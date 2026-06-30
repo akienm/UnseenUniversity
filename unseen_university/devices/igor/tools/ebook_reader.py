@@ -959,7 +959,7 @@ def _reading_extract_worker(
     """
     try:
         from ..cognition.inference_gateway import (
-            InferenceGateway,
+            get_gateway,
             make_context,
             RoutingError,
         )
@@ -975,7 +975,7 @@ def _reading_extract_worker(
             candidates=candidates_str,
         )
 
-        gw = InferenceGateway.from_env()
+        gw = get_gateway()
         ctx = make_context(is_background=True, research_mode=True)
         kwargs = {}
         if model_override:

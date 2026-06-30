@@ -57,7 +57,6 @@ from .cognition.inference_openrouter import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection, cts as _cts, log_error
 from .cognition.system_prompt import build_boot_message, invalidate_cache
 
-# LocalKoboldPool/BatchKoboldPool moved to InferenceGateway.from_env() — not imported directly here
 from .cognition import observer
 from .cognition import milieu as milieu_mod
 from .cognition import basal_ganglia
@@ -672,9 +671,9 @@ class Igor(IgorBase):
         from .cognition.coa import COA
 
         self._coa = COA(self.cortex, instance_id, igor=self)
-        from .cognition.inference_gateway import InferenceGateway as _InferenceGateway
+        from .cognition.inference_gateway import build_default_gateway
 
-        self._gateway = _InferenceGateway.from_env()
+        self._gateway = build_default_gateway()
         from .cognition.experiment_scheduler import ExperimentScheduler as _ExpSched
 
         self._experiment_scheduler = _ExpSched(self.cortex)
@@ -4876,23 +4875,18 @@ class Igor(IgorBase):
                 return f"{_threshold_prefix}{self._igor_lisp('Thinking about that...')}"
             return f"{_threshold_prefix}Started background job #{_async_job_id}. I'll notify you when complete."
 
-        # Forensic: log tier selection decision (WO_escalation_gate)
-        _tiers_available = ["tier.1"]
-        if self._gateway._t2:
-            _tiers_available.append("tier.2")
-        if self._gateway._t3:
-            _tiers_available.append("tier.3")
-        if self._gateway._t35:
-            _tiers_available.append("tier.3.5")
-        if self._gateway._t4:
-            _tiers_available.append("tier.4")
-        if self._gateway._t5 and os.getenv("IGOR_TIER5_ENABLED", "false").lower() in (
-            "1",
-            "true",
-            "yes",
-        ):
-            _tiers_available.append("tier.5")
-        _tiers_available.append("tier.6")
+        # Forensic: log tier selection decision (WO_escalation_gate).
+        # igor no longer owns a tier ladder — availability comes from the
+        # Inference Proxy's source health (T-inf-reroute-C).
+        try:
+            _tiers_available = [
+                name
+                for name, ok in self._gateway._get_inference().source_health().items()
+                if ok
+            ]
+        except Exception:
+            _tiers_available = []
+        _tiers_available = _tiers_available or ["proxy"]
 
         _preparse_via = (
             "ollama"
@@ -8830,7 +8824,16 @@ class Igor(IgorBase):
         if any(p in t for p in _local_words):
             if self.local_mode:
                 return "Operating in local-only mode. No cloud calls."
-            cloud_ok = self._gateway._t35 is not None
+            # Cloud availability now comes from the Inference Proxy's source
+            # health — a cloud source is one the Proxy reports kind != local.
+            try:
+                _health = self._gateway._get_inference().source_health()
+                cloud_ok = any(
+                    ok and "ollama" not in name.lower() and "local" not in name.lower()
+                    for name, ok in _health.items()
+                )
+            except Exception:
+                cloud_ok = False
             return (
                 "Cloud is available."
                 if cloud_ok
@@ -9542,41 +9545,37 @@ class Igor(IgorBase):
 
         state = "[green]ON[/]" if self.local_mode else "[yellow]OFF[/]"
         if self.local_mode:
-            if self._gateway._t2:
-                self._gateway._t2._refresh()  # Re-read machines.json
-                loginfo(f"\n[bold]Local mode:[/] {state}")
-                loginfo(f"[dim]Pool: {self._gateway._t2.machines_summary()}[/]")
-            else:
-                loginfo(
-                    f"\n[bold]Local mode:[/] {state}  [dim](no local pool available)[/]"
-                )
+            try:
+                from .cognition.cluster_router import force_refresh, status_lines
+
+                force_refresh()  # re-read machines.json
+                pool = "; ".join(status_lines()) or "no machines"
+            except Exception:
+                pool = "unavailable"
+            loginfo(f"\n[bold]Local mode:[/] {state}")
+            loginfo(f"[dim]Pool: {pool}[/]")
         else:
-            _cloud_model = self._gateway._t4.model if self._gateway._t4 else "none"
             loginfo(
-                f"\n[bold]Local mode:[/] {state}  [dim](using cloud: {_cloud_model})[/]"
+                f"\n[bold]Local mode:[/] {state}  [dim](inference routed by the Proxy)[/]"
             )
 
     def _cmd_model(self, raw):
+        # Operational inference is tier-routed by the Inference Proxy — there is
+        # no global model to set (tier-not-model contract). /model is now
+        # informational; specific-model experiments go through /cloud.
         from .cognition.inference_openrouter import MODEL_ALIASES
 
         parts = raw.strip().split(None, 1)
         if len(parts) < 2:
-            if self.local_mode and self._gateway._t2:
-                loginfo(f"\n[bold]Current model (local):[/] {self._gateway._t2.model}")
-                loginfo(f"[dim]Pool: {self._gateway._t2.machines_summary()}[/]")
-            else:
-                _m = self._gateway._t4.model if self._gateway._t4 else "none"
-                loginfo(f"\n[bold]Current model (cloud):[/] {_m}")
-                aliases = ", ".join(f"{k} → {v}" for k, v in MODEL_ALIASES.items())
-                loginfo(f"[dim]Aliases: {aliases}[/]")
+            loginfo("\n" + self._gateway.describe())
+            aliases = ", ".join(f"{k} → {v}" for k, v in MODEL_ALIASES.items())
+            loginfo(f"[dim]Model aliases (for /cloud experiments): {aliases}[/]")
             return
-        name = parts[1].strip()
-        if self.local_mode and self._gateway._t2:
-            self._gateway._t2.set_model(name)
-            loginfo(f"\n[green]Ollama model switched to:[/] {name}")
-        elif self._gateway._t4:
-            resolved = self._gateway._t4.set_model(name)
-            loginfo(f"\n[green]Cloud model switched to:[/] {resolved}")
+        loginfo(
+            "[yellow]Operational inference is tier-routed by the Proxy — no global "
+            "model to set. Use /cloud add MODEL then /cloud query for specific-model "
+            "experiments (the sanctioned exception).[/]"
+        )
 
     def _cmd_compress(self, _):
         """Summarize session ring memory to LTM via Ollama, then restart fresh."""

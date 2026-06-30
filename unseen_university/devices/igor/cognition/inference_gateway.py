@@ -110,20 +110,24 @@ ENGRAM PORTION
   PROC_NIGHT_READ       — threshold habit; clears override + drains local
   escalation_stats tool — tracks cloud escalations per topic
 
+igor no longer owns a routing DAG or per-tier reasoners. reason() and call()
+assemble a request and dispatch through the canonical Inference Proxy
+(InferenceDevice); the Proxy's rules_engine owns source selection, budget, and
+fallback (T-inf-reroute-A/B/C). Code asks for a tier (task_class), not a model;
+a specific model is the experiment/comparison exception only and still rides
+req.model through the Proxy.
+
 If you want to change:
-  - Tier ladder         — edit build_default_gateway() + reason() signature
-  - Cloud preference    — edit _cloud_preferred() + InferenceContext init in
-                          main.py make_context()
-  - Benchmark a model   — gateway.call(purpose_id, ..., handler_override=...)
-                          (benchmarking only, never production)
+  - Purpose constraints  — edit build_default_gateway() (token/timeout/temp)
+  - Purpose → task_class — edit _PURPOSE_TASK_CLASS
+  - Source / model / budget routing — NOT here; it's the Inference Proxy's job
+                          (devices/inference/: rules_engine, sources, budget_gate)
 """
 
 from __future__ import annotations
 
-import json
 import os
 import time
-import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
@@ -137,23 +141,21 @@ from .forensic_logger import log_error
 @dataclass
 class InferenceContext:
     """
-    Live routing-state snapshot. Constructed fresh before each gateway.call().
-    Passed to every edge condition; handlers may read last_elapsed_ms.
+    Routing-intent snapshot constructed before each gateway.call().
 
-    D211 routing: local-first. Cloud only when:
-      - is_user_turn AND complexity in {medium, high}  (quality/voice matters)
-      - research_mode AND cloud_ok_override            (research quality)
-      - no local capacity                              (fallback)
+    The Proxy owns source selection now; what _call_via_proxy actually reads is
+    is_user_turn / research_mode (→ foreground) and complexity. The cloud/local/
+    balance fields are legacy carriers kept for caller compatibility.
     """
 
-    cloud_active: bool  # is_cloud_training_active() — time-of-day + intent
-    local_available: bool  # Ollama health check passed
-    balance_ok: bool  # OR api key present AND balance above floor
+    cloud_active: bool  # legacy (Proxy owns cloud decisions)
+    local_available: bool  # legacy
+    balance_ok: bool  # legacy
     is_background: bool  # impulse / background turn (no latency requirement)
-    cloud_ok_override: bool = True  # D071: False = night/local-only; gates background
-    last_elapsed_ms: float = 0.0  # set by gateway after each handler attempt
-    db_colocated: bool = False  # D205: Postgres on same host as Ollama
-    # D211: routing intent signals
+    cloud_ok_override: bool = True  # legacy
+    last_elapsed_ms: float = 0.0  # set by gateway after each call
+    db_colocated: bool = False  # legacy
+    # routing intent signals (still consumed)
     is_user_turn: bool = False  # this call is part of a reply to a human
     research_mode: bool = False  # call chain is research (book reader, web extract)
     complexity: str = "low"  # low | medium | high — from thalamus parsed_input
@@ -161,36 +163,17 @@ class InferenceContext:
 
 @dataclass
 class PurposeConstraints:
-    """
-    Call constraints attached to a purpose node.
-    Travel unchanged through traversal; every handler receives them.
+    """Call constraints attached to a purpose (token budget / timeout / temp).
+
+    Mapped onto the InferenceRequest by _call_via_proxy; ``extra`` carries
+    request extras such as ne's json response_format.
     """
 
     step_name: str  # pipeline_trace step label
     max_tokens: int = 256
     timeout_s: float = 8.0
     temperature: float = 0.1
-    extra: dict = field(default_factory=dict)  # purpose-specific overrides
-
-
-@dataclass
-class Node:
-    id: str
-    handler: Optional[Callable] = None  # None → routing node; callable → leaf handler
-
-    @property
-    def is_handler(self) -> bool:
-        return self.handler is not None
-
-
-@dataclass
-class Edge:
-    source: str
-    target: str
-    condition: Callable[[InferenceContext], bool]
-    priority: int = 0
-    is_fallback: bool = False
-    label: str = ""  # human-readable label for describe()
+    extra: dict = field(default_factory=dict)  # purpose-specific request extras
 
 
 class RoutingError(RuntimeError):
@@ -220,16 +203,7 @@ class InferenceGateway(IgorBase):
         # other device (reader/summarizer/evaluator pattern). Lazy-loaded
         # on first use; injectable for tests. (T-inf-reroute-A)
         self._inference = inference
-        self._nodes: dict[str, Node] = {}
-        self._edges: dict[str, list[Edge]] = {}
         self._purposes: dict[str, PurposeConstraints] = {}
-        # Tier reasoner instances — populated by from_env()
-        self._t2 = None  # tier.2       local Ollama (interactive timeout)
-        self._t2_batch = None  # tier.2 batch local Ollama (quality priority)
-        self._t3 = None  # tier.3       OR cheap (gpt-4o-mini)
-        self._t35 = None  # tier.3.5     OR haiku  (persona-capable)
-        self._t4 = None  # tier.4       OR sonnet
-        self._t5 = None  # tier.5       Anthropic direct (inhibited)
         self.last_tier: str = ""  # set after every reason() call
         self.last_elapsed_s: float = 0.0  # set after every reason() call
 
@@ -244,18 +218,10 @@ class InferenceGateway(IgorBase):
             self._inference = InferenceDevice()
         return self._inference
 
-    def add_node(self, node: Node) -> None:
-        self._nodes[node.id] = node
-        self._edges.setdefault(node.id, [])
-
-    def add_edge(self, edge: Edge) -> None:
-        self._edges.setdefault(edge.source, [])
-        self._edges[edge.source].append(edge)
-
     def register_purpose(self, node_id: str, constraints: PurposeConstraints) -> None:
         self._purposes[node_id] = constraints
 
-    # ── Traversal ─────────────────────────────────────────────────────────────
+    # ── Purpose calls ───────────────────────────────────────────────────────────
 
     def call(
         self,
@@ -265,41 +231,31 @@ class InferenceGateway(IgorBase):
         **kwargs,
     ) -> str:
         """
-        Traverse from purpose_id to a handler node, return response text.
-        kwargs are forwarded to every handler attempt.
+        Run a purpose call through the canonical Inference Proxy, return the text.
 
-        Special kwargs (consumed here, not forwarded to handlers):
-          handler_override: str — jump directly to a named handler node,
-            skipping DAG edge traversal. Logging and fallback still fire.
-            Used by benchmarking to force ollama vs OR endpoint.
-        Raises RoutingError if no handler succeeds.
+        The purpose maps to a task_class; the Proxy's rules_engine owns local-vs-
+        cloud selection and fallback. There is no routing DAG — igor requests
+        inference like every other device (T-inf-reroute-B/C).
+
+        Special kwargs (consumed here, not forwarded):
+          model: str — request a specific model (testing / experiments /
+            benchmark only; the sanctioned model-request exception). Still goes
+            THROUGH the Proxy via req.model.
+          timeout_override: float — override the purpose timeout (benchmark use).
+        Raises RoutingError on dispatch failure or when no source is available.
         """
-        # Pop special kwargs so they don't forward to handlers
-        handler_override = kwargs.pop("handler_override", None)
         timeout_override = kwargs.pop("timeout_override", None)
+        model = kwargs.pop("model", "")
 
         constraints = self._purposes.get(
             purpose_id, PurposeConstraints(step_name=purpose_id)
         )
-        # Apply timeout override (benchmark use — no short-circuit on slow models)
         if timeout_override is not None:
             from dataclasses import replace
 
             constraints = replace(constraints, timeout_s=float(timeout_override))
 
-        # Benchmark-only legacy path: handler_override forces a specific DAG
-        # handler node (reading_benchmark.py). Keep raw DAG traversal for this
-        # case only; T-inf-reroute-C moves the benchmark onto the Proxy and
-        # deletes the DAG + raw _h_ollama/_h_or handlers.
-        if handler_override:
-            return self._traverse_dag(
-                handler_override, prompt, ctx, constraints, **kwargs
-            )
-
-        # Normal path (T-inf-reroute-B): igor is a normal Proxy consumer. The
-        # purpose maps to a task_class; the Proxy's rules_engine owns local-vs-
-        # cloud selection and fallback, collapsing the old DAG fallback edges.
-        return self._call_via_proxy(purpose_id, prompt, ctx, constraints, **kwargs)
+        return self._call_via_proxy(purpose_id, prompt, ctx, constraints, model=model)
 
     def _call_via_proxy(
         self,
@@ -307,15 +263,16 @@ class InferenceGateway(IgorBase):
         prompt: str,
         ctx: "InferenceContext",
         constraints: "PurposeConstraints",
-        **kwargs,
+        model: str = "",
     ) -> str:
         """Route a purpose call through the canonical Inference Proxy.
 
         Maps PurposeConstraints -> InferenceRequest (max_tokens / temperature /
         timeout, and response_format via extra) and the purpose -> a task_class.
-        Returns the response text; raises RoutingError on dispatch failure or when
-        no source is available — matching call()'s legacy failure contract so the
-        ne / think / preparse callers keep their existing except-handling.
+        An explicit `model` (experiment/benchmark exception) is forwarded as
+        req.model. Returns the response text; raises RoutingError on dispatch
+        failure or when no source is available — matching call()'s failure
+        contract so the ne / think / preparse callers keep their except-handling.
         """
         from unseen_university.devices.inference.shim import InferenceRequest
 
@@ -330,6 +287,7 @@ class InferenceGateway(IgorBase):
 
         req = InferenceRequest(
             messages=[{"role": "user", "content": prompt}],
+            model=model or "",
             max_tokens=constraints.max_tokens,
             temperature=constraints.temperature,
             timeout=int(constraints.timeout_s),
@@ -338,10 +296,11 @@ class InferenceGateway(IgorBase):
             extra=extra,
         )
         get_logger(__name__).info(
-            "[gateway] call(%s) -> Proxy.dispatch task_class=%s foreground=%s",
+            "[gateway] call(%s) -> Proxy.dispatch task_class=%s foreground=%s model=%s",
             purpose_id,
             task_class,
             foreground,
+            model or "(tier)",
         )
         try:
             resp = self._get_inference().dispatch(req)
@@ -356,176 +315,26 @@ class InferenceGateway(IgorBase):
         ctx.last_elapsed_ms = float(getattr(resp, "elapsed_ms", 0) or 0)
         return resp.text
 
-    def _traverse_dag(
-        self,
-        start_id: str,
-        prompt: str,
-        ctx: "InferenceContext",
-        constraints: "PurposeConstraints",
-        **kwargs,
-    ) -> str:
-        """Legacy raw-DAG traversal — benchmark handler_override path only.
-
-        Retained until T-inf-reroute-C so reading_benchmark.py can still force a
-        specific Ollama / OpenRouter endpoint. Every non-benchmark call now goes
-        through _call_via_proxy.
-        """
-        try:
-            from .forensic_logger import log_pipeline_step as _lpt, get_turn_id as _gtid
-        except Exception:
-            _lpt = None
-            _gtid = lambda: "?"
-
-        current_id = start_id
-        failed: set[str] = set()
-
-        while True:
-            node = self._nodes.get(current_id)
-            if node is None:
-                raise RoutingError(f"InferenceGateway: unknown node '{current_id}'")
-
-            if node.is_handler:
-                t0 = time.monotonic()
-                try:
-                    result = node.handler(prompt, constraints, **kwargs)
-                    ms = round((time.monotonic() - t0) * 1000)
-                    ctx.last_elapsed_ms = float(ms)
-                    if _lpt:
-                        try:
-                            _lpt(
-                                turn_id=_gtid(),
-                                step=constraints.step_name,
-                                elapsed_ms=ms,
-                                via=current_id,
-                            )
-                        except Exception as _bare_e:
-                            log_error(
-                                kind="BARE_EXCEPT",
-                                detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
-                            )
-                    return result
-                except Exception as exc:
-                    ctx.last_elapsed_ms = round((time.monotonic() - t0) * 1000)
-                    failed.add(current_id)
-                    fallbacks = sorted(
-                        [
-                            e
-                            for e in self._edges.get(current_id, [])
-                            if e.is_fallback
-                            and e.target not in failed
-                            and e.condition(ctx)
-                        ],
-                        key=lambda e: e.priority,
-                    )
-                    if not fallbacks:
-                        raise RoutingError(
-                            f"Handler '{current_id}' failed, no fallback available: {exc}"
-                        ) from exc
-                    current_id = fallbacks[0].target
-                    continue
-
-            # Routing node — walk highest-priority passing non-fallback edge
-            candidates = sorted(
-                [
-                    e
-                    for e in self._edges.get(current_id, [])
-                    if not e.is_fallback and e.target not in failed and e.condition(ctx)
-                ],
-                key=lambda e: e.priority,
-            )
-            if not candidates:
-                raise RoutingError(
-                    f"InferenceGateway: no passing edges from routing node '{current_id}'"
-                )
-            current_id = candidates[0].target
-
     # ── Visibility ────────────────────────────────────────────────────────────
 
     def describe(self) -> str:
-        """Human-readable DAG — used by /routing --dag."""
-        lines = ["── Inference Gateway — routing DAG ──", ""]
-        for node_id in sorted(self._nodes):
-            node = self._nodes[node_id]
-            role = "handler" if node.is_handler else "router "
-            c = self._purposes.get(node_id)
-            c_str = (
-                f"  [max_tokens={c.max_tokens} timeout={c.timeout_s}s temp={c.temperature}]"
-                if c
-                else ""
+        """Human-readable purpose table — used by /routing --dag.
+
+        igor no longer owns a routing DAG; source selection and fallback are the
+        Inference Proxy's job (rules_engine). This lists the purposes igor calls
+        and the task_class each maps to.
+        """
+        lines = ["── Inference purposes (routed by the Inference Proxy) ──", ""]
+        for purpose_id in sorted(self._purposes):
+            c = self._purposes[purpose_id]
+            tc = _PURPOSE_TASK_CLASS.get(purpose_id, "minion")
+            lines.append(
+                f"  {purpose_id}  → task_class={tc}  "
+                f"[max_tokens={c.max_tokens} timeout={c.timeout_s}s temp={c.temperature}]"
             )
-            lines.append(f"  [{role}] {node_id}{c_str}")
-            for e in sorted(self._edges.get(node_id, []), key=lambda e: e.priority):
-                fb = " [fallback]" if e.is_fallback else ""
-                lbl = f" ({e.label})" if e.label else ""
-                lines.append(f"    ──[pri={e.priority}{fb}]──▶  {e.target}{lbl}")
+        lines.append("")
+        lines.append("Source selection + fallback owned by the Proxy (rules_engine).")
         return "\n".join(lines)
-
-    # ── Reasoner factory ──────────────────────────────────────────────────────
-
-    @classmethod
-    def from_env(cls) -> "InferenceGateway":
-        """
-        Build the default routing DAG and instantiate all tier reasoners from env.
-        This is the single place that knows about Ollama, OpenRouter, and Anthropic.
-        Called once at Igor boot; result stored on Igor as self._gateway.
-        """
-        import logging as _log
-
-        gw = build_default_gateway()
-
-        # Tier 2: local Ollama (interactive fallback + background impulse)
-        try:
-            from .inference_ollama import OllamaReasoner as _OR
-
-            gw._t2 = _OR(
-                model=os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
-                host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-            )
-            _log.getLogger(__name__).info(
-                f"[gateway] Ollama tier.2 ready — model={gw._t2.model}"
-            )
-        except Exception as _e:
-            _log.getLogger(__name__).warning(
-                f"[gateway] Ollama tier.2 init failed: {_e}"
-            )
-
-        # Tiers 3 / 3.5 / 4: OpenRouter
-        if os.getenv("OPENROUTER_API_KEY", "").strip():
-            try:
-                from .inference_openrouter import OpenRouterReasoner
-
-                gw._t3 = OpenRouterReasoner(
-                    model=os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
-                )
-                gw._t35 = OpenRouterReasoner(
-                    model=os.getenv(
-                        "OPENROUTER_DEFAULT_MODEL",
-                        os.getenv(
-                            "OPENROUTER_INTERACTIVE_MODEL", "anthropic/claude-haiku-4.5"
-                        ),
-                    )
-                )
-                gw._t4 = OpenRouterReasoner(
-                    model=os.getenv(
-                        "OPENROUTER_INTERACTIVE_MODEL", "anthropic/claude-sonnet-4.6"
-                    )
-                )
-                _log.getLogger(__name__).info(
-                    f"[gateway] OpenRouter ready — t3={gw._t3.model} t35={gw._t35.model} t4={gw._t4.model}"
-                )
-            except Exception as _e:
-                _log.getLogger(__name__).error(
-                    f"[gateway] OpenRouter init FAILED — cloud will be unavailable: {type(_e).__name__}: {_e}"
-                )
-        else:
-            _log.getLogger(__name__).debug(
-                "[gateway] OpenRouter API key not configured — cloud inference disabled"
-            )
-
-        # Tier 5: Anthropic direct — REMOVED (D329: OR handles all cloud routing)
-        gw._t5 = None
-
-        return gw
 
     # ── Primary reasoning interface ────────────────────────────────────────────
 
@@ -655,435 +464,32 @@ class InferenceGateway(IgorBase):
         return resp.text, resp.cost_estimate, used_api
 
 
-# ── Handler callables ────────────────────────────────────────────────────────────
-# Accept (prompt, constraints, **kwargs) → str.
-# Raise on any failure. Return non-empty string on success.
-# Model + host read from constraints.extra so purpose drives configuration.
-
-
-def _h_ollama(prompt: str, c: PurposeConstraints, **kw) -> str:
-    """Raw Ollama /api/chat. Raises on any error or blank response.
-
-    D120: if extra contains cluster_call_type, asks cluster_router for the best
-    (host, model) at call time. Falls back to static extra values if router returns None.
-    """
-    call_type = c.extra.get("cluster_call_type", "")
-    if call_type:
-        try:
-            from .inference_ollama import router as _router
-
-            r_host, r_model = _router.route(call_type)
-        except Exception:
-            r_host, r_model = None, None
-    else:
-        r_host, r_model = None, None
-
-    model = (
-        kw.get("model")
-        or r_model
-        or c.extra.get("model")
-        or os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
-    )
-    host = (
-        r_host
-        or c.extra.get("host")
-        or os.getenv("OLLAMA_HOST", "http://localhost:11434")
-    )
-    payload = json.dumps(
-        {
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "stream": False,
-            "options": {"temperature": c.temperature, "num_predict": c.max_tokens},
-        }
-    ).encode()
-    req = urllib.request.Request(
-        f"{host}/api/chat",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=int(c.timeout_s)) as resp:
-        data = json.loads(resp.read())
-    text = (data.get("message") or {}).get("content", "").strip()
-    if not text:
-        raise RuntimeError("Ollama returned empty response")
-    return text
-
-
-def _h_or(prompt: str, c: PurposeConstraints, **kw) -> str:
-    """OpenRouter chat completion. Raises on any error or blank response."""
-    api_key = os.getenv("OPENROUTER_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("OPENROUTER_API_KEY not set")
-    model = (
-        kw.get("model")
-        or c.extra.get("or_model")
-        or os.getenv("OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini")
-    )
-    body: dict = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": c.temperature,
-        "max_tokens": c.max_tokens,
-    }
-    if "response_format" in c.extra:
-        body["response_format"] = c.extra["response_format"]
-    payload = json.dumps(body).encode()
-    req = urllib.request.Request(
-        "https://openrouter.ai/api/v1/chat/completions",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read())
-    text = data["choices"][0]["message"]["content"].strip()
-    if not text:
-        raise RuntimeError("OR returned empty response")
-    return text
-
-
-# ── Edge conditions (pure functions of InferenceContext) ─────────────────────────
-
-
-def _always(ctx: InferenceContext) -> bool:
-    return True
-
-
-def _local_preferred(ctx: InferenceContext) -> bool:
-    """
-    D234: Ollama primary. True unless local is physically unavailable.
-    Ollama fires before OR regardless of complexity — OR is scarce budget.
-    Reasons to route directly to OR:
-      - research_mode  (research quality, large context — model capability matters)
-      - db_colocated   (RAM contention with Postgres on same host)
-      - no local capacity (nothing available)
-    """
-    if ctx.db_colocated:
-        return False
-    from .inference_ollama import router as _router
-
-    if not _router.has_local_capacity():
-        return False
-    # Research mode: model capability matters more than budget
-    if ctx.research_mode:
-        return False
-    return True
-
-
-def _cloud_preferred(ctx: InferenceContext) -> bool:
-    """
-    D234: OR path when local is physically unavailable or research quality required.
-    Blocked for background if night mode (D071).
-    """
-    if ctx.is_background and not ctx.cloud_ok_override:
-        return False
-    return not _local_preferred(ctx)
-
-
-def _cloud_ok(ctx: InferenceContext) -> bool:
-    """OR balance above floor and API key present. Blocked for background if night mode (D071)."""
-    if ctx.is_background and not ctx.cloud_ok_override:
-        return False
-    return ctx.balance_ok
-
-
-def _ne_local_ok(ctx: InferenceContext) -> bool:
-    """NE local model env var set, cluster has local capacity, cloud_mode not active. (D120)"""
-    from .inference_ollama import router as _router
-
-    return (
-        bool(os.getenv("IGOR_NE_LOCAL_MODEL", ""))
-        and _router.has_local_capacity("ne")
-        and not ctx.cloud_active
-    )
-
-
-def _cloud_training(ctx: InferenceContext) -> bool:
-    """Cloud training mode active AND OR available (NE training preference)."""
-    return ctx.cloud_active and ctx.balance_ok
-
-
 # ── Default gateway factory ───────────────────────────────────────────────────────
 
 
 def build_default_gateway() -> InferenceGateway:
-    """
-    Wire the default routing DAG.
+    """Register the purpose constraints igor's call() uses.
 
-    preparse  local_preferred ──▶ ollama_preparse ──[fallback]──▶ or_preparse
-              cloud_preferred ──▶ or_preparse
-
-    winnow    local_preferred ──▶ ollama_winnow   ──[fallback]──▶ or_winnow
-              cloud_preferred ──▶ or_winnow
-
-    ne        cloud_training  ──▶ or_ne
-              ne_local_ok     ──▶ ollama_ne        ──[fallback]──▶ or_ne
-
-    think     always          ──▶ ollama_think     (no cloud fallback)
-
-    reading_extract
-              local_preferred ──▶ ollama_reading   ──[fallback]──▶ or_reading
-              cloud_preferred ──▶ or_reading
+    There is no routing DAG: the Inference Proxy (rules_engine) owns source
+    selection and fallback. This only declares each purpose's call constraints
+    (token budget / timeout / temperature, and ne's json response_format).
     """
     gw = InferenceGateway()
-
-    # ── Purpose nodes ────────────────────────────────────────────────────────
     purposes = [
-        (
-            "preparse",
-            PurposeConstraints(
-                step_name="preparse_search",
-                max_tokens=120,
-                timeout_s=5.0,
-                temperature=0.1,
-                extra={
-                    # D120: host + model resolved dynamically via cluster_router at call time.
-                    # Fallback values used only if router returns (None, None).
-                    "cluster_call_type": "preparse",
-                    "model": os.getenv(
-                        "OLLAMA_REASONING_MODEL",
-                        os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
-                    ),
-                    "host": os.getenv(
-                        "OLLAMA_REASONING_HOST",
-                        os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-                    ),
-                    "or_model": os.getenv(
-                        "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
-                    ),
-                },
-            ),
-        ),
-        (
-            "winnow",
-            PurposeConstraints(
-                step_name="winnow",
-                max_tokens=60,
-                timeout_s=3.0,
-                temperature=0.1,
-                extra={
-                    "cluster_call_type": "winnow",
-                    "model": os.getenv("IGOR_WINNOW_LOCAL_MODEL", "llama3.2:1b"),
-                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-                    "or_model": os.getenv(
-                        "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
-                    ),
-                },
-            ),
-        ),
-        (
-            "ne",
-            PurposeConstraints(
-                step_name="ne",
-                max_tokens=1024,
-                timeout_s=45.0,
-                temperature=0.3,
-                extra={
-                    "cluster_call_type": "ne",
-                    "model": os.getenv("IGOR_NE_LOCAL_MODEL", ""),
-                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-                    "or_model": os.getenv(
-                        "OPENROUTER_CHEAP_MODEL", "openai/gpt-4o-mini"
-                    ),
-                    "response_format": {"type": "json_object"},
-                },
-            ),
-        ),
-        (
-            "think",
-            PurposeConstraints(
-                step_name="think_llm",
-                max_tokens=80,
-                timeout_s=8.0,
-                temperature=0.2,
-                extra={
-                    "cluster_call_type": "extraction",
-                    "model": os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),
-                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-                },
-            ),
-        ),
-        (
-            "reading_extract",
-            PurposeConstraints(
-                step_name="reading_extract",
-                max_tokens=220,
-                timeout_s=300.0,  # background work — no short timeout; model swaps need time
-                temperature=0.1,
-                extra={
-                    "cluster_call_type": "extraction",
-                    "model": os.getenv("IGOR_READING_LOCAL_MODEL", "qwen2.5:7b"),
-                    "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-                    "or_model": os.getenv(
-                        "IGOR_READING_OR_MODEL", "qwen/qwen-2.5-7b-instruct"
-                    ),
-                },
-            ),
-        ),
+        ("preparse", PurposeConstraints(
+            step_name="preparse_search", max_tokens=120, timeout_s=5.0, temperature=0.1)),
+        ("winnow", PurposeConstraints(
+            step_name="winnow", max_tokens=60, timeout_s=3.0, temperature=0.1)),
+        ("ne", PurposeConstraints(
+            step_name="ne", max_tokens=1024, timeout_s=45.0, temperature=0.3,
+            extra={"response_format": {"type": "json_object"}})),
+        ("think", PurposeConstraints(
+            step_name="think_llm", max_tokens=80, timeout_s=8.0, temperature=0.2)),
+        ("reading_extract", PurposeConstraints(
+            step_name="reading_extract", max_tokens=220, timeout_s=300.0, temperature=0.1)),
     ]
-    for node_id, constraints in purposes:
-        gw.add_node(Node(id=node_id))
-        gw.register_purpose(node_id, constraints)
-
-    # ── Handler nodes (one Ollama + one OR per purpose, except think) ─────────
-    for node_id in (
-        "ollama_preparse",
-        "ollama_winnow",
-        "ollama_ne",
-        "ollama_think",
-        "ollama_reading",
-    ):
-        gw.add_node(Node(id=node_id, handler=_h_ollama))
-    for node_id in ("or_preparse", "or_winnow", "or_ne", "or_reading"):
-        gw.add_node(Node(id=node_id, handler=_h_or))
-
-    # ── Edges: preparse ──────────────────────────────────────────────────────
-    gw.add_edge(
-        Edge(
-            "preparse",
-            "ollama_preparse",
-            _local_preferred,
-            priority=1,
-            label="local available, cloud_mode off",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "preparse",
-            "or_preparse",
-            _cloud_preferred,
-            priority=2,
-            label="cloud_mode active or local unavailable",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "ollama_preparse",
-            "or_preparse",
-            _cloud_ok,
-            priority=1,
-            is_fallback=True,
-            label="ollama failed",
-        )
-    )
-
-    # ── Edges: winnow ────────────────────────────────────────────────────────
-    gw.add_edge(
-        Edge(
-            "winnow",
-            "ollama_winnow",
-            _local_preferred,
-            priority=1,
-            label="local available, cloud_mode off",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "winnow",
-            "or_winnow",
-            _cloud_preferred,
-            priority=2,
-            label="cloud_mode active or local unavailable",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "ollama_winnow",
-            "or_winnow",
-            _cloud_ok,
-            priority=1,
-            is_fallback=True,
-            label="ollama failed",
-        )
-    )
-
-    # ── Edges: ne ────────────────────────────────────────────────────────────
-    gw.add_edge(
-        Edge(
-            "ne",
-            "or_ne",
-            _cloud_training,
-            priority=1,
-            label="cloud_mode active (training — prefers cloud)",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "ne",
-            "ollama_ne",
-            _ne_local_ok,
-            priority=2,
-            label="local NE model set, cloud_mode off",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "ollama_ne",
-            "or_ne",
-            _cloud_ok,
-            priority=1,
-            is_fallback=True,
-            label="ollama_ne failed",
-        )
-    )
-    # Unconditional fallback: no Ollama + cloud_mode off (e.g. Windows, nighttime)
-    gw.add_edge(
-        Edge(
-            "ne",
-            "or_ne",
-            _always,
-            priority=10,
-            label="no local NE and cloud_mode off — OR fallback",
-        )
-    )
-
-    # ── Edges: think ─────────────────────────────────────────────────────────
-    gw.add_edge(
-        Edge(
-            "think",
-            "ollama_think",
-            _always,
-            priority=1,
-            label="always local (think never hits cloud)",
-        )
-    )
-    # No fallback — _think_call() treats empty return as "no synthesis available"
-
-    # ── Edges: reading_extract (D359) ────────────────────────────────────────
-    gw.add_edge(
-        Edge(
-            "reading_extract",
-            "ollama_reading",
-            _local_preferred,
-            priority=1,
-            label="local available, cloud_mode off",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "reading_extract",
-            "or_reading",
-            _cloud_preferred,
-            priority=2,
-            label="cloud_mode active or local unavailable",
-        )
-    )
-    gw.add_edge(
-        Edge(
-            "ollama_reading",
-            "or_reading",
-            _cloud_ok,
-            priority=1,
-            is_fallback=True,
-            label="ollama_reading failed",
-        )
-    )
-
+    for purpose_id, constraints in purposes:
+        gw.register_purpose(purpose_id, constraints)
     return gw
 
 
@@ -1096,70 +502,18 @@ def make_context(
     research_mode: bool = False,
     complexity: str = "low",
 ) -> InferenceContext:
-    """Build a fresh InferenceContext by checking live system state.
+    """Build a fresh InferenceContext carrying the call's routing intent.
 
-    D211: callers pass is_user_turn, research_mode, complexity to drive routing.
-    main.py sets is_user_turn=True for human web turns.
-    Pipeline calls set research_mode=True for book/web research chains.
+    The Proxy owns source selection now, so this no longer probes Ollama/OR
+    health or balance — it just carries is_user_turn / research_mode / complexity
+    (the signals _call_via_proxy turns into the foreground/task_class decision).
+    The remaining InferenceContext fields are legacy and left at defaults.
     """
-    cloud_active = False
-    try:
-        from .cloud_mode import is_cloud_training_active
-
-        cloud_active = is_cloud_training_active()
-    except Exception as _bare_e:
-        log_error(
-            kind="BARE_EXCEPT",
-            detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
-        )
-
-    cloud_ok_override = True
-    try:
-        from .cloud_mode import is_cloud_ok_override as _cko
-
-        cloud_ok_override = _cko()
-    except Exception as _bare_e:
-        log_error(
-            kind="BARE_EXCEPT",
-            detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
-        )
-
-    local_available = False
-    try:
-        from .inference_ollama import is_healthy as _ollama_healthy
-
-        local_available = _ollama_healthy()
-    except Exception as _bare_e:
-        log_error(
-            kind="BARE_EXCEPT",
-            detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
-        )
-
-    balance_ok = False
-    try:
-        if os.getenv("OPENROUTER_API_KEY", ""):
-            from unseen_university.devices.igor.tools.resource_manager import budget_status
-
-            balance_ok = budget_status().get("remaining_usd", 1.0) > 0.50
-    except Exception:
-        balance_ok = bool(os.getenv("OPENROUTER_API_KEY", ""))
-
-    # T-inference-colocation-signal: is Postgres on same host as Ollama?
-    # When true, local inference competes with DB for RAM → prefer cloud.
-    db_url = os.getenv("UU_HOME_DB_URL", "")
-    db_colocated = (
-        "localhost" in db_url
-        or "127.0.0.1" in db_url
-        or not db_url  # empty = no remote DB = always same box
-    )
-
     return InferenceContext(
-        cloud_active=cloud_active,
-        local_available=local_available,
-        balance_ok=balance_ok,
+        cloud_active=False,
+        local_available=False,
+        balance_ok=False,
         is_background=is_background,
-        cloud_ok_override=cloud_ok_override,
-        db_colocated=db_colocated,
         is_user_turn=is_user_turn,
         research_mode=research_mode,
         complexity=complexity,

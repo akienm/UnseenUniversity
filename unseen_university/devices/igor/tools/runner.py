@@ -41,7 +41,6 @@ _workspace = WorkspaceDevice(workspace_root=WORKSPACE)
 import time
 from datetime import datetime
 from ..cognition.reasoners.ollama_reasoner import (
-    OllamaReasoner,
     OLLAMA_LOCAL_MODEL,
     OLLAMA_HOST,
 )

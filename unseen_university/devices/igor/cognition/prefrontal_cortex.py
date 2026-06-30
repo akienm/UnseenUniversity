@@ -1,14 +1,13 @@
 """
-Prefrontal Cortex - executive reasoning.
-Delegates to whichever reasoner is currently active.
-The reasoner is pluggable: Anthropic API, browser-based AI, local model, or none (pure habits).
+Prefrontal Cortex — executive judgment functions.
 
-Judgment functions (assess_valence, measure_friction, calculate_roi) live in judgments.py (#74).
-Re-exported here for backward compatibility.
+The old reason() delegate (which instantiated a reasoner directly) is gone:
+igor reasons through the Inference Proxy via the gateway (reason()/call()), not
+a per-call reasoner object (T-inf-reroute-C). What remains here are the judgment
+functions (assess_valence, measure_friction, calculate_roi), which live in
+judgments.py (#74) and are re-exported here for backward compatibility.
 """
 
-from ..memory.models import Memory
-from .reasoners.base import BaseReasoner
 from .judgments import (  # noqa: F401  (re-export)
     assess_valence,
     measure_friction,
@@ -18,26 +17,3 @@ from .judgments import (  # noqa: F401  (re-export)
     _POSITIVE_ANCHORS,
     _NEGATIVE_ANCHORS,
 )
-
-
-def reason(
-    user_input: str,
-    relevant_memories: list[Memory],
-    core_patterns: list[Memory],
-    instance_id: str,
-    reasoner: BaseReasoner = None,
-    cortex=None,
-) -> tuple[str, float]:
-    """
-    Call the active reasoner. Returns (response_text, cost).
-    cortex is forwarded to the reasoner so it can inject ring context directly.
-    If no reasoner is provided, uses Anthropic by default.
-    """
-    if reasoner is None:
-        from .inference_openrouter import OpenRouterReasoner
-
-        reasoner = OpenRouterReasoner()
-
-    return reasoner.reason(
-        user_input, relevant_memories, core_patterns, instance_id, cortex=cortex
-    )

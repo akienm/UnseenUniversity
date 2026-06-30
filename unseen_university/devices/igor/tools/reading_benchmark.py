@@ -140,15 +140,15 @@ def _run_pass(
     book_title: str,
     book_author: str,
 ) -> PassResult:
-    """Run extraction on all chunks with a specific model via the inference gateway.
+    """Run extraction on all chunks with a specific model via the Inference Proxy.
 
-    Routes through gateway.call() so cluster routing, forensic logging, and tier
-    tracking all fire. model_id is passed as kwarg override — the handler uses it
-    instead of the default. endpoint ("ollama"/"or") selects the gateway handler
-    node to force via handler_override.
+    Benchmarking is the sanctioned model-request exception: model_id is forwarded
+    as req.model through gateway.call() (which dispatches to the Proxy). The Proxy
+    routes that model to its registered source, so the old endpoint→handler-node
+    selection is gone — `endpoint` is now just a result label.
     """
     from ..cognition.inference_gateway import (
-        InferenceGateway,
+        get_gateway,
         make_context,
         RoutingError,
     )
@@ -156,12 +156,8 @@ def _run_pass(
 
     pr = PassResult(pass_name=pass_name, model_id=model_id, notes=notes)
 
-    gw = InferenceGateway.from_env()
-    # Not background, not research — let local_preferred pass for Ollama routing
+    gw = get_gateway()
     ctx = make_context(is_background=False, research_mode=False)
-
-    # Map endpoint to the handler node name for reading_extract
-    handler_node = "ollama_reading" if endpoint == "ollama" else "or_reading"
 
     candidates_str = "\n".join(f"  {nid}: {desc}" for nid, desc in _INTERP_CANDIDATES)
 
@@ -187,7 +183,6 @@ def _run_pass(
                 prompt,
                 ctx,
                 model=model_id,
-                handler_override=handler_node,
                 timeout_override=86400,
             )
         except (RoutingError, Exception) as e:
