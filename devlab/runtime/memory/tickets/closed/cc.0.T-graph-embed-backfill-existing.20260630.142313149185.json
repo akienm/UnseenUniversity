@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-graph-embed-backfill-existing",
-    "title": "[sprint] Backfill node-activation reps for existing memories (hard prerequisite of nomic deletion)",
+    "title": "Backfill node-activation reps for existing memories (hard prerequisite of nomic deletion)",
     "size": "M",
     "tags": [
       "GraphEmbed",
@@ -30,18 +30,24 @@
     "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
     "gate": "T-graph-embed-primitive",
     "priority": 0.45,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-30T20:23:05.292567+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Moot — Igor is starting over (all old memories killed). There is no pre-existing corpus to strand, so no backfill is needed before retiring nomic. retire-nomic's gate moved off this ticket (now gated only on memory-and-like).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-30T21:42:41.834936+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-30T20:23:05.292613+00:00"
+    "scraps_validated": "2026-06-30T20:23:05.292613+00:00",
+    "proven": false,
+    "unproven_reason": "Won't-do / superseded by Igor reset — no corpus to backfill, no work shipped.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
