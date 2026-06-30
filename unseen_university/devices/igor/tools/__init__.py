@@ -33,7 +33,6 @@ from . import (
     graph_ops,
     ops,
     converter,
-    sudo_relay,
     memory_sync,
     reading_integration,
     trail_inspector,
