@@ -10,7 +10,6 @@ Phase 1b: actual code moves here, old file becomes thin redirect.
 
 Public API (what the gateway calls):
   - OpenRouterReasoner class (interactive cloud reasoning)
-  - preparse_via_openrouter(user_input, habits, model) → CSB str
 """
 
 from __future__ import annotations
@@ -20,7 +19,6 @@ import os as _os
 
 from .reasoners.openrouter_reasoner import (
     OpenRouterReasoner,
-    preparse_via_openrouter,
     MODEL_ALIASES,
     OPENROUTER_BASE,
 )
@@ -34,7 +32,6 @@ OR_INTERACTIVE_MODEL = _os.getenv(
 
 __all__ = [
     "OpenRouterReasoner",
-    "preparse_via_openrouter",
     "MODEL_ALIASES",
     "OPENROUTER_BASE",
     "OR_CHEAP_MODEL",

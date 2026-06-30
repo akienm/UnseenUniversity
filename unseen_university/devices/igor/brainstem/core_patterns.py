@@ -134,7 +134,7 @@ def _patch_genesis_procs(cortex: Cortex) -> None:
                 "(haiku via OpenRouter). This is not optional — D035 fires before tier.2 "
                 "Ollama is reached, regardless of complexity score or cloud budget. "
                 "Tier.2 Ollama (local, free) only runs for: background NE tasks, "
-                "action impulses, and preparse checks. When planning 'local inference' "
+                "action impulses, and background NE. When planning 'local inference' "
                 "this means background-only work; interactive sessions always spend OR budget. "
                 "Tier.4 sonnet fires on: NE ambiguity signal, thalamus complexity=high, "
                 "milieu dominance very low. Know this before writing evening plans."
@@ -184,7 +184,7 @@ def _patch_genesis_procs(cortex: Cortex) -> None:
             MemoryType.PROCEDURAL,
             0.7,
             (
-                "Use local Ollama for: low-complexity requests, habit matches, preparse, "
+                "Use local Ollama for: low-complexity requests, habit matches, "
                 "NE background tasks. Signals: complexity_score < 0.6, no multi-tool requirement, urgency < 0.7."
             ),
             {
@@ -628,7 +628,7 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
         (
             "PROC_ROUTING_LOCAL",
             "CP2",
-            "Use local Ollama for: low-complexity requests, habit matches, preparse, "
+            "Use local Ollama for: low-complexity requests, habit matches, "
             "NE background tasks. Signals: complexity_score < 0.6, no multi-tool requirement, urgency < 0.7.",
             {
                 "trigger": "routing_decision",

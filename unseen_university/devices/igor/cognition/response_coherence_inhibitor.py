@@ -15,11 +15,9 @@ Observed in 2026-04-13 transcript:
   and planning inside your graph matrix. you can't ONLY rely on LLMs
   for that...'
 
-  Igor: 'Word graph + thalamus form Stage 1 of preparse (free, instant).
-  Ollama is Stage 2 — called only when Stage 1 finds no confident habit
-  match. Adjust IGOR_WG_PREPARSE_THRESHOLD...'
+  Igor: 'Word graph + thalamus form Stage 1 of routing classification (free, instant).'
 
-A habit fired on the keyword 'graph' and dumped a cached preparse paragraph.
+A habit fired on the keyword 'graph' and dumped a cached documentation paragraph.
 The response shares one or two words with the prompt and otherwise has
 nothing to do with what was asked. No inhibitor caught it.
 
@@ -179,9 +177,8 @@ def jaccard_overlap(prompt: str, response: str) -> float:
 # ── Configuration ────────────────────────────────────────────────────────────
 
 # Below this Jaccard score, the response is suspect. Tuned conservative
-# (low) so first-pass detection only flags clear failures. The 2026-04-13
-# preparse-paragraph case scores around 0.05; coherent answers to questions
-# typically land in 0.15–0.40. Will tune up after observing logs.
+# (low) so first-pass detection only flags clear failures. Coherent answers
+# to questions typically land in 0.15–0.40. Will tune up after observing logs.
 COHERENCE_THRESHOLD = 0.10
 
 # Don't false-positive on tiny prompts or tiny responses. A two-word

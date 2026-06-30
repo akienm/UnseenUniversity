@@ -106,27 +106,9 @@ INHIBITION_SPEC = [
     },
     # ── Documentation-as-action habits (T-canned-response-refractory-leak) ──
     # These are PROCEDURAL/action habits whose `action` field is a multi-line
-    # documentation paragraph rather than a tool call. They were misfiring on
-    # contextual word_graph similarity — the 2026-04-13 transcript caught
-    # PROC_WG_PREPARSE_TUNING firing twice in unrelated conversational contexts
-    # ("any thoughts?" got the preparse-tuning paragraph back). Refractory
-    # alone won't fully prevent double-fires while their duplicate numeric-ID
-    # rows still exist (T-doc-habit-duplicates), but it's the right defense
+    # documentation paragraph rather than a tool call. They can misfire on
+    # contextual word_graph similarity. Refractory is the right defense
     # in depth and brings them in line with the other tool-call habits above.
-    {
-        "habit_id": "PROC_WG_PREPARSE_TUNING",
-        "ttl_seconds": 1800,
-        "result_format": "str",
-        "code_ref": "(action habit — documentation paragraph, no tool call)",
-        "status": "pending",
-    },
-    {
-        "habit_id": "PROC_PREPARSE_TUNING",
-        "ttl_seconds": 1800,
-        "result_format": "str",
-        "code_ref": "(action habit — documentation paragraph, no tool call)",
-        "status": "pending",
-    },
     {
         "habit_id": "PROC_LATENCY_ADAPTIVE_TUNING",
         "ttl_seconds": 1800,

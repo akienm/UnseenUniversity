@@ -1,7 +1,7 @@
 """
 shadow_reasoner — dual-path reasoning execution + divergence corpus.
 
-T-shadow-stream-reasoning (D-preparse-architecture-2026-04-22).
+T-shadow-stream-reasoning.
 
 On each reasoning turn, Igor's substrate-driven path (trees + workflow
 escalation) produces an output. In parallel, a tutor-LLM path runs the

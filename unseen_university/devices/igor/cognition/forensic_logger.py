@@ -536,7 +536,6 @@ def log_escalation(
     reason: str,  # routing_reason string built in _process_inner
     intent: str = "",  # thalamus intent
     complexity: str = "",  # thalamus complexity: low | medium | high
-    preparse_tier: str = "",  # complexity["tier_minimum"] from preparse (before bumps)
     complexity_score: float = 0.0,
     complexity_signals: str = "",
     input_snippet: str = "",  # first 120 chars of user input
@@ -556,7 +555,6 @@ def log_escalation(
         f"|reason={reason}"
         f"|intent={intent}"
         f"|complexity={complexity}"
-        f"|preparse_base={preparse_tier or 'n/a'}"
         f"|cx_score={complexity_score:.2f}"
         f"|cx_signals={complexity_signals[:80] or 'none'}"
         f"|habit={'yes' if habit_fired else 'no'}"
@@ -735,8 +733,7 @@ def log_error(
 def log_tier_selection(
     *,
     tiers_available: list,
-    preparse_escalate: bool,
-    preparse_via: str,  # "ollama" | "openrouter" | "skipped"
+    escalate: bool,
     tier_selected: str,  # "tier.1" | "tier.2" | "tier.3" | ...
     reason: str,
     complexity_score: float = 0.0,
@@ -746,8 +743,7 @@ def log_tier_selection(
     entry = (
         f"{_ts()}|tier_select"
         f"|available={','.join(tiers_available)}"
-        f"|preparse_via={preparse_via}"
-        f"|escalate={preparse_escalate}"
+        f"|escalate={escalate}"
         f"|selected={tier_selected}"
         f"|reason={reason}"
         f"|complexity={complexity_score:.2f}"
@@ -945,7 +941,7 @@ def log_inference_io(
     prompt: str,  # full prompt sent to model (system + user + context)
     response: str,  # full text response received
     elapsed_ms: int = 0,
-    call_type: str = "reason",  # "reason" | "preparse" | "winnow" | "ne" | "think"
+    call_type: str = "reason",  # "reason" | "winnow" | "ne" | "think"
     tokens_in: int = 0,
     tokens_out: int = 0,
 ) -> None:

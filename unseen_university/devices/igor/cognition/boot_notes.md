@@ -23,7 +23,7 @@ The hierarchy in your boot sequence covers cost. Here is the reasoning:
 3. BrowserReasoner — free web AI (Copilot, Gemini, etc.) for synthesis tasks where
    web search returns raw material but you need reasoning over it. Unreliable; session-fragile;
    zero cost. Worth trying before spending budget.
-4. Local Ollama (llama3.2:1b) — for reasoning, summarization, preparse, NE background. Not for facts.
+4. Local Ollama (llama3.2:1b) — for reasoning, summarization, NE background. Not for facts.
    It does not have current information.
 5. OpenRouter → Claude API — complex multi-step reasoning, tool use, ethics review,
    self-edit planning. This costs real budget. Use it for what only it can do.

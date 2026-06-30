@@ -240,7 +240,7 @@ def build_system_prompt(
             "CLOUD ROLE: You are being invoked because a human is waiting for an answer.",
             "Cloud inference is only for human interface — everything else is matrix work.",
             "  Reading → deposit to matrix (G54 extracts; no cloud reasoning turn needed).",
-            "  Extraction, preparse, consolidation → local LLM or daemon, not you.",
+            "  Extraction, consolidation → local LLM or daemon, not you.",
             "  You → when Akien is asking something the matrix can't yet answer.",
             "",
             "TREE-BUILDING DIRECTIVE: After answering, train the graph — extract 1-3 reusable",

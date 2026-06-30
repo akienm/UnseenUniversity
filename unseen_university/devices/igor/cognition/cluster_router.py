@@ -240,12 +240,10 @@ def status_lines() -> list[str]:
 
 # ── Capacity profiling (T-cluster-router-capacity-profile) ───────────────────
 #
-# Per-machine sliding-window stats layer for distributed preparse routing.
-# cluster_router already tracks machine health, in-use detection, and
-# ranked scoring. It did NOT track per-machine latency-by-input-size or
-# learn a "safe input ceiling" for each machine. T-preparse-router
-# consumes this layer to decide "yogai7 handles ≤3 sentences, yoga9i
-# handles ≤7" when grouping atomic chunks into batches.
+# Per-machine sliding-window stats layer for inference routing.
+# cluster_router tracks machine health, in-use detection, and
+# ranked scoring. This layer adds per-machine latency-by-input-size tracking
+# to learn a "safe input ceiling" for each machine.
 #
 # Storage: in-memory sliding window of last _MAX_WINDOW observations per
 # machine. Persistence to DB is a follow-on; in-process stats are enough

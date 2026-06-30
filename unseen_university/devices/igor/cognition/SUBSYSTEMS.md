@@ -86,8 +86,6 @@ response caching live here. Nothing above this layer talks to an LLM directly.
 | inference_openrouter.py | OpenRouter (cloud) LLM provider |
 | cloud_mode.py | Switches inference to cloud-only mode |
 | multi_cloud.py | Multi-provider cloud inference (fan-out or fallback) |
-| local_preparse.py | Pre-parses local model output before passing upstream |
-| preparse_router.py | Routes pre-parse results based on content type |
 | shadow_reasoner.py | Runs a second inference pass in shadow to check reasoning |
 | cluster_router.py | Routes inference across a compute cluster |
 | reasoning_cache.py | Caches reasoning chains for identical prompts |

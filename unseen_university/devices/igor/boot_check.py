@@ -3,12 +3,12 @@ import logging
 """
 boot_check.py — Verify required Ollama models on cluster machines at boot.
 
-All cluster machines run Ollama. Primary local inference backend for preparse
-and tier.2 reasoning.
+All cluster machines run Ollama. Primary local inference backend for
+tier.2 reasoning.
 
 Required Ollama models (checked and auto-pulled at boot):
   nomic-embed-text  — universal embedding model; must be identical across cluster
-  llama3.2:1b       — local preparse + tier.2 reasoning (override: OLLAMA_LOCAL_MODEL)
+  llama3.2:1b       — local tier.2 reasoning (override: OLLAMA_LOCAL_MODEL)
 
 Runs in a daemon thread at startup so Igor is not blocked.
 Logs results to ~/.unseen_university/claudecode/changes.log (CSB format, newest first)
@@ -32,7 +32,7 @@ CHANGES_LOG = paths().claudecode / "changes.log"
 OLLAMA_PORT = 11434
 REQUIRED_MODELS = [
     "nomic-embed-text",  # embeddings
-    os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),  # preparse + tier.2
+    os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b"),  # tier.2 reasoning
 ]
 # Batch model only pulled on priority.batch / priority.background machines
 BATCH_MODELS = [

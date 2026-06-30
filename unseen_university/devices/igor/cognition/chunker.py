@@ -1,7 +1,5 @@
 """
-chunker — atomic input splitter for distributed preparse.
-
-T-input-chunker (D-preparse-distribution-2026-04-22).
+chunker — atomic input splitter.
 
 Pure function. Splits input text into atomic units — sentence-level by
 default, with force-splits at discourse markers ("but", "however",
@@ -12,10 +10,6 @@ for sentences that exceed a token budget. Paragraph boundaries
 Each emitted chunk carries a context-carry field referencing the
 previous 1-2 atoms, so downstream consumers can resolve pronouns and
 "it"/"that" references without the splitter needing to know intent.
-
-No routing awareness here. T-preparse-router consumes these chunks
-with capacity-profile information to group atoms into machine-sized
-batches.
 
 Usage:
     from unseen_university.devices.igor.cognition.chunker import chunk_input

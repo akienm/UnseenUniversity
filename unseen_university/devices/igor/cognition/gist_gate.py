@@ -1,7 +1,7 @@
 """
 gist_gate — confidence-gated short-circuit for cortex.search.
 
-T-gist-before-retrieve (D-preparse-architecture-2026-04-22).
+T-gist-before-retrieve.
 
 Before this gate, cortex.search fired for every non-command turn, even when
 the input was a reflex ("hi", "hello") that doesn't need episodic memory.

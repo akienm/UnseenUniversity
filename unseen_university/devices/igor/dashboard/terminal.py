@@ -138,7 +138,6 @@ def render(
     t_out = inf.get("tokens_out", 0)
     cost = inf.get("cost_usd", 0.0)
     lat_ms = inf.get("latency_ms", 0)
-    preparse = inf.get("preparse", "")
     winnow = inf.get("winnow", "")
     ne_info = inf.get("ne", "")
     header = f"{intent}/{tier}" if (intent and tier) else (intent or tier or "—")
@@ -149,8 +148,6 @@ def render(
         lines.append(f"[bold]Turn:[/] {header}  {tok_str}  {cost_str}  {lat_str}")
     else:
         lines.append(f"[bold]Turn:[/] {header}  (no inference data)")
-    if preparse:
-        lines.append(f"  preparse  {preparse}")
     if winnow:
         lines.append(f"  winnow    {winnow}")
     if ne_info:

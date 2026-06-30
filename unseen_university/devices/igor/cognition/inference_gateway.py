@@ -2,7 +2,7 @@
 
 WHAT IT IS
 ──────────
-All low-cost single-shot inference (preparse, winnow, NE, think) routes
+All low-cost single-shot inference (winnow, NE, think) routes
 through the gateway's DAG. Interactive reasoning (human turns, background
 impulses, batch jobs) routes through gateway.reason() via the tier ladder.
 The gateway is the ONLY entry point for all inference (D015 gateway-pattern).
@@ -32,7 +32,6 @@ DAG routing (gateway.call() for pipeline calls):
   On handler failure: follow fallback edges. Raise RoutingError if no path.
 
   DAG purposes:
-    preparse  — local Ollama → (fallback) → OR cheap
     winnow    — local Ollama → (fallback) → OR cheap
     ne        — (cloud_mode) OR cheap ↔ local Ollama
     think     — always local Ollama (no cloud fallback)
@@ -180,12 +179,11 @@ class RoutingError(RuntimeError):
     pass
 
 
-# T-inf-reroute-B: purpose -> Proxy task_class. preparse / winnow / think are
+# T-inf-reroute-B: purpose -> Proxy task_class. winnow / think are
 # cheap mechanical extraction (minion); ne is narrative synthesis where quality
 # matters (analyst); reading_extract is background book work (batch). The Proxy's
 # rules_engine owns local-vs-cloud selection within each class.
 _PURPOSE_TASK_CLASS = {
-    "preparse": "minion",
     "winnow": "minion",
     "ne": "analyst",
     "think": "minion",
@@ -272,7 +270,7 @@ class InferenceGateway(IgorBase):
         An explicit `model` (experiment/benchmark exception) is forwarded as
         req.model. Returns the response text; raises RoutingError on dispatch
         failure or when no source is available — matching call()'s failure
-        contract so the ne / think / preparse callers keep their except-handling.
+        contract so the ne / think callers keep their except-handling.
         """
         from unseen_university.devices.inference.shim import InferenceRequest
 
@@ -476,8 +474,6 @@ def build_default_gateway() -> InferenceGateway:
     """
     gw = InferenceGateway()
     purposes = [
-        ("preparse", PurposeConstraints(
-            step_name="preparse_search", max_tokens=120, timeout_s=5.0, temperature=0.1)),
         ("winnow", PurposeConstraints(
             step_name="winnow", max_tokens=60, timeout_s=3.0, temperature=0.1)),
         ("ne", PurposeConstraints(

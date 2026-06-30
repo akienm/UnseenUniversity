@@ -361,7 +361,7 @@ class NarrativeEngine(IgorBase):
                 best_habit = habit
 
         # #50: word graph predicts upcoming topics from the context window.
-        # These become pre-warmed memory search keys — retrieved before preparse.
+        # These become pre-warmed memory search keys for the next turn.
         _search_keys: list[str] = []
         if word_graph is not None:
             try:

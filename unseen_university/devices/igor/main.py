@@ -46,14 +46,12 @@ from .cognition import prefrontal_cortex as pfc
 
 # D327: inference imports via canonical modules
 from .cognition.inference_ollama import (
-    preparse,
     parse_preparse_csb,
     _rule_based_csb,
 )
 from .cognition.inference_gateway import (
     is_local_inference_available as _local_inference_ok,
 )
-from .cognition.inference_openrouter import preparse_via_openrouter
 from .cognition.forensic_logger import log_tier_selection, cts as _cts, log_error
 from .cognition.system_prompt import build_boot_message, invalidate_cache
 
@@ -694,11 +692,6 @@ class Igor(IgorBase):
         self._user_ctx_mgr.preseed("stdin:main", "Akien", relationship="operator")
         self.last_roi = None
         self.session_cost = 0.0
-        self.use_local_preparse = os.getenv("IGOR_LOCAL_PREPARSE", "true").lower() in (
-            "true",
-            "1",
-            "yes",
-        )
         # local_mode: default False — use cloud for general reasoning.
         # Set IGOR_LOCAL=true to default to local Ollama pool mode.
         self.local_mode = os.getenv("IGOR_LOCAL", "false").lower() in (
@@ -1192,32 +1185,6 @@ class Igor(IgorBase):
                 },
             ),
             Memory(
-                id="PROC_WG_PREPARSE_TUNING",
-                narrative="Word graph preparse routing — controls when word graph replaces Ollama for habit selection.",
-                memory_type=MemoryType.PROCEDURAL,
-                parent_id="CP4",
-                valence=0.6,
-                metadata={
-                    "trigger": "tune word graph preparse",
-                    "habit_type": "action",
-                    "env_vars": {
-                        "IGOR_WG_PREPARSE_THRESHOLD": "0.35",
-                        "IGOR_WG_PREPARSE_REQUIRE_TRIGGER": "true",
-                    },
-                    "action": (
-                        "Word graph + thalamus form Stage 1 of preparse (free, instant). "
-                        "Ollama is Stage 2 — called only when Stage 1 finds no confident habit match. "
-                        "Adjust IGOR_WG_PREPARSE_THRESHOLD (0.0–1.0) in .env; higher = more conservative. "
-                        "Set IGOR_WG_PREPARSE_REQUIRE_TRIGGER=false to allow WG-only matches without trigger phrase."
-                    ),
-                    "why": (
-                        "Word graph scoring already happens in basal_ganglia before preparse. "
-                        "If habit fires (trigger + WG match), Ollama preparse is already skipped. "
-                        "This memory documents the tuning levers and expected behavior."
-                    ),
-                },
-            ),
-            Memory(
                 id="PROC_LATENCY_ADAPTIVE_TUNING",
                 narrative="Adaptive routing from latency history — automatically skips slow tiers based on measured performance.",
                 memory_type=MemoryType.PROCEDURAL,
@@ -1238,30 +1205,6 @@ class Igor(IgorBase):
                         "Tier.2: if p50 > IGOR_LATENCY_TIER2_SLOW_MS (>= 3 samples) → jump to tier.3."
                     ),
                     "why": "Self-measured latency drives routing; no guessing. Data > assumptions.",
-                },
-            ),
-            Memory(
-                id="PROC_PREPARSE_TUNING",
-                narrative="Tune when Ollama preparse is skipped vs used. Low/high complexity = skip; medium = use.",
-                memory_type=MemoryType.PROCEDURAL,
-                parent_id="CP2",
-                valence=0.6,
-                metadata={
-                    "trigger": "tune preparse",
-                    "habit_type": "action",
-                    "env_var": "IGOR_SKIP_PREPARSE_ON_CONFIDENT",
-                    "current_value": "true",
-                    "action": (
-                        "To disable: set IGOR_SKIP_PREPARSE_ON_CONFIDENT=false in .env and /restart. "
-                        "To re-enable: set to true. "
-                        "When true: Ollama preparse only called on medium-complexity non-habit turns. "
-                        "Expected: reduces cloud inference dependency by ~10-15%."
-                    ),
-                    "why": (
-                        "Ollama preparse is redundant when thalamus complexity is already confident. "
-                        "low=rule-based CSB is sufficient; high=tier.4 forced regardless of preparse. "
-                        "Only medium complexity needs Ollama for routing disambiguation."
-                    ),
                 },
             ),
             Memory(
@@ -2623,8 +2566,6 @@ class Igor(IgorBase):
         Parse recent latency_trace ring entries into per-stage statistics.
 
         Returns dict:
-          preparse_ms_p50  — median preparse+memory stage (ms)
-          preparse_ms_p95
           tier_reasoning   — {tier: {"p50": int, "p95": int, "n": int}}
           samples          — number of entries parsed
 
@@ -2640,29 +2581,24 @@ class Igor(IgorBase):
         ):
             return self._latency_profile_cache
 
-        preparse_vals: list[int] = []
         tier_vals: dict[str, list[int]] = {}
+        sample_count = 0
 
         try:
             entries = self.cortex.read_ring_memory(limit=n, category="latency_trace")
             for e in entries:
                 content = e.get("content", "")
-                # Parse: LATENCY|preparse_ms=150|reasoning_ms=2300|total_ms=2500|tier=tier.4|...
+                # Parse: LATENCY|reasoning_ms=2300|total_ms=2500|tier=tier.4|...
                 parts = {
                     kv.split("=")[0]: kv.split("=")[1]
                     for kv in content.split("|")[1:]  # skip "LATENCY" prefix
                     if "=" in kv
                 }
                 try:
-                    preparse_vals.append(int(parts["preparse_ms"]))
-                except (KeyError, ValueError) as _bare_e:
-                    log_error(
-                        kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}"
-                    )
-                try:
                     tier = parts["tier"]
                     r_ms = int(parts["reasoning_ms"])
                     tier_vals.setdefault(tier, []).append(r_ms)
+                    sample_count += 1
                 except (KeyError, ValueError) as _bare_e:
                     log_error(
                         kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}"
@@ -2683,13 +2619,11 @@ class Igor(IgorBase):
             return s[max(0, int(len(s) * 0.95) - 1)]
 
         profile = {
-            "preparse_ms_p50": _p50(preparse_vals),
-            "preparse_ms_p95": _p95(preparse_vals),
             "tier_reasoning": {
                 tier: {"p50": _p50(vals), "p95": _p95(vals), "n": len(vals)}
                 for tier, vals in tier_vals.items()
             },
-            "samples": len(preparse_vals),
+            "samples": sample_count,
         }
         self._latency_profile_cache = profile
         self._latency_profile_ts = now
@@ -4122,16 +4056,6 @@ class Igor(IgorBase):
                 self.ne.record_actual(_thalamus_habit.id if _thalamus_habit else None)
             except Exception as _bare_e:
                 log_error(kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}")
-        # #142: skip Ollama preparse when thalamus is already confident.
-        # low complexity → rule-based CSB is correct; high complexity → tier.4 forced anyway.
-        # Only medium complexity genuinely needs Ollama for routing disambiguation.
-        _thalamus_confident = (
-            parsed.complexity in ("low", "high")
-            and os.getenv("IGOR_SKIP_PREPARSE_ON_CONFIDENT", "true").lower() != "false"
-        )
-        _short_input = (
-            len(user_input.split()) <= 6
-        )  # rule-based thalamus handles short inputs fine
         _cloud_mode_active = False
         try:
             from .cognition.cloud_mode import is_cloud_training_active as _cma
@@ -4139,15 +4063,6 @@ class Igor(IgorBase):
             _cloud_mode_active = _cma()
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}")
-        _skip_llm_preparse = (
-            parsed.intent in _fast_path_intents
-            or _thalamus_habit is not None
-            or not parsed.keywords  # empty input
-            or is_impulse  # background work — rule-based CSB is instant; never wait on LLM
-            or _thalamus_confident  # thalamus is confident — Ollama preparse won't change the routing
-            or _short_input  # ≤6 words: LLM preparse overhead > benefit
-            or _cloud_mode_active  # cloud mode: cloud models route fine without preparse overhead
-        )
 
         # [#139 P2] Adaptive routing from latency history.
         # Gate: IGOR_LATENCY_ADAPTIVE=true (default false until enough data collected).
@@ -4159,19 +4074,6 @@ class Igor(IgorBase):
         ):
             _lp = self._get_latency_profile()
             if _lp["samples"] >= 5:
-                # If Ollama preparse is slow → skip it; rule-based is instant and cheaper
-                _PREPARSE_SLOW_MS = int(
-                    os.getenv("IGOR_LATENCY_PREPARSE_SLOW_MS", "2500")
-                )
-                if (
-                    not _skip_llm_preparse
-                    and _lp["preparse_ms_p50"] > _PREPARSE_SLOW_MS
-                ):
-                    _skip_llm_preparse = True
-                    loginfo(
-                        f"[dim][LATENCY] preparse p50={_lp['preparse_ms_p50']}ms "
-                        f"> {_PREPARSE_SLOW_MS}ms → skipping LLM preparse[/]"
-                    )
                 # If tier.2 (local Ollama reasoning) is slow → jump to tier.3
                 _TIER2_SLOW_MS = int(os.getenv("IGOR_LATENCY_TIER2_SLOW_MS", "5000"))
                 _t2 = _lp["tier_reasoning"].get("tier.2", {})
@@ -4190,99 +4092,38 @@ class Igor(IgorBase):
         # accumulated thread history. Memory search keeps full user_input for relevance.
         _preparse_input = parsed.core_input
 
-        from .cognition.inference_ollama import (
-            _PREPARSE_PROMPT,
-            _rule_based_csb,
+        # Rule-based CSB: always instant, no LLM I/O needed for routing classification.
+        pre_csb = _rule_based_csb(_preparse_input, habits)
+        # T-gist-before-retrieve (D-preparse-architecture-2026-04-22):
+        # confidence-gated short-circuit — skip cortex.search for reflex
+        # intents (greeting, command) when the thalamus/BG gist-pass was
+        # confident. Monkey-brain pattern: recognize "friend greeting"
+        # reflexively, don't pull full memory before saying "hi back."
+        from .cognition.gist_gate import should_skip_memory_search
+
+        _skip_memory_search = should_skip_memory_search(
+            parsed.intent, _thalamus_habit, _thalamus_confidence
         )
-
-        if _skip_llm_preparse:
-            # No I/O needed — build CSB from thalamus result instantly
-            pre_csb = _rule_based_csb(_preparse_input, habits)
-            # T-gist-before-retrieve (D-preparse-architecture-2026-04-22):
-            # confidence-gated short-circuit — skip cortex.search for reflex
-            # intents (greeting, command) when the thalamus/BG gist-pass was
-            # confident. Monkey-brain pattern: recognize "friend greeting"
-            # reflexively, don't pull full memory before saying "hi back."
-            from .cognition.gist_gate import should_skip_memory_search
-
-            _skip_memory_search = should_skip_memory_search(
-                parsed.intent, _thalamus_habit, _thalamus_confidence
-            )
-            if _skip_memory_search:
-                if parsed.intent != "command":  # command already quiet
-                    loginfo(
-                        f"[dim][GIST] short-circuit: intent={parsed.intent} "
-                        f"habit={_thalamus_habit.id[:20] if _thalamus_habit else None} "
-                        f"conf={_thalamus_confidence:.2f}[/]"
-                    )
-            else:
-                _search_query = " ".join(parsed.keywords)
-                # #50: merge NE predicted search keys — topics the NE predicted before input arrived
-                if _ne_search_keys:
-                    _search_query = _search_query + " " + " ".join(_ne_search_keys)
-                console.print(f"[dim]{_cts()}[→] memory search[/]")
-                candidates = self.cortex.search(
-                    _search_query.strip(), emotional_context=_milieu_state
+        if _skip_memory_search:
+            if parsed.intent != "command":  # command already quiet
+                loginfo(
+                    f"[dim][GIST] short-circuit: intent={parsed.intent} "
+                    f"habit={_thalamus_habit.id[:20] if _thalamus_habit else None} "
+                    f"conf={_thalamus_confidence:.2f}[/]"
                 )
-            # cortex.search() Phase 2 already cosine-reranks by embedding similarity —
-            # score_memories() (qwen2.5:7b) added 25-200s per turn for worse output
-            # (80-char truncation vs full-text embeddings). Removed: G65.
-            relevant = list(candidates)
         else:
-            # Parallel: memory search + LLM preparse
-            import concurrent.futures as _cf
-
-            self._current_action = "preparse"
-            web_server.broadcast_activity(self._activity_state())
-            console.print(f"[dim]{_cts()}[→] preparse (LLM)[/]")
-            # Inference gateway routes preparse: local Ollama → OR cheap fallback.
-            # cloud_mode active → OR directly. Gateway handles all routing decisions.
-            from .cognition.inference_gateway import (
-                get_gateway as _gw,
-                make_context as _mk_ctx,
-            )
-
-            def _preparse_fn():
-                _prompt = _PREPARSE_PROMPT.format(text=_preparse_input[:300])
-                try:
-                    _text = _gw().call("preparse", _prompt, _mk_ctx())
-                    if "[PARSED_INPUT]" in _text:
-                        return _text.strip()
-                except Exception as _bare_e:
-                    log_error(
-                        kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}"
-                    )
-                # Gateway failed — try distributed preparse router (T-wire-graph-preparse-pipeline)
-                try:
-                    from .cognition.preparse_router import route_preparse
-                    from .tools.machine_manager import get_ranked_machines
-
-                    _machines = [m.hostname for m in get_ranked_machines()]
-                    _rr = route_preparse(_preparse_input, machines=_machines)
-                    if _rr.merged_csb and "[PARSED_INPUT]" in _rr.merged_csb:
-                        return _rr.merged_csb.strip()
-                except Exception as _r_e:
-                    log_error(
-                        kind="BARE_EXCEPT",
-                        detail=f"devices/igor/main.py preparse_router: {_r_e}",
-                    )
-                return _rule_based_csb(_preparse_input, habits)
-
-            # #50: include NE predicted search keys in memory retrieval query
-            _kw_query = " ".join(parsed.keywords)
+            _search_query = " ".join(parsed.keywords)
+            # #50: merge NE predicted search keys — topics the NE predicted before input arrived
             if _ne_search_keys:
-                _kw_query = _kw_query + " " + " ".join(_ne_search_keys)
-
-            with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
-                _pre_fut = _pool.submit(_preparse_fn)
-                _cand_fut = _pool.submit(
-                    self.cortex.search, _kw_query.strip(), 10, _milieu_state
-                )
-                pre_csb = _pre_fut.result()
-                candidates = _cand_fut.result()
-            # Same reasoning: cortex.search() cosine-rank is better than qwen2.5:7b
-            # scoring 80-char truncated narratives. G65.
-            relevant = list(candidates)
+                _search_query = _search_query + " " + " ".join(_ne_search_keys)
+            console.print(f"[dim]{_cts()}[→] memory search[/]")
+            candidates = self.cortex.search(
+                _search_query.strip(), emotional_context=_milieu_state
+            )
+        # cortex.search() Phase 2 already cosine-reranks by embedding similarity —
+        # score_memories() (qwen2.5:7b) added 25-200s per turn for worse output
+        # (80-char truncation vs full-text embeddings). Removed: G65.
+        relevant = list(candidates)
 
         # #153: Notebook context — search user's personal notebook, prepend hits to relevant
         if not is_impulse and thread_id:
@@ -4633,7 +4474,6 @@ class Igor(IgorBase):
                 turn_id=_turn_id,
                 step="preparse_search",
                 elapsed_ms=round((_t_after_preparse_memory - _tc) * 1000),
-                llm_skipped=_skip_llm_preparse,
                 candidates=len(candidates),
             )
         _tc = _t_after_preparse_memory
@@ -4888,11 +4728,6 @@ class Igor(IgorBase):
             _tiers_available = []
         _tiers_available = _tiers_available or ["proxy"]
 
-        _preparse_via = (
-            "ollama"
-            if (self.use_local_preparse and _local_inference_ok())
-            else "openrouter"
-        )
         if self.local_mode:
             _tier_hint = "tier.2"
             _reason = "local_mode=true"
@@ -4908,8 +4743,7 @@ class Igor(IgorBase):
 
         log_tier_selection(
             tiers_available=_tiers_available,
-            preparse_escalate=pre["should_escalate"],
-            preparse_via=_preparse_via,
+            escalate=pre["should_escalate"],
             tier_selected=_tier_hint,
             reason=_reason,
             complexity_score=complexity["score"],
@@ -5904,7 +5738,6 @@ class Igor(IgorBase):
                                     reason="pipeline_resolved",
                                     intent=parsed.intent,
                                     complexity=parsed.complexity,
-                                    preparse_tier=complexity.get("tier_minimum", ""),
                                     complexity_score=complexity.get("score", 0.0),
                                     complexity_signals="|".join(
                                         complexity.get("signals_fired", [])
@@ -6523,11 +6356,6 @@ class Igor(IgorBase):
             "intent": parsed.intent,
             "cost_usd": locals().get("cost", 0.0) or 0.0,
             "latency_ms": (locals().get("_total_ms") or 0) if not is_impulse else 0,
-            "preparse": (
-                "skipped (cloud mode)"
-                if _cloud_mode_active
-                else ("skipped (confident)" if _skip_llm_preparse else "ollama")
-            ),
         }
         dashboard.render(
             cortex=self.cortex,
@@ -6585,7 +6413,6 @@ class Igor(IgorBase):
 
         # Compute stage latencies and write latency_trace ring entry (#139)
         if not is_impulse:
-            _preparse_ms = round((_t_after_preparse_memory - _t0) * 1000)
             _reasoning_ms = round(
                 (_t_after_reasoning - _t_after_preparse_memory) * 1000
             )
@@ -6596,7 +6423,7 @@ class Igor(IgorBase):
             if len(self._latency_samples) > 20:
                 self._latency_samples = self._latency_samples[-20:]
             self.cortex.write_ring(
-                f"LATENCY|preparse_ms={_preparse_ms}|reasoning_ms={_reasoning_ms}"
+                f"LATENCY|reasoning_ms={_reasoning_ms}"
                 f"|total_ms={_total_ms}|tier={_tier_hint}|intent={parsed.intent}",
                 category="latency_trace",
             )
@@ -9627,7 +9454,7 @@ class Igor(IgorBase):
     def _cmd_routing(self, raw):
         """
         /routing [N]       — show last N escalation decisions from escalation.log (default 20).
-        /routing --dag     — show the inference gateway DAG (preparse/winnow/NE/think routing).
+        /routing --dag     — show the inference gateway DAG (winnow/NE/think routing).
 
         G37 weaning tool: reveals which reasons are driving cloud inference calls so we can
         reduce them incrementally. Each entry shows: tier, reason, intent, complexity,

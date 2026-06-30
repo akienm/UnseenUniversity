@@ -12,7 +12,6 @@ Public API (what the gateway calls):
   - route_batch(n, call_type) → [(host, model), ...]
   - has_local_capacity(call_type) → bool
   - is_healthy(host) → bool
-  - preparse(user_input, habits, model) → CSB str
   - parse_preparse_csb(csb, habits) → dict
   - compute_complexity(user_input) → dict
   - score_memories(query, memories, model, top_n) → [Memory]
@@ -26,7 +25,7 @@ Internal to inference layer:
   - _log_call(fn_name, model, response, elapsed, error)
 
 Constants re-exported:
-  - OLLAMA_LOCAL_MODEL, OLLAMA_HOST, DEFAULT_MODEL, PREPARSE_TIMEOUT
+  - OLLAMA_LOCAL_MODEL, OLLAMA_HOST, DEFAULT_MODEL
 """
 
 from __future__ import annotations
@@ -53,9 +52,7 @@ from .reasoners.ollama_reasoner import (
     OLLAMA_LOCAL_MODEL,
     OLLAMA_HOST,
     DEFAULT_MODEL,
-    PREPARSE_TIMEOUT,
     # Core functions
-    preparse,
     parse_preparse_csb,
     compute_complexity,
     score_memories,
@@ -66,7 +63,6 @@ from .reasoners.ollama_reasoner import (
     # Internal (used by gateway handlers)
     _get_client_and_model,
     _rule_based_csb,
-    _PREPARSE_PROMPT,
     _log_call,
 )
 
@@ -81,7 +77,6 @@ __all__ = [
     "status_lines",
     "is_healthy",
     # Ollama inference
-    "preparse",
     "parse_preparse_csb",
     "compute_complexity",
     "score_memories",
@@ -91,5 +86,4 @@ __all__ = [
     "OLLAMA_LOCAL_MODEL",
     "OLLAMA_HOST",
     "DEFAULT_MODEL",
-    "PREPARSE_TIMEOUT",
 ]

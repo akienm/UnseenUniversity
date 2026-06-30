@@ -52,29 +52,6 @@ def _get_client_and_model(call_type: str) -> tuple[object, str]:
     return _ollama, OLLAMA_LOCAL_MODEL
 
 
-# rule: unseenuniversity/rules/local-inference-no-timeouts — local takes whatever
-# time it takes; brain-modeled goal makes local-fast NOT a constraint.
-# Sanity cap of 1hr to catch a truly hung process (e.g., model deadlock).
-# Preparse falls back to _rule_based_csb on hit, so the cap is the LATEST
-# the user can wait before getting a rule-based parse instead of an LLM one.
-PREPARSE_TIMEOUT = 3600  # seconds (1hr — sanity cap, not a UX deadline)
-
-# Intent taxonomy must match thalamus.py 13-intent taxonomy exactly (#30, G36)
-_PREPARSE_PROMPT = """\
-Parse this input. Output ONLY the block below with fields filled in — no other text.
-
-[PARSED_INPUT]
-intent: <greeting|meta_question|memory_instruction|code_task|analysis_task|explanation_request|factual_question|action_request|complaint|command|conversation|creative_request|general>
-tone: <friendly|neutral|urgent|frustrated|curious>
-complexity: <low|medium|high>
-entities: <comma-separated names/things, or none>
-requires_tools: <true|false>
-memory_hints: <comma-separated keywords relevant to memory search, or none>
-should_escalate: <true|false>
-
-Input: "{text}"
-"""
-
 # ── Ollama call logger ──────────────────────────────────────────────────────
 _LOG_PATH = paths().logs / "ollama_calls.log"
 paths().logs.mkdir(parents=True, exist_ok=True)
@@ -342,76 +319,6 @@ def _rule_based_csb(user_input: str, habits: list) -> str:
         f"memory_hints: {memory_hints}\n"
         f"should_escalate: {str(should_escalate).lower()}\n"
     )
-
-
-def preparse(user_input: str, habits: list, model: str = "") -> str:
-    """
-    Pre-parse user input via Ollama → PARSED_INPUT CSB block.
-    Host and model selected dynamically via cluster_router at call time.
-    Falls back to _rule_based_csb on timeout or error.
-    Returns a CSB string (always — never raises).
-    Logs fallback events to errors.log for telemetry (#30).
-    """
-    _client, _routed_model = _get_client_and_model("preparse")
-    _model = model or _routed_model
-    prompt = _PREPARSE_PROMPT.format(text=user_input[:300])
-    fallback_reason = None
-    t0 = time.perf_counter()
-    try:
-        _result_q: _queue.Queue = _queue.Queue()
-
-        def _do_preparse():
-            try:
-                _result_q.put(
-                    (
-                        _client.chat(
-                            model=_model,
-                            messages=[{"role": "user", "content": prompt}],
-                            options={"temperature": 0.1, "num_predict": 120},
-                        ),
-                        None,
-                    )
-                )
-            except Exception as _e:
-                _result_q.put((None, _e))
-
-        _t = _threading.Thread(target=_do_preparse, daemon=True)
-        _t.start()
-        try:
-            _resp, _err = _result_q.get(timeout=PREPARSE_TIMEOUT)
-        except _queue.Empty:
-            raise RuntimeError(f"preparse timed out after {PREPARSE_TIMEOUT}s")
-        if _err:
-            raise _err
-        response = _resp
-        elapsed = time.perf_counter() - t0
-        text = (
-            response["message"]["content"]
-            if isinstance(response, dict)
-            else response.message.content
-        )
-        _log_call("preparse", _model, response, elapsed)
-        if "[PARSED_INPUT]" in text:
-            return text.strip()
-        fallback_reason = "no_parsed_input_block"
-    except Exception as exc:
-        elapsed = time.perf_counter() - t0
-        _log_call("preparse", _model, None, elapsed, error=str(exc))
-        fallback_reason = f"exception:{type(exc).__name__}"
-
-    try:
-        log_error(
-            kind="preparse_fallback",
-            detail=fallback_reason or "unknown",
-            source="ollama_reasoner",
-        )
-    except Exception as _bare_e:
-        log_error(
-            kind="BARE_EXCEPT",
-            detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
-        )
-
-    return _rule_based_csb(user_input, habits)
 
 
 def parse_preparse_csb(csb: str, habits: list) -> dict:
@@ -710,66 +617,6 @@ class OllamaReasoner(LocalReasoner, IgorBase):
                 "OllamaReasoner.reason", self.model, None, elapsed, error=str(exc)
             )
             raise
-
-
-# ── preparse_dict (legacy; retained for reference) ──────────────────────────
-
-
-def _preparse_dict(
-    user_input: str, habits: list[Memory], model: str = DEFAULT_MODEL
-) -> dict:
-    """
-    Legacy dict-returning preparse. Retained for reference only.
-    Production preparse is now the CSB-format preparse() function above.
-    """
-    prompt = f"""Classify this user input. Reply with ONLY a JSON object, no other text.
-
-User input: "{user_input}"
-
-JSON fields:
-- intent: one word from this list only: greeting, meta_question, factual_question, action_request, memory_instruction, general
-- keywords: array of 2-4 important words from the input
-- should_escalate: true if needs deep reasoning, false if simple
-
-Example output:
-{{"intent": "factual_question", "keywords": ["capital", "france"], "should_escalate": true}}"""
-
-    t0 = time.perf_counter()
-    try:
-        response = _ollama.chat(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1},
-        )
-        elapsed = time.perf_counter() - t0
-        _log_call("preparse", model, response, elapsed)
-
-        text = response["message"]["content"].strip()
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            parsed = json.loads(text[start:end])
-        else:
-            raise ValueError("No JSON found in response")
-
-        return {
-            "intent": parsed.get("intent", "general"),
-            "keywords": parsed.get("keywords", []),
-            "habit_match": None,
-            "confidence": 0.0,
-            "should_escalate": bool(parsed.get("should_escalate", True)),
-        }
-
-    except Exception as exc:
-        elapsed = time.perf_counter() - t0
-        _log_call("preparse", model, None, elapsed, error=str(exc))
-        return {
-            "intent": "general",
-            "keywords": [],
-            "habit_match": None,
-            "confidence": 0.0,
-            "should_escalate": True,
-        }
 
 
 # ── compute_complexity ──────────────────────────────────────────────────────

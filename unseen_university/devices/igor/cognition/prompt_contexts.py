@@ -79,7 +79,7 @@ HYPOTHESIS_DISCLAIMER: str = (
     "observations, fallbacks) rather than confident.\n"
 )
 
-# T-tutor-not-oracle-prompt (D-preparse-architecture-2026-04-22).
+# T-tutor-not-oracle-prompt.
 # When Igor consults an upstream LLM for reasoning help, the prompt asks
 # for a THINKING FRAME — questions, options, considerations — not an
 # answer. The goal is forcing Igor to reason rather than copy-paste, and
