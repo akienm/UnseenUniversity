@@ -20,7 +20,7 @@ from pathlib import Path
 from unseen_university.shim import BaseShim
 
 UU_ROOT = Path(__file__).resolve().parent
-DAEMON_SCRIPT = UU_ROOT / "devices" / "igor" / "tools" / "sudoer_daemon.sh"
+DAEMON_SCRIPT = UU_ROOT / "unseen_university" / "devices" / "igor" / "tools" / "sudoer_daemon.sh"
 
 TMUX_SESSION = "sudo-relay"
 
