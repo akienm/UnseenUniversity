@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.D-graph-tree-embeddings-teach-on-miss-2026-06-30.20260630.142354743700",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-30T14:23:54.743700",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
+    "title": "Graph-tree embeddings + teach-on-miss (LLM grows the graph, never answers); retire nomic entirely",
+    "status": "open",
+    "date": "2026-06-30",
+    "spawned_tickets": [
+      "T-graph-embed-verify-existence",
+      "T-graph-embed-define-representation",
+      "T-graph-embed-primitive",
+      "T-graph-embed-memory-and-like",
+      "T-graph-embed-teach-on-miss",
+      "T-graph-embed-node-merge",
+      "T-graph-embed-backfill-existing",
+      "T-graph-embed-retire-nomic",
+      "T-graph-embed-convergence-metric",
+      "T-consequence-D-graph-tree-embeddings"
+    ],
+    "text": "# D-graph-tree-embeddings-teach-on-miss-2026-06-30\n**title:** Graph-tree embeddings + teach-on-miss; retire nomic entirely\n**date:** 2026-06-30\n**status:** open\n\n## Decision narrative\nKEYSTONE compiled-inference design, confirmed with Akien 2026-06-30. The LLM NEVER produces the answer; it only PUSHES NODES into the graph tree, and the graph tree always produces output in its own node-activation shape. First application: embeddings = the SET of activated word-graph concept-nodes; LIKE/similarity = node-overlap, NOT cosine. Nomic dense vectors retire ENTIRELY; all consumers (valence anchors, kNN, compression, distillation, cortex) redefine in node-overlap. On a MISS the LLM pushes missing nodes WITH a checkable target, committed only if the graph then produces it (proof-on-write, the graph-write analogue of proof-on-close). teach-on-miss SUPERSEDES the earlier 'LLM-compare-for-training'. Node MERGE required (living-entities discipline). Convergence signal: teach-call-rate declines over time. Affordable now (free Ollama Cloud / Hex). Full principle in architecture/cc.0.graph-embeddings-teach-on-miss.*. This is a DESIGN-THEN-BUILD epic: define-representation + teach-on-miss need a CC design pass first; the rest are specified Haiku-buildable (dogfood of the dev-pipeline). Advisor added the backfill ticket (else nomic deletion silently strands LIKE over existing memories) and flagged closing the superseded T-igor-embedder-via-rack (done).\n\n## Hypothesis\nAfter this ships, igor's embeddings are node-activation sets with LIKE=node-overlap, the LLM only TEACHES the graph on misses (never answers), nomic is fully retired, and the LLM-teach-call-rate DECLINES over time.\n\n## Measurement Signal\nteach-call-rate time series declines as the graph fills; grep nomic / embedder.py / memory_embeddings -> 0 live refs; LIKE retrieval ranks similar memories via node-overlap; proof-on-write accepts good node-pushes and rejects bad ones (both paths tested).\n\n## Intention\nI intend that cognition runs in graph-trees with the LLM only growing the graph (never answering), so the system compiles inference and learns its way off the LLM.\n\n## Intention mapping (vs extant)\nADVANCES the compiled-inference intention ([[project_compiled_inference_vision]], [[project_intention_compiler_reflexive]], [[project_build_packet_pre_inference_compiler]]) — teach-on-miss is the concrete mechanism for 'move capability out of the LLM, one piece at a time'. The node-merge requirement DECOMPOSES from [[project_intentions_as_living_entities]] (compete/merge/decompose) applied at the concept-node level. Does not conflict with any open decision."
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-graph-embed-primitive.20260630.142312681692",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-embed-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T20:23:12.681692+00:00",
+  "links": {
+    "decisions": [
+      "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+    ],
+    "tickets": [
+      "T-graph-embed-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-graph-embed-primitive",
+    "title": "[sprint] Implement the graph-tree embed(text) -> node-activation primitive (rack-callable)",
+    "size": "M",
+    "tags": [
+      "GraphEmbed"
+    ],
+    "intention": "I intend that any device can get a node-activation embedding from one rack primitive instead of running its own model.",
+    "description": "**Problem:** Need the embed primitive once the representation is defined.\n**Proposed shape:** Implement embed(text) -> node-activation set (per T-graph-embed-define-representation), exposed as a rack/MCP call (cross-device, device-boundary-respecting). No LLM in the hot path.\n**Affected files:** the rack embedder device/module (path per verify-existence); MCP/bus registration.\n**Design rules:** Inference Proxy is chat-only — embeddings are a separate device; no SQLite; log the interface crossing.\n**Scope boundary:** the embed primitive + its call surface; NOT memory wiring, NOT teach-on-miss.\n**Completion criteria:** embed(text) returns a node-activation rep for given text; a cross-device call works; unit test on known text -> expected node set. Haiku-buildable once the rep spec lands.\n**Test plan:** unit test: embed(known_text) activates the expected concept nodes; overlap(embed(a), embed(near-dup)) > overlap(embed(a), embed(unrelated)).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
+    "gate": "T-graph-embed-define-representation",
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-06-30T20:22:58.254385+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T20:22:58.254440+00:00"
+  }
+}

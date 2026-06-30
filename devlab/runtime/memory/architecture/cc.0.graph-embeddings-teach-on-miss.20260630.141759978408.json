@@ -1,0 +1,70 @@
+{
+  "id": "cc.0.graph-embeddings-teach-on-miss.20260630.141759978408",
+  "emitter": "cc.0",
+  "namespace": [
+    "graph-embeddings-teach-on-miss"
+  ],
+  "category": "architecture",
+  "kind": "principle",
+  "emitted_at": "2026-06-30T14:17:59.978408",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "graph-embeddings-teach-on-miss",
+    "kind": "principle",
+    "title": "Graph-tree embeddings + the teach-on-miss principle (the LLM grows the graph, never answers)",
+    "summary": "THE KEYSTONE COMPILED-INFERENCE PRINCIPLE (Akien, confirmed 2026-06-30): the LLM NEVER produces the answer. It only ever PUSHES NODES into the graph tree, and the graph tree always produces output in its own (node-activation) shape. This guarantees (1) representational COHERENCE — one shape everywhere, no dense-vector-vs-graph mismatch (the exact thing that blocked the embedder repoint); and (2) monotonic CONVERGENCE — every miss makes the graph permanently better, so the LLM-call rate declines over time and the system learns its way off the LLM. First application = embeddings: text -> the SET of activated word-graph concept-nodes (the 'embedding'); similarity / LIKE = NODE-OVERLAP (Jaccard / path-distance), NOT cosine. Nomic dense vectors retire ENTIRELY; ALL current embedding consumers (valence anchors, kNN, factual_compression, distillation, narrative_engine, cortex memory_embeddings) get redefined in node-overlap terms. On a MISS (text activates too few nodes / low confidence, or a LIKE search returns nothing plausible), the LLM is invoked NOT to answer (that would be a different shape) but to PUSH the missing nodes WITH a checkable target ('after these nodes, this text should land near memories X,Y'); the pushed nodes COMMIT ONLY IF the graph then actually produces that target -> proof-on-write, the graph-write analogue of proof-on-close. teach-on-miss SUPERSEDES the earlier 'LLM-compare-for-training' framing (the LLM stops producing a rival embedding to compare; it just teaches). Node MERGE is required (living-entities discipline at the node level) so repeated misses on overlapping concepts merge into existing nodes, not duplicate. Convergence SIGNAL: teach-call-rate over time must decline. Affordable now because inference is free (Ollama Cloud today, Hex within hours).",
+    "key_concepts": [
+      {
+        "name": "LLM-teaches-never-answers",
+        "what": "the universal move: on a miss the LLM writes nodes into the graph; the graph always produces the answer in its native shape. Generalizes beyond embeddings to any graph-tree capability."
+      },
+      {
+        "name": "node-activation embedding",
+        "what": "text -> set of activated concept-nodes; LIKE/similarity = node-overlap, not a dense vector. This is what makes embeddings 'simple enough to do in graph trees'."
+      },
+      {
+        "name": "proof-on-write gate",
+        "what": "LLM-pushed nodes must come with a checkable target and commit only if the graph then produces it; provenance-tag pushed nodes. Prevents compiling confabulation into the graph (a bad node is WORSE than a bad answer — it's permanent)."
+      },
+      {
+        "name": "teach-on-miss supersedes compare",
+        "what": "no rival-embedding comparison; the miss IS the training signal and the teach IS the update."
+      },
+      {
+        "name": "node merge (living entities)",
+        "what": "repeated misses merge into existing nodes; same compete/merge/decompose discipline as intentions, one level down."
+      },
+      {
+        "name": "convergence metric",
+        "what": "teach-call-rate declines over time = the architecture works; flat/rising = graph not retaining or domain genuinely open-ended."
+      },
+      {
+        "name": "nomic full retirement",
+        "what": "all embedding uses move to node-overlap; delete embedder.py (nomic/Ollama), the file cache (~/.unseen_university/cache/embeddings/), and the Postgres memory_embeddings table."
+      }
+    ],
+    "implementing_files": [
+      "TBD — graph-tree embedder existence UNVERIFIED (a prior Sonnet claimed it was built; our investigation found only the stale Scraps embedding_engine, which is the OLD version). Verify first.",
+      "unseen_university/devices/igor/cognition/embedder.py (current nomic/Ollama embedder — to RETIRE)",
+      "unseen_university/devices/igor/cognition/word_graph.py (the concept-node graph this builds on)",
+      "unseen_university/devices/igor/memory/cortex.py (memory_embeddings PG table — to retire)"
+    ],
+    "reference_docs": [
+      "devlab/runtime/memory/architecture/cc.0.dev-pipeline.20260630.103101036158.json"
+    ],
+    "status_notes": "Principle CONFIRMED by Akien 2026-06-30; tickets filed under D-graph-tree-embeddings-teach-on-miss-2026-06-30, specified to be Haiku-buildable (dogfood of the dev-pipeline: CC specs, cheap worker builds). Embedder existence must be VERIFIED before build (do not trust the 'it's built' claim).",
+    "related": [
+      "project_compiled_inference_vision",
+      "project_intention_compiler_reflexive",
+      "project_intentions_as_living_entities",
+      "project_build_packet_pre_inference_compiler",
+      "feedback_cc_defaults_to_foreground_build",
+      "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+    ]
+  }
+}

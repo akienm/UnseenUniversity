@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-igor-embedder-via-rack.20260629.182426462412",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-embedder-via-rack"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T00:24:26.462412+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-igor-embedder-via-rack"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-embedder-via-rack",
+    "title": "Repoint embedder.py to the rack embeddings generator",
+    "size": "M",
+    "priority": 0.4,
+    "status": "closed",
+    "tags": [
+      "InferenceProxyOnly",
+      "Igor"
+    ],
+    "intention": "I intend that embeddings come from the rack embeddings generator, not a raw ollama.embeddings call in igor.",
+    "description": "**Akien (2026-06-29):** embedder is replaced by the embeddings generator in the rack. **File:** unseen_university/devices/igor/cognition/embedder.py:46 . **Task:** find the rack embeddings-generator device/tool and repoint embedder through it (the Proxy does chat, not embeddings — confirm whether the rack generator is a device call or a Proxy embeddings path). Preserve the on-disk cache. **Test:** grep embedder for / -> 0; embedding smoke via the rack.\n\nPart of the igor Inference-Proxy-only sweep (post T-inf-reroute-A/B/C).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-30T00:24:24.111219+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "SUPERSEDED by D-graph-tree-embeddings-teach-on-miss-2026-06-30 (esp. T-graph-embed-retire-nomic). The repoint reframed entirely: embeddings move to graph-tree node-activation (not a repoint to an existing rack service); nomic retires under that epic. No work shipped here.",
+    "dispatched_at": null,
+    "completed_at": "2026-06-30T20:23:13.771011+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T00:24:24.160129+00:00",
+    "proven": false,
+    "unproven_reason": "None — won't-do/superseded; the lever is a first-class superseded-close path that doesn't force proof-or-shipped-unproven.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  },
+  "description": "**Akien (2026-06-29):** embedder is replaced by the embeddings generator in the rack. **File:** unseen_university/devices/igor/cognition/embedder.py:46 -- raw 'import ollama' then _ollama.embeddings(model=..., keep_alive=-1). **Task:** find the rack embeddings-generator device/tool and repoint embedder through it (the Proxy does chat, not embeddings -- confirm whether the rack generator is a device call or a Proxy embeddings path). Preserve the on-disk cache. **Test:** grep embedder for 'import ollama' / '_ollama.embeddings' -> 0; embedding smoke via the rack.\n\nPart of the igor Inference-Proxy-only sweep (post T-inf-reroute-A/B/C).\n\n**Akien confirms (2026-06-30): there IS a rack embeddings generator.** Find it and repoint embedder.py through it (delete the raw ollama.embeddings call).",
+  "intention": "I intend that embeddings come from the rack embeddings generator, not a raw ollama.embeddings call in igor.",
+  "title": "Repoint embedder.py to the rack embeddings generator"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-D-graph-tree-embeddings.20260630.142313504135",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-graph-tree-embeddings"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T20:23:13.504135+00:00",
+  "links": {
+    "decisions": [
+      "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+    ],
+    "tickets": [
+      "T-consequence-D-graph-tree-embeddings"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-graph-tree-embeddings",
+    "title": "[sprint] Consequence check: graph-tree embeddings + teach-on-miss + nomic retirement",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "intention": "I intend that replacing the embedding substrate doesn't silently degrade retrieval or poison the graph.",
+    "description": "**What changed:** Replaced dense nomic embeddings with node-activation graph-tree embeddings; added LLM-teaches-on-miss with a proof-on-write gate; retired nomic entirely.\n**Predicted unintended effects:** (1) node-overlap LIKE may retrieve worse than cosine for some queries (recall regression) until the graph fills; (2) proof-on-write gate too strict -> graph never learns; too loose -> graph poisoned by bad LLM nodes; (3) node-merge too aggressive -> distinct concepts collapse; too weak -> bloat; (4) retiring memory_embeddings/cache breaks any consumer missed in the redefinition; (5) teach-call-rate fails to decline (bet falsified).\n**Signals to watch:** LIKE retrieval quality vs the old nomic baseline; teach accept/reject ratio; duplicate vs merged node counts; teach-call-rate slope; any AttributeError/None from a missed consumer.\n**Gate condition:** Check by 2026-07-14 or when T-graph-embed-retire-nomic closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate occurred/clear/partial and close\n**Test plan:** no tests — observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
+    "gate": "2026-07-14",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-06-30T20:23:10.537214+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T20:23:10.537277+00:00"
+  }
+}

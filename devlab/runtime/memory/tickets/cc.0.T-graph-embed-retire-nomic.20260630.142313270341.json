@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-graph-embed-retire-nomic.20260630.142313270341",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-embed-retire-nomic"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T20:23:13.270341+00:00",
+  "links": {
+    "decisions": [
+      "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+    ],
+    "tickets": [
+      "T-graph-embed-retire-nomic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-graph-embed-retire-nomic",
+    "title": "[sprint] Retire nomic vectors entirely — redefine all consumers in node-overlap, delete embedder.py + cache + PG table",
+    "size": "L",
+    "tags": [
+      "GraphEmbed",
+      "Cleanup"
+    ],
+    "intention": "I intend that no dense-vector embedding survives — every embedding use in igor is node-overlap, one coherent shape.",
+    "description": "**Problem:** Akien: retire nomic entirely; all uses -> graph-tree. The cosine-shaped consumers must be redefined and the nomic machinery deleted.\n**Proposed shape:** Redefine each consumer in node-overlap terms: judgments.py valence anchors, the kNN classifier, factual_compression, distillation, narrative_engine, cortex stored-vector compares. Then DELETE embedder.py (nomic/Ollama), the file cache ~/.unseen_university/cache/embeddings/, and the Postgres memory_embeddings table. SUPERSEDES T-igor-embedder-via-rack.\n**HARD PREREQUISITE:** T-graph-embed-backfill-existing MUST close first, or deleting nomic strands LIKE-retrieval over all existing memories.\n**Affected files:** cognition/judgments.py, narrative_engine.py, factual_compression.py, distillation.py, memory/cortex.py, cognition/embedder.py (delete), devlab competition kNN.\n**Design rules:** no dense vectors remain; no SQLite; log the schema/table drop.\n**Scope boundary:** consumer redefinition + nomic deletion; gated on backfill + the node-overlap LIKE path existing.\n**Completion criteria:** grep embedder.py / nomic / memory_embeddings -> 0 live refs in igor; every former cosine consumer now uses node-overlap; igor import + the redefined consumers' tests green.\n**Test plan:** grep-gate red->green on nomic/embedder.py/memory_embeddings; per-consumer test that valence/kNN/dedup still function via node-overlap.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
+    "gate": "T-graph-embed-backfill-existing",
+    "priority": 0.4,
+    "status": "sprint",
+    "created_at": "2026-06-30T20:23:07.355875+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T20:23:07.355934+00:00"
+  }
+}

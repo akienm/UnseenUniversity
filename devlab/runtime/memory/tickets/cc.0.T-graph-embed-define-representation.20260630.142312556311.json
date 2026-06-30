@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-graph-embed-define-representation.20260630.142312556311",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-embed-define-representation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T20:23:12.556311+00:00",
+  "links": {
+    "decisions": [
+      "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+    ],
+    "tickets": [
+      "T-graph-embed-define-representation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-graph-embed-define-representation",
+    "title": "[sprint] Define the node-activation embedding representation + LIKE=node-overlap",
+    "size": "M",
+    "tags": [
+      "GraphEmbed",
+      "Design"
+    ],
+    "intention": "I intend that 'embedding' in this system means a set of activated concept-nodes, so similarity is node-overlap and embeddings are computable in graph trees without an LLM.",
+    "description": "**Problem:** The whole epic rests on a concrete definition of the node-activation representation. DESIGN-FIRST (needs CC, not Haiku yet).\n**Proposed shape:** Define: (a) text -> activated word-graph concept-node set (the embedding); how activation is computed/scored; (b) LIKE/similarity = node-overlap metric (Jaccard / weighted overlap / path-distance) — pick and justify; (c) how this replaces every dense-vector use (valence anchors, kNN) in node-overlap terms; (d) the on-node storage shape.\n**OPEN DESIGN QUESTIONS:** activation scoring; overlap metric choice; how kNN/valence arithmetic map to overlap. Resolve with Akien before implementation tickets unblock.\n**Affected files:** design doc -> devlab/runtime/memory/architecture/; references word_graph.py.\n**Design rules:** node-activation not dense vectors; living-entities node discipline.\n**Scope boundary:** representation + metric definition only; no production code.\n**Completion criteria:** a written representation+metric spec sufficient for a builder to implement the embed primitive; gates T-graph-embed-primitive.\n**Test plan:** none (design); proof = the spec + Akien sign-off.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
+    "gate": "T-graph-embed-verify-existence",
+    "priority": 0.55,
+    "status": "sprint",
+    "created_at": "2026-06-30T20:22:56.581869+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T20:22:56.581924+00:00"
+  }
+}

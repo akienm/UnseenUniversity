@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-graph-embed-verify-existence.20260630.142312442028",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-embed-verify-existence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T20:23:12.442028+00:00",
+  "links": {
+    "decisions": [
+      "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+    ],
+    "tickets": [
+      "T-graph-embed-verify-existence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-graph-embed-verify-existence",
+    "title": "[sprint] Verify whether a current graph-tree embedder actually exists (don't trust 'it's built')",
+    "size": "S",
+    "tags": [
+      "GraphEmbed",
+      "Investigation"
+    ],
+    "intention": "I intend that build work on the graph-tree embedder starts from verified reality, not a confabulated 'it's built' claim.",
+    "description": "**Problem:** A prior Sonnet told Akien the rack graph-tree embedder was built; investigation found only the STALE Scraps embedding_engine (OpenAI/hash/wordgraph-sidecar), which Akien confirmed is the OLD version. Existence of a CURRENT graph-tree embedder is unverified.\n**Proposed shape:** grep/inventory the repo for a graph-tree / word-graph-based embedding generator that produces node-activation representations (NOT dense vectors). Check word_graph.py, skeleton/rack devices, any 'embed' surface. Output a definitive: EXISTS (name + path + what it produces) OR TO-BE-BUILT.\n**Affected files:** none (investigation).\n**Design rules:** none.\n**Scope boundary:** report only; no edits.\n**Completion criteria:** a written verdict naming the current graph-tree embedder + path if it exists, or stating it must be built; this gates the rest of the epic. Haiku-buildable (grep + report).\n**Test plan:** none (investigation ticket); proof = the verdict doc.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "created_at": "2026-06-30T20:22:54.620974+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T20:22:54.665814+00:00"
+  }
+}

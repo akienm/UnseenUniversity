@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-graph-embed-teach-on-miss.20260630.142312909633",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-embed-teach-on-miss"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T20:23:12.909633+00:00",
+  "links": {
+    "decisions": [
+      "D-graph-tree-embeddings-teach-on-miss-2026-06-30"
+    ],
+    "tickets": [
+      "T-graph-embed-teach-on-miss"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-graph-embed-teach-on-miss",
+    "title": "[sprint] Teach-on-miss: LLM pushes missing nodes (with checkable target) under a proof-on-write gate",
+    "size": "L",
+    "tags": [
+      "GraphEmbed",
+      "CompiledInference"
+    ],
+    "intention": "I intend that on a miss the LLM grows the graph (never answers), so every answer stays graph-native and the graph permanently improves.",
+    "description": "**Problem:** THE KEYSTONE. On a miss the system must NOT ask the LLM for an answer (wrong shape) — the LLM must push the missing nodes so the graph produces the answer itself.\n**Proposed shape:** (1) miss-detection: text activates too few nodes / below confidence, or LIKE returns nothing plausible — define the threshold (graph-tree judgment). (2) On miss, invoke the LLM (free Ollama Cloud / Hex) to push missing concept-nodes (+edges) WITH a checkable target ('after these, this text should land near X,Y'). (3) PROOF-ON-WRITE GATE: commit the pushed nodes ONLY IF the graph then actually produces the stated target; else reject. (4) Provenance-tag pushed nodes as LLM-sourced. teach-on-miss SUPERSEDES any LLM-compare-for-training path.\n**OPEN DESIGN:** miss threshold; the target-assertion format; the verify step; rollback of rejected pushes.\n**Affected files:** the embedder/teach loop; word_graph write path; provenance.\n**Design rules:** Inference Proxy only for the LLM call; proof-on-write mirrors proof-on-close (CP1 — a bad node is permanent, gate it); log every node write.\n**Scope boundary:** miss-detect + teach + proof-on-write gate + provenance; node-merge is a sibling ticket.\n**Completion criteria:** a forced miss triggers an LLM node-push; with a satisfiable target the nodes commit and the graph then produces the target; with an UNsatisfiable/bad target the push is REJECTED (not committed). Test proves both accept and reject paths.\n**Test plan:** integration: planted miss + good target -> nodes committed + graph produces target; planted miss + bad target -> rejected, graph unchanged.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-graph-tree-embeddings-teach-on-miss-2026-06-30",
+    "gate": "T-graph-embed-primitive",
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-06-30T20:23:01.724632+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T20:23:01.724700+00:00"
+  }
+}
