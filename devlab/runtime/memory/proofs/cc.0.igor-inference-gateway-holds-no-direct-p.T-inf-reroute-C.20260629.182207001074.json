@@ -1,0 +1,64 @@
+{
+  "id": "cc.0.igor-inference-gateway-holds-no-direct-p.T-inf-reroute-C.20260629.182207001074",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-inference-gateway-holds-no-direct-p",
+    "T-inf-reroute-C"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-29T18:22:07.001074",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inf-reroute-C"
+    ],
+    "commits": [
+      "be469ddda1fe23371d3b8fea5714a39f50a4e227"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "igor inference gateway holds no direct-provider machinery",
+    "intention": "inference_gateway.py has zero urllib/OPENROUTER_/_h_ollama/_h_or/from_env/handler_override/reasoner-instantiation — all inference goes through the Proxy",
+    "test": "tests/igor/test_gateway_proxy_only.py::test_gateway_has_no_direct_provider_machinery",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_gateway_proxy_only.py::test_gateway_has_no_direct_provider_machinery",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "E         inference_gateway.py:716: OPENROUTER_: api_key = os.getenv(\"OPENROUTER_API_KEY\", \"\")\nE         inference_gateway.py:718: OPENROUTER_: raise RuntimeError(\"OPENROUTER_API_KEY not set\")\nE         inference_gateway.py:722: OPENROUTER_: or os.getenv(\"OPENROUTER_CHEAP_MODEL\", \"openai/gpt-4o-mini\")\nE         inference_gateway.py:733: urllib: req = urllib.request.Request(\nE         inference_gateway.py:742: urllib: with urllib.request.urlopen(req, timeout=30) as resp:\nE         inference_gateway.py:857: OPENROUTER_: \"OPENROUTER_CHEAP_MODEL\", \"openai/gpt-4o-mini\"\nE         inference_gateway.py:874: OPENROUTER_: \"OPENROUTER_CHEAP_MODEL\", \"openai/gpt-4o-mini\"\nE         inference_gateway.py:891: OPENROUTER_: \"OPENROUTER_CHEAP_MODEL\", \"openai/gpt-4o-mini\"\nE         inference_gateway.py:941: _h_ollama: gw.add_node(Node(id=node_id, handler=_h_ollama))\nE         inference_gateway.py:943: _h_or: gw.add_node(Node(id=node_id, handler=_h_or))\nE         inference_gateway.py:1140: OPENROUTER_: if os.getenv(\"OPENROUTER_API_KEY\", \"\"):\nE         inference_gateway.py:1145: OPENROUTER_: balance_ok = bool(os.getenv(\"OPENROUTER_API_KEY\", \"\"))\nE       assert not ['inference_gateway.py:117: handler_override: - Benchmark a model   — gateway.call(purpose_id, ..., handler_override=.... forces a specific DAG', 'inference_gateway.py:293: _h_ollama: # deletes the DAG + raw _h_ollama/_h_or handlers.', ...]\n\ntests/igor/test_gateway_proxy_only.py:47: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-29 18:22:06.804 | WARNING  | logging:callHandlers:1762 - slow query 276ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_gateway_proxy_only.py::test_gateway_has_no_direct_provider_machinery\n1 failed in 1.38s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.54s"
+          }
+        }
+      }
+    ],
+    "commit": "be469ddda1fe23371d3b8fea5714a39f50a4e227",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-inf-reroute-C.20260629.122009898952.json",
+      "tests/igor/test_call_via_proxy.py",
+      "tests/igor/test_cmd_handlers_proxy_repoint.py",
+      "unseen_university/devices/igor/cognition/inference_gateway.py",
+      "unseen_university/devices/igor/cognition/prefrontal_cortex.py",
+      "unseen_university/devices/igor/main.py",
+      "unseen_university/devices/igor/tools/ebook_reader.py",
+      "unseen_university/devices/igor/tools/reading_benchmark.py",
+      "unseen_university/devices/igor/tools/runner.py"
+    ],
+    "ticket": "T-inf-reroute-C",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
