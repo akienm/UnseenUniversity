@@ -1,0 +1,68 @@
+{
+  "id": "cc.0.cloud-mode-concept-dead-cloud-ok-overrid.T-igor-cloud-mode-assess.20260630.115456913509",
+  "emitter": "cc.0",
+  "namespace": [
+    "cloud-mode-concept-dead-cloud-ok-overrid",
+    "T-igor-cloud-mode-assess"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-30T11:54:56.913509",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-igor-cloud-mode-assess"
+    ],
+    "commits": [
+      "9b859fa4d5e1cd95f446a6cd97d2dc5c208ba5ac"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "cloud_mode concept + dead cloud_ok_override removed from igor",
+    "intention": "The igor device contains zero references to is_cloud_training_active / cloud_ok_override / the cloud_mode module; old cloud routing is gone (Proxy owns routing/budget)",
+    "test": "tests/igor/test_cloud_mode_removed.py::test_dead_symbols_absent",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_cloud_mode_removed.py::test_dead_symbols_absent",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "                    found.append(f\"{py.relative_to(IGOR_ROOT)}: {sym!r}\")\n>       assert not found, \"Dead symbols still present:\\n\" + \"\\n\".join(found)\nE       AssertionError: Dead symbols still present:\nE         main.py: 'is_cloud_training_active'\nE         cognition/cloud_mode.py: 'is_cloud_training_active'\nE         cognition/cloud_mode.py: 'is_cloud_ok_override'\nE         cognition/cloud_mode.py: 'set_cloud_ok_override'\nE         cognition/cloud_mode.py: 'clear_cloud_ok_override'\nE         cognition/inference_gateway.py: 'is_cloud_training_active'\nE         tools/learner.py: 'set_cloud_ok_override'\nE         tools/learner.py: 'clear_cloud_ok_override'\nE         cognition/reasoners/ollama_reasoner.py: 'is_cloud_training_active'\nE       assert not [\"main.py: 'is_cloud_training_active'\", \"cognition/cloud_mode.py: 'is_cloud_training_active'\", \"cognition/cloud_mode.p...cognition/cloud_mode.py: 'clear_cloud_ok_override'\", \"cognition/inference_gateway.py: 'is_cloud_training_active'\", ...]\n\ntests/igor/test_cloud_mode_removed.py:51: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-30 11:54:56.651 | WARNING  | logging:callHandlers:1762 - slow query 263ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_cloud_mode_removed.py::test_dead_symbols_absent - Asse...\n1 failed in 1.41s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.33s"
+          }
+        }
+      }
+    ],
+    "commit": "9b859fa4d5e1cd95f446a6cd97d2dc5c208ba5ac",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260630.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-igor-inner-cc-assess.20260629.182436116353.json",
+      "devlab/runtime/memory/tickets/closed/cc.0.T-igor-inner-cc-assess.20260629.182436116353.json",
+      "unseen_university/devices/igor/cognition/SUBSYSTEMS.md",
+      "unseen_university/devices/igor/cognition/cloud_mode.py",
+      "unseen_university/devices/igor/cognition/forensic_logger.py",
+      "unseen_university/devices/igor/cognition/inference_gateway.py",
+      "unseen_university/devices/igor/cognition/narrative_engine.py",
+      "unseen_university/devices/igor/cognition/reasoners/ollama_reasoner.py",
+      "unseen_university/devices/igor/dashboard/terminal.py",
+      "unseen_university/devices/igor/main.py",
+      "unseen_university/devices/igor/paths.py",
+      "unseen_university/devices/igor/tools/learner.py"
+    ],
+    "ticket": "T-igor-cloud-mode-assess",
+    "narrative": "",
+    "why": "cloud_mode is old routing superseded by the Proxy budget_gate/rules_engine; override was write-only-dead",
+    "bootstrap": false
+  }
+}
