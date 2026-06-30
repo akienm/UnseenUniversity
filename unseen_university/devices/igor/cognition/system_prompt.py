@@ -279,11 +279,6 @@ def build_system_prompt(
             "- Do not read .env directly. Check env vars with: run_bash(command='echo $VARNAME').",
             "- Do not attempt to purchase credits or modify budgets. Only Akien manages that.",
             "- Before any self-edit: read the current file state first (PROC5).",
-            "- For codebase reasoning (reading source, planning edits, architecture, debugging):",
-            "  delegate to Claude Code via inner_cc() — it is 5-10x cheaper",
-            "  than an OR turn due to token caching on the stable repo context.",
-            "  Use inner_cc() only for quick single-question pattern/architecture lookups",
-            "  that do not require reading live source files.",
             "- Irreversible actions (send, delete, publish, deploy) go to the arbiter queue,",
             "  not direct execution.",
         ]

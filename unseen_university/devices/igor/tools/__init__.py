@@ -45,7 +45,6 @@ from . import (
     output_trainer,
     stale_task_reaper,
     bootstrap_reader,
-    training_pass,
     memory_query,
     boredom_idle,
     goal_continuation,

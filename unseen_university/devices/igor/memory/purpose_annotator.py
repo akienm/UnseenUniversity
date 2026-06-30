@@ -4,30 +4,19 @@ purpose_annotator.py — Annotate engrams with purpose, purpose_category.
 Called from coa.py _ne_worker after each NE run (batch_size=2 to stay within
 budget). retroactive_sweep() can be called manually to process existing engrams.
 
-LLM call: call_inner_cc_long with a compact prompt. Haiku-tier.
-Budget gate: skip if <5 engrams to annotate (not worth the LLM call).
+Fast-path only: rule-based classifier (scraps.purpose_classifier).
+The LLM fallback for ambiguous cases has been retired (T-igor-inner-cc-assess).
 """
 
 from __future__ import annotations
-import json
 import logging
 import os
 
 log = logging.getLogger(__name__)
 
-_PROMPT_TEMPLATE = """\
-You are annotating an Igor memory for inspection purposes.
-Memory type: {memory_type}
-Memory content: {narrative}
-
-Respond with ONLY valid JSON (no other text):
-{{"purpose": "<one sentence: why does this memory exist?>", "category": "<one of: skill, fact, preference, constraint, decision, experience, procedure, observation>"}}
-"""
-
 
 def _annotate_one(narrative: str, memory_type: str) -> dict | None:
-    """Get purpose + category for one memory. Fast-path: rule-based classifier; LLM fallback."""
-    # Compiled inference fast-path — avoids LLM call for the majority of cases
+    """Get purpose + category for one memory. Rule-based classifier only (fast-path)."""
     try:
         from unseen_university.devices.scraps.purpose_classifier import classify_purpose
 
@@ -40,32 +29,7 @@ def _annotate_one(narrative: str, memory_type: str) -> dict | None:
     except Exception as e:
         log.debug("_annotate_one fast-path failed: %s", e)
 
-    # LLM fallback for ambiguous cases
-    try:
-        from ..tools.inner_cc import call_inner_cc_long
-
-        prompt = _PROMPT_TEMPLATE.format(
-            memory_type=memory_type,
-            narrative=(narrative or "")[:600],
-        )
-        result = call_inner_cc_long(task=prompt, model="anthropic/claude-haiku-4-5")
-        raw = (result.get("answer") or "").strip()
-        # strip markdown code fences if present
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        parsed = json.loads(raw)
-        purpose = str(parsed.get("purpose", "")).strip()
-        category = str(parsed.get("category", "")).strip().lower()
-        from ..memory.models import PURPOSE_CATEGORIES
-
-        if category not in PURPOSE_CATEGORIES:
-            category = ""
-        return {"purpose": purpose, "category": category}
-    except Exception as e:
-        log.debug("_annotate_one failed: %s", e)
-        return None
+    return None
 
 
 def annotate_pending(cortex, batch_size: int = 2) -> int:

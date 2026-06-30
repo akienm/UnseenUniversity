@@ -1,10 +1,17 @@
-"""Tests for devices/igor/cognition/dreaming.py (T-igor-dreaming-module)."""
+"""Tests for devices/igor/cognition/dreaming.py (T-igor-dreaming-module).
+
+inner_cc synthesis tests removed (T-igor-inner-cc-assess):
+  - test_dreaming_empty_inputs_returns_zero (patched _synthesize)
+  - test_dreaming_writes_proposals (patched _synthesize)
+  - test_dreaming_deduplicates_identical_proposals (patched _synthesize)
+  - test_is_convergent_* (_is_convergent deleted with _synthesize)
+  - test_synthesize_sets_convergence_flag (patched inner_cc module)
+"""
 
 from __future__ import annotations
 
 import json
 import os
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -44,25 +51,6 @@ def mock_paths(tmp_path):
     return p
 
 
-@pytest.fixture
-def psych_log_with_entries(mock_paths):
-    """Write 5 psych_log entries into mock_paths.logs."""
-    log_file = mock_paths.logs / "igor_psych.jsonl"
-    entries = [
-        {
-            "ts": 1746900000.0 + i * 60,
-            "valence": 0.3,
-            "arousal": 0.5,
-            "notes": f"cycle {i}",
-        }
-        for i in range(5)
-    ]
-    with log_file.open("w") as f:
-        for e in entries:
-            f.write(json.dumps(e) + "\n")
-    return mock_paths
-
-
 # ── Disabled when IGOR_DREAMING_INTERVAL=0 ───────────────────────────────────
 
 
@@ -73,100 +61,6 @@ def test_dreaming_disabled_when_interval_zero(mock_paths, monkeypatch):
 
     result = dreaming.run(paths_obj=mock_paths)
     assert result == 0
-
-
-# ── Empty inputs return 0 without calling haiku ──────────────────────────────
-
-
-def test_dreaming_empty_inputs_returns_zero(mock_paths, monkeypatch):
-    """No psych_log, no watch_problems → run() returns 0 without synthesis call."""
-    monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "50")
-    from unseen_university.devices.igor.cognition import dreaming
-
-    with (
-        patch("unseen_university.devices.igor.cognition.dreaming._read_watch_problems", return_value=[]),
-        patch("unseen_university.devices.igor.cognition.dreaming._synthesize") as mock_synth,
-    ):
-        result = dreaming.run(paths_obj=mock_paths)
-
-    assert result == 0
-    mock_synth.assert_not_called()
-
-
-# ── Proposals written on seeded psych_log + watch_problems ───────────────────
-
-
-def test_dreaming_writes_proposals(psych_log_with_entries, monkeypatch):
-    """Mocked haiku returning 1 proposal → 1 row in instance.proposals."""
-    monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "50")
-    from unseen_university.devices.igor.cognition import dreaming
-
-    mock_proposals = [
-        {
-            "kind": "habit",
-            "content": "When valence is low, scan watch_problems for active levers.",
-            "rationale": "Repeated low valence correlates with unresolved watch entries.",
-        }
-    ]
-
-    with patch(
-        "unseen_university.devices.igor.cognition.dreaming._synthesize",
-        return_value=mock_proposals,
-    ):
-        result = dreaming.run(paths_obj=psych_log_with_entries)
-
-    assert result == 1
-
-    conn = psycopg2.connect(_PG_URL)
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT kind, content, source_module "
-                "FROM instance.proposals WHERE source_module = 'dreaming'"
-            )
-            rows = cur.fetchall()
-    finally:
-        conn.close()
-
-    assert len(rows) == 1
-    assert rows[0][0] == "habit"
-    assert rows[0][2] == "dreaming"
-
-
-def test_dreaming_deduplicates_identical_proposals(psych_log_with_entries, monkeypatch):
-    """Two identical proposals → occurrence_count increments, not two rows."""
-    monkeypatch.setenv("IGOR_DREAMING_INTERVAL", "50")
-    from unseen_university.devices.igor.cognition import dreaming
-
-    proposal = [
-        {
-            "kind": "watch_q",
-            "content": "Watch for repeated low arousal after escalation.",
-            "rationale": "Pattern detected.",
-        }
-    ]
-
-    with patch(
-        "unseen_university.devices.igor.cognition.dreaming._synthesize",
-        return_value=proposal,
-    ):
-        dreaming.run(paths_obj=psych_log_with_entries)
-        result2 = dreaming.run(paths_obj=psych_log_with_entries)
-
-    # Second run increments occurrence_count, not a new row
-    conn = psycopg2.connect(_PG_URL)
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT COUNT(*), MAX(occurrence_count) "
-                "FROM instance.proposals WHERE source_module = 'dreaming'"
-            )
-            row = cur.fetchone()
-    finally:
-        conn.close()
-
-    assert row[0] == 1  # only one distinct proposal
-    assert row[1] >= 2  # occurrence_count ≥ 2
 
 
 # ── Cycle counter behavior ────────────────────────────────────────────────────
@@ -206,70 +100,7 @@ def test_cycle_counter_triggers_at_interval(monkeypatch):
     assert len(run_calls) == 3
 
 
-# ── Librarian observation helpers ─────────────────────────────────────────────
-
-
-def test_is_convergent_true_when_both_domains():
-    from unseen_university.devices.igor.cognition.dreaming import _is_convergent
-
-    assert _is_convergent(
-        "Librarian researched this topic and igor's valence dropped — pattern detected."
-    )
-
-
-def test_is_convergent_false_librarian_only():
-    from unseen_university.devices.igor.cognition.dreaming import _is_convergent
-
-    assert not _is_convergent("Librarian observation about research quality.")
-
-
-def test_is_convergent_false_psych_only():
-    from unseen_university.devices.igor.cognition.dreaming import _is_convergent
-
-    assert not _is_convergent("Igor valence low and arousal high during this period.")
-
-
-def test_synthesize_sets_convergence_flag():
-    """Proposals with rationale citing both librarian + psych terms get convergence=True."""
-    from unseen_university.devices.igor.cognition.dreaming import _synthesize
-
-    convergent_proposals = [
-        {
-            "kind": "habit",
-            "content": "Cross-check librarian and igor observations.",
-            "rationale": "Librarian research and igor psych data both highlight this gap.",
-            "conditions": "",
-            "heuristics": "",
-        }
-    ]
-    non_convergent_proposals = [
-        {
-            "kind": "watch_q",
-            "content": "Watch for repeated failures in retrieval.",
-            "rationale": "Repeated retrieval failures in recent cycles.",
-            "conditions": "",
-            "heuristics": "",
-        }
-    ]
-    all_proposals = convergent_proposals + non_convergent_proposals
-
-    fake_inner_cc = MagicMock()
-    fake_inner_cc.call_inner_cc_long.return_value = {
-        "answer": json.dumps(all_proposals)
-    }
-    with patch.dict("sys.modules", {"unseen_university.devices.igor.tools.inner_cc": fake_inner_cc}):
-        results = _synthesize(
-            psych_entries=[{"ts": 1, "valence": 0.5, "arousal": 0.5, "notes": ""}],
-            watch_problems=[],
-        )
-
-    assert len(results) == 2
-    assert (
-        results[0].get("convergence") is True
-    ), "convergent proposal should be flagged"
-    assert (
-        "convergence" not in results[1]
-    ), "non-convergent proposal should not be flagged"
+# ── Proposal infrastructure (_add_proposal / _ensure_proposals) ──────────────
 
 
 def test_add_proposal_stores_extra_metadata(pg_test_schema):
@@ -306,16 +137,6 @@ def test_add_proposal_stores_extra_metadata(pg_test_schema):
     assert meta.get("convergence") is True
     assert meta.get("test_key") == "test_val"
     assert "fingerprint" in meta
-
-
-def test_read_librarian_observations_returns_list(pg_test_schema):
-    """_read_librarian_observations() returns a list (empty or populated)."""
-    if pg_test_schema is None:
-        pytest.skip("pg_test_schema not available")
-    from unseen_university.devices.igor.cognition.dreaming import _read_librarian_observations
-
-    result = _read_librarian_observations()
-    assert isinstance(result, list)
 
 
 # ── Hebbian edge strengthening (T-dreaming-wg-hebbian) ───────────────────────
