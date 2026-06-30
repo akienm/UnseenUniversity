@@ -1098,10 +1098,11 @@ class NarrativeEngine(IgorBase):
                 # Retry once after stripping markdown/think-block wrappers
                 result = self._parse_ne_json(self._clean_llm_response(text))
             if result is not None:
-                _via = "cloud" if _ctx.cloud_active else "local"
-                print(f"{_cts()}[NE] {_via} ok")
+                # Source (local vs cloud) is the Proxy's decision now and isn't
+                # surfaced through call(); label it "proxy" rather than guess.
+                print(f"{_cts()}[NE] proxy ok")
                 reasoning_cache.put(NE_MODEL, prompt, text, max_twm_id)
-                self._last_ne_model = f"gateway/ne/{_via}"
+                self._last_ne_model = "gateway/ne/proxy"
                 return result
             # Still None — log at WARNING and return minimal fallback so the
             # cycle doesn't skip entirely (the fallback impulse keeps Igor awake).
