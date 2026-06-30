@@ -36,3 +36,11 @@ Done: Done: InferenceProxyOnly sweep COMPLETE — preparse/inner_cc/cloud_mode/o
 Next: Next: CC design pass on T-graph-embed-define-representation + T-graph-embed-teach-on-miss (need design, not Haiku), then T-graph-embed-verify-existence, then the Haiku-buildable impl chain. Hex (M1 Studio) arrives today = free inference for the teach loop.
 
 ## In-flight: NONE actively executing — clean stop. InferenceProxyOnly sweep done+committed; graph-tree-embeddings keystone epic filed+committed (19 commits local on main, unpushed). Awaiting CC design pass on define-representation + teach-on-miss post-compact.
+
+## Session close 2026-06-30
+Done: Reshaped graph-embeddings epic to Igor-reset reality (verify-existence closed: no node-set embedder exists, the activation producer does; backfill closed moot; retire-nomic widened to ALL consumers both stacks; teach-on-miss target = the EXISTING verifier, not the pushing LLM). RESET IGOR: truncated ~117.7k rows across instance/clan/infra (memories, interpretive_edges 102k, code_index, palace, word-graph, logs), cleared 10 nomic embed-cache files; _migrations + all other devices preserved; Igor was not running. Committed 2507c78b.
+Next: DickSimnel — get it from exists -> picks up a Granny ticket, builds, closes. A read-only Explore scan of DS state was launched (re-run it post-compact; its result did not persist). Then act on the single smallest gap it names. Hex (free local inference) lifting the DS cost constraint is the unlock.
+
+## In-flight: NONE in-flight — tree clean, all work committed (2507c78b: epic reshape; Igor corpus wiped via DB truncate, no repo changes). Only a disposable read-only DickSimnel state-scan was running; re-run post-compact.
+- D-ds-first-live-build-on-hex-2026-06-30: route devstral worker tier to local Hex + trivial fixture + live smoke — T-ds-local-ollama-route, T-ds-hello-build, T-ds-smoke-pytest
+- D-uu-cleanup-2026-06-30: rename flags->run_flags (keep breaker); strip sudo_relay out of igor — T-uu-rename-flags-to-run_flags, T-igor-strip-sudo-relay

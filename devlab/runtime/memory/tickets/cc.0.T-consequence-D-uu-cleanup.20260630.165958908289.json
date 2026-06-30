@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-D-uu-cleanup.20260630.165958908289",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-uu-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T22:59:58.908289+00:00",
+  "links": {
+    "decisions": [
+      "D-uu-cleanup-2026-06-30"
+    ],
+    "tickets": [
+      "T-consequence-D-uu-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-uu-cleanup",
+    "title": "[sprint] Consequence check: run_flags rename + sudo_relay igor-strip",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "intention": "I intend to catch anything that silently depended on the old flags path or the Igor sudo_relay tool, so cleanup doesn't break a live caller.",
+    "description": "**What changed:** Renamed the ground_loop breaker dir `flags`→`run_flags` (+ `_IGOR_HOME`→`uu_home()`), and deleted the duplicate `igor/tools/sudo_relay.py` (the rack device + bus is the path).\n**Predicted unintended effects:** (1) any external script or doc that touches `~/.unseen_university/flags/<name>.breaker` directly (outside the repo) now writes to a dead path — the breaker silently never trips; (2) a not-yet-found caller of the Igor sudo_relay tool (dynamic registry lookup by name, not a static import) breaks at call time, invisible to grep; (3) the rack device assumes a daemon started via `/start` in chat — if nothing starts it, sudo-relay capability is simply absent (was it ever actually used by Igor?).\n**Signals to watch:** ground_loop logs showing breaker checks resolve under run_flags; any AttributeError/KeyError on a `sudo_relay` tool lookup in Igor logs; confirm no shell alias/cron references the old `flags` path (`grep -rn unseen_university/flags ~/.bashrc ~/.unseen_university` outside the repo).\n**Gate condition:** Check by 2026-07-14 or when ground_loop next gates a device on a breaker.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-uu-cleanup-2026-06-30",
+    "gate": "2026-07-14",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-06-30T22:59:56.737200+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T22:59:56.737290+00:00"
+  }
+}

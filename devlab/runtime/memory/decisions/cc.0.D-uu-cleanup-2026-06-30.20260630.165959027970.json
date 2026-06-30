@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-uu-cleanup-2026-06-30.20260630.165959027970",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-uu-cleanup-2026-06-30"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-30T16:59:59.027970",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-uu-cleanup-2026-06-30",
+    "title": "uu_home cleanup: rename flags→run_flags (keep breaker); strip duplicated sudo_relay out of igor",
+    "status": "open",
+    "date": "2026-06-30",
+    "spawned_tickets": [
+      "T-uu-rename-flags-to-run_flags",
+      "T-igor-strip-sudo-relay",
+      "T-consequence-D-uu-cleanup"
+    ],
+    "text": "# D-uu-cleanup-2026-06-30\n**title:** uu_home cleanup — run_flags rename + sudo_relay igor-strip\n**date:** 2026-06-30\n**status:** open\n**spawned_tickets:** T-uu-rename-flags-to-run_flags, T-igor-strip-sudo-relay, T-consequence-D-uu-cleanup\n\n## Decision narrative\nTwo cleanups surfaced while standing up Hex. (1) `~/.unseen_university/flags` looked like a dead 'old folder' but is the LIVE ground_loop circuit-breaker dir (`<name>.breaker` suppresses device auto-start; plugin_proxy/plugin_daemon/daemon). The fix is NOT deletion but a self-documenting rename → `run_flags` (it gates auto-RUN), keeping the mechanism, plus retiring the stale `_IGOR_HOME` alias → `uu_home()`. (2) `sudo_relay` exists twice: a proper rack device `devices/sudo_relay/` AND a 176-line duplicate `igor/tools/sudo_relay.py` registered as an Igor tool — infrastructure wrongly contained inside cognition. Nothing imports the Igor copy but its `__init__` export, so it strips cleanly; Igor reaches sudo-relay over the bus to the rack device if ever needed. Empty `~/.unseen_university/removeme` was already removed directly (no ticket).\n\n## Hypothesis\nAfter these ship, the breaker dir is named for what it does (run_flags) with the mechanism unchanged, and Igor's tree no longer contains the sudo_relay infrastructure duplicate — Igor holds only cognition+memory.\n\n## Measurement Signal\ngrep `unseen_university/flags`/`_IGOR_HOME` in ground_loop → 0; breaker still trips via run_flags; `igor/tools/sudo_relay.py` gone and grep of its import/export → 0; igor tools package + sudo_relay rack device both import green.\n\n## Intention\nI intend that runtime dirs and device trees say what they are — names match function and Igor uses infrastructure rather than containing it ([[feedback_igor_uses_not_contains]], [[project_igor_reset_cleanup_before_codex_tickets]])."
+  }
+}

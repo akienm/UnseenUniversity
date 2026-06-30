@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ds-hello-build.20260630.165951905364",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-hello-build"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T22:59:51.905364+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-first-live-build-on-hex-2026-06-30"
+    ],
+    "tickets": [
+      "T-ds-hello-build"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-hello-build",
+    "title": "[sprint] DS trivial fixture: builder-role 'write a one-line scratch file + DONE' (the smoke target)",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Fixture"
+    ],
+    "intention": "I intend that DickSimnel.0 has one known-trivial, SAFE builder ticket to execute end-to-end, so the first live run proves the loop without risking a destructive action.",
+    "description": "**Problem:** No trivial/smoke builder-role ticket exists in the queue — the only open builder ticket is a consequence-check, not a code build. The first live DS run needs a minimal, deterministically-verifiable target.\n**Proposed shape:** A `role=builder` ticket whose body instructs: create the file `unseen_university/devices/dicksimnel/SMOKE_OK.txt` containing exactly one line `dicksimnel smoke ok` (or a scratch path under the repo), then return the DONE envelope. A CREATE, not a delete — safe for an unproven devstral run's first act (a confabulated path on a create is harmless; on an rm it is not).\n**Affected files:** none of CC's — this ticket is DS's BUILD TARGET; CC only files it. The file it creates is a throwaway smoke artifact.\n**Design rules:** the ticket DS executes must be self-contained and Haiku/devstral-buildable (one Write + DONE); proof-on-close = the file exists with the expected single line.\n**Scope boundary:** just the fixture ticket; the routing and the pytest driver are siblings.\n**Completion criteria:** the ticket is filed `role=builder`, gated on T-ds-local-ollama-route, and is dispatchable to DickSimnel.0; on execution the SMOKE_OK.txt file exists with the expected content.\n**Test plan:** existence+content check of SMOKE_OK.txt after the DS run (this IS the live-smoke proof).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-ds-first-live-build-on-hex-2026-06-30",
+    "gate": "T-ds-local-ollama-route",
+    "priority": 0.6,
+    "status": "sprint",
+    "role": "builder",
+    "created_at": "2026-06-30T22:59:46.163369+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-06-30T22:59:46.163433+00:00"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-strip-sudo-relay.20260630.165958778614",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-strip-sudo-relay"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T22:59:58.778614+00:00",
+  "links": {
+    "decisions": [
+      "D-uu-cleanup-2026-06-30"
+    ],
+    "tickets": [
+      "T-igor-strip-sudo-relay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-strip-sudo-relay",
+    "title": "[sprint] Strip sudo_relay out of igor/tools — the rack device owns it; Igor reaches it over the bus",
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Igor",
+      "IgorStrip"
+    ],
+    "intention": "I intend that Igor contains only cognition+memory, so infrastructure he merely USES (an OS sudo relay) lives in its own rack device, not duplicated inside his tree.",
+    "description": "**Problem:** `sudo_relay` exists TWICE: a proper rack device `unseen_university/devices/sudo_relay/` (SudoRelayDevice/Shim wrapping the `./sudo_relay` daemon CLI) AND a 176-line copy inside Igor's tree, `igor/tools/sudo_relay.py`, registered as an Igor tool via `igor/tools/__init__.py:36`. An OS privilege-escalation relay is INFRASTRUCTURE, not cognition — it violates 'Igor uses systems, does not contain them' ([[feedback_igor_uses_not_contains]]) and the igor-strip cleanup ([[project_igor_reset_cleanup_before_codex_tickets]]). Grep confirms NOTHING imports the Igor copy except the `__init__` export — removal is low-risk.\n**Proposed shape:** Delete `igor/tools/sudo_relay.py` and remove its line from `igor/tools/__init__.py` (line ~36). If Igor cognition ever needs sudo-relay, it requests it from the SudoRelay rack device over the bus (request/response envelope), NOT via an in-tree tool that pokes the relay dir directly. Do NOT re-add the capability under igor. The rack device + repo-root `./sudo_relay` daemon remain the sole owners.\n**Affected files:** DELETE unseen_university/devices/igor/tools/sudo_relay.py; EDIT unseen_university/devices/igor/tools/__init__.py.\n**Design rules:** Igor = cognition+memory only; infrastructure lives in its own device; preserve the rack device untouched; no TheIgors imports.\n**Scope boundary:** remove the Igor-side duplicate + export only; do NOT modify the rack device or the daemon CLI; do NOT wire a new bus path in this ticket (that's future if/when Igor needs it).\n**Completion criteria:** `igor/tools/sudo_relay.py` gone; grep `igor.tools.sudo_relay` / `from .sudo_relay import` / the `sudo_relay,` export → 0 live refs; `import unseen_university.devices.igor.tools` is green; the rack device `devices/sudo_relay/` still imports + self-tests green.\n**Test plan:** grep-gate red→green on the igor copy + export; igor tools package import-green; sudo_relay rack-device import/self_test green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-uu-cleanup-2026-06-30",
+    "gate": null,
+    "priority": 0.45,
+    "status": "sprint",
+    "role": "master",
+    "created_at": "2026-06-30T22:59:54.752651+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-06-30T22:59:54.752743+00:00"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ds-local-ollama-route.20260630.165951787762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-local-ollama-route"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T22:59:51.787762+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-first-live-build-on-hex-2026-06-30"
+    ],
+    "tickets": [
+      "T-ds-local-ollama-route"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-local-ollama-route",
+    "title": "[sprint] Route devstral worker tier to local Ollama (Hex) — register ollama ModelSpec + worker rule",
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "Inference",
+      "Hex"
+    ],
+    "intention": "I intend that DickSimnel's builder inference runs on free local Hex, so the DS cost constraint lifts and the first real build is affordable.",
+    "description": "**Problem:** DS 'ollama-only mode' requests model `devstral-small-2:24b`, but EVERY Ollama ModelSpec in the registry is bound to source `ollama_cloud` — the local `ollama` source (sources.py:254, base_url from `INFERENCE_ENDPOINT`, default 127.0.0.1:11434) has ZERO models registered. So a worker dispatch resolves to the CLOUD, never to Hex. Pointing `INFERENCE_ENDPOINT` at Hex alone does nothing because the rules engine has no local-ollama candidate to pick.\n**Proposed shape:** (1) Register `ModelSpec(model_id='devstral-small-2:24b', source_name='ollama', tier='worker', ...)` in models_registry.py alongside the existing cloud spec. (2) Add a `RoutingRule(task_class='worker', model='devstral-small-2:24b', source='ollama')` in rules_engine.py `_DEFAULT_RULES`, prioritized so the LOCAL source is preferred WHEN AVAILABLE (Hex reachable) and falls back to `ollama_cloud` when not — local is free + is the Hex-dogfood target. (3) Set `INFERENCE_ENDPOINT=http://10.0.0.100:11434` in the DS launch env / uu_bash_profile. (4) Reconcile the DEAD source name `local_ollama` in rules_engine.py:95-96 (batch rules) → `ollama` (no source named `local_ollama` is ever registered).\n**Affected files:** unseen_university/devices/inference/models_registry.py, rules_engine.py; env (uu_bash_profile.sh / DS launch env). Inference Proxy only (tier-not-model preserved; model_override is the existing DS path).\n**Design rules:** ALL inference through the Proxy; no direct OR/Anthropic; log the source/model selection at the crossing; no SQLite.\n**Scope boundary:** routing + registration + env only; does NOT touch ToolLoop, the trivial ticket, or the smoke driver (sibling tickets).\n**Completion criteria:** a unit test on the rules engine: a worker dispatch with model_override='devstral-small-2:24b' resolves to source `ollama` at base_url `http://10.0.0.100:11434` when that source is available, and to `ollama_cloud` when not; grep `local_ollama` → 0 live refs.\n**Test plan:** rules_engine selection test red→green (local preferred when available; cloud fallback); grep-gate on `local_ollama`.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-ds-first-live-build-on-hex-2026-06-30",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "role": "master",
+    "created_at": "2026-06-30T22:59:44.090719+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-06-30T22:59:44.139564+00:00"
+  }
+}

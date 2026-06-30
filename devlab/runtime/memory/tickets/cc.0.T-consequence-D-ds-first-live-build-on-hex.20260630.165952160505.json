@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-D-ds-first-live-build-on-hex.20260630.165952160505",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-ds-first-live-build-on-hex"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T22:59:52.160505+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-first-live-build-on-hex-2026-06-30"
+    ],
+    "tickets": [
+      "T-consequence-D-ds-first-live-build-on-hex"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-ds-first-live-build-on-hex",
+    "title": "[sprint] Consequence check: DS first live build on devstral@Hex",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "intention": "I intend to catch the silent failure modes of routing builder inference to a local box, so the cost-lift doesn't trade for invisible regressions.",
+    "description": "**What changed:** DS builder inference rerouted from ollama_cloud to a local Ollama on Hex (10.0.0.100), with a new local `ollama` ModelSpec + worker rule, and the first live devstral ToolLoop build was run.\n**Predicted unintended effects:** (1) local-preferred routing could send OTHER worker-tier callers (not just DS) to Hex and overload a single 32GB box / evict the pinned model; (2) when Hex is down the fallback-to-cloud must actually fire — a missing `available` check would hard-fail worker dispatch instead of falling back; (3) the `local_ollama`→`ollama` rename could change batch-tier routing (those rules were dead, so behavior changes from never-resolves to resolves); (4) devstral may reach DONE on the trivial create but loop/escalate on any non-trivial ticket — the smoke green does not generalize.\n**Signals to watch:** inference Proxy selection logs showing source=`ollama` vs `ollama_cloud` per worker dispatch; Hex `/api/ps` model residency; any worker dispatch hard-failing when Hex unreachable (should skip→cloud); batch-tier dispatches now resolving.\n**Gate condition:** Check by 2026-07-14 or when the second (non-trivial) DS build is attempted.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-ds-first-live-build-on-hex-2026-06-30",
+    "gate": "2026-07-14",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-06-30T22:59:49.737940+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T22:59:49.737998+00:00"
+  }
+}

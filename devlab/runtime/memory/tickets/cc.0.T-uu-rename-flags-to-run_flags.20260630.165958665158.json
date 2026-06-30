@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-uu-rename-flags-to-run_flags.20260630.165958665158",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-rename-flags-to-run_flags"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T22:59:58.665158+00:00",
+  "links": {
+    "decisions": [
+      "D-uu-cleanup-2026-06-30"
+    ],
+    "tickets": [
+      "T-uu-rename-flags-to-run_flags"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-rename-flags-to-run_flags",
+    "title": "[sprint] Rename ~/.unseen_university/flags → run_flags (self-documenting breaker dir); keep mechanism",
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "GroundLoop"
+    ],
+    "intention": "I intend that runtime dirs say what they do, so a future reader doesn't mistake the live auto-run breaker dir for dead cruft and delete it.",
+    "description": "**Problem:** `~/.unseen_university/flags` was flagged as an 'old folder' to remove, but it is the LIVE circuit-breaker directory: ground_loop reads `_FLAGS_DIR / '<name>.breaker'` to suppress a device's auto-start (plugin_proxy.py:53,56; plugin_daemon.py:42,49; documented daemon.py:11). Empty-but-present is its normal resting state. The name 'flags' hides its purpose — it gates device auto-RUN.\n**Proposed shape:** Rename the dir to `run_flags` (says what it does). Update `_FLAGS_DIR = _IGOR_HOME / 'flags'` (ground_loop/daemon.py:38) → `uu_home() / 'run_flags'`, and every breaker-path builder (plugin_proxy.py:53, plugin_daemon.py:42) + the docstring (daemon.py:11). KEEP the breaker mechanism intact. While touching daemon.py, replace the stale `_IGOR_HOME` alias (a retired-IGOR_HOME-name holdover) with `uu_home()` from `unseen_university._uu_root`. Dir is currently EMPTY → no file migration needed; ensure the code mkdirs `run_flags` before touching a breaker.\n**Affected files:** unseen_university/devices/ground_loop/daemon.py, plugin_proxy.py, plugin_daemon.py.\n**Design rules:** keep the breaker semantics identical; no new ~/.unseen_university path without the rename being the only change.\n**Scope boundary:** rename + alias fix only; do NOT change breaker logic or add new flags.\n**Completion criteria:** grep `_FLAGS_DIR.*flags'` and `_IGOR_HOME` in ground_loop → 0 stale refs; breaker path resolves to `~/.unseen_university/run_flags/<name>.breaker`; ground_loop imports green; touching a `.breaker` still suppresses auto-start.\n**Test plan:** unit: breaker_path resolves under run_flags and `is_tripped` reads it; ground_loop import-green; grep-gate on the old `flags` path + `_IGOR_HOME`.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-uu-cleanup-2026-06-30",
+    "gate": null,
+    "priority": 0.4,
+    "status": "sprint",
+    "role": "master",
+    "created_at": "2026-06-30T22:59:52.419389+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-06-30T22:59:52.463921+00:00"
+  }
+}
