@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-ledger-domain-tier-columns.20260701.140249207762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-ledger-domain-tier-columns"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T20:02:49.207762+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-ledger-domain-tier-columns"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-ledger-domain-tier-columns",
+    "title": "[sprint] budget_ledger: add domain/tier/outcome/ticket_id columns (needs a verified Postgres migration)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Database",
+      "CostLearn"
+    ],
+    "description": "**Problem (deferred from T-inference-cost-learn-verify):** the per-call cost+outcome record now lives in the LOG (grep-locatable per ticket_id), which satisfies the 'learn from it every time' + live-ticket-validation intention. The durable Postgres budget_ledger row, however, still records only {agent_id, instance_id, coa_id, session_id, provider, model, input_tokens, output_tokens, cost_usd, ts} — it lacks domain, tier, outcome, and ticket_id, so DB-side aggregation (cost per domain/tier over time) isn't yet possible. This was deferred deliberately: adding columns to debit()'s INSERT without a matching ALTER TABLE makes psycopg2 raise, which the except-clause swallows -> EVERY ledger write silently no-ops (kills budget tracking invisibly). It cannot be verified in a no-DB session. **Proposed shape:** (1) a verified, idempotent migration adding domain, tier, call_outcome, ticket_id columns (ADD COLUMN IF NOT EXISTS) to clan.budget_ledger; (2) extend debit() to accept + write them; (3) thread them from device.py's debit() call (they're already on the request / cost-record). Run against a real Postgres and confirm no silent no-op. **Affected files:** budget_ledger.py (debit signature + INSERT), device.py (debit call args), a migration script/step. **Design rules:** NO SQLITE; Postgres only; NEVER a bare INSERT with new columns absent an applied ALTER; migration idempotent. **Scope boundary:** IN: ledger columns + verified migration + debit threading. OUT: the log cost-record (shipped in T-inference-cost-learn-verify), dashboards/aggregation queries. **Test plan:** integration test against real Postgres (per the DB rule — no mocks): a debit writes a row with domain/tier/outcome/ticket_id; an existing-schema DB still writes after the idempotent migration. **Completion criteria:** budget_ledger rows carry domain+tier+outcome+ticket_id; migration verified idempotent on a live DB; no silent no-op.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.3,
+    "status": "sprint",
+    "intention": "I intend that the per-call cost+outcome record is durable and aggregatable in Postgres (cost per domain/tier over time), not only greppable in the logs — so cost learning survives log rotation.",
+    "created_at": "2026-07-01T20:02:43.120549+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T20:02:43.120681+00:00"
+  }
+}

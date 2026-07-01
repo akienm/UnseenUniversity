@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-proof-emitter-additive-surface-mode.20260701.140249086098",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proof-emitter-additive-surface-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T20:02:49.086098+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-proof-emitter-additive-surface-mode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proof-emitter-additive-surface-mode",
+    "title": "[sprint] proof_emitter: proof mode for additive API / behavior-preserving moves / repo-invariants",
+    "size": "L",
+    "tags": [
+      "Proof",
+      "Tooling",
+      "GateRemoval"
+    ],
+    "description": "**Problem (accumulated lever — 5 tickets in D-inference-domain-routing closed shipped-unproven citing the SAME gap):** proof_emitter.py derives its authentic red by inverting the parent..HEAD diff in place, which requires the proving test to EXIST at the pre-impl state and go assertion-red there. This structurally cannot prove three common classes: (a) ADDITIVE API changes — a new field/param/function means the pre-impl tree raises TypeError/AttributeError/ImportError (collateral, not assertion-red), and the new test file is stripped by the diff-inversion; (b) BEHAVIOR-PRESERVING MOVES (e.g. a byte-identical prompt relocation) — no failing pre-state exists by design; (c) REPO-INVARIANT / characterization assertions that must hold at HEAD (e.g. 'zero unsanctioned model pins', 'coding prompt sha256 == pinned') without a red pre-state. **Evidence:** T-inference-domain-tag, -domain-prompt, -migrate-pinners, -pin-gate-enforce, -cost-learn-verify all shipped-unproven naming this exact lever. **Proposed shape:** add a proof mode (golden-master / invariant) that certifies a pinned test passes at HEAD and is bound to the commit, WITHOUT requiring an authentic red pre-state — for the classes where red is structurally unavailable. Keep the red->green path as the default/strongest; this mode is explicitly labelled weaker (characterization, not falsification) so the distinction stays visible. **Affected files:** devlab/claudecode/proof_emitter.py, its test suite. **Design rules:** the weaker mode must be DISTINGUISHABLE in the emitted proof (never masquerade as red->green). **Scope boundary:** IN: an additive/invariant proof mode + its label. OUT: auto-detecting which mode a ticket needs. **Test plan (stub-first red->green — this ticket CAN prove itself the old way, it's a real behavioral change to the emitter): a proof for an additive-API test emits successfully in the new mode and is tagged 'characterization' not 'red_green'; the red->green path still rejects a fabricated red. **Completion criteria:** additive/move/invariant tickets can emit a labelled characterization proof; the five backlogged tickets above become provable; red->green remains the default.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.45,
+    "status": "sprint",
+    "intention": "I intend that every honest close can point at a commit-bound proof — so the proof-on-close gate stops accumulating shipped-unproven debt for whole classes of change it structurally cannot cover, moving the gate-removal staircase forward.",
+    "created_at": "2026-07-01T20:02:35.501847+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T20:02:35.549565+00:00"
+  }
+}

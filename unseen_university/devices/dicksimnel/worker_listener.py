@@ -196,6 +196,11 @@ class DickSimnelWorkerListener:
 
         result = self._device._run_inference(ticket)
 
+        # Task-level outcome (did the routed inference actually finish the work) —
+        # logged keyed by ticket_id so it joins the device-side per-call cost_record
+        # for the same ticket (T-inference-cost-learn-verify). 'fail' | 'escalated' | 'done'.
+        _task_outcome = "done" if result is not None else "fail"
+
         if result is None:
             self._device._decline_ticket(ticket_id, "inference proxy unavailable or returned empty")
             self._send(reply_to, {
@@ -207,6 +212,7 @@ class DickSimnelWorkerListener:
         else:
             should_esc, esc_reason = self._device._should_escalate(ticket, result)
             if should_esc:
+                _task_outcome = "escalated"
                 self._device._escalate_ticket(ticket_id, esc_reason, analysis=result)
                 self._send(reply_to, {
                     "kind": "dispatch_done",
@@ -223,4 +229,5 @@ class DickSimnelWorkerListener:
                     "outcome": "done",
                 })
 
+        log.info("DickSimnel: task_outcome|ticket=%s|outcome=%s", ticket_id, _task_outcome)
         self._device._active_ticket = None

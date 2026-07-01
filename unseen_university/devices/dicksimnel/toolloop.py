@@ -235,6 +235,7 @@ class ToolLoop:
                 tools=TOOL_DEFINITIONS,
                 task_class="worker",
                 domain="coding",  # DS builds code — route among coding-capable sources only
+                ticket_id=ticket_id,  # per-ticket correlator for the cost+outcome record
                 agent_id="dicksimnel",
                 max_tokens=4096,
                 timeout=120,

@@ -42,6 +42,7 @@ from unseen_university.devices.inference.models_registry import (
     default_registry as _default_models,
 )
 from unseen_university.devices.inference.rules_engine import RulesEngine
+from unseen_university.devices.inference.routing_buckets import inference_cost_record
 from unseen_university.devices.inference.health_monitor import HealthMonitor
 from unseen_university.devices.inference.resource_monitor import ResourceMonitor
 
@@ -248,6 +249,30 @@ class InferenceDevice(BaseDevice):
         )
         return query_results(db_url, task_class=task_class, model=model, limit=limit)
 
+    def _emit_cost_record(
+        self, request, source_name, model, input_tokens, output_tokens, dollars, call_outcome
+    ) -> None:
+        """Log the per-call cost+outcome record (T-inference-cost-learn-verify).
+
+        Fired on every dispatch exit path — success, no-source chokepoint, and a raised
+        call — so a failed call records its outcome (and cost, when any) too. Grep by
+        the ticket_id in the record to reconstruct one ticket's full inference story.
+        """
+        log.info(
+            "inference: cost_record %s",
+            inference_cost_record(
+                ticket_id=request.ticket_id,
+                domain=request.domain,
+                task_class=request.task_class or "worker",
+                source=source_name,
+                model=model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                dollars=dollars,
+                call_outcome=call_outcome,
+            ),
+        )
+
     def dispatch(self, request: InferenceRequest) -> InferenceResponse:
         """Route and dispatch an inference request via the mini-rack rules engine.
 
@@ -334,6 +359,9 @@ class InferenceDevice(BaseDevice):
                 escalation_hop=request.escalation_hop,
                 prior_attempt=request.prior_attempt,
                 foreground=request.foreground,
+                domain=request.domain,
+                ticket_id=request.ticket_id,
+                pin_reason=request.pin_reason,
             )
             log.info(
                 "dispatch: tier-escalation hop=%d prior_summary_len=%d",
@@ -382,6 +410,7 @@ class InferenceDevice(BaseDevice):
                         task_class=request.task_class, agent_id=request.agent_id,
                         tools=request.tools, domain=request.domain,
                         session_id=request.session_id, foreground=request.foreground,
+                        ticket_id=request.ticket_id,
                     )
                     decision = self._rules.route(
                         task_class=request.task_class or "worker",
@@ -432,6 +461,7 @@ class InferenceDevice(BaseDevice):
                 prior_attempt=request.prior_attempt,
                 foreground=request.foreground,
                 domain=request.domain,
+                ticket_id=request.ticket_id,
             )
             source = decision.source
             provider_name = source.name
@@ -476,6 +506,9 @@ class InferenceDevice(BaseDevice):
                 "dispatch: complete inference failure — no live source for task_class=%s model=%s",
                 tc, request.model,
             )
+            self._emit_cost_record(
+                request, provider_name or "none", request.model, 0, 0, 0.0, "error"
+            )
             return InferenceResponse(
                 text=f"[InferenceDevice: no live inference source for task_class={tc}]",
                 finish_reason="error",
@@ -498,7 +531,15 @@ class InferenceDevice(BaseDevice):
 
         # source is guaranteed non-None and available past the chokepoint above.
         t0 = time.time()
-        raw = source.call(request)
+        try:
+            raw = source.call(request)
+        except Exception:
+            # A raised call (HTTP error, timeout) is a failed call — record it (with its
+            # cost, which is 0 since no usage was returned) before propagating.
+            self._emit_cost_record(
+                request, provider_name, request.model, 0, 0, 0.0, "error"
+            )
+            raise
         elapsed_ms = round((time.time() - t0) * 1000)
         # Feed the observed latency into live re-measurement (increment 4).
         self._monitor.record(source, elapsed_ms / 1000.0)
@@ -536,6 +577,15 @@ class InferenceDevice(BaseDevice):
         # from the source's is_local flag, NOT billing_type (a flat_rate cloud
         # source is still cloud).
         resp.source_kind = "local" if getattr(source, "is_local", False) else "cloud"
+        self._emit_cost_record(
+            request,
+            provider_name,
+            resp.model or request.model,
+            resp.input_tokens,
+            resp.output_tokens,
+            cost_usd if cost_usd is not None else 0.0,
+            "ok",
+        )
         return resp
 
     def source_health(self) -> dict[str, bool]:

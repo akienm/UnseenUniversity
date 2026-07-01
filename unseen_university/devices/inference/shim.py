@@ -61,6 +61,11 @@ class InferenceRequest:
     # SANCTIONED_PIN_REASONS when `model` is non-empty, else the pin-gate rejects it
     # (T-inference-pin-gate-enforce). Empty for the normal route-by-domain path.
     pin_reason: str = ""
+    # Per-ticket correlator — threads the originating ticket id through dispatch so a
+    # single call's full routing+cost+outcome record is grep-locatable per ticket
+    # (T-inference-cost-learn-verify — 'learn from it every single time'). '' when the
+    # call isn't tied to a ticket (chat, self-test).
+    ticket_id: str = ""
     # Agent context for budget ledger attribution and enforcement.
     agent_id: str = ""
     instance_id: str = ""

@@ -144,6 +144,41 @@ def cost_class_rank(cost_class: str) -> int:
         return len(COST_CLASSES)
 
 
+def inference_cost_record(
+    *,
+    ticket_id: str,
+    domain: str,
+    task_class: str,
+    source: str,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    dollars,
+    call_outcome: str,
+) -> dict:
+    """Build the per-call cost+outcome record — the 'learn from it every time' instrument.
+
+    Emitted once per dispatch (success OR failure), it is the full routing+cost story of
+    a single inference call, grep-locatable by `ticket_id`: which domain/tier routed to
+    which source+model, at what tokens and dollars, and whether the CALL itself
+    succeeded. `call_outcome` is device-level ('ok' | 'error') — the call reached a
+    source and returned, or it did not. The DS-level TASK outcome (done/fail/escalated —
+    did the cheap route actually finish the work) is logged separately, DS-side, keyed by
+    the same ticket_id.
+    """
+    return {
+        "ticket_id": ticket_id,
+        "domain": domain,
+        "tier": task_class,
+        "source": source,
+        "model": model,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "dollars": dollars,
+        "call_outcome": call_outcome,
+    }
+
+
 def routing_crossing_record(source, model, task_class: str, domain: str = "") -> dict:
     """Build the structured routing-crossing log record (the epic's measurement signal).
 
