@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-router-live-resource-read",
-    "title": "[sprint] Inference router increment 4 — LIVE re-measurement so time_buckets never go stale",
+    "title": "[in_progress] Inference router increment 4 — LIVE re-measurement so time_buckets never go stale",
     "size": "M",
     "tags": [
       "Inference",
@@ -31,7 +31,7 @@
     "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "in_progress",
     "created_at": "2026-07-01T02:51:35.113604+00:00",
     "worker": null,
     "created_by": null,
