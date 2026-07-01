@@ -274,15 +274,24 @@ class OllamaSource(Source):
         self.base_url = base_url.rstrip("/")
 
     def ping(self) -> bool:
-        try:
-            from urllib.parse import urlparse
+        """Honest liveness = dispatch-ability, not a bare socket.
 
-            parsed = urlparse(self.base_url)
-            host = parsed.hostname or "127.0.0.1"
-            port = parsed.port or 11434
-            with socket.create_connection((host, port), timeout=2):
-                return True
-        except OSError as exc:
+        A hung or mis-served ollama holds the socket open while its HTTP API 404s or times
+        out, so a socket connect alone reports a dead server as LIVE and the selector routes
+        a call that then dies (T-inference-ollama-honest-liveness). Probe the API instead —
+        GET /api/tags is cheap, read-only, and costs no generation: urlopen RAISES HTTPError
+        on a 404 and URLError on a hang/refused, so only a real 200 gets through. A 200 with
+        a NON-EMPTY model list means the server can actually serve; an empty list (nothing
+        pulled) is not dispatchable. Fail-soft: any probe error → False (classified), never
+        raises into the health loop. (Per-MODEL 'is THIS model pulled' is a finer,
+        selector-level check — a separate follow-up.)
+        """
+        try:
+            http_req = urllib.request.Request(f"{self.base_url}/api/tags", method="GET")
+            with urllib.request.urlopen(http_req, timeout=3) as resp:
+                data = json.loads(resp.read())
+            return bool(data.get("models"))
+        except Exception as exc:
             self._classify_ping_failure_simple(exc)
             return False
 
