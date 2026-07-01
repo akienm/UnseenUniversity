@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-router-failure-bump-escalation",
-    "title": "[sprint] Inference router increment 5 — reconciled escalation driver (one within-domain difficulty-walk, DS-driven, ends in system_alarm)",
+    "title": "Inference router increment 5 — reconciled escalation driver (one within-domain difficulty-walk, DS-driven, ends in system_alarm)",
     "size": "L",
     "tags": [
       "Inference",
@@ -32,18 +32,24 @@
     "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
     "gate": null,
     "priority": 0.55,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-01T03:13:43.217535+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "One escalation driver shipped: DS._run_inference walks difficulty UP one rung per CAPABILITY failure (self-ESCALATE/MAX_TURNS/prose-no-DONE → escalation_hop+1 → cost-ordered selector picks cheapest-capable at the harder tier, Ollama/Google before Anthropic); AVAILABILITY failure (dispatch raised OR no-source error response → None) re-selects next-cheapest at SAME difficulty, bounded (2 retries) then system_alarm — never bumps to paid on a source-down; past-top rung → system_alarm + clean halt, checked BEFORE re-dispatch so no loop; COST_EXCEEDED → halt. Collapsed the 3 half-mechanisms (device escalation_hop now driven, _TIER_CASCADE retired, ad-hoc append folded into prior_attempt); return-to-CC endpoint gone. bump_difficulty + route(required_difficulty=) override + escalation_hop→difficulty map. Fresh adversarial reviewer confirmed availability CANNOT drive paid escalation and termination is loop-free; found the guard line was untested → added inversion-verified + neuter-verified regression tests. Commits b081d4d9 + 90552b04. 0 new regressions (DS 70 passed).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T21:33:14.558935+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 2,
     "role": "apprentice",
-    "scraps_validated": "2026-07-01T03:13:43.267630+00:00"
+    "scraps_validated": "2026-07-01T03:13:43.267630+00:00",
+    "proven": false,
+    "unproven_reason": "The STATIC money-safety property is now genuinely proven (money-safety terminals pinned by tests proven non-vacuous via logic-inversion; the load-bearing no-source→None guard pinned via neutering — a hollow build fails both). The remaining lever is the BEHAVIORAL proof Akien named: run LIVE DS tickets one at a time against Hex and read the per-call cost_records to confirm the walk spends what the classification predicts (paid only on genuine capability ceilings, cost-ordered Ollama/Google-before-Anthropic). That needs DS online (Hex delivery + DS cost constraint lifted) — the automatic per-ticket cost TOTAL to watch it by is T-inference-ledger-domain-tier-columns. Also the additive-test proof_emitter gap (T-proof-emitter-additive-surface-mode).",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
