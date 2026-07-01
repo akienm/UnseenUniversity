@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.hex-registered-as-first-owned-local-sour.T-ds-local-ollama-route.20260701.061844044611",
+  "emitter": "cc.0",
+  "namespace": [
+    "hex-registered-as-first-owned-local-sour",
+    "T-ds-local-ollama-route"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-01T06:18:44.044611",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-local-ollama-route"
+    ],
+    "commits": [
+      "2c3d613eb0de5f3ec8a017b2c54f3e17581c82bf"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Hex registered as first owned-local source (increment 3)",
+    "intention": "With Hex's roster registered on source 'ollama' (owned_local, $0), a worker dispatch resolves to source 'ollama' (Hex) — the cheapest capable source — instead of a cloud source, lifting the DS cost constraint",
+    "test": "tests/inference/test_hex_registration.py::test_worker_routes_to_hex_when_available",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_hex_registration.py::test_worker_routes_to_hex_when_available",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________________ test_worker_routes_to_hex_when_available ___________________\n\n    def test_worker_routes_to_hex_when_available():\n        engine = RulesEngine(_hex_sources(), default_registry(), list(_DEFAULT_RULES))\n        decision = engine.route(\"worker\")\n        assert decision is not None\n>       assert decision.source.name == \"ollama\", f\"worker should land on Hex, got {decision.source.name}\"\nE       AssertionError: worker should land on Hex, got google_free\nE       assert 'google_free' == 'ollama'\nE         \nE         - ollama\nE         + google_free\n\ntests/inference/test_hex_registration.py:80: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_hex_registration.py::test_worker_routes_to_hex_when_available\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "2c3d613eb0de5f3ec8a017b2c54f3e17581c82bf",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-ds-local-ollama-route.20260630.165951787762.json",
+      "tests/inference/test_router_schema.py",
+      "unseen_university/devices/dicksimnel/device.py",
+      "unseen_university/devices/inference/models_registry.py",
+      "unseen_university/devices/inference/routing_buckets.py",
+      "unseen_university/devices/inference/rules_engine.py"
+    ],
+    "ticket": "T-ds-local-ollama-route",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
