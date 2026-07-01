@@ -1,0 +1,1 @@
+- ✅ T-ds-local-ollama-route CLOSED PROVEN (worker→Hex red→green @2c3d613e) — Hex registered owned-local; DS routes by worker tier; LIVE-VERIFIED minion/worker/analyst→ollama@Hex; DS cost constraint LIFTING. Ungated T-ds-hello-build + T-ds-smoke-pytest (DS build chain) + increment 4 (live re-measure).
