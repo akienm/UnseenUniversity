@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-fix-inference-tier-escalation-tests.20260630.210719461617",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-inference-tier-escalation-tests"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T03:07:19.461617+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-fix-inference-tier-escalation-tests"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-inference-tier-escalation-tests",
+    "title": "[sprint] Fix 3 pre-existing failures in test_inference_tier_escalation.py",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Tests",
+      "PreExisting"
+    ],
+    "intention": "I intend that the inference escalation test suite is green, so a real regression there is visible instead of masked by standing red.",
+    "description": "**Problem:** 3 tests in tests/inference/test_inference_tier_escalation.py fail at clean HEAD (confirmed via worktree 2026-06-30, unrelated to T-router-data-schema): TestEscalationCeiling::test_hop_0_passes_through, TestEscalationHandoff::test_hop_1_prepends_summary_to_system, TestEscalationHandoff::test_hop_1_no_prior_attempt_no_prepend. All fail with `TypeError: 'NoneType' object is not subscriptable` at `mock_source.call.call_args[0][0]` — mock_source.call was never invoked because dispatch aborts with SYSTEM_ALARM 'no live source for task_class=worker model=openai/gpt-4o-mini'. The test sets `d._sources = {'openrouter': mock_source}` and dispatches, but the model 'openai/gpt-4o-mini' resolves through the rules engine to no live source. Test is stale vs current dispatch/routing wiring.\n**Proposed shape:** determine whether the test's mock-source injection or the model id is stale vs current device.dispatch routing; fix the fixture (register the mock under the resolved source_name / use a model the registry knows, or stub route()) so the escalation-hop assertions actually exercise dispatch. Do NOT change dispatch behavior to satisfy the test unless dispatch is genuinely wrong — verify which side is stale first.\n**Affected files:** tests/inference/test_inference_tier_escalation.py (likely fixture only); possibly unseen_university/devices/inference/device.py if dispatch is the stale side.\n**Design rules:** integration tests hit real Postgres, no mocks for DB; ALL inference through the Proxy; no SQLite.\n**Scope boundary:** these 3 tests only. Not the router epic.\n**Test plan:** the 3 named tests go green; no other inference test regresses.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.2,
+    "status": "sprint",
+    "created_at": "2026-07-01T03:07:16.784027+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T03:07:16.828287+00:00"
+  }
+}
