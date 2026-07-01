@@ -283,8 +283,71 @@ _SEED: list[ModelSpec] = [
         context_window=131_072,
         tags=["local", "hex", "reasoning", "analyst"],
         difficulty_capable="code",
-        notes="Hex local analyst — 14B reasoner. Serves the analyst (reasoning) tier; NOT "
-              "design/architecture (that stays Claude-direct). 9GB.",
+        notes="Hex local analyst — 14B reasoner. Serves the analyst (reasoning) tier at the "
+              "CODE difficulty rung; the bigger deepseek-r1:32b (below) is the coding domain's "
+              "design/architect rung. 9GB.",
+        created_at="2026-07-01T00:00:00Z",
+    ),
+    # ── Coding domain's full ladder (D-coding-domain-hex-cloud-ladder-2026-07-01) ──
+    # Hex-local first (owned_local, $0, cheapest); Ollama Cloud subscription only for
+    # the SAME-family flagships too large for Hex's 32GB RAM to hold. No OR/Anthropic/
+    # Google belongs on this domain's ladder — pure Ollama, local then cloud-subscription.
+    ModelSpec(
+        model_id="qwen3-coder:30b",
+        source_name="ollama",
+        tier="worker",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=256_000,
+        tags=["local", "hex", "coding", "worker"],
+        difficulty_capable="code",
+        features=["tools"],
+        domains=["coding"],
+        notes="Hex local worker — bigger in-family coder above qwen2.5-coder:14b. 18GB.",
+        created_at="2026-07-01T00:00:00Z",
+    ),
+    ModelSpec(
+        model_id="deepseek-r1:32b",
+        source_name="ollama",
+        tier="analyst",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=131_072,
+        tags=["local", "hex", "reasoning", "architect"],
+        difficulty_capable="design",
+        domains=["coding"],
+        notes="Hex local architect — fills the coding domain's design/architect rung (was "
+              "empty). 19GB. First local candidate DS's escalation walk can reach at "
+              "required_difficulty='design'.",
+        created_at="2026-07-01T00:00:00Z",
+    ),
+    ModelSpec(
+        model_id="qwen3-coder:480b-cloud",
+        source_name="ollama_cloud",
+        tier="worker",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=256_000,
+        tags=["coding", "flat-rate", "ollama-pro", "cloud-flagship"],
+        difficulty_capable="code",
+        features=["tools"],
+        domains=["coding"],
+        notes="Ollama Cloud subscription flagship coder — too large for Hex's 32GB RAM. "
+              "Escalation target only when Hex's local coders are exhausted/unavailable.",
+        created_at="2026-07-01T00:00:00Z",
+    ),
+    ModelSpec(
+        model_id="deepseek-v3.1:671b-cloud",
+        source_name="ollama_cloud",
+        tier="analyst",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=131_072,
+        tags=["reasoning", "flat-rate", "ollama-pro", "cloud-flagship", "architect"],
+        difficulty_capable="design",
+        domains=["coding"],
+        notes="Ollama Cloud subscription flagship architect — too large for Hex's 32GB RAM. "
+              "Escalation target only when Hex's local deepseek-r1:32b is exhausted/unavailable.",
         created_at="2026-07-01T00:00:00Z",
     ),
     ModelSpec(

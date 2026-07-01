@@ -97,6 +97,17 @@ _DEFAULT_RULES: list[RoutingRule] = [
     RoutingRule(5, "worker", "qwen2.5-coder:14b", "ollama", "worker→qwen2.5-coder:14b/hex"),
     RoutingRule(4, "minion", "llama3.2:3b", "ollama", "minion→llama3.2:3b/hex"),
     RoutingRule(4, "analyst", "deepseek-r1:14b", "ollama", "analyst→deepseek-r1:14b/hex"),
+    # Coding domain's full ladder (D-coding-domain-hex-cloud-ladder-2026-07-01). ALL filed
+    # under task_class='worker': DS always dispatches with task_class='worker' and relies on
+    # required_difficulty (the escalation-walk override) to reach the design rung — a rule
+    # filed under task_class='designer'/'analyst' would be invisible to DS's candidate pool
+    # (route() filters by rule.task_class == task_class BEFORE required_difficulty is ever
+    # considered), so the design-difficulty models below MUST live here, not under a
+    # designer-tier rule, or the escalation walk finds zero candidates and false-halts.
+    RoutingRule(6, "worker", "qwen3-coder:30b", "ollama", "worker→qwen3-coder:30b/hex"),
+    RoutingRule(7, "worker", "deepseek-r1:32b", "ollama", "worker→deepseek-r1:32b/hex"),
+    RoutingRule(12, "worker", "qwen3-coder:480b-cloud", "ollama_cloud", "worker→qwen3-coder:480b/ollama-pro"),
+    RoutingRule(13, "worker", "deepseek-v3.1:671b-cloud", "ollama_cloud", "worker→deepseek-v3.1:671b/ollama-pro"),
     # Analyst tier — usage-based fallback
     RoutingRule(3, "analyst", "deepseek/deepseek-v4-flash", "openrouter", "analyst→deepseek-v4-flash/OR"),
     # Analyst tier — Ollama Pro flat-rate

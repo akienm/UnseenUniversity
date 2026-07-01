@@ -137,3 +137,97 @@ def test_ds_routes_by_tier_not_explicit_model():
     assert req.model == "", f"DS must not pin a model — got {req.model!r}"
     assert req.task_class == "worker"
     assert req.domain == "coding"
+
+
+# ── T-inference-coding-ladder-hex-cloud: the coding domain's full ladder ──────
+#
+# Hex-local first (owned_local, $0), Ollama-Cloud subscription only for the same-family
+# flagships too large for Hex's 32GB RAM. No OR/Anthropic/Google on this domain's ladder.
+#
+# CRITICAL: DS always dispatches with task_class='worker' and relies on required_difficulty
+# (the escalation-walk override) to reach the design rung. route() filters its candidate pool
+# by rule.task_class == task_class BEFORE required_difficulty is ever considered — so a design-
+# difficulty model filed under a 'designer'/'analyst' RoutingRule would be invisible to DS's
+# actual call shape. These tests pin task_class='worker' throughout, matching DS.
+
+CODING_LADDER_LOCAL = ("qwen3-coder:30b", "deepseek-r1:32b")
+CODING_LADDER_CLOUD = ("qwen3-coder:480b-cloud", "deepseek-v3.1:671b-cloud")
+
+
+def test_coding_ladder_local_models_registered_at_code_and_design():
+    reg = default_registry()
+    assert reg.get("qwen3-coder:30b").difficulty_capable == "code"
+    assert reg.get("deepseek-r1:32b").difficulty_capable == "design"
+    for mid in CODING_LADDER_LOCAL:
+        spec = reg.get(mid)
+        assert spec.source_name == "ollama"
+        assert "coding" in spec.domains
+        assert spec.dollars_per_unit == 0.0
+
+
+def test_coding_ladder_cloud_models_registered_at_code_and_design():
+    reg = default_registry()
+    assert reg.get("qwen3-coder:480b-cloud").difficulty_capable == "code"
+    assert reg.get("deepseek-v3.1:671b-cloud").difficulty_capable == "design"
+    for mid in CODING_LADDER_CLOUD:
+        spec = reg.get(mid)
+        assert spec.source_name == "ollama_cloud"
+        assert "coding" in spec.domains
+        assert spec.dollars_per_unit == 0.0
+
+
+def test_design_difficulty_coding_request_routes_to_hex_first():
+    """The escalation walk sends task_class='worker' + required_difficulty='design' — this
+    MUST land on the local architect (deepseek-r1:32b/ollama), not the cloud one, when Hex
+    is up (cost_class=owned_local beats subscription)."""
+    engine = RulesEngine(_hex_sources(), default_registry(), list(_DEFAULT_RULES))
+    decision = engine.route("worker", domain="coding", required_difficulty="design")
+    assert decision is not None
+    assert decision.model.model_id == "deepseek-r1:32b"
+    assert decision.source.name == "ollama"
+
+
+def test_design_difficulty_hex_down_picks_cheapest_capable():
+    """Intention: lowest cost with the required capabilities. Hex down → the cheapest
+    remaining CAPABLE candidate wins. A capable generalist on a cheaper cost_class
+    (gemini-2.5-flash / google_free, free_throttled) legitimately beats the coding
+    domain's own subscription cloud flagship — cheaper + capable is the whole rule."""
+    engine = RulesEngine(_hex_sources(ollama_available=False), default_registry(), list(_DEFAULT_RULES))
+    decision = engine.route("worker", domain="coding", required_difficulty="design")
+    assert decision is not None
+    assert decision.source.name == "google_free"
+    assert decision.model.model_id == "gemini-2.5-flash"
+
+
+def test_design_difficulty_family_cloud_flagship_wins_when_it_is_cheapest_available():
+    """With Hex AND the free generalist tier down, the coding domain's own cloud flagship
+    (deepseek-v3.1:671b-cloud, subscription) is the cheapest capable candidate left — proving
+    the cloud rung is reachable and correctly ordered when nothing cheaper is available."""
+    reg = SourceRegistry()
+    reg.register(_src("ollama", "owned_local", available=False))
+    reg.register(_src("google_free", "free_throttled", available=False))
+    reg.register(_src("ollama_cloud", "subscription"))
+    engine = RulesEngine(reg, default_registry(), list(_DEFAULT_RULES))
+    decision = engine.route("worker", domain="coding", required_difficulty="design")
+    assert decision is not None
+    assert decision.model.model_id == "deepseek-v3.1:671b-cloud"
+    assert decision.source.name == "ollama_cloud"
+
+
+def test_code_difficulty_coding_request_still_prefers_cheapest_hex_coder():
+    """Registering the bigger local/cloud coders must not disturb the existing code-tier
+    preference for the cheapest available Hex coder."""
+    engine = RulesEngine(_hex_sources(), default_registry(), list(_DEFAULT_RULES))
+    decision = engine.route("worker", domain="coding", required_difficulty="code")
+    assert decision is not None
+    assert decision.source.name == "ollama"
+
+
+def test_design_difficulty_models_only_reachable_via_worker_task_class():
+    """Regression pin for the wiring gap this ticket fixed: filing the new rules under
+    task_class='worker' (matching DS) is what makes them reachable at all — proves the
+    routing rules exist under 'worker', not a dead 'designer'/'analyst' rule DS never sends."""
+    worker_rules = [r for r in _DEFAULT_RULES if r.task_class == "worker"]
+    worker_model_ids = {r.model_id for r in worker_rules}
+    assert "deepseek-r1:32b" in worker_model_ids
+    assert "deepseek-v3.1:671b-cloud" in worker_model_ids
