@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-D-inference-domain-routing.20260701.105830973150",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-inference-domain-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T16:58:30.973150+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-consequence-D-inference-domain-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-inference-domain-routing",
+    "title": "[sprint] Consequence check: domain routing + reconciled escalation + pin-gate + cost record",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "priority": 0.3,
+    "gate": "2026-07-15",
+    "status": "sprint",
+    "description": "**What changed:** routing gains a domain filter + domain-owned prompt; all production model-pins migrated to domain-routing and the explicit-model path gated to 3 sanctioned uses; escalation reconciled to one within-domain difficulty-walk that auto-escalates to the top cloud tier and system_alarms only past it (T-router-failure-bump-escalation); per-call cost/outcome recorded with domain+tier. **Predicted unintended effects:** (1) domain filter over-narrows — a coding call finds NO candidate and system_alarms where an untagged generalist would have worked (back-compat rule: untagged=generalist must match domain=''); (2) migrated devices now get cheapest-capable instead of their old pinned model — QUALITY may regress on reader/intent/summarizer/critic even as cost drops (the intended trade, but watch DONE%/quality per device); (3) the reconciled escalation REMOVES DS's old return-to-CC endpoint and auto-runs the top cloud tier (Claude, paid, unattended) on capability failure — watch for unexpected Claude dispatches and their cost; (4) domain->prompt move could alter the DS prompt if the extracted text isn't byte-identical -> DONE% regression. **Signals to watch:** routing crossing-log shows domain+tier+dollars+outcome per ticket; grep for coding calls with empty candidate set; grep for rejected pins; per-ticket cost lines present; DS DONE% + avg-iterations before/after migration; count + cost of design-tier (Claude) dispatches. **Gate condition:** check by 2026-07-15 or once the batch has run on >=3 live tickets. **Affected files:** None — observation only. **Design rules:** none apply. **Scope boundary:** observe predicted effects; annotate outcome as occurred/clear/partial and close. **Completion criteria:** predicted effects observed and annotated occurred/clear/partial; ticket closed with the observation recorded.\n**Test plan:** no tests — observation ticket.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-01T16:58:26.363598+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the predicted side-effects of domain-routing are observed on live tickets before any of them becomes a silent regression.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T16:58:26.363731+00:00",
+    "inferred_intention": "create_build_target",
+    "inferred_intention_id": "fa88319d-405c-40e9-bb50-2b8dd0b35a8e"
+  }
+}

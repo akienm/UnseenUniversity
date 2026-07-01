@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-domain-prompt.20260701.105830487167",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-domain-prompt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T16:58:30.487167+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-domain-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-domain-prompt",
+    "title": "[sprint] Router: system prompt is data keyed by domain (coding populated from DS prompt)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router"
+    ],
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "priority": 0.45,
+    "gate": "T-inference-domain-tag",
+    "status": "sprint",
+    "description": "**Problem:** the system prompt is hardcoded per-caller (DS's builder prompt lives in DS/ToolLoop). Intention-Based Development declares 'the system IS domain-routed for BOTH model and prompt' — so the prompt must be data keyed on domain, not baked into the caller; otherwise adding a domain needs code. **Proposed shape:** introduce a domain->prompt lookup (small data map under devices/inference/) with ONE live entry: coding = the current DS builder/tool-loop system prompt MOVED VERBATIM. DS resolves its system prompt by domain. Per-model prompt adapters are explicitly OUT (note as a future optional descriptor field). **First step — separability check:** confirm the DS 'coding' system prompt is cleanly separable from tool-loop/DONE-envelope mechanics; if tangled, extract the domain-prompt portion cleanly first (that separation IS part of this ticket, and is why 'byte-identical' is scoped to the domain-prompt text, not the whole assembled system message). **Affected files:** a domain-prompt data file under unseen_university/devices/inference/, rules_engine.py or a small prompt resolver, devices/dicksimnel/ (consume domain-resolved prompt). **Design rules:** NO SQLITE; prompt is data keyed by domain; ZERO behavior change for coding. **Scope boundary:** IN: domain->prompt seam with coding populated from the existing DS prompt; DS consumes it by domain; separability extraction if needed. OUT: any NEW domain's prompt, per-model adapters, prompt rewrites. **Test plan (stub-first red->green):** (1) resolving prompt for domain='coding' returns the existing DS builder-prompt text byte-identical to today's; (2) a DS run uses the domain-resolved prompt and still reaches DONE on the smoke fixture; (3) a second stub domain entry resolves independently — proving the seam is data-driven. **Completion criteria:** prompt selected by domain; coding prompt text identical to current; adding a domain's prompt is a data edit with no selector change; tests green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-01T16:58:11.312045+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the system prompt is a property of the task's domain, so a new domain arrives entirely as data (its eligible models + its prompt) with no selector code change.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T16:58:11.312160+00:00",
+    "inferred_intention": "create_build_target",
+    "inferred_intention_id": "16d29d17-f367-4f85-b06f-add163c7da03"
+  }
+}

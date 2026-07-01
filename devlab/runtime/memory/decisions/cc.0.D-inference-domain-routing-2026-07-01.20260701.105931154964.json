@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.D-inference-domain-routing-2026-07-01.20260701.105931154964",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-inference-domain-routing-2026-07-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-01T10:59:31.154964",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "title": "Inference routing: DOMAIN is the container for model+prompt; caller gives {domain,urgency} only; one reconciled within-domain escalation ending in system_alarm; learn every call",
+    "status": "open",
+    "date": "2026-07-01",
+    "parent_decision": "D-inference-cost-optimizing-router-2026-06-30",
+    "spawned_tickets": [
+      "T-inference-domain-tag",
+      "T-inference-domain-prompt",
+      "T-inference-migrate-pinners",
+      "T-inference-pin-gate-enforce",
+      "T-inference-cost-learn-verify",
+      "T-consequence-D-inference-domain-routing"
+    ],
+    "reshaped_tickets": [
+      "T-router-failure-bump-escalation"
+    ],
+    "text": "# D-inference-domain-routing-2026-07-01\n**title:** Inference routing = DOMAIN as the container for model + prompt; caller specifies {domain, urgency} only; one reconciled within-domain escalation driver ending in system_alarm; learn from every call\n**date:** 2026-07-01\n**status:** open\n**parent:** D-inference-cost-optimizing-router-2026-06-30 (this refines the epic; increments 1-4 shipped)\n**spawned_tickets:** T-inference-domain-tag, T-inference-domain-prompt, T-inference-migrate-pinners, T-inference-pin-gate-enforce, T-inference-cost-learn-verify, T-consequence-D-inference-domain-routing\n**reshaped:** T-router-failure-bump-escalation (increment 5 — NEEDS-AKIEN blocker resolved here)\n\n## Decision narrative\nRefines the cost-optimizing-router epic with two things the epic left open: (1) a DOMAIN dimension, and (2) the escalation DRIVER (which had no live driver).\n\n**Domain.** The caller specifies {domain, urgency} and NOTHING else — never a model name (invisible to caller). Models are tagged with the domains they are good at (coding is the first; others surface as we discover models suited to tasks we don't know yet). DOMAIN is the container for BOTH model-eligibility AND the prompt (how you ASK for coding is a fact about coding, not about the model) — built now, not deferred, because Intention-Based Development declares 'the system IS domain-routed for model and prompt' and deferring a piece contradicts the declaration. DIFFICULTY/tier stays a SEPARATE orthogonal axis (folding it into domain would be the cross-product — more complex, not less). Selector: filter by (domain-capable) x (difficulty >= needed) x (urgency fits time bucket) x (features cover) -> argmin(dollars). A new domain OR provider is a data edit, zero selector code.\n\n**Escalation driver (resolves T-router-failure-bump-escalation's NEEDS-AKIEN).** Three half-built mechanisms existed (never-incremented escalation_hop in device.py; degenerate _TIER_CASCADE in dicksimnel; DS's ad-hoc prior-attempt append) and none was live. Reconciled to ONE: the driver is DS._run_inference (caller-side — device.py runs one call and cannot see 'did-not-reach-DONE', a ToolLoop terminal). AVAILABILITY failure (call raised/timeout/source-down) is NOT escalation — the source is absent from candidates, next-cheapest wins at the same difficulty ('Hex-DOWN is not a branch'). ONLY a CAPABILITY failure (reached a terminal but never DONE) bumps difficulty one rung within the same domain and re-runs the selector with escalation_hop+1. Akien set the endpoint: the old return-to-CC endpoint is REMOVED; capability failure auto-escalates UP to the top cloud tier for the domain (paid, unattended); when the TOP tier still can't do it -> inference failure -> system_alarm -> HALT the ticket for analysis.\n\n**Learn every call + escape hatch.** Every dispatch records {domain, tier, source, tokens, dollars, outcome} per ticket ('look at the logs on a ticket'). The ONLY sanctioned model-pinning is (a) testing the inference system itself, (b) Akien's experiments, (c) model-competition testing — gated by a pin_reason; ~10 current production pinners (reader/intent/summarizer/critic/minion/librarian/scraps/igor-cognition; evaluator=competition) are migrated to domain-routing now (safe: nothing running). Plan for OR + metered providers (metered Ollama/Anthropic/many more) in the DATA ($/unit) without enabling them; D-minion-model-upgrade-2026-06-01 (qwen2.5-coder-32b/deepseek-v3/gemini-2.0-flash/qwen3.5-9b, SWE-bench ranked) is the worked coding-domain slate for when OR is on.\n\n## Hypothesis\nAfter these ship, any caller specifies only {domain, urgency} and the router picks the cheapest domain-capable source that fits urgency; on a capability failure it walks difficulty within the domain and, past the top cloud tier, raises system_alarm and halts the ticket; production model-pinning is gone (only the 3 sanctioned uses remain, gated by pin_reason); every call records domain+tier+source+cost+outcome per ticket; and adding a domain or provider is a data edit with no selector-code change.\n\n## Measurement Signal\nThe routing crossing-log line names {domain, difficulty-tier, chosen source, dollars, outcome} and is greppable per ticket; grep shows the cheapest domain-capable source winning and escalation firing ONLY on did-not-reach-DONE (never on a timeout/down); grep shows ZERO unsanctioned production model-pins; adding the next domain/provider touches only data files (verified by diff). Validation method (Akien): prove on LIVE tickets, ONE at a time, watching the actual per-ticket cost.\n\n## Intention\nThe caller gets what they ask for, no fussing; we give it to them as cheaply as possible every single time; and we learn from it every single time — all encapsulated — except for testing the inference system itself, for Akien's experiments, and for model-competition testing."
+  }
+}

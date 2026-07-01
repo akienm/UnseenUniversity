@@ -12,3 +12,4 @@ Done: Day-closed 2026-06-30 (slate ✅ CLOSED, GitHub Discussion #19, roll-up no
 Next: Restart, then resume — operational Granny→bus→DS.0 dispatch on the T-ds-smoke-hello fixture, OR design increment 5's escalation-driver (deferred: escalation_hop has no live driver).
 
 ## In-flight: Session paused for restart after day-close 2026-06-30 + the DS-on-Hex keystone; tree clean, all pushed. Resume on operational DS.0 dispatch or increment 5 escalation-driver design.
+- D-inference-domain-routing-2026-07-01: domain=container(model+prompt); caller gives {domain,urgency} only; reconciled DS-driven within-domain escalation -> system_alarm; learn every call; pin only for test/experiment/competition — T-inference-domain-tag, T-inference-domain-prompt, T-inference-migrate-pinners, T-inference-pin-gate-enforce, T-inference-cost-learn-verify, T-consequence-D-inference-domain-routing (+reshaped T-router-failure-bump-escalation to L)
