@@ -195,7 +195,7 @@ class _BootstrapPathManager:
           3. macOS    (sys.platform == 'darwin'):  ~/OneDrive/AkiensMedia/Ebooks
              (falls back to ~/Library/CloudStorage/OneDrive-Personal/AkiensMedia/Ebooks
               if the primary path doesn't exist — newer macOS OneDrive layout)
-          4. Linux: ~/.unseen_university/akien/onedrive/AkiensMedia/Ebooks  (CIFS mount)
+          4. Linux: /media/akien/onedrive/AkiensMedia/Ebooks  (CIFS mount)
         """
         import sys
 
@@ -216,8 +216,9 @@ class _BootstrapPathManager:
                 / "AkiensMedia"
                 / "Ebooks"
             )
-        # Linux — OneDrive accessed via CIFS mount under runtime root
-        return self._runtime / "akien" / "onedrive" / "AkiensMedia" / "Ebooks"
+        # Linux — OneDrive CIFS mount at /media/akien/onedrive (canonical;
+        # supersedes the retired akien-home symlink bridge)
+        return Path("/media") / "akien" / "onedrive" / "AkiensMedia" / "Ebooks"
 
     @property
     def calibre_library(self) -> Path:
