@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-router-live-resource-read",
-    "title": "[in_progress] Inference router increment 4 — LIVE re-measurement so time_buckets never go stale",
+    "title": "Inference router increment 4 — LIVE re-measurement so time_buckets never go stale",
     "size": "M",
     "tags": [
       "Inference",
@@ -31,18 +31,24 @@
     "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
     "gate": null,
     "priority": 0.5,
-    "status": "in_progress",
+    "status": "closed",
     "created_at": "2026-07-01T02:51:35.113604+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Live re-measurement shipped: resource_monitor.ResourceMonitor keeps a rolling latency window per source, maps the MEDIAN to a time_bucket (interactive<=10s/minutes<=300s/overnight) with hysteresis, writes back Source.time_bucket on change and logs the transition; device.py dispatch feeds every observed latency in. 8 tests green incl. promote/demote, hysteresis (outlier doesn't flip), transition logged, selector-reroutes-after-remeasure (the Hex-collapsed-a-bucket scenario), and a dispatch-wiring test. 59 inference tests green.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T12:37:39.125571+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-01T02:51:35.113686+00:00"
+    "scraps_validated": "2026-07-01T02:51:35.113686+00:00",
+    "proven": false,
+    "unproven_reason": "proof_emitter requires the red state to fail on an ASSERTION, but for a NEW module the test-only red stub (cf0bb5ef) fails on ModuleNotFoundError (collection error), which it rejects. Correct pattern for a new module: commit a stub-MODULE first (symbols resolve, behavior wrong) so the red is an assertion, then impl. I committed test-only-stub then full impl. Mechanism fully proven by 8 green tests. Lever: adopt stub-module-first for new-module increments, OR a proof_emitter mode that accepts a symbol-stub as authentic red.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
