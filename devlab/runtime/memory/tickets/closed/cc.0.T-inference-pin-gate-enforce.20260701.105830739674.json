@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-inference-pin-gate-enforce",
-    "title": "[in_progress] Router: explicit-model path requires a sanctioned pin_reason, else reject + system_alarm",
+    "title": "Router: explicit-model path requires a sanctioned pin_reason, else reject + system_alarm",
     "size": "S",
     "tags": [
       "Inference",
@@ -28,14 +28,14 @@
     "decision_id": "D-inference-domain-routing-2026-07-01",
     "priority": 0.4,
     "gate": null,
-    "status": "in_progress",
+    "status": "closed",
     "description": "**Problem:** once all production callers route by domain (T-inference-migrate-pinners), the explicit-model path must be CLOSED to anything but the 3 sanctioned uses, or it silently reopens as an escape hatch that defeats 'cheapest every time' (CP6 — no escape hatches). **Proposed shape:** add `pin_reason` to the request (shim.py) — one of {inference_test, experiment, model_competition}; device.py's explicit-model branch requires a recognized pin_reason. CHOSEN DEFAULT (mine, CP6-aligned, not attributed to Akien): a pinned model with NO sanctioned pin_reason is REJECTED with a clear error + system_alarm + loud log — never silently rerouted (silent reroute would hide a caller doing the wrong thing). Unpinned requests route by {domain, urgency} as normal. **Affected files:** unseen_university/devices/inference/shim.py (pin_reason field, if not already added by the migrate ticket), devices/inference/device.py (explicit-model branch gate + system_alarm + logging). **Design rules:** NO SQLITE; log the routing/trust decision at the crossing; CP6 — a pin must name its sanctioned purpose. **Scope boundary:** IN: pin_reason gate + reject + system_alarm + logging on the explicit-model path. OUT: the migration itself (gated before this), domain routing (T-inference-domain-tag). **Test plan (stub-first red->green):** (1) a pin with pin_reason=model_competition dispatches to that exact model; (2) a pin with NO pin_reason is REJECTED (raises + system_alarm), does not dispatch to the pinned model; (3) an unpinned request routes via the selector by domain; (4) the crossing-log names the pin purpose on sanctioned pins and the rejection on unsanctioned ones. **Completion criteria:** explicit-model dispatch requires a sanctioned pin_reason; unsanctioned pin rejected + system_alarm + logged; unpinned always routes by domain; tests green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-07-01T16:58:18.841796+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Pin-gate enforced: a non-empty request.model with an unsanctioned pin_reason is rejected at dispatch top (raise ValueError + system_alarm 'unsanctioned-model-pin:<model>' + loud log), never silently rerouted; unpinned routes by domain. Runtime-safe (all production paths route by domain; DS cascade dispatches model=''). 4 pin-gate tests green + 6 escalation tests fixed green (incl. my ticket-3 tier_transition regression + 3 pre-existing hop tests the default change enabled). Filed T-inference-legacy-mode-dispatch-tests-red + T-inference-mini-rack-routing-tests-red for orthogonal pre-existing reds. Commit 1bfbc843.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T19:47:30.123537+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-01T16:58:18.841901+00:00",
     "inferred_intention": "create_build_target",
-    "inferred_intention_id": "977d16e5-8113-4199-be18-9a4a17f11489"
+    "inferred_intention_id": "977d16e5-8113-4199-be18-9a4a17f11489",
+    "proven": false,
+    "unproven_reason": "Same additive-test lever as the rest of the batch: the gate's authentic red (unsanctioned pin raises where pre-impl it routed) IS a real behavioral assertion, but proof_emitter's diff-inversion strips the new test_pin_gate.py file (added-file → ImportError collateral, not assertion-red). Needs a proof mode that binds a repo-invariant/behavioral test at HEAD without requiring the test to pre-exist the impl commit.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

@@ -25,3 +25,5 @@ Next: Resume via /sprint-batch decision:D-inference-domain-routing-2026-07-01 or
 ## In-flight: sprint-batch D-inference-domain-routing: 1/6 closed (T-inference-domain-tag, commit 91531831, shipped-unproven — additive-API proof lever). Next: T-inference-domain-prompt.
 
 ## In-flight: sprint-batch D-inference-domain-routing: 2/6 closed (domain-tag 91531831, domain-prompt bb3af29d, both shipped-unproven — additive-API + behavior-preserving-move proof levers). Next: T-inference-migrate-pinners.
+
+## In-flight: sprint-batch D-inference-domain-routing: 3/6 closed (domain-tag 91531831, domain-prompt bb3af29d, migrate-pinners 258168b8, all shipped-unproven). Filed T-librarian-inference-onto-proxy. Next: T-inference-pin-gate-enforce.
