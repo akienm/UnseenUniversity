@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-mini-rack-routing-tests-red.20260701.134619013981",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-mini-rack-routing-tests-red"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T19:46:19.013981+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-mini-rack-routing-tests-red"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-mini-rack-routing-tests-red",
+    "title": "[sprint] Pre-existing: 3 routing-selector tests red (local_ollama naming + google_free preference)",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Router",
+      "Tests"
+    ],
+    "description": "**Problem (pre-existing, confirmed red at clean HEAD before the domain-routing batch):** three routing tests fail, orthogonal to domain-tag/prompt/migrate/pin-gate: (1) tests/inference/test_mini_rack.py::test_rules_worker_routes_to_openrouter and (2) ::test_rules_batch_routes_to_local_ollama_at_night — both reference a source named 'local_ollama' while the default rules use 'ollama' (source-name drift; test_no_local_ollama_source_name_in_default_rules already asserts the rules dropped 'local_ollama', so these two tests are stale); (3) tests/inference/test_dicksimnel.py::TestORCostGate::test_worker_google_free_preferred_over_openrouter_when_available — asserts free_throttled beats token_direct but the fixture setup no longer resolves that ordering. **Proposed shape:** reconcile the two mini_rack tests to the current source names (ollama, ollama_cloud) or delete if superseded; re-fixture the google_free-preference test so the cost_class ordering it asserts is actually exercised. **Affected files:** tests/inference/test_mini_rack.py, tests/inference/test_dicksimnel.py. **Design rules:** route by {domain, task_class}; cost_class ordering owned-local < free_throttled < subscription < token_direct. **Scope boundary:** IN: the 3 stale routing tests. OUT: production routing behavior (unchanged; these are test-fixture staleness). **Test plan:** the 3 tests pass or are removed as superseded; no new reds. **Completion criteria:** tests/inference/ is green for these 3.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.25,
+    "status": "sprint",
+    "intention": "I intend that the router's test suite reflects the current source roster and cost taxonomy, so a green run actually means routing is correct.",
+    "created_at": "2026-07-01T19:46:11.264688+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T19:46:11.312045+00:00"
+  }
+}

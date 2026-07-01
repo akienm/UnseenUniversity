@@ -26,6 +26,7 @@ def _make_device():
     d._rules.route.return_value = None  # fall through to legacy mode
     d._sources = {}
     d._models = default_registry()
+    d._monitor = MagicMock()  # ResourceMonitor stub — dispatch records observed latency
     return d
 
 

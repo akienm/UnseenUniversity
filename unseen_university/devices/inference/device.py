@@ -28,7 +28,11 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
-from unseen_university.devices.inference.shim import InferenceRequest, InferenceResponse
+from unseen_university.devices.inference.shim import (
+    SANCTIONED_PIN_REASONS,
+    InferenceRequest,
+    InferenceResponse,
+)
 from unseen_university.devices.inference.sources import (
     SourceRegistry,
     default_registry as _default_sources,
@@ -267,6 +271,36 @@ class InferenceDevice(BaseDevice):
             request.foreground,
             request.escalation_hop,
         )
+
+        # Pin-gate (T-inference-pin-gate-enforce, CP6 — no escape hatches): a pinned
+        # `model` must name a sanctioned purpose (SANCTIONED_PIN_REASONS). An
+        # unsanctioned pin is REJECTED loudly — raise + system_alarm — never silently
+        # rerouted; a silent reroute would hide a caller defeating 'cheapest every
+        # time'. Unpinned (model='') requests route by {domain, task_class} as normal.
+        if request.model and request.pin_reason not in SANCTIONED_PIN_REASONS:
+            from unseen_university import system_alarms
+
+            sanctioned = sorted(SANCTIONED_PIN_REASONS)
+            system_alarms.raise_alarm(
+                signature=f"unsanctioned-model-pin:{request.model}",
+                caller=request.agent_id or "inference.device",
+                message=(
+                    f"rejected unsanctioned model pin {request.model!r} "
+                    f"(pin_reason={request.pin_reason!r}, sanctioned={sanctioned}) — "
+                    f"caller must route by {{domain, task_class}} or name a sanctioned pin_reason"
+                ),
+                fatal=False,
+            )
+            log.error(
+                "dispatch: REJECTED unsanctioned model pin=%s pin_reason=%r (sanctioned=%s) — "
+                "route by {domain, task_class} instead",
+                request.model, request.pin_reason, sanctioned,
+            )
+            raise ValueError(
+                f"unsanctioned model pin {request.model!r}: pin_reason={request.pin_reason!r} "
+                f"is not sanctioned {sanctioned}. Route by domain (model=''), or pin only "
+                f"for one of {sanctioned}."
+            )
 
         # Tier escalation: enforce 2-hop ceiling and prepend attempt summary
         _MAX_ESCALATION_HOPS = 2

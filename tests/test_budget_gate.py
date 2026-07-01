@@ -126,7 +126,10 @@ class TestDispatchBudgetGate:
         from unseen_university.devices.inference.shim import InferenceRequest
 
         dev = InferenceDevice(mode="openrouter")
-        req = InferenceRequest(messages=[{"role": "user", "content": "hi"}])
+        req = InferenceRequest(
+            messages=[{"role": "user", "content": "hi"}],
+            model="gpt-4o-mini", pin_reason="inference_test",
+        )
 
         with patch(
             "unseen_university.devices.inference.budget_gate.check_balance",
@@ -145,7 +148,8 @@ class TestDispatchBudgetGate:
 
         dev = InferenceDevice(mode="openrouter", sources=SourceRegistry())
         req = InferenceRequest(
-            messages=[{"role": "user", "content": "hi"}], model="gpt-4o-mini"
+            messages=[{"role": "user", "content": "hi"}], model="gpt-4o-mini",
+            pin_reason="inference_test",
         )
 
         fake_raw = {

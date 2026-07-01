@@ -55,13 +55,17 @@ def _redirect_home(tmp_path, monkeypatch):
 
 
 def test_unknown_model_routes_to_live_source_and_alarms_when_all_down():
-    # ── phase 1: unknown model + a live ollama_cloud → reaches the live source ──
+    # ── phase 1: unknown model (sanctioned pin) + a live ollama_cloud → live source ──
+    # An unknown model resolves to no spec, so it falls through to task_class routing.
+    # Under the pin-gate the pin must be sanctioned (pin_reason) — an UNSANCTIONED
+    # unknown-model pin is now rejected, not silently rerouted.
     live = SourceRegistry()
     live.register(_FakeSource("ollama_cloud", available=True, text="LIVE-OLLAMA-CLOUD"))
     dev = InferenceDevice(mode="ollama_cloud", endpoint=None, sources=live, models=_analyst_models())
     resp = dev.dispatch(InferenceRequest(
         messages=[{"role": "user", "content": "hi"}],
-        model="totally-unknown-model-xyz", task_class="analyst", agent_id="tester",
+        model="totally-unknown-model-xyz", pin_reason="inference_test",
+        task_class="analyst", agent_id="tester",
     ))
     assert resp.finish_reason != "error", f"dead OR path still firing: {resp.text}"
     assert "LIVE-OLLAMA-CLOUD" in resp.text  # routed via rules engine, not hardcoded openrouter

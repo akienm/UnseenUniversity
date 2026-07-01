@@ -72,7 +72,8 @@ def test_local_source_yields_source_kind_local(device):
     device._rules = RulesEngine(device._sources, device._models)
     resp = device.dispatch(
         InferenceRequest(messages=[{"role": "user", "content": "hi"}],
-                         model="local-test", task_class="worker")
+                         model="local-test", task_class="worker",
+                         pin_reason="inference_test")
     )
     assert resp.source_kind == "local"
 

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-legacy-mode-dispatch-tests-red.20260701.133602836130",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-legacy-mode-dispatch-tests-red"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T19:36:02.836130+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-legacy-mode-dispatch-tests-red"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-legacy-mode-dispatch-tests-red",
+    "title": "[sprint] Pre-existing: legacy mode=openrouter/ollama direct-dispatch path + its 10 tests are red",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "TechDebt",
+      "Tests"
+    ],
+    "description": "**Problem (pre-existing, found during T-inference-pin-gate-enforce):** the legacy direct-dispatch fallback in InferenceDevice.dispatch (the `mode=openrouter`/`mode=ollama` path that fires when the rules engine returns no decision) no longer reaches its mocked HTTP call — routing with an empty SourceRegistry fails first and returns a 'no live source' error before the legacy `_or_call`/`_ollama_call` path runs. 10 tests in tests/test_inference_via_bus.py (TestDispatchOpenRouter/TestDispatchOllama) + tests/test_budget_gate.py assert the legacy path returns mocked content and are RED. Confirmed pre-existing: they fail at 94f9c17c (before the domain-routing batch) — NOT caused by domain-tag/domain-prompt/migrate-pinners/pin-gate. **Proposed shape:** decide whether the legacy direct-mode dispatch path is still wanted now that all inference routes by {domain, task_class} through the rules engine. If retained: fix so a mode-based dispatch reaches its provider (or register a mode source so routing resolves). If retired: delete the dead path + update/remove the tests to assert the domain-routing contract instead. **Affected files:** unseen_university/devices/inference/device.py (legacy mode branch), tests/test_inference_via_bus.py, tests/test_budget_gate.py. **Design rules:** NO SQLITE; ALL inference through the Proxy; route by {domain, task_class}. **Scope boundary:** IN: the legacy mode-dispatch path + its red tests. OUT: domain routing / pin-gate (already shipped). **Test plan:** the 10 currently-red tests either pass (path fixed) or are replaced by domain-routing-contract tests; no NEW reds. **Completion criteria:** legacy-mode dispatch decision made and executed; the 10 red tests resolved; suite green for these files.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.3,
+    "status": "sprint",
+    "intention": "I intend that every inference dispatch has exactly one live, tested path (route by domain through the Proxy) — no vestigial direct-mode branch that silently fails and leaves tests red.",
+    "created_at": "2026-07-01T19:35:55.875553+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T19:35:55.919951+00:00"
+  }
+}

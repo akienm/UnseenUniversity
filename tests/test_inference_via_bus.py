@@ -65,7 +65,7 @@ def _mock_urlopen(response_dict: dict):
 class TestEnvelopeTypes:
     def test_request_defaults(self):
         req = InferenceRequest(messages=[{"role": "user", "content": "hi"}])
-        assert req.model == "openai/gpt-4o-mini"
+        assert req.model == ""  # default is unpinned — route by {domain, task_class}
         assert req.max_tokens == 4096
         assert req.temperature == 0.0
         assert req.system == ""
@@ -138,7 +138,11 @@ class TestDispatchOpenRouter:
     def test_returns_response(self, monkeypatch):
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
         device = self._device()
-        req = InferenceRequest(messages=[{"role": "user", "content": "hello"}])
+        # legacy direct-dispatch path — inference-system test, sanctioned pin
+        req = InferenceRequest(
+            messages=[{"role": "user", "content": "hello"}],
+            model="openai/gpt-4o-mini", pin_reason="inference_test",
+        )
         with _mock_urlopen(_or_success("world")):
             resp = device.dispatch(req)
         assert resp.text == "world"
@@ -150,6 +154,7 @@ class TestDispatchOpenRouter:
         req = InferenceRequest(
             messages=[{"role": "user", "content": "q"}],
             system="System instruction.",
+            model="openai/gpt-4o-mini", pin_reason="inference_test",
         )
         captured = {}
         raw_open = __import__("urllib.request", fromlist=["urlopen"]).urlopen
@@ -175,7 +180,10 @@ class TestDispatchOpenRouter:
     def test_raises_when_no_api_key(self, monkeypatch):
         monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
         device = self._device()
-        req = InferenceRequest(messages=[{"role": "user", "content": "x"}])
+        req = InferenceRequest(
+            messages=[{"role": "user", "content": "x"}],
+            model="openai/gpt-4o-mini", pin_reason="inference_test",
+        )
         with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
             device.dispatch(req)
 
@@ -184,7 +192,10 @@ class TestDispatchOpenRouter:
 
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
         device = self._device()
-        req = InferenceRequest(messages=[{"role": "user", "content": "x"}])
+        req = InferenceRequest(
+            messages=[{"role": "user", "content": "x"}],
+            model="openai/gpt-4o-mini", pin_reason="inference_test",
+        )
         err = urllib.error.HTTPError(
             url="https://openrouter.ai",
             code=429,
@@ -217,7 +228,8 @@ class TestDispatchOllama:
     def test_returns_response(self):
         device = self._device()
         req = InferenceRequest(
-            messages=[{"role": "user", "content": "ping"}], model="llama3"
+            messages=[{"role": "user", "content": "ping"}], model="llama3",
+            pin_reason="inference_test",
         )
         with _mock_urlopen(_ollama_success("pong", "llama3")):
             resp = device.dispatch(req)
@@ -227,7 +239,8 @@ class TestDispatchOllama:
     def test_uses_ollama_chat_endpoint(self):
         device = self._device()
         req = InferenceRequest(
-            messages=[{"role": "user", "content": "x"}], model="llama3"
+            messages=[{"role": "user", "content": "x"}], model="llama3",
+            pin_reason="inference_test",
         )
         captured = {}
 
@@ -251,7 +264,10 @@ class TestDispatchOllama:
         import urllib.error
 
         device = self._device()
-        req = InferenceRequest(messages=[{"role": "user", "content": "x"}])
+        req = InferenceRequest(
+            messages=[{"role": "user", "content": "x"}],
+            model="llama3", pin_reason="inference_test",
+        )
         err = urllib.error.HTTPError(
             url="http://127.0.0.1:11434",
             code=500,
@@ -268,6 +284,7 @@ class TestDispatchOllama:
         req = InferenceRequest(
             messages=[{"role": "user", "content": "x"}],
             model="llama3",
+            pin_reason="inference_test",
             extra={"keep_alive": "5m"},
         )
         captured = {}
