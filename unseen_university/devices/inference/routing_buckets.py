@@ -115,6 +115,22 @@ def difficulty_meets(model_capable: str, required: str) -> bool:
     return cap_idx >= req_idx
 
 
+def domain_eligible(model_domains, requested_domain: str) -> bool:
+    """True if a model may serve the requested task DOMAIN (coding, prose, math…).
+
+    Generalist on either side passes: an empty `requested_domain` (the caller did
+    not specialize) matches any model, and a model with no `domains` (a generalist)
+    serves any requested domain. Otherwise the requested domain must appear in the
+    model's domain set. Domain is orthogonal to difficulty/tier — WHAT KIND of task
+    a model is good at, not HOW HARD a task it can handle (that's difficulty_meets).
+    """
+    if not requested_domain:
+        return True
+    if not model_domains:
+        return True
+    return requested_domain in model_domains
+
+
 def cost_class_rank(cost_class: str) -> int:
     """Return the dollars rank of a cost_class (lower = cheaper = preferred).
 
@@ -128,15 +144,16 @@ def cost_class_rank(cost_class: str) -> int:
         return len(COST_CLASSES)
 
 
-def routing_crossing_record(source, model, task_class: str) -> dict:
+def routing_crossing_record(source, model, task_class: str, domain: str = "") -> dict:
     """Build the structured routing-crossing log record (the epic's measurement signal).
 
     Duck-typed and defensive on purpose: this runs at the routing decision crossing,
     including in tests where `source`/`model` may be mocks — it must never raise and
     never affect the routing decision. Missing attributes read as '?'.
 
-    The five fields are the whole observability contract for the router: which source
-    and model were chosen, at what time/difficulty bucket, and at what dollars.
+    The fields are the whole observability contract for the router: which source and
+    model were chosen, for what task_class and DOMAIN, at what time/difficulty bucket,
+    and at what dollars. `domain` is the caller's requested domain ('' = generalist).
     """
     return {
         "source": getattr(source, "name", "?"),
@@ -145,4 +162,5 @@ def routing_crossing_record(source, model, task_class: str) -> dict:
         "difficulty_bucket": getattr(model, "difficulty_bucket", "?"),
         "dollars": getattr(model, "dollars_per_unit", "?"),
         "task_class": task_class,
+        "domain": domain,
     }

@@ -234,6 +234,7 @@ class ToolLoop:
                 system=full_system,
                 tools=TOOL_DEFINITIONS,
                 task_class="worker",
+                domain="coding",  # DS builds code — route among coding-capable sources only
                 agent_id="dicksimnel",
                 max_tokens=4096,
                 timeout=120,

@@ -39,6 +39,10 @@ class InferenceRequest:
     # One of: "minion" | "worker" | "analyst" | "designer"
     # "worker" is the default for sprint-ticket tasks.
     task_class: str = "worker"
+    # Task DOMAIN — WHAT KIND of task this is (coding, prose, math…). The caller names
+    # a domain (never a model); the router keeps only domain-capable sources. Empty =
+    # generalist (matches any model). Orthogonal to task_class (difficulty/tier).
+    domain: str = ""
     # Agent context for budget ledger attribution and enforcement.
     agent_id: str = ""
     instance_id: str = ""

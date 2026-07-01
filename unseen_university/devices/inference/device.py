@@ -346,12 +346,14 @@ class InferenceDevice(BaseDevice):
                         max_tokens=request.max_tokens, temperature=request.temperature,
                         system=request.system, timeout=request.timeout, extra=request.extra,
                         task_class=request.task_class, agent_id=request.agent_id,
-                        tools=request.tools,
+                        tools=request.tools, domain=request.domain,
+                        session_id=request.session_id, foreground=request.foreground,
                     )
                     decision = self._rules.route(
                         task_class=request.task_class or "worker",
                         session_id=request.session_id,
                         foreground=request.foreground,
+                        domain=request.domain,
                     )
             else:
                 # Unknown model ID — converge on the tier router (same fall-through as
@@ -366,12 +368,14 @@ class InferenceDevice(BaseDevice):
                     task_class=request.task_class or "worker",
                     session_id=request.session_id,
                     foreground=request.foreground,
+                    domain=request.domain,
                 )
         else:
             decision = self._rules.route(
                 task_class=request.task_class or "worker",
                 session_id=request.session_id,
                 foreground=request.foreground,
+                domain=request.domain,
             )
 
         if decision is not None:
@@ -393,6 +397,7 @@ class InferenceDevice(BaseDevice):
                 escalation_hop=request.escalation_hop,
                 prior_attempt=request.prior_attempt,
                 foreground=request.foreground,
+                domain=request.domain,
             )
             source = decision.source
             provider_name = source.name

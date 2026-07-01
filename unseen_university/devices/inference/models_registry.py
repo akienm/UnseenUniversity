@@ -55,6 +55,12 @@ class ModelSpec:
     # 'vision') — distinct from free-text `tags`. A call requiring a feature excludes
     # models that lack it.
     features: list[str] = field(default_factory=list)
+    # Task DOMAINS this model is competent in ('coding', 'prose', 'math', …). Empty →
+    # generalist: eligible for any requested domain. Orthogonal to `tier` (difficulty,
+    # HOW HARD) and to free-text `tags` — domain is WHAT KIND of task. The selector's
+    # domain filter (routing_buckets.domain_eligible) reads this. Adding a model for a
+    # new kind of task is a data edit here, not a code change.
+    domains: list[str] = field(default_factory=list)
 
     @property
     def cacheable(self) -> bool:
@@ -101,6 +107,7 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.15,
         context_window=262_144,
         tags=["coding", "cheap", "fast", "cacheable"],
+        domains=["coding"],
         notes="Confirmed working 2026-06-02; fast and cheap; good for simple well-specified tasks",
         created_at="2026-06-02T00:00:00Z",
     ),
@@ -113,6 +120,7 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.28,
         context_window=156_000,
         tags=["coding", "fast", "cacheable"],
+        domains=["coding"],
         notes="Qwen3 dedicated coder; replaces deprecated qwen2.5-coder-32b slug",
         created_at="2026-06-02T00:00:00Z",
     ),
@@ -149,6 +157,7 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.88,
         context_window=1_048_576,
         tags=["coding", "1m-context", "cacheable"],
+        domains=["coding"],
         notes="Qwen3 Coder full model; 1M context; fallback analyst when DeepSeek unavailable",
         created_at="2026-06-02T00:00:00Z",
     ),
@@ -203,6 +212,7 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.0,
         context_window=128_000,
         tags=["coding", "flat-rate", "ollama-pro", "agentic", "tool-call"],
+        domains=["coding"],
         notes="Mistral Devstral Small 2 — purpose-built agentic coding model, 24B. Floor candidate for flat-rate worker tier.",
         created_at="2026-06-11T00:00:00Z",
     ),
@@ -214,6 +224,7 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.0,
         context_window=256_000,
         tags=["coding", "flat-rate", "ollama-pro"],
+        domains=["coding"],
         notes="Ollama Pro flat-rate: Qwen3 Coder Next, dedicated coder. Reconciled 2026-06-19 "
               "from qwen2.5-coder:32b (404 — not on the account). Preferred when OLLAMA_API_KEY set.",
         created_at="2026-06-19T00:00:00Z",
@@ -259,6 +270,7 @@ _SEED: list[ModelSpec] = [
         tags=["local", "hex", "coding", "worker"],
         difficulty_capable="code",
         features=["tools"],
+        domains=["coding"],
         notes="Hex local worker — coder fallback behind devstral. 9GB.",
         created_at="2026-07-01T00:00:00Z",
     ),

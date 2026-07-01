@@ -52,6 +52,7 @@ from unseen_university.devices.inference.models_registry import ModelSpec, Model
 from unseen_university.devices.inference.routing_buckets import (
     cost_class_rank,
     difficulty_meets,
+    domain_eligible,
     routing_crossing_record,
     task_class_to_difficulty,
     urgency_time_eligible,
@@ -160,6 +161,7 @@ class RulesEngine:
         foreground: bool = False,
         urgency: str | None = None,
         required_features: list[str] | None = None,
+        domain: str = "",
     ) -> RoutingDecision | None:
         """
         Return the cheapest capable (Source, ModelSpec) for this task_class.
@@ -179,6 +181,9 @@ class RulesEngine:
               speed with capability — now separate axes).
         required_features: capability flags the chosen model must provide (e.g.
               'tools'); a model lacking any is excluded.
+        domain: WHAT KIND of task ('coding', 'prose', …); keeps only domain-capable
+              models. '' = generalist request (matches any model). A generalist model
+              (no domains) matches any domain. Orthogonal to task_class/difficulty.
 
         Returns None only if no source is available at all.
         """
@@ -202,7 +207,7 @@ class RulesEngine:
                     model_id,
                     source_name,
                 )
-                log.info("rules: crossing %s", routing_crossing_record(source, model, task_class))
+                log.info("rules: crossing %s", routing_crossing_record(source, model, task_class, domain))
                 return RoutingDecision(
                     source, model, "session-affinity", session_affinity=True
                 )
@@ -248,6 +253,7 @@ class RulesEngine:
                 if urgency_time_eligible(getattr(source, "time_bucket", "interactive"), eff_urgency)
                 and difficulty_meets(model.difficulty_bucket, required_difficulty)
                 and req_features.issubset(set(getattr(model, "features", ()) or ()))
+                and domain_eligible(getattr(model, "domains", ()) or (), domain)
             ]
             if eligible:
                 eligible.sort(
@@ -264,7 +270,7 @@ class RulesEngine:
                     "rules: %s → %s (urgency=%s difficulty=%s)",
                     task_class, rule.label, eff_urgency, required_difficulty,
                 )
-                log.info("rules: crossing %s", routing_crossing_record(source, model, task_class))
+                log.info("rules: crossing %s", routing_crossing_record(source, model, task_class, domain))
                 return RoutingDecision(source, model, rule.label)
             # All candidates filtered out (too slow / too weak / missing a feature) —
             # fall through to the tier / last-resort safety nets below.
@@ -279,7 +285,7 @@ class RulesEngine:
             if source and source.available:
                 label = f"{task_class}-fallback→{spec.model_id}"
                 log.info("rules: fallback %s", label)
-                log.info("rules: crossing %s", routing_crossing_record(source, spec, task_class))
+                log.info("rules: crossing %s", routing_crossing_record(source, spec, task_class, domain))
                 if session_id:
                     self._session_map[session_id] = (spec.model_id, spec.source_name)
                 return RoutingDecision(source, spec, label)
@@ -291,7 +297,7 @@ class RulesEngine:
                     log.warning(
                         "rules: last-resort routing → %s/%s", spec.model_id, source.name
                     )
-                    log.info("rules: crossing %s", routing_crossing_record(source, spec, task_class))
+                    log.info("rules: crossing %s", routing_crossing_record(source, spec, task_class, domain))
                     return RoutingDecision(source, spec, "last-resort")
 
         log.error("rules: no available source for task_class=%r", task_class)

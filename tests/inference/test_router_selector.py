@@ -211,6 +211,62 @@ def test_sanity_worker_lands_on_google_free_pre_hex():
     assert decision.source.name == "google_free"
 
 
+# ── DOMAIN capability filter (T-inference-domain-tag) ─────────────────────────
+
+
+def test_domain_mismatch_model_excluded():
+    """A prose-only model is excluded from a coding request; the coding model wins."""
+    reg = SourceRegistry()
+    reg.register(_src("prose_src", "owned_local"))   # cheaper — would win but for domain
+    reg.register(_src("code_src", "token_direct"))
+    models = ModelsRegistry([
+        ModelSpec("prose-m", "prose_src", "worker", 0.0, 0.0, 8192, domains=["prose"]),
+        ModelSpec("code-m", "code_src", "worker", 1.0, 1.0, 8192, domains=["coding"]),
+    ])
+    rules = [
+        RoutingRule(1, "worker", "prose-m", "prose_src", "prose"),
+        RoutingRule(2, "worker", "code-m", "code_src", "code"),
+    ]
+    decision = RulesEngine(reg, models, rules).route("worker", domain="coding")
+    assert decision is not None
+    assert decision.model.model_id == "code-m"
+
+
+def test_generalist_model_selectable_for_any_domain():
+    """A model with no domains (generalist) is eligible for a coding request."""
+    reg = SourceRegistry()
+    reg.register(_src("gen_src", "owned_local"))
+    models = ModelsRegistry([
+        ModelSpec("gen-m", "gen_src", "worker", 0.0, 0.0, 8192),  # domains=[] → generalist
+    ])
+    rules = [RoutingRule(1, "worker", "gen-m", "gen_src", "gen")]
+    decision = RulesEngine(reg, models, rules).route("worker", domain="coding")
+    assert decision is not None
+    assert decision.model.model_id == "gen-m"
+
+
+def test_generalist_request_matches_domain_specialized_model():
+    """A request with domain='' (generalist) still selects a domain-tagged model."""
+    reg = SourceRegistry()
+    reg.register(_src("code_src", "owned_local"))
+    models = ModelsRegistry([
+        ModelSpec("code-m", "code_src", "worker", 0.0, 0.0, 8192, domains=["coding"]),
+    ])
+    rules = [RoutingRule(1, "worker", "code-m", "code_src", "code")]
+    decision = RulesEngine(reg, models, rules).route("worker")  # domain='' default
+    assert decision is not None
+    assert decision.model.model_id == "code-m"
+
+
+def test_crossing_record_includes_domain():
+    """The routing crossing-log record names the requested domain (measurement signal)."""
+    from unseen_university.devices.inference.routing_buckets import routing_crossing_record
+    src = _src("code_src", "owned_local")
+    model = ModelSpec("code-m", "code_src", "worker", 0.0, 0.0, 8192, domains=["coding"])
+    rec = routing_crossing_record(src, model, "worker", "coding")
+    assert rec["domain"] == "coding"
+
+
 # ── dead source name reconciled ───────────────────────────────────────────────
 
 
