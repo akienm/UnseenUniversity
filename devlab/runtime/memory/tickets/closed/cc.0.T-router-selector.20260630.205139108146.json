@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-router-selector",
-    "title": "[sprint] Inference router increment 2 — the stateless selector: two bucket-filters + argmin(dollars)",
+    "title": "Inference router increment 2 — the stateless selector: two bucket-filters + argmin(dollars)",
     "size": "M",
     "tags": [
       "Inference",
@@ -30,18 +30,25 @@
     "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
     "gate": null,
     "priority": 0.6,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-01T02:51:33.167506+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Stateless cost-optimizing selector shipped: route() replaces the binary billing_type sort with TIME-eligibility x DIFFICULTY-capability filters then argmin(cost_class_rank, dollars_per_unit, priority). foreground redefined to time-only (no cost inversion); google_free (free_throttled) beats ollama_cloud (subscription); local_ollama->ollama; route() gains urgency + required_features. Failure-bump descoped to T-router-failure-bump-escalation. Proven red->green @8e814ad4; 114 routing tests green incl. migrated flat_rate + per-tier-resolves + worker->google_free sanity anchor.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T03:20:12.747865+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-01T02:51:33.167612+00:00"
+    "scraps_validated": "2026-07-01T02:51:33.167612+00:00",
+    "proven": true,
+    "proof_id": "cc.0.cost-optimizing-selector-increment-2-ran.T-router-selector.20260630.212002068228",
+    "proof_commit": "8e814ad42fc035fc2fa3ead2489a0af13e8f1c43",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
