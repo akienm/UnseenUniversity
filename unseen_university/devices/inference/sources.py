@@ -72,6 +72,17 @@ class Source:
     available: bool = True
     # "flat_rate" = subscription (prefer over usage-based); "usage_based" = pay-per-token
     billing_type: str = "usage_based"
+    # Cost axis for the cost-optimizing router (D-inference-cost-optimizing-router):
+    # ordered cheap→dear per routing_buckets.COST_CLASSES. Corrects the inverted binary
+    # billing_type — owned-local hardware is genuinely cheaper than a metered subscription,
+    # a distinction per-token cost cannot make (both bill $0/token). The selector reads
+    # this (increment 2); billing_type stays the live sort key until then.
+    cost_class: str = "token_direct"
+    # Speed axis: how fast this source answers RIGHT NOW (routing_buckets.TIME_BUCKETS,
+    # interactive|minutes|overnight). An eligibility filter, not a static label —
+    # increment 4 re-measures it live so a box that got faster (Hex) is promoted, not
+    # pinned by a stale "ollama = slow" label. Mutable per-instance for that reason.
+    time_bucket: str = "interactive"
     # On-box inference (no network hop, no paid token cost) vs networked cloud.
     # Distinct from billing_type: a cloud source can be flat_rate (subscription)
     # yet still NOT local — callers needing local-vs-cloud must read this, not
@@ -257,7 +268,9 @@ class OllamaSource(Source):
     is_local: ClassVar[bool] = True  # on-box; the only true-local source
 
     def __init__(self, base_url: str = "http://127.0.0.1:11434") -> None:
-        super().__init__(name="ollama")
+        # owned_local: on-box hardware we own (Hex/igor cluster) — the cheapest rung,
+        # cheaper than the ollama_cloud subscription despite both billing $0/token.
+        super().__init__(name="ollama", cost_class="owned_local")
         self.base_url = base_url.rstrip("/")
 
     def ping(self) -> bool:
@@ -536,6 +549,9 @@ class GoogleSource(Source):
         self.free_tier = free_tier
         if free_tier:
             self.billing_type = "flat_rate"
+            # free_throttled: $0 but rate-limited/external (~15 RPM) — cheaper than a
+            # paid subscription, dearer than owned-local hardware.
+            self.cost_class = "free_throttled"
         self._rate_limited_until: float = 0.0
 
     _KEY_ALIASES = ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY")
@@ -711,6 +727,9 @@ class OllamaCloudSource(Source):
             name="ollama_cloud",
             available=bool(api_key),
             billing_type="flat_rate",
+            # subscription: fixed $20/mo sub + metered usage caps — NOT owned-local.
+            # This is the taxonomy fix: the cloud account was mislabelled cheapest.
+            cost_class="subscription",
         )
         self._api_key_val = api_key
         self._endpoint = endpoint

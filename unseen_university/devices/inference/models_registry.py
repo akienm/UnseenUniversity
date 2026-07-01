@@ -26,6 +26,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 
+from unseen_university.devices.inference.routing_buckets import task_class_to_difficulty
+
 TIERS = ("minion", "worker", "analyst", "designer")
 
 
@@ -44,10 +46,40 @@ class ModelSpec:
     tags: list[str] = field(default_factory=list)
     notes: str = ""
     created_at: str = ""  # ISO-8601 UTC — when this entry was verified/created
+    # Capability ceiling for the cost-optimizing router: the hardest
+    # routing_buckets.DIFFICULTY_BUCKETS bucket this model can handle. Empty →
+    # derived from `tier` (the a-priori estimate). Set explicitly to describe a model
+    # whose true ceiling differs from the tier slot it's routed under.
+    difficulty_capable: str = ""
+    # Structured capability flags the selector filters on (e.g. 'tools', 'json_mode',
+    # 'vision') — distinct from free-text `tags`. A call requiring a feature excludes
+    # models that lack it.
+    features: list[str] = field(default_factory=list)
 
     @property
     def cacheable(self) -> bool:
         return "cacheable" in self.tags
+
+    @property
+    def difficulty_bucket(self) -> str:
+        """Difficulty this model can handle: explicit ceiling, else tier-derived.
+
+        The selector's capability filter reads this; a model with no explicit
+        difficulty_capable falls back to its tier's a-priori bucket
+        (minion=classify, worker=code, analyst/designer=design).
+        """
+        return self.difficulty_capable or task_class_to_difficulty(self.tier)
+
+    @property
+    def dollars_per_unit(self) -> float:
+        """Marginal-cost scalar for the selector's argmin — 0 for owned-local/flat models.
+
+        Sum of input + output per-1M-token cost: a symmetric proxy for per-call dollars.
+        The source's cost_class captures the quota/subscription dimension this marginal
+        number cannot (a $0/token subscription still consumes a metered cap); the
+        selector combines the two (increment 2).
+        """
+        return self.input_cost_per_1m + self.output_cost_per_1m
 
     def cost_estimate(self, input_tokens: int, output_tokens: int) -> float:
         return (

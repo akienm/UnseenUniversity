@@ -44,6 +44,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
+from unseen_university.devices.inference.routing_buckets import routing_crossing_record
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
 log = logging.getLogger(__name__)
@@ -170,6 +171,7 @@ class RulesEngine:
                     model_id,
                     source_name,
                 )
+                log.info("rules: crossing %s", routing_crossing_record(source, model, task_class))
                 return RoutingDecision(
                     source, model, "session-affinity", session_affinity=True
                 )
@@ -221,6 +223,7 @@ class RulesEngine:
             if session_id:
                 self._session_map[session_id] = (rule.model_id, rule.source_name)
             log.info("rules: %s → %s", task_class, rule.label)
+            log.info("rules: crossing %s", routing_crossing_record(source, model, task_class))
             return RoutingDecision(source, model, rule.label)
 
         # Tier fallback — try cheapest available model in same tier
@@ -229,6 +232,7 @@ class RulesEngine:
             if source and source.available:
                 label = f"{task_class}-fallback→{spec.model_id}"
                 log.info("rules: fallback %s", label)
+                log.info("rules: crossing %s", routing_crossing_record(source, spec, task_class))
                 if session_id:
                     self._session_map[session_id] = (spec.model_id, spec.source_name)
                 return RoutingDecision(source, spec, label)
@@ -240,6 +244,7 @@ class RulesEngine:
                     log.warning(
                         "rules: last-resort routing → %s/%s", spec.model_id, source.name
                     )
+                    log.info("rules: crossing %s", routing_crossing_record(source, spec, task_class))
                     return RoutingDecision(source, spec, "last-resort")
 
         log.error("rules: no available source for task_class=%r", task_class)
