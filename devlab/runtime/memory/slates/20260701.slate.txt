@@ -21,3 +21,5 @@ Done: Done: root-caused + fixed git-push GUI-askpass hang (guard deployed, memor
 Next: Resume via /sprint-batch decision:D-inference-domain-routing-2026-07-01 or decision:D-calibre-device-encapsulation-2026-07-01 (independent batches); or operational DS.0 dispatch on T-ds-smoke-hello if live-testing desired. Tree clean, all pushed.
 
 ## In-flight: In-flight: 3 decisions (D-inference-domain-routing, D-calibre-device-encapsulation, I-compiled-inference-residue intention) with 9 new tickets + 1 reshaped, all sprint status, ready for /sprint-batch; operational DS.0 dispatch on T-ds-smoke-hello as alternate next; tree clean + all pushed (94f9c17c). No blockers. Two independent batches, or live-test pick.
+
+## In-flight: sprint-batch D-inference-domain-routing: 1/6 closed (T-inference-domain-tag, commit 91531831, shipped-unproven — additive-API proof lever). Next: T-inference-domain-prompt.

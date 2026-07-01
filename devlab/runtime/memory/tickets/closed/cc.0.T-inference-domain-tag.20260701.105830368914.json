@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-inference-domain-tag",
-    "title": "[in_progress] Router: domain capability tag on models + request; selector filters by domain",
+    "title": "Router: domain capability tag on models + request; selector filters by domain",
     "size": "M",
     "tags": [
       "Inference",
@@ -28,14 +28,14 @@
     "decision_id": "D-inference-domain-routing-2026-07-01",
     "priority": 0.5,
     "gate": null,
-    "status": "in_progress",
+    "status": "closed",
     "description": "**Problem:** the cost-optimizing selector filters by difficulty x urgency x features, but has no notion of WHAT KIND of task a model is good at. A caller can't say 'this is a coding task' without naming a model (violates invisible-to-caller), and a coding-specialist can't be preferred over a generalist. **Proposed shape:** add `domain` to the per-source model descriptor (a set of domain tags the model is good at, e.g. ['coding']); add `domain: str` to InferenceRequest (shim.py), default '' = generalist so existing callers keep working; rules_engine.route() gains a domain filter (candidates must be tagged for the requested domain; untagged/generalist matches any domain); DS dispatches with domain='coding'. Metered providers already carry dollars_per_unit (T-router-data-schema) so no cost-model change. **Affected files:** unseen_university/devices/inference/shim.py (InferenceRequest.domain), devices/inference/models_registry.py or sources.py (domain tag on descriptor), devices/inference/rules_engine.py (route() domain filter), devices/dicksimnel/toolloop.py (set domain='coding'). **Design rules:** NO SQLITE; ALL inference through the Proxy; shim.py/device.py are the design center — the new field is OPTIONAL with a default so no caller breaks; log the chosen {domain, source, tier, dollars} at the routing crossing (state change). **Scope boundary:** IN: domain field on descriptor+request, selector domain-filter, DS sets coding, crossing-log gains domain. OUT: prompt-by-domain (T-inference-domain-prompt), migrating other pinning callers (T-inference-migrate-pinners), new non-coding domains beyond generalist (data, later). **Test plan (stub-first red->green):** (1) a request with domain='coding' selects only coding-tagged models; (2) a model not tagged coding is excluded from a coding request's candidate set; (3) an untagged/generalist model is still selectable when domain='' (back-compat); (4) the routing crossing-log line includes the domain. **Completion criteria:** route() filters candidates by domain; domain rides on InferenceRequest; DS dispatches domain='coding'; routing crossing-log names the domain; tests green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-07-01T16:57:39.560420+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Domain capability tag lands: ModelSpec.domains (6 coders tagged coding), routing_buckets.domain_eligible, InferenceRequest.domain, route(domain=) filter, crossing-log carries domain, DS dispatches domain='coding'. 4 new assertion tests green; 0 regressions (6 pre-existing escalation/mini_rack failures unchanged on clean HEAD). Commit 91531831.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T18:58:52.515956+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-01T16:57:39.619822+00:00",
     "inferred_intention": "create_build_target",
-    "inferred_intention_id": "0b39f86c-69df-4a58-8a1e-35e334f30c74"
+    "inferred_intention_id": "0b39f86c-69df-4a58-8a1e-35e334f30c74",
+    "proven": false,
+    "unproven_reason": "proof_emitter can't generate authentic assertion-red for ADDITIVE API changes: pre-impl tree raises TypeError/AttributeError on the new route(domain=) param + ModelSpec.domains field (collateral, not assertion-red), and in-place diff-inversion also strips the new test. Lever needed: stub-first proof mode for additive API surface (or thing-start..HEAD span proof).",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
