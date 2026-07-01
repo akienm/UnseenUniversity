@@ -61,3 +61,5 @@ Next: Start next sprint on DS/Hex routing. TWO OPEN SCOPE Qs for Akien before bu
 
 ## In-flight: Router epic in flight: increment 1 (T-router-data-schema) CLOSED shipped-unproven (stub-first proof lever); increment 2 (T-router-selector) ungated + next — the trivial selector replacing the billing_type sort. Building down the chain autonomously.
 - ✅ T-router-selector CLOSED PROVEN (red→green @8e814ad4) — stateless cost-optimizing selector (2 filters + argmin); 114 routing tests green; foreground→time-only + google_free>ollama_cloud (intentional); failure-bump descoped→T-router-failure-bump-escalation; ungated increment 3 (register Hex) + increment 5
+
+## In-flight: Router epic: increments 1 (schema, shipped-unproven) + 2 (selector, PROVEN) DONE + committed. Increment 3 (T-ds-local-ollama-route = register Hex, ungated) is next — the payoff that makes Hex routable + lifts DS cost constraint; involves live-hardware wiring (INFERENCE_ENDPOINT→10.0.0.100) + DS device change. Paused for Akien checkpoint before wiring live.
