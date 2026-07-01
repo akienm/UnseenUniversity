@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-ds-smoke-pytest",
-    "title": "[sprint] DS live-smoke pytest: drive _run_inference(hello) against real devstral@Hex, assert DONE→close",
+    "title": "DS live-smoke pytest: drive _run_inference(hello) against real devstral@Hex, assert DONE→close",
     "size": "M",
     "tags": [
       "DickSimnel",
@@ -31,18 +31,24 @@
     "decision_id": "D-ds-first-live-build-on-hex-2026-06-30",
     "gate": null,
     "priority": 0.55,
-    "status": "sprint",
+    "status": "closed",
     "role": "master",
     "created_at": "2026-06-30T22:59:48.031578+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "KEYSTONE PROVEN: DickSimnel drove devstral@Hex through a real agentic ToolLoop — dispatch→native tool_call→Write→DONE envelope, SMOKE_OK.txt created, 8.8s, $0. First DONE in an agentic loop (Jun-11 hit max-turns). Live pytest test_dicksimnel_builds_on_hex passes (skip-soft when Hex down; 'live' marker registered). Required the T-ollama-local-native-tools fix.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T12:57:44.128396+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
-    "scraps_validated": "2026-06-30T22:59:48.031638+00:00"
+    "scraps_validated": "2026-06-30T22:59:48.031638+00:00",
+    "proven": false,
+    "unproven_reason": "The live smoke PASSES (empirical proof); proof_emitter can't bind a new live test to a red→green (test written after the fixes; needs Hex up to run). Live-empirical + passing test are the proof. See [[T-proof-emitter-stub-module-mode]].",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

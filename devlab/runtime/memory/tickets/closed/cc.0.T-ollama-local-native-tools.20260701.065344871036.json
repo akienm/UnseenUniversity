@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-ollama-local-native-tools.20260701.065344871036",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ollama-local-native-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T12:53:44.871036+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ollama-local-native-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ollama-local-native-tools",
+    "title": "Local Ollama source: native tool-calling (forward tools, parse tool_calls, dict args)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Ollama",
+      "DickSimnel",
+      "Hex"
+    ],
+    "intention": "I intend that a tool-capable model on local Ollama (Hex) emits and executes native tool_calls, so DickSimnel can actually build on free local inference.",
+    "description": "**Problem (surfaced by the DS keystone smoke, T-ds-smoke-pytest):** devstral@Hex received the ticket and knew what to do but emitted its tool call as PROSE ('Write{...}'), never wrote the file, never reached DONE. Root cause: the LOCAL Ollama tool path had three gaps the OpenAI-format path already handled: (1) OllamaSource.call did not forward req.tools to Ollama /api/chat, so the model got no tool schema; (2) _parse_response's Ollama (/api/chat) branch extracted message.content but NOT message.tool_calls; (3) ToolLoop did json.loads() on tool-call arguments, which are a JSON STRING from OpenAI but an already-parsed DICT from Ollama (json.loads(dict) raises TypeError, uncaught).\n**Fix (all three):** (1) sources.py OllamaSource.call — add payload['tools']=req.tools when req.tools set. (2) device.py _parse_response — extract tool_calls=msg.get('tool_calls') in the Ollama branch. (3) toolloop.py — accept dict-or-string arguments (isinstance dict → use directly; else json.loads with TypeError guard).\n**Affected files:** unseen_university/devices/inference/sources.py, unseen_university/devices/inference/device.py, unseen_university/devices/dicksimnel/toolloop.py.\n**Design rules:** Inference Proxy only; no SQLite.\n**Scope boundary:** the local-Ollama native-tool-calling path only. Cloud OllamaCloudSource already forwarded tools.\n**Completion criteria:** a tool-capable model on local Ollama (Hex) emits a native tool_call, the ToolLoop executes it, and the loop reaches DONE. PROVEN LIVE 2026-07-01: DS drove devstral@Hex → Write → DONE in 8.8s, SMOKE_OK.txt created.\n**Test plan:** the live DS smoke (T-ds-smoke-pytest) drives devstral@Hex to DONE; unit: OllamaSource.call includes tools in payload when req.tools set; _parse_response extracts tool_calls from an Ollama-format response; ToolLoop accepts dict-form arguments.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.85,
+    "status": "closed",
+    "created_at": "2026-07-01T12:53:44.388670+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "Local Ollama native tool-calling fixed (3 gaps): OllamaSource.call forwards req.tools to /api/chat; _parse_response extracts message.tool_calls in the Ollama branch; ToolLoop accepts dict-or-string tool-call arguments. PROVEN LIVE: devstral@Hex emitted a native tool_call → executed Write → reached DONE in 8.8s. 4 hermetic unit tests + the live smoke guard it; 101 inference tests green.",
+    "dispatched_at": null,
+    "completed_at": "2026-07-01T12:57:43.531280+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T12:53:44.432845+00:00",
+    "proven": false,
+    "unproven_reason": "Fixes committed before their tests (no test-without-fix commit for proof_emitter to bind red→green). Proven LIVE + by 4 green unit tests. Same binding gap as [[T-proof-emitter-stub-module-mode]].",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}

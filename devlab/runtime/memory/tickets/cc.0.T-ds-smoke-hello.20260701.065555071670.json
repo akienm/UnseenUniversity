@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ds-smoke-hello.20260701.065555071670",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-smoke-hello"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T12:55:55.071670+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-first-live-build-on-hex-2026-06-30"
+    ],
+    "tickets": [
+      "T-ds-smoke-hello"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-smoke-hello",
+    "title": "[sprint] Smoke: write /tmp/ds_smoke/SMOKE_OK.txt then DONE",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "smoke"
+    ],
+    "role": "builder",
+    "intention": "I intend that DickSimnel.0 has a trivial, safe, dispatchable build target so the live Granny→DS handshake can be exercised end to end.",
+    "description": "**Build target for DickSimnel.0 (dispatchable via Granny for the operational run).** Create the file /tmp/ds_smoke/SMOKE_OK.txt containing exactly one line: dicksimnel smoke ok — using the write tool with that absolute file_path. One write tool call, then output DONE: wrote smoke file. A CREATE, not a delete — safe for a builder run's first act.\n**Affected files:** /tmp/ds_smoke/SMOKE_OK.txt (throwaway smoke artifact, not the repo).\n**Design rules:** self-contained, devstral-buildable (one Write + DONE).\n**Scope boundary:** just this fixture.\n**Completion criteria:** SMOKE_OK.txt exists with the expected single line after the DS run.\n**Test plan:** existence+content check (the live smoke, T-ds-smoke-pytest, is the proof).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-ds-first-live-build-on-hex-2026-06-30",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-07-01T12:55:54.585468+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-01T12:55:54.629016+00:00"
+  }
+}
