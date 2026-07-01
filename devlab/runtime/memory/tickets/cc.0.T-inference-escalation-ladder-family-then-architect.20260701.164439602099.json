@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-escalation-ladder-family-then-architect.20260701.164439602099",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-escalation-ladder-family-then-architect"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T22:44:39.602099+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-escalation-ladder-family-then-architect"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-escalation-ladder-family-then-architect",
+    "title": "[sprint] Escalation ladder: exhaust the family in-tier (cost-ordered), THEN advance to the architect",
+    "size": "L",
+    "tags": [
+      "Inference",
+      "Router",
+      "Escalation"
+    ],
+    "description": "**Problem (refinement of the shipped escalation driver, T-router-failure-bump-escalation):** the current driver bumps DIFFICULTY one rung on the FIRST capability failure. With the real model slate that skips the bigger same-family model. Akien's resolved ladder for a stuck CODING task: (1) Qwen3-Coder 30B local → (2) Qwen3-Coder 480B cloud (SAME family, bigger, cost-ordered next) → (3) DeepSeek (architect/reasoner) as the cross-family FINAL rung — even though Qwen-480B and DeepSeek are roughly 'on a level' (both cloud flagships, not a strict difficulty increase). So escalation = 'exhaust the family AT this tier (cheapest→bigger), THEN advance to the architect', NOT 'bump difficulty every capability failure'. Keeps model FAMILY consistent as long as possible (prompt/tool-use transfer), architect only as last resort. See memory project_hex_ollama_model_slate.\n\n**Proposed shape:** give the driver (or the selector) a TRIED-SET keyed by (source,model). On a CAPABILITY failure: re-select the next-cheapest-UNTRIED capable candidate AT THE CURRENT difficulty (walks Qwen-30B→Qwen-480B within coding). Only when the current tier's candidates are EXHAUSTED, advance to the architect rung (bump difficulty, or an explicit architect-tier for the domain → DeepSeek). Terminal = architect rung also exhausted → system_alarm + halt (unchanged). This MERGES the difficulty-bump with a tried-set exclusion — shares the tried-set mechanism with T-inference-hard-error-fallthrough (which excludes a hard-errored candidate); build the tried-set once, both consume it. The AVAILABILITY path (source-down → None) stays unchanged (re-select same difficulty, no ladder advance).\n\n**Affected files:** unseen_university/devices/dicksimnel/device.py (_run_inference walk: tried-set + exhaust-tier-before-advance), unseen_university/devices/inference/rules_engine.py (route() must accept an exclude-set OR expose ranked candidates so the driver can pick next-untried), possibly routing_buckets.py (architect as a rung distinct from pure difficulty). **Design rules:** ALL inference through the Proxy; route by {domain, task_class}; capability bumps, availability does NOT ('Hex-DOWN is not a branch'); log every escalation hop + the tried-set at the crossing. **Scope boundary:** IN: the family-then-architect ladder (tried-set + exhaust-tier-before-advance) for the capability path. OUT: registry population with the real Qwen/DeepSeek specs (separate, gated on Hex/Ollama-Cloud live); the availability path (shipped); hard-error intra-dispatch fall-through (T-inference-hard-error-fallthrough — shares the tried-set). **Test plan (stub-first red->green, model-agnostic — uses stub sources at code+design difficulty):** (1) capability failure with two untried code candidates re-selects the second (bigger same-family) BEFORE bumping difficulty; (2) only when both code candidates are tried does it advance to the design/architect rung; (3) a candidate is never retried (tried-set honored); (4) availability failure still re-selects same difficulty without consuming the ladder; (5) architect rung exhausted → system_alarm + halt, no loop. **Completion criteria:** a stuck task walks cheapest→bigger within the family at a tier, advances to the architect only when the tier is exhausted, never retries a tried candidate, and still halts cleanly; tests green. VALIDATION of the real Qwen→DeepSeek behavior is a live run once the models are registered.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.45,
+    "status": "sprint",
+    "intention": "I intend that a stuck task escalates through its OWN model family first (consistent prompting/tool-use), reaching the architect only when the family is exhausted — so escalation gains capability without gratuitous behavioral shifts.",
+    "created_at": "2026-07-01T22:44:32.272877+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T22:44:32.323663+00:00"
+  }
+}
