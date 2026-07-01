@@ -14,7 +14,9 @@
     "tickets": [
       "T-router-data-schema"
     ],
-    "commits": [],
+    "commits": [
+      "9ff710bf"
+    ],
     "whys": []
   },
   "body": {
@@ -49,6 +51,7 @@
     "input_tokens": 0,
     "cache_write_tokens": 0,
     "cache_read_tokens": 0,
-    "output_tokens": 0
+    "output_tokens": 0,
+    "commit": "9ff710bf"
   }
 }
