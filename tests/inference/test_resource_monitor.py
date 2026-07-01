@@ -121,3 +121,39 @@ def test_selector_reroutes_after_remeasure():
 
     # After: hex is interactive AND cheaper (owned_local) → hex wins the same call.
     assert engine.route("worker", foreground=True).source.name == "hex"
+
+
+# ── the device actually feeds the monitor on dispatch (wiring, not hollow) ────
+
+
+def test_dispatch_feeds_the_monitor():
+    """A real dispatch records its observed latency into the device's ResourceMonitor."""
+    from unittest.mock import MagicMock, patch
+    from unseen_university.devices.inference.device import InferenceDevice
+    from unseen_university.devices.inference.shim import InferenceRequest
+
+    src = MagicMock(spec=Source)
+    src.name = "ollama"
+    src.available = True
+    src.cost_class = "owned_local"
+    src.time_bucket = "interactive"
+    src.call.return_value = {
+        "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+    }
+    reg = SourceRegistry()
+    reg.register(src)
+    models = ModelsRegistry([ModelSpec("devstral-small-2:24b", "ollama", "worker", 0.0, 0.0, 8192)])
+    rules = [RoutingRule(1, "worker", "devstral-small-2:24b", "ollama", "hex")]
+
+    dev = InferenceDevice(mode="ollama", sources=reg, models=models)
+    dev._rules = RulesEngine(reg, models, rules)
+    try:
+        with patch("unseen_university.devices.inference.pattern_intercept.try_intercept", return_value=None), \
+             patch("unseen_university.devices.inference.budget_ledger.check_session_limit"), \
+             patch("unseen_university.devices.inference.budget_ledger.debit"):
+            dev.dispatch(InferenceRequest(messages=[{"role": "user", "content": "hi"}],
+                                          model="", task_class="worker"))
+        assert dev._monitor.window("ollama"), "dispatch must record a latency for the source"
+    finally:
+        dev._health.stop()

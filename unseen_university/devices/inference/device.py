@@ -39,6 +39,7 @@ from unseen_university.devices.inference.models_registry import (
 )
 from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.health_monitor import HealthMonitor
+from unseen_university.devices.inference.resource_monitor import ResourceMonitor
 
 log = logging.getLogger(__name__)
 
@@ -101,6 +102,10 @@ class InferenceDevice(BaseDevice):
         self._rules = RulesEngine(self._sources, self._models)
         self._health = HealthMonitor(self._sources)
         self._health.start()
+        # Live re-measurement (T-router-live-resource-read): every dispatch feeds its
+        # observed latency here, which re-derives the source's time_bucket so a box that
+        # got faster/slower is promoted/demoted — the selector reads it on the next call.
+        self._monitor = ResourceMonitor()
 
     # ── BaseDevice contract ───────────────────────────────────────────────────
 
@@ -456,6 +461,8 @@ class InferenceDevice(BaseDevice):
         t0 = time.time()
         raw = source.call(request)
         elapsed_ms = round((time.time() - t0) * 1000)
+        # Feed the observed latency into live re-measurement (increment 4).
+        self._monitor.record(source, elapsed_ms / 1000.0)
 
         resp = _parse_response(raw, elapsed_ms=elapsed_ms)
 
