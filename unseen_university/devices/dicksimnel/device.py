@@ -38,6 +38,35 @@ _CC_QUEUE = Path(__file__).resolve().parents[2] / "devlab" / "claudecode" / "cc_
 _SKILLS_DIR = Path.home() / ".claude" / "skills"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
+# Source-down (availability) retries at the SAME difficulty before the driver halts. Small
+# and hard — an infra blip re-selects next-cheapest, but a persistent outage must not loop
+# (and must not walk onto paid tiers unbounded).
+_MAX_AVAILABILITY_RETRIES = 2
+
+
+def _classify_toolloop_result(result: str | None) -> str:
+    """Classify a ToolLoop.run result for the escalation driver (T-router-failure-bump-escalation).
+
+    The availability-vs-capability split is the whole safety of the walk — capability bumps to
+    a pricier tier, availability must NOT. Returns one of:
+      'availability' — the call did not reach a live source (None: dispatch raised, or the router
+                       returned a no-source error response). NOT the model failing; do NOT bump.
+      'cost'         — a paid run hit its per-run cost cap without finishing (COST_EXCEEDED:).
+      'done'         — an explicit DONE terminal envelope (work claimed complete).
+      'capability'   — reached a terminal but never DONE (self-ESCALATE, MAX_TURNS status=error,
+                       or prose with no DONE): the tier could not finish → bump difficulty.
+    """
+    from unseen_university.devices.dicksimnel.toolloop import _parse_terminal_response
+    if result is None:
+        return "availability"
+    stripped = result.strip()
+    if stripped.startswith("COST_EXCEEDED:"):
+        return "cost"
+    env = _parse_terminal_response(stripped)
+    if env is not None and env.get("status") == "done":
+        return "done"
+    return "capability"
+
 # The DS builder/coding system prompt now lives as DATA in the inference
 # router's domain-prompt store (prompts/coding.md), resolved by domain — the
 # router routes BOTH model and prompt by domain (T-inference-domain-prompt).
@@ -375,114 +404,139 @@ class DickSimnelDevice(BaseDevice):
 
     # Internal tier cascade: cheapest first, escalate within Dick before going to CC.
     # Each tier appends context from the prior attempt so the next model starts informed.
-    # Tier cascade: builder → creator → (CC). Each explicit ESCALATE: advances to the next
-    # tier (with context appended) rather than going straight to CC. Only the last tier's
-    # ESCALATE: propagates to CC. Creator tier absorbs escalations that builder can't handle
-    # but that don't need master (CC/Anthropic) attention.
-    #
-    # Tuple: (model_id, tier_label)
-    # tier_label "builder" — cheap floor; first attempt
-    # tier_label "creator" — mid-tier; receives builder escalation context
-    #
-    # OLLAMA-ONLY MODE: OR tiers disabled — no paid fallthrough. Escalate to CC if devstral fails.
-    _TIER_CASCADE = [
-        # tier 0 (builder): route by the worker TIER, not an explicit model (tier-not-model
-        # contract). Empty model_override → dispatch routes via the cost-optimizing selector,
-        # which picks the cheapest capable worker source — Hex (owned-local, $0) when it's up,
-        # else the next-cheapest cloud source. An explicit model here would BYPASS the selector
-        # (dispatch resolves a known model via its own source_name), pinning DS to the cloud.
-        ("", "builder"),
-        # Creator tier — larger model; absorbs builder escalations before reaching CC.
-        # Enable when a creator-tier source is registered.
-        # ("", "creator"),
-    ]
-
     def _run_inference(self, ticket: dict) -> str | None:
-        """Work a ticket through the ReAct ToolLoop with internal tier escalation.
+        """Work a ticket through the ReAct ToolLoop, driving the ONE escalation walk.
 
-        Tries tiers in _TIER_CASCADE order. ESCALATE: from a non-final tier advances
-        to the next tier with the escalation context appended — builder→creator before
-        reaching CC. DONE: or COST_EXCEEDED: terminate immediately. MAX_TURNS: with
-        tool calls escalates to CC directly (no tier advance — tier was working, ran out
-        of turns, adding context to a bigger model won't help).
+        This is the single live escalation driver (T-router-failure-bump-escalation),
+        collapsing the three former half-mechanisms — the never-incremented device
+        escalation_hop, the degenerate _TIER_CASCADE, and the ad-hoc prior-attempt append
+        — into one difficulty walk:
 
-        Returns the last result (for CC escalation) or None if all tiers fail hard.
+          - CAPABILITY failure (reached a terminal but never produced a DONE: self-ESCALATE,
+            MAX_TURNS, or prose without DONE): bump difficulty ONE rung (escalation_hop+1)
+            and re-run the SAME domain-aware selector, which picks a more-capable (pricier)
+            tier. This is the ONLY trigger that spends up.
+          - AVAILABILITY failure (dispatch raised, or the router held no live source →
+            ToolLoop returns None): NOT escalation — re-select next-cheapest at the SAME
+            difficulty (bounded), 'Hex-DOWN is not a branch'. A system_alarm fires if
+            retries exhaust.
+          - Past the top difficulty rung for the domain: inference failure → system_alarm →
+            HALT for analysis. Checked BEFORE re-dispatch so the walk terminates cleanly and
+            never loops into the device's hop-ceiling backstop.
+          - COST_EXCEEDED (a paid run hit its per-run cost cap without finishing): halt —
+            bumping to a pricier tier would only cost more.
+
+        Cumulative per-ticket cost is bounded by the small attempt count (≤2 capability hops
+        for the worker→design range, plus ≤2 availability retries) and is observable per
+        ticket in the cost_record log (T-inference-cost-learn-verify). Returns the DONE result
+        on success, or None to HALT (worker_listener declines; a system_alarm has fired). The
+        old return-to-CC endpoint is gone: capability failures escalate UP the domain's own
+        tiers, not out to CC.
         """
         from unseen_university.devices.dicksimnel.toolloop import ToolLoop
+        from unseen_university.devices.inference.routing_buckets import (
+            bump_difficulty, task_class_to_difficulty,
+        )
+        from unseen_university import system_alarms
+
         ticket_id = ticket.get("id", "?")
         system_prompt = self._build_system_prompt(ticket)
-        last_result: str | None = None
+        base_difficulty = task_class_to_difficulty("worker")  # 'code'
+        escalation_hop = 0
+        prior_attempt = ""
+        availability_retries = 0
 
-        for idx, (model_id, tier_label) in enumerate(self._TIER_CASCADE):
-            is_last_tier = (idx == len(self._TIER_CASCADE) - 1)
-            log.info("DickSimnel: ToolLoop tier=%s model=%r for ticket %s", tier_label, model_id or "rules-engine", ticket_id)
+        while True:
+            # Terminal check BEFORE dispatch: bumped past the top difficulty rung → inference
+            # failure. Firing here (not after another dispatch) is what stops the walk looping.
+            required = bump_difficulty(base_difficulty, escalation_hop)
+            if required is None:
+                system_alarms.raise_alarm(
+                    signature=f"inference-capability-ceiling:{ticket_id}",
+                    caller="dicksimnel",
+                    message=(
+                        f"capability ceiling for ticket {ticket_id}: escalated past the top "
+                        f"difficulty tier ('{base_difficulty}'+{escalation_hop}) and still no DONE "
+                        f"— inference failure, halting for analysis"
+                    ),
+                    fatal=False,
+                )
+                log.error(
+                    "DickSimnel: capability ceiling for %s (hop=%d) — halting for analysis",
+                    ticket_id, escalation_hop,
+                )
+                return None
+
+            log.info(
+                "DickSimnel: inference attempt ticket=%s hop=%d difficulty=%s",
+                ticket_id, escalation_hop, required,
+            )
             try:
                 loop = ToolLoop()
-                result = loop.run(ticket, system_prompt, model_override=model_id)
-                if result:
-                    log.info("DickSimnel: tier=%s finished for %s (%d chars)", tier_label, ticket_id, len(result))
-                    last_result = result
-                    stripped = result.strip()
-                    # DONE: / COST_EXCEEDED: terminate the cascade immediately.
-                    if stripped.startswith("DONE:") or stripped.startswith("COST_EXCEEDED:"):
-                        return result
-                    # ESCALATE: — if more tiers remain, advance with context; otherwise hand to CC.
-                    if stripped.startswith("ESCALATE:"):
-                        if is_last_tier:
-                            return result  # CC handles it
-                        reason = stripped[len("ESCALATE:"):].strip()[:300]
-                        esc_note = (
-                            f"\n\n---\n**{tier_label} tier escalation:**\n"
-                            f"Reason: {reason}\n"
-                            f"Attempt: {result[:400]}"
-                        )
-                        ticket = dict(ticket)
-                        ticket["description"] = ticket.get("description", "") + esc_note
-                        log.info(
-                            "DickSimnel: tier=%s escalated for %s — advancing to next tier with context",
-                            tier_label, ticket_id,
-                        )
-                        continue
-                    # MAX_TURNS: with tool calls = tier was working but ran out of turns.
-                    # Don't advance to a more expensive tier — escalate to CC with the log.
-                    had_tool_calls = any(e.get("had_tool_calls") for e in loop._turn_log)
-                    if stripped.startswith("MAX_TURNS:") and had_tool_calls:
-                        log.warning(
-                            "DickSimnel: tier=%s hit MAX_TURNS with tool calls for %s — escalating to CC (not advancing tier)",
-                            tier_label, ticket_id,
-                        )
-                        return result
-                    # No DONE:, no tool calls (blank stall or planning-mode prose) — try next tier.
-                    log.warning(
-                        "DickSimnel: tier=%s no DONE: for %s — trying next tier (prior attempt appended)",
-                        tier_label, ticket_id,
-                    )
-                    prior_note = f"\n\n---\n**Prior attempt ({tier_label}) produced no DONE: result.**\n{result[:300]}"
-                    ticket = dict(ticket)
-                    ticket["description"] = ticket.get("description", "") + prior_note
-                else:
-                    log.warning("DickSimnel: tier=%s returned None for %s — trying next tier", tier_label, ticket_id)
+                result = loop.run(
+                    ticket, system_prompt,
+                    escalation_hop=escalation_hop, prior_attempt=prior_attempt,
+                )
             except Exception as exc:
-                from unseen_university.devices.inference.sources import OllamaCloudFatalError
-                if isinstance(exc, OllamaCloudFatalError):
-                    # Ollama Cloud failed hard — don't fall through to OR/paid sources.
-                    log.error(
-                        "DickSimnel: tier=%s OllamaCloudFatalError for %s — halting cascade: %s",
-                        tier_label, ticket_id, exc,
-                    )
-                    # Return an escalation envelope so the caller escalates to CC
-                    import json as _json
-                    return _json.dumps({
-                        "status": "escalate",
-                        "result": f"OllamaCloud fatal error on tier {tier_label}: {exc}",
-                        "error_class": "OLLAMA_CLOUD_FATAL",
-                        "error_number": None,
-                    })
-                log.error("DickSimnel: tier=%s failed for %s: %s", tier_label, ticket_id, exc)
+                # Any raise (incl. OllamaCloudFatalError) is an AVAILABILITY failure — a source
+                # went down mid-call. Treat as None so the walk re-selects, never bumps to paid.
+                log.error(
+                    "DickSimnel: ToolLoop raised for %s (hop=%d): %s", ticket_id, escalation_hop, exc
+                )
+                result = None
 
-        # All tiers tried — return last result (will be escalated to CC by caller)
-        log.warning("DickSimnel: all tiers exhausted for %s — escalating to CC", ticket_id)
-        return last_result
+            cls = _classify_toolloop_result(result)
+            log.info(
+                "DickSimnel: attempt classified ticket=%s hop=%d class=%s", ticket_id, escalation_hop, cls
+            )
+
+            if cls == "done":
+                log.info(
+                    "DickSimnel: DONE for %s at hop=%d difficulty=%s", ticket_id, escalation_hop, required
+                )
+                return result
+
+            if cls == "cost":
+                system_alarms.raise_alarm(
+                    signature=f"inference-cost-cap:{ticket_id}",
+                    caller="dicksimnel",
+                    message=(
+                        f"cost cap hit for ticket {ticket_id} without completing — halting "
+                        f"(bumping to a pricier tier would only cost more)"
+                    ),
+                    fatal=False,
+                )
+                log.error("DickSimnel: cost cap for %s — halting: %s", ticket_id, (result or "").strip()[:120])
+                return None
+
+            if cls == "availability":
+                availability_retries += 1
+                if availability_retries > _MAX_AVAILABILITY_RETRIES:
+                    system_alarms.raise_alarm(
+                        signature=f"inference-availability-exhausted:{ticket_id}",
+                        caller="dicksimnel",
+                        message=(
+                            f"no live source for ticket {ticket_id} after {_MAX_AVAILABILITY_RETRIES} "
+                            f"retries at difficulty '{required}' — halting"
+                        ),
+                        fatal=False,
+                    )
+                    log.error("DickSimnel: availability exhausted for %s — halting", ticket_id)
+                    return None
+                log.warning(
+                    "DickSimnel: availability failure for %s (retry %d/%d, same difficulty=%s) — "
+                    "re-selecting next-cheapest",
+                    ticket_id, availability_retries, _MAX_AVAILABILITY_RETRIES, required,
+                )
+                continue  # same hop → the selector skips the down source and picks next-cheapest
+
+            # cls == 'capability': reached a terminal but never DONE → bump difficulty one rung.
+            prior_attempt = (result or "").strip()[:400]
+            escalation_hop += 1
+            log.info(
+                "DickSimnel: capability failure for %s at difficulty=%s — bumping to hop=%d",
+                ticket_id, required, escalation_hop,
+            )
 
     def replay_and_analyze(self, ticket_id: str) -> dict:
         """Replay a closed ticket using the simulator to understand decision-making.

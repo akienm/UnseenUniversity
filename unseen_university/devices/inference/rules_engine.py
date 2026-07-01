@@ -162,6 +162,7 @@ class RulesEngine:
         urgency: str | None = None,
         required_features: list[str] | None = None,
         domain: str = "",
+        required_difficulty: str = "",
     ) -> RoutingDecision | None:
         """
         Return the cheapest capable (Source, ModelSpec) for this task_class.
@@ -245,7 +246,10 @@ class RulesEngine:
             # Hardware (cost_class) now correctly beats a metered subscription that per-token
             # cost alone could not distinguish.
             eff_urgency = urgency or ("interactive" if foreground else "normal")
-            required_difficulty = task_class_to_difficulty(task_class)
+            # A caller may OVERRIDE the a-priori difficulty (the escalation walk bumps it
+            # one rung per capability failure — T-router-failure-bump-escalation). Empty =
+            # use the task_class's a-priori bucket.
+            required_difficulty = required_difficulty or task_class_to_difficulty(task_class)
             req_features = set(required_features or ())
             eligible = [
                 (rule, source, model)

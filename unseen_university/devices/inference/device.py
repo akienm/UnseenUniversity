@@ -42,7 +42,11 @@ from unseen_university.devices.inference.models_registry import (
     default_registry as _default_models,
 )
 from unseen_university.devices.inference.rules_engine import RulesEngine
-from unseen_university.devices.inference.routing_buckets import inference_cost_record
+from unseen_university.devices.inference.routing_buckets import (
+    bump_difficulty,
+    inference_cost_record,
+    task_class_to_difficulty,
+)
 from unseen_university.devices.inference.health_monitor import HealthMonitor
 from unseen_university.devices.inference.resource_monitor import ResourceMonitor
 
@@ -386,6 +390,14 @@ class InferenceDevice(BaseDevice):
         source = None
         provider_name = ""
         decision = None
+        # Escalation walk: each capability failure re-dispatches with escalation_hop+1, which
+        # bumps the REQUIRED difficulty one rung so the selector picks a more-capable (pricier)
+        # tier in the SAME domain (T-router-failure-bump-escalation). The DS driver terminates
+        # BEFORE re-dispatching past the top rung, so bump_difficulty never returns None here
+        # (and the hop>=2 ceiling above is an unreachable backstop). '' → the a-priori bucket.
+        req_difficulty = bump_difficulty(
+            task_class_to_difficulty(request.task_class or "worker"), request.escalation_hop
+        ) or ""
         if request.model:
             spec = self._models.get(request.model)
             if spec is not None:
@@ -417,6 +429,7 @@ class InferenceDevice(BaseDevice):
                         session_id=request.session_id,
                         foreground=request.foreground,
                         domain=request.domain,
+                        required_difficulty=req_difficulty,
                     )
             else:
                 # Unknown model ID — converge on the tier router (same fall-through as
@@ -432,6 +445,7 @@ class InferenceDevice(BaseDevice):
                     session_id=request.session_id,
                     foreground=request.foreground,
                     domain=request.domain,
+                    required_difficulty=req_difficulty,
                 )
         else:
             decision = self._rules.route(
@@ -439,6 +453,7 @@ class InferenceDevice(BaseDevice):
                 session_id=request.session_id,
                 foreground=request.foreground,
                 domain=request.domain,
+                required_difficulty=req_difficulty,
             )
 
         if decision is not None:

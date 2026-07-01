@@ -101,10 +101,39 @@ def test_worker_falls_to_next_cheapest_when_hex_down():
 # ── DS routes by the worker TIER, not an explicit model (tier-not-model) ──────
 
 
-def test_ds_tier_cascade_uses_tier_not_explicit_model():
-    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
-    builder = DickSimnelDevice._TIER_CASCADE[0]
-    assert not builder[0], (
-        "DS builder tier must route by the worker TIER (empty model_override), "
-        f"not an explicit model — got {builder[0]!r}"
-    )
+def test_ds_routes_by_tier_not_explicit_model():
+    """DS routes by {domain, task_class} and never pins a model (tier-not-model contract).
+
+    The old _TIER_CASCADE (empty model_override) is retired (T-router-failure-bump-escalation);
+    the invariant now lives in the ToolLoop request itself: model='' (route by domain),
+    task_class='worker', domain='coding'. An explicit model would bypass the cost-optimizing
+    selector AND trip the pin-gate.
+    """
+    from unittest.mock import patch
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
+
+    captured = {}
+
+    class _Resp:
+        text = "DONE: ok"
+        tool_calls = None
+        source_billing_type = "flat_rate"
+        source_kind = "cloud"
+        finish_reason = "stop"
+        cost_estimate = 0.0
+        input_tokens = 0
+        output_tokens = 0
+        model = "some-coding-model"
+
+    class _Dev:
+        def dispatch(self, req):
+            captured["req"] = req
+            return _Resp()
+
+    with patch("unseen_university.devices.inference.device.InferenceDevice", return_value=_Dev()):
+        ToolLoop().run({"id": "T-x", "description": "d", "tags": []}, "sys")
+
+    req = captured["req"]
+    assert req.model == "", f"DS must not pin a model — got {req.model!r}"
+    assert req.task_class == "worker"
+    assert req.domain == "coding"

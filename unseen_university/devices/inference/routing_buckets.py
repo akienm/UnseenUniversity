@@ -115,6 +115,26 @@ def difficulty_meets(model_capable: str, required: str) -> bool:
     return cap_idx >= req_idx
 
 
+def bump_difficulty(base: str, hops: int) -> str | None:
+    """Return the difficulty bucket `hops` rungs above `base`, or None past the top.
+
+    The escalation driver (T-router-failure-bump-escalation) walks difficulty UP one
+    rung per CAPABILITY failure: a call that reached a terminal but never finished the
+    work needs a more-capable (pricier) tier, so `bump_difficulty('code', 1)` → 'design'.
+    Returning None means the walk has bumped past the hardest bucket — the DS-side
+    terminal (system_alarm + halt), checked BEFORE re-dispatch so the walk never loops.
+    An unknown base is treated as 'code' (the safe middle, matching task_class_to_difficulty).
+    """
+    try:
+        idx = DIFFICULTY_BUCKETS.index(base)
+    except ValueError:
+        idx = DIFFICULTY_BUCKETS.index("code")
+    target = idx + max(0, hops)
+    if target >= len(DIFFICULTY_BUCKETS):
+        return None
+    return DIFFICULTY_BUCKETS[target]
+
+
 def domain_eligible(model_domains, requested_domain: str) -> bool:
     """True if a model may serve the requested task DOMAIN (coding, prose, math…).
 

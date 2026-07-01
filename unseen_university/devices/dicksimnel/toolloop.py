@@ -166,11 +166,23 @@ class ToolLoop:
         self._max_turns = max_turns
         self._turn_log: list[dict] = []
 
-    def run(self, ticket: dict, system_prompt: str, model_override: str = "") -> str | None:
+    def run(
+        self, ticket: dict, system_prompt: str,
+        escalation_hop: int = 0, prior_attempt: str = "",
+    ) -> str | None:
         """Work a ticket through the tool loop.
 
-        Returns the model's final text when it stops calling tools, or the
-        last assistant content if max_turns is hit, or None if inference failed.
+        Returns the model's final text when it stops calling tools, or the last
+        assistant content if max_turns is hit, or None if the inference call did not
+        reach a live source (dispatch raised, or the router returned a no-source error
+        response). That None is the AVAILABILITY signal the DS escalation driver reads:
+        a source being down is NOT a capability failure and must NOT bump difficulty
+        (T-router-failure-bump-escalation, 'Hex-DOWN is not a branch').
+
+        `escalation_hop`/`prior_attempt` are threaded into the InferenceRequest so the
+        router bumps difficulty (via escalation_hop) and the device prepends the prior
+        attempt to the system prompt. Replaces the retired `model_override` (the
+        degenerate _TIER_CASCADE) — DS never pins a model; it routes by {domain, tier}.
 
         Populates self._turn_log after each run — list of dicts with keys:
           turn (int), had_tool_calls (bool), tool_names (list[str])
@@ -229,7 +241,6 @@ class ToolLoop:
             # After turn 1, auto lets the model decide (including returning DONE:).
             extra = {"tool_choice": "required"} if turn == 0 else {}
             req = InferenceRequest(
-                model=model_override,
                 messages=messages,
                 system=full_system,
                 tools=TOOL_DEFINITIONS,
@@ -242,12 +253,28 @@ class ToolLoop:
                 temperature=0.0,
                 extra=extra,
                 foreground=False,  # flat-rate (Ollama Cloud) preferred; foreground=True would flip to OR
+                # Escalation walk: the router bumps difficulty by escalation_hop; the device
+                # prepends prior_attempt to the system prompt (only threaded on turn 0 — after
+                # that the live tool-loop transcript IS the context).
+                escalation_hop=escalation_hop if turn == 0 else 0,
+                prior_attempt=prior_attempt if turn == 0 else "",
             )
             try:
                 response = inference_device.dispatch(req)
             except Exception as exc:
                 log.error("ToolLoop inference failed on turn %d: %s", turn + 1, exc)
-                return None  # inference error — no critic finalize (no data)
+                return None  # inference error (dispatch raised) — AVAILABILITY, not capability
+            # No live source: the router returned a clean error response (not a raise) —
+            # finish_reason='error'/source_kind='none'. This is an AVAILABILITY failure
+            # (a source is down), NOT the model failing to finish; return the same None
+            # signal so the driver re-selects at the SAME difficulty instead of bumping to
+            # a pricier tier. (Without this it would swallow into MAX_TURNS → paid escalation.)
+            if response.finish_reason == "error" or response.source_kind == "none":
+                log.warning(
+                    "ToolLoop turn %d: no live source (finish=%s kind=%s) for %s — availability failure",
+                    turn + 1, response.finish_reason, response.source_kind, ticket_id,
+                )
+                return None
 
             # On first response, lock in billing type and adjust turn cap accordingly.
             if turn == 0 and response.source_billing_type == "flat_rate":
