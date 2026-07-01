@@ -6,3 +6,9 @@
 - 🎯 KEYSTONE PROVEN LIVE: DickSimnel drove devstral@Hex through a real ToolLoop → native tool_call → Write → DONE (8.8s, $0, SMOKE_OK.txt created). FIRST DONE in an agentic loop. Required 3 local-Ollama tool-path fixes (T-ollama-local-native-tools: forward tools + parse tool_calls + dict args). Closed T-ds-hello-build, T-ds-smoke-pytest, T-ollama-local-native-tools. DS exists→builds→closes on FREE LOCAL inference — the original session goal, achieved.
 
 ## In-flight: Router epic shipped live (DS proven building on Hex with T-ollama-local-native-tools fix, 8.8s, $0); awaiting next direction: operational Granny→DS.0 run, increment 5 escalation-driver design, or bank here.
+
+## Session close 2026-07-01
+Done: Day-closed 2026-06-30 (slate ✅ CLOSED, GitHub Discussion #19, roll-up note, 5 date-gates swept). 2026-07-01: shipped cost-optimizing router increments 3–4 + T-ollama-local-native-tools; DS PROVEN building live on devstral@Hex (tool_call→Write→DONE, 8.8s, $0) — the original goal. 57 commits pushed, commit hashes backfilled onto tickets.
+Next: Restart, then resume — operational Granny→bus→DS.0 dispatch on the T-ds-smoke-hello fixture, OR design increment 5's escalation-driver (deferred: escalation_hop has no live driver).
+
+## In-flight: Session paused for restart after day-close 2026-06-30 + the DS-on-Hex keystone; tree clean, all pushed. Resume on operational DS.0 dispatch or increment 5 escalation-driver design.
