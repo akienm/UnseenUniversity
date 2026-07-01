@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-inference-hex-slate-one-per-level.20260701.170752818029",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-hex-slate-one-per-level"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T23:07:52.818029+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-hex-slate-one-per-level"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-hex-slate-one-per-level",
+    "title": "Populate Hex slate: DeepSeek-R1 32B as LOCAL design/architect (fills the gap) + Qwen3-Coder 30B local coder",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router",
+      "Registry"
+    ],
+    "description": "**Problem (found running toward the first live DS test):** the difficulty levels must each have at least one model, ideally one LOCAL. Coverage today: classify=llama3.2:3b(local)✓, code=qwen2.5-coder:14b(local)✓, but DESIGN/architect = gemini/opus/sonnet — ALL cloud-paid, NO local. So a code→design escalation always jumps straight to paid cloud, and there is no local architect. **Resolution (Akien's slate + 'one at every level'):** DeepSeek-R1 32B is the local architect → tag it DESIGN difficulty on source 'ollama' (Hex). This SUPERSEDES the standing 'design = architecture = Claude-only' principle (routing_buckets note + the D-minion-model-upgrade designer→gemini choice): we now have a capable OPEN, LOCAL reasoner for architecture, so design is no longer Claude-only. Also register Qwen3-Coder 30B as the bigger LOCAL coder (the in-family escalation step above qwen2.5-coder:14b, per project_hex_ollama_model_slate). Both pulled on Hex this session. **Proposed shape:** models_registry.py — add ModelSpec(qwen3-coder:30b, source ollama, difficulty code, domains coding) and ModelSpec(deepseek-r1:32b, source ollama, difficulty design, domains generalist/reasoning); rules_engine.py — add worker→qwen3-coder:30b/hex and a designer/design→deepseek-r1:32b/hex rule so the design tier routes to the local architect first (cheapest-capable). Keep deepseek-r1:14b at code (the smaller analyst reasoner). **Affected files:** models_registry.py, rules_engine.py. **Design rules:** route by {domain,task_class}; cost-ordered (owned_local Hex cheapest); one-at-every-level; NO SQLITE. **Scope boundary:** IN: register the two pulled local models + their rules + design-level supersession. OUT: the Ollama-Cloud rungs (qwen3-coder:480b, deepseek-v3.1:671b — separate, gated on cloud availability); the escalation-ladder logic (T-inference-escalation-ladder-family-then-architect). **Test plan (stub-first):** (1) registry has a LOCAL design-difficulty model (deepseek-r1:32b/ollama); (2) a designer/design-difficulty coding request routes to deepseek-r1:32b/ollama (local) not a cloud-paid model when Hex is up; (3) every difficulty bucket (classify/code/design) has >=1 local ollama candidate. **Completion criteria:** deepseek-r1:32b registered as local design and qwen3-coder:30b as local code; a design-tier request prefers the local architect; every level has a local model; tests green + verified with a live Hex dispatch.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.6,
+    "status": "closed",
+    "intention": "I intend that every difficulty level has at least one capable model and a LOCAL one where possible, so escalation always has a rung to climb to and the cheapest-capable is often on-box.",
+    "created_at": "2026-07-01T23:07:41.538115+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "SUPERSEDED before build — the description was based on a domain-blind reading of difficulty tiers (I mixed the coding-domain and generalist-domain model lists and wrongly proposed 'design = Claude-only' needed superseding by DeepSeek). Corrected understanding (Akien, live): the coding domain's ladder is Qwen(code)->DeepSeek(design/architect), ALL on Ollama — local Hex first, Ollama-Cloud subscription only for the same-family models too large for Hex's 32GB (qwen3-coder:480b-cloud, deepseek-v3.1:671b-cloud). No Claude/Gemini/OR in this domain's ladder at all; nothing to supersede. Replaced by a correctly-scoped ticket in a fresh decision.",
+    "dispatched_at": null,
+    "completed_at": "2026-07-01T23:36:20.239629+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T23:07:41.589670+00:00",
+    "proven": false,
+    "unproven_reason": "Discarded pre-build — no code was written under this ticket; the corrected scope is refiled fresh, not amended, per /sorted's append-only decision rule.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}

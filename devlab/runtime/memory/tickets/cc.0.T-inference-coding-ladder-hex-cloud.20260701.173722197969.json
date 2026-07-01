@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-coding-ladder-hex-cloud.20260701.173722197969",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-coding-ladder-hex-cloud"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T23:37:22.197969+00:00",
+  "links": {
+    "decisions": [
+      "D-coding-domain-hex-cloud-ladder-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-coding-ladder-hex-cloud"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-coding-ladder-hex-cloud",
+    "title": "[in_progress] Register the coding domain's full Ollama ladder: 2 Hex-local + 2 Ollama-Cloud flagships",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router",
+      "Registry"
+    ],
+    "description": "**Problem:** the coding domain's difficulty ladder is incomplete. Today: code=qwen2.5-coder:14b(Hex,$0)+devstral-small-2:24b(Hex/cloud,$0); design=EMPTY (no coding-domain model at all). qwen3-coder:30b and deepseek-r1:32b are already pulled on Hex (this session) but not registered; the Ollama Cloud subscription flagships (qwen3-coder:480b-cloud, deepseek-v3.1:671b-cloud -- too large for Hex's 32GB) are not registered at all. Corrected design (D-coding-domain-hex-cloud-ladder-2026-07-01): the coding ladder is Qwen(code)->DeepSeek(design), Hex-local first, Ollama-Cloud subscription only for the flagships Hex cannot hold. No OR/Anthropic/Google belongs on this domain's ladder.\n\n**CRITICAL WIRING GAP FOUND (must be in this ticket, not a follow-up):** route()'s candidate pool is filtered FIRST by `rule.task_class == task_class` (rules_engine.py ~L222), BEFORE required_difficulty is ever considered. DS ALWAYS calls dispatch with task_class='worker' (tier-not-model contract, T-router-failure-bump-escalation) -- it never sends task_class='designer' or 'analyst'. So a new RoutingRule filed under task_class='designer' or 'analyst' would be INVISIBLE to DS's escalation walk no matter what required_difficulty says -- the walk would bump to 'design' difficulty and find zero candidates, halting on a false capability-ceiling even though a perfectly good local architect exists. ALL FOUR new rules must be filed under task_class='worker' (matching what DS actually sends); the model's difficulty_capable field (not the rule's task_class) is what makes the escalation walk find them at the design rung. This matches the existing pattern (Hex code-tier rules are already task_class='worker').\n\n**Shape:** models_registry.py -- add 4 ModelSpecs, all domains=['coding'], dollars=0:\n  1. qwen3-coder:30b, source='ollama' (Hex), tier='worker', difficulty_capable='code', features=['tools']\n  2. deepseek-r1:32b, source='ollama' (Hex), tier='analyst', difficulty_capable='design' -- the local architect, fills the empty design slot\n  3. qwen3-coder:480b-cloud, source='ollama_cloud', tier='worker', difficulty_capable='code' -- cloud escalation target, too large for Hex\n  4. deepseek-v3.1:671b-cloud, source='ollama_cloud', tier='analyst', difficulty_capable='design' -- cloud architect, too large for Hex\nrules_engine.py -- add 4 RoutingRules, ALL task_class='worker' (per the wiring gap above): 2 for source='ollama' (Hex, cost_class=owned_local, cheapest -- wins over cloud when Hex is up), 2 for source='ollama_cloud' (cost_class=subscription, wins only when Hex is down/insufficient).\n\n**Affected files:** unseen_university/devices/inference/models_registry.py, unseen_university/devices/inference/rules_engine.py, tests/inference/test_hex_registration.py (extend) or a new test_coding_domain_ladder.py.\n\n**Design rules:** route by {domain, task_class, required_difficulty}; cost-ordered selector (owned_local Hex beats subscription cloud); NO SQLITE; domain routing keeps generalist providers (Claude/Gemini/OR) out of this domain entirely.\n\n**Scope boundary:** IN -- the 4 ModelSpecs + 4 RoutingRules (all task_class='worker') + tests proving the design-difficulty rung is now reachable by DS's actual call shape. OUT -- removing the existing OR-tagged coding entries (qwen/qwen3-coder-30b-a3b-instruct, qwen/qwen3-coder -- inert since OR is disabled, cleanup is a separate lower-priority ticket); the escalation-ladder 'exhaust family before advancing' refinement (T-inference-escalation-ladder-family-then-architect, separate); fixing the same task_class-visibility gap for the OTHER pre-existing analyst/designer-tier rules that DS also can't reach (pre-existing, out of scope, note only).\n\n**Test plan (stub-first, model-agnostic where possible):** (1) registry has qwen3-coder:30b and qwen3-coder:480b-cloud at difficulty_capable=code, domains=coding; (2) registry has deepseek-r1:32b and deepseek-v3.1:671b-cloud at difficulty_capable=design, domains=coding; (3) route(task_class='worker', domain='coding', required_difficulty='design') with Hex available returns source='ollama' model='deepseek-r1:32b' (NOT the cloud one -- cost_class ordering); (4) same call with 'ollama' unavailable returns source='ollama_cloud' model='deepseek-v3.1:671b-cloud'; (5) route(task_class='worker', domain='coding', required_difficulty='code') still prefers the cheapest Hex coder over the 480b cloud one when Hex is up; (6) neither new design-difficulty model is reachable via task_class='designer' or 'analyst' surprises -- confirms the fix targets DS's actual call shape.\n\n**Completion criteria:** all 4 tests green; a live Hex dispatch at required_difficulty='design' (task_class=worker) routes to deepseek-r1:32b/ollama, verified against the real box.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-coding-domain-hex-cloud-ladder-2026-07-01",
+    "gate": null,
+    "priority": 0.6,
+    "status": "in_progress",
+    "created_at": "2026-07-01T23:37:10.752239+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T23:37:10.796155+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f7d76e16-65d4-41eb-b82d-2f78b45d04a4"
+  }
+}

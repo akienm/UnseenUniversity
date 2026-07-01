@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-inference-ollama-honest-liveness",
-    "title": "[sprint] Inference: OllamaSource liveness reflects dispatch-ability, not just socket-ping",
+    "title": "Inference: OllamaSource liveness reflects dispatch-ability, not just socket-ping",
     "size": "S",
     "tags": [
       "Inference",
       "HonestLiveness"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.5,
     "gate": null,
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
@@ -35,14 +35,20 @@
     "created_at": "2026-06-23T21:26:20.949291+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "OllamaSource.ping() now probes GET /api/tags (HTTP, read-only) instead of a bare socket connect — a socket-up-but-API-dead/404/empty-models server reads as unavailable so the selector skips it and falls through (safe given the shipped chokepoint). Fail-soft: probe errors → available=False, never raises into the health loop. 6 tests green, proven non-vacuous (hollow always-True ping fails 5/6). 0 regressions.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T22:56:58.983180+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T21:26:20.999495+00:00"
+    "scraps_validated": "2026-06-23T21:26:20.999495+00:00",
+    "proven": false,
+    "unproven_reason": "Additive-test class (same lever as T-proof-emitter-additive-surface-mode): the 6 tests ARE a genuine red→green (a hollow always-True ping fails 5/6) but proof_emitter's diff-inversion strips the new test file. The full behavioral proof (a real socket-up-but-model-absent Hex actually gets skipped) lands in the Phase-A live smoke test.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

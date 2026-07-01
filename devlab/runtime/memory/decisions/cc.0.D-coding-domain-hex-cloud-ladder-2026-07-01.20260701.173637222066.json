@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.D-coding-domain-hex-cloud-ladder-2026-07-01.20260701.173637222066",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-coding-domain-hex-cloud-ladder-2026-07-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-01T17:36:37.222066",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-coding-domain-hex-cloud-ladder-2026-07-01",
+    "title": "Coding domain's full Ollama ladder: Hex-local + Ollama-Cloud subscription, no other providers",
+    "status": "open",
+    "date": "2026-07-01",
+    "spawned_tickets": [
+      "T-inference-coding-ladder-hex-cloud",
+      "T-consequence-D-coding-domain-hex-cloud-ladder"
+    ],
+    "text": "# D-coding-domain-hex-cloud-ladder-2026-07-01\n**title:** Coding domain's full Ollama ladder: Hex-local + Ollama-Cloud subscription, no other providers\n**date:** 2026-07-01\n**status:** open\n**spawned_tickets:** T-inference-coding-ladder-hex-cloud, T-consequence-D-coding-domain-hex-cloud-ladder\n\n## Decision narrative\nDuring rung-3 planning for the live DS/Hex proof, CC misread the registry domain-blind (mixed the coding-domain model list with the generalist list) and wrongly proposed Claude/Gemini as the coding escalation target and 'design=Claude-only' as a rule to supersede. Akien corrected: the coding domain's ladder is entirely Qwen (code) -> DeepSeek (design/architect), ALL on Ollama. Hex-local models are the free floor; Ollama-Cloud SUBSCRIPTION models (qwen3-coder:480b-cloud, deepseek-v3.1:671b-cloud) are the escalation target ONLY because those flagships are too large to run on Hex's 32GB RAM -- 'coding tasks fail over on models that would be too large to run here.' Classification is out of this ladder entirely -- that work is moving to compiled graph-trees, not an LLM tier. No OR/Anthropic/Google belongs on the coding domain's ladder.\n\n## Hypothesis\nA coding-domain request that bumps to design-difficulty (after a capability failure on the code tier) routes to the local deepseek-r1:32b on Hex first; only when Hex's local candidates are unavailable does it escalate to deepseek-v3.1:671b-cloud on the Ollama Cloud subscription -- never to OR/Anthropic/Google, at any difficulty rung, for this domain.\n\n## Measurement Signal\nroute(task_class='worker', domain='coding', required_difficulty='design') returns source='ollama' model='deepseek-r1:32b' when Hex is available; with 'ollama' marked unavailable, it returns source='ollama_cloud' model='deepseek-v3.1:671b-cloud'. Both cost_records show dollars=0.0. A live Hex dispatch at design-difficulty (rung-3 test) shows the DickSimnel log routing to deepseek-r1:32b/ollama.\n\n## Intention\nI intend that a coding-domain request escalates through the SAME family per rising difficulty rung, Hex-local first and Ollama-Cloud subscription only when a task genuinely needs a model too large for Hex to hold -- so cost stays $0 until that point, and no other provider is ever in the loop for this domain."
+  }
+}
