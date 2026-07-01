@@ -17,22 +17,22 @@
   },
   "body": {
     "id": "T-inference-tier-escalation-tests-red",
-    "title": "[sprint] tests/inference/test_inference_tier_escalation.py: 3 tests red (no live source in test env)",
+    "title": "tests/inference/test_inference_tier_escalation.py: 3 tests red (no live source in test env)",
     "size": "S",
     "tags": [
       "Inference",
       "TestFix"
     ],
     "priority": 0.2,
-    "status": "sprint",
+    "status": "closed",
     "intention": "I intend that the tier-escalation tests pass hermetically without live providers.",
     "description": "**Problem:** Pre-existing (confirmed RED on HEAD 6763b897 independent of T-proxy-source-kind): tests/inference/test_inference_tier_escalation.py::TestEscalationCeiling::test_hop_0_passes_through and TestEscalationHandoff::{test_hop_1_prepends_summary_to_system, test_hop_1_no_prior_attempt_no_prepend} fail with 'complete inference failure — no live source for task_class=worker'. They appear to exercise dispatch() routing without registering an available stub source, so in a provider-less test env route() returns None and the chokepoint fires. Likely need a registered MagicMock source (see test_inference_device.py::test_dispatch_via_rules_engine pattern) or @pytest.mark.integration.\n**Affected files:** tests/inference/test_inference_tier_escalation.py (test setup only, likely).\n**Scope boundary:** IN — make the 3 tests hermetic (stub a source) or mark integration. OUT — changing dispatch/escalation behavior.\n**Test plan:** the 3 named tests pass with no live Ollama/OR; full tests/inference/ green.\n**Completion criteria:** tests/inference/test_inference_tier_escalation.py green hermetically.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-29T18:28:57.661567+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "SUBSUMED by T-inference-pin-gate-enforce (commit 1bfbc843). The 3 tests it names (test_hop_0_passes_through, test_hop_1_prepends_summary_to_system, test_hop_1_no_prior_attempt_no_prepend) are GREEN at HEAD — verified now (3 passed). Root cause was the 'openai/gpt-4o-mini' default model blocking the legacy path + a partial _make_device() lacking _monitor; both fixed during the domain-routing batch (default→'' in migrate-pinners 258168b8; _monitor added to the fixture in the pin-gate commit).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T22:37:42.406850+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -40,6 +40,12 @@
     "gate": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-29T18:28:57.710087+00:00"
+    "scraps_validated": "2026-06-29T18:28:57.710087+00:00",
+    "proven": false,
+    "unproven_reason": "Proof is the 3 green tests at HEAD (a hollow build fails them), but the fix shipped under another ticket's commit — this is a duplicate-close, not a fresh proof-emitter run.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
