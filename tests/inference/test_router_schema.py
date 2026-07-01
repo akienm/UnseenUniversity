@@ -98,7 +98,7 @@ def test_difficulty_bucket_explicit_wins():
 def test_difficulty_bucket_falls_back_to_tier():
     assert ModelSpec("m", "s", "minion", 0.0, 0.0, 8192).difficulty_bucket == "classify"
     assert ModelSpec("m", "s", "worker", 0.0, 0.0, 8192).difficulty_bucket == "code"
-    assert ModelSpec("m", "s", "analyst", 0.0, 0.0, 8192).difficulty_bucket == "design"
+    assert ModelSpec("m", "s", "analyst", 0.0, 0.0, 8192).difficulty_bucket == "code"
     assert ModelSpec("m", "s", "designer", 0.0, 0.0, 8192).difficulty_bucket == "design"
 
 
@@ -116,7 +116,7 @@ def test_dollars_per_unit_sums_token_costs():
 def test_task_class_to_difficulty_known():
     assert task_class_to_difficulty("minion") == "classify"
     assert task_class_to_difficulty("worker") == "code"
-    assert task_class_to_difficulty("analyst") == "design"
+    assert task_class_to_difficulty("analyst") == "code"   # reasoning, not architecture
     assert task_class_to_difficulty("designer") == "design"
 
 

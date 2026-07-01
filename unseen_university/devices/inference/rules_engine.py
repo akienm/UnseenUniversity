@@ -89,6 +89,13 @@ _DEFAULT_RULES: list[RoutingRule] = [
     # devstral-small-2 first: purpose-built agentic coding model, floor candidate
     RoutingRule(10, "worker", "devstral-small-2:24b", "ollama_cloud", "worker→devstral-small-2:24b/ollama-pro"),
     RoutingRule(11, "worker", "qwen3-coder-next", "ollama_cloud", "worker→qwen3-coder-next/ollama-pro"),
+    # Hex (owned-local, source 'ollama') — the selector prefers these (cost_class=owned_local)
+    # over every cloud source when Hex is up. Priority is only a same-cost tiebreak.
+    # devstral (agentic) is the worker floor; qwen2.5-coder is the local coder fallback.
+    RoutingRule(4, "worker", "devstral-small-2:24b", "ollama", "worker→devstral-small-2:24b/hex"),
+    RoutingRule(5, "worker", "qwen2.5-coder:14b", "ollama", "worker→qwen2.5-coder:14b/hex"),
+    RoutingRule(4, "minion", "llama3.2:3b", "ollama", "minion→llama3.2:3b/hex"),
+    RoutingRule(4, "analyst", "deepseek-r1:14b", "ollama", "analyst→deepseek-r1:14b/hex"),
     # Analyst tier — usage-based fallback
     RoutingRule(3, "analyst", "deepseek/deepseek-v4-flash", "openrouter", "analyst→deepseek-v4-flash/OR"),
     # Analyst tier — Ollama Pro flat-rate

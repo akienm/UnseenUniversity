@@ -458,11 +458,15 @@ class DickSimnelDevice(BaseDevice):
     #
     # OLLAMA-ONLY MODE: OR tiers disabled — no paid fallthrough. Escalate to CC if devstral fails.
     _TIER_CASCADE = [
-        ("devstral-small-2:24b", "builder"),        # tier 0: flat-rate floor; purpose-built agentic coding
-        # Creator tier — larger OR model; absorbs builder escalations before reaching CC
-        # Enable when OR/paid inference is back on.
-        # ("qwen/qwen3-30b-a3b-instruct", "creator"),  # DISABLED — OR off
-        # ("anthropic/claude-haiku-4.5", "creator"),   # DISABLED — OR off
+        # tier 0 (builder): route by the worker TIER, not an explicit model (tier-not-model
+        # contract). Empty model_override → dispatch routes via the cost-optimizing selector,
+        # which picks the cheapest capable worker source — Hex (owned-local, $0) when it's up,
+        # else the next-cheapest cloud source. An explicit model here would BYPASS the selector
+        # (dispatch resolves a known model via its own source_name), pinning DS to the cloud.
+        ("", "builder"),
+        # Creator tier — larger model; absorbs builder escalations before reaching CC.
+        # Enable when a creator-tier source is registered.
+        # ("", "creator"),
     ]
 
     def _run_inference(self, ticket: dict) -> str | None:

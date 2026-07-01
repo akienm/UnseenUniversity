@@ -57,13 +57,16 @@ _URGENCY_MAX_TIME_INDEX: dict[str, int] = {
 }
 
 # task_class (tier) → its a-priori difficulty bucket. The class IS the estimate.
+# 'design' is reserved for architecture (the designer tier, Claude-only). analyst is
+# reasoning/research — hard, but code-difficulty, not architecture — so a mid-size local
+# reasoner can serve it without overclaiming (T-ds-local-ollama-route, 2026-07-01).
 _TASK_CLASS_DIFFICULTY: dict[str, str] = {
     "minion": "classify",
     "worker": "code",
     "creator": "code",
     "batch": "code",
-    "analyst": "design",   # deep reasoning/research demands top capability
-    "designer": "design",
+    "analyst": "code",     # reasoning/research — hard but not architecture
+    "designer": "design",  # architecture; the top bucket, Claude-only
 }
 
 

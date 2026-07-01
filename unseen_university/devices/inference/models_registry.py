@@ -230,6 +230,51 @@ _SEED: list[ModelSpec] = [
               "2026-06-19 from llama3.3:70b (404 — not on the account). Preferred when OLLAMA_API_KEY set.",
         created_at="2026-06-19T00:00:00Z",
     ),
+    # ── Hex (Mac Studio M1 Max 32GB, 10.0.0.100) — owned-local, $0, source 'ollama' ──
+    # Registered 2026-07-01 (T-ds-local-ollama-route). Roster probed live against Hex's
+    # /api/tags. Source 'ollama' is cost_class=owned_local + time_bucket=interactive, so
+    # the cost-optimizing selector prefers these over every cloud source when Hex is up.
+    # dollars=0 (owned hardware); difficulty_capable set explicitly per model. devstral
+    # is NOT re-registered here — its existing spec is reused by a source='ollama' rule
+    # (route pairs model_id with source_name independently).
+    ModelSpec(
+        model_id="llama3.2:3b",
+        source_name="ollama",
+        tier="minion",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=131_072,
+        tags=["local", "hex", "fast", "minion"],
+        difficulty_capable="classify",
+        notes="Hex local minion — trivial transforms/classification. 2GB, fits easily.",
+        created_at="2026-07-01T00:00:00Z",
+    ),
+    ModelSpec(
+        model_id="qwen2.5-coder:14b",
+        source_name="ollama",
+        tier="worker",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=32_768,
+        tags=["local", "hex", "coding", "worker"],
+        difficulty_capable="code",
+        features=["tools"],
+        notes="Hex local worker — coder fallback behind devstral. 9GB.",
+        created_at="2026-07-01T00:00:00Z",
+    ),
+    ModelSpec(
+        model_id="deepseek-r1:14b",
+        source_name="ollama",
+        tier="analyst",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=131_072,
+        tags=["local", "hex", "reasoning", "analyst"],
+        difficulty_capable="code",
+        notes="Hex local analyst — 14B reasoner. Serves the analyst (reasoning) tier; NOT "
+              "design/architecture (that stays Claude-direct). 9GB.",
+        created_at="2026-07-01T00:00:00Z",
+    ),
     ModelSpec(
         model_id="anthropic/claude-haiku-4.5",
         source_name="openrouter",
