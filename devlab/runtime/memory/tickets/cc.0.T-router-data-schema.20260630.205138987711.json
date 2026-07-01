@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-router-data-schema",
-    "title": "[sprint] Inference router increment 1 — the per-source + per-call data schema the selector reads",
+    "title": "[in_progress] Inference router increment 1 — the per-source + per-call data schema the selector reads",
     "size": "M",
     "tags": [
       "Inference",
@@ -31,7 +31,7 @@
     "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
     "gate": null,
     "priority": 0.7,
-    "status": "sprint",
+    "status": "in_progress",
     "created_at": "2026-07-01T02:51:30.635534+00:00",
     "worker": null,
     "created_by": null,
