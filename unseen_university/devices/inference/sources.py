@@ -324,6 +324,12 @@ class OllamaSource(Source):
             "stream": False,
             "options": {"temperature": req.temperature, "num_predict": req.max_tokens},
         }
+        # Forward tool definitions so the model emits native tool_calls (Ollama /api/chat
+        # supports `tools`). Without this, a tool-capable model (devstral) improvises the
+        # call as prose and the ToolLoop never sees a tool_call — the local-Ollama
+        # counterpart of the OllamaCloudSource tools-forwarding fix.
+        if req.tools:
+            payload["tools"] = req.tools
         payload.update(req.extra)
         body = json.dumps(payload).encode()
         http_req = urllib.request.Request(

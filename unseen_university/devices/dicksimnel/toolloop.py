@@ -320,10 +320,17 @@ class ToolLoop:
                 tc_id = tc.get("id", "")
                 fn = tc.get("function", {})
                 name = fn.get("name", "")
-                try:
-                    args = json.loads(fn.get("arguments", "{}"))
-                except json.JSONDecodeError:
-                    args = {}
+                # Tool-call arguments come as a JSON string (OpenAI) OR an already-parsed
+                # dict (Ollama /api/chat). Accept both — json.loads on a dict raises
+                # TypeError, not JSONDecodeError, so it must be handled explicitly.
+                raw_args = fn.get("arguments", "{}")
+                if isinstance(raw_args, dict):
+                    args = raw_args
+                else:
+                    try:
+                        args = json.loads(raw_args)
+                    except (json.JSONDecodeError, TypeError):
+                        args = {}
                 # Advisory: apply prior critic rules before executing this tool call.
                 if critic is not None:
                     try:

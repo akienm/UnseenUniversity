@@ -608,6 +608,10 @@ def _parse_response(raw: dict, elapsed_ms: int = 0) -> InferenceResponse:
     # Ollama /api/chat native format
     msg = raw.get("message") or {}
     text = msg.get("content") or ""
+    # Ollama /api/chat returns native tool_calls on the message (same shape the ToolLoop
+    # reads from the OpenAI-format branch above). Without extracting them here, a local
+    # Ollama model's tool calls are invisible and it looks like plain prose.
+    tool_calls = msg.get("tool_calls") or None
     done_reason = raw.get("done_reason") or ("stop" if raw.get("done") else "")
     return InferenceResponse(
         text=text,
@@ -616,5 +620,6 @@ def _parse_response(raw: dict, elapsed_ms: int = 0) -> InferenceResponse:
         input_tokens=raw.get("prompt_eval_count", 0),
         output_tokens=raw.get("eval_count", 0),
         elapsed_ms=elapsed_ms,
+        tool_calls=tool_calls,
         raw=raw,
     )
