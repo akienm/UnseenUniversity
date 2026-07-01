@@ -39,6 +39,7 @@ addopts = "--import-mode=importlib"
 markers = [
     "docker: tests that require Docker installed and running (deselect with -m 'not docker')",
     "integration: tests that require live external services (deselect with -m 'not integration')",
+    "live: tests that drive real inference against a live host (e.g. Hex); skip-soft when unreachable",
 ]
 
 [project.scripts]
