@@ -29,7 +29,6 @@ from unseen_university.devices.intent.store import IntentStore
 log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
-_PREDICT_MODEL = "anthropic/claude-haiku-4-5-20251001"
 _FEW_SHOT_LIMIT = 10
 
 
@@ -175,7 +174,9 @@ class IntentExtractorDevice(BaseDevice):
 
         req = InferenceRequest(
             messages=[{"role": "user", "content": prompt}],
-            model=_PREDICT_MODEL,
+            # Route by domain — intent classification is a trivial classify task.
+            task_class="minion",
+            domain="",
             max_tokens=256,
             temperature=0.0,
             agent_id=self.DEVICE_ID,

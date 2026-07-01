@@ -14,7 +14,6 @@ from unseen_university.devices.evaluator.core import EvaluatorCore
 log = logging.getLogger(__name__)
 
 _RULES_DIR = Path.home() / ".unseen_university" / "critic_rules"
-_CRITIC_MODEL = "anthropic/claude-haiku-4-5-20251001"
 
 _DECISION_CRITERIA = [
     {
@@ -117,7 +116,7 @@ class CriticDevice(BaseDevice):
             f"Tool result: {decision.tool_result or '(no result)'}"
         )
         try:
-            core = EvaluatorCore(self._get_inference(), model=_CRITIC_MODEL)
+            core = EvaluatorCore(self._get_inference())  # route by domain (analyst tier)
             result = core.evaluate(context, _DECISION_CRITERIA, optimism=-1.0)
             passed = result.get("passed", False)
             score = result.get("score", 0.0)

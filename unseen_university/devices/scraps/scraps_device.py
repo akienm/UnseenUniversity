@@ -21,8 +21,6 @@ from unseen_university.device import INTERFACE_VERSION, BaseDevice
 from unseen_university.devices.scraps import validation_rules
 
 _START_TIME = time.time()
-
-_FUZZY_MODEL = "qwen/qwen3-8b"
 _FUZZY_PROMPT = (
     "You are a ticket quality reviewer. Given the ticket JSON below, "
     "decide whether it contains enough actionable detail for a developer "
@@ -56,7 +54,9 @@ def _fuzzy_check(ticket: dict) -> tuple[bool, str]:
                     ),
                 }
             ],
-            model=_FUZZY_MODEL,
+            # Route by domain — VALID/INVALID fuzzy check is a trivial classify task.
+            task_class="minion",
+            domain="",
             max_tokens=64,
             temperature=0.0,
         )

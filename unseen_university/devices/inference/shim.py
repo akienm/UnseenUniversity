@@ -23,13 +23,27 @@ from dataclasses import dataclass, field
 
 from unseen_university.shim import BaseShim
 
+# The ONLY sanctioned reasons a caller may pin a specific `model` (bypassing
+# domain routing). Everything else routes by {domain, urgency} — the caller gets
+# what it asks for, as cheaply as possible (D-inference-domain-routing). The
+# pin-gate (T-inference-pin-gate-enforce) rejects a non-empty `model` whose
+# `pin_reason` is not in this set.
+#   inference_test   — testing the inference system itself (self-tests, harnesses)
+#   akien_experiment — Akien's experiments
+#   model_competition — model-competition / eval testing (e.g. evaluator model_eval_run)
+SANCTIONED_PIN_REASONS = frozenset({"inference_test", "akien_experiment", "model_competition"})
+
 
 @dataclass
 class InferenceRequest:
     """Bus envelope for an inference dispatch call."""
 
     messages: list[dict]
-    model: str = "openai/gpt-4o-mini"
+    # Empty = route by {domain, task_class, urgency} (the normal path). A non-empty
+    # model is a PIN — only sanctioned with a `pin_reason` (see SANCTIONED_PIN_REASONS
+    # and T-inference-pin-gate-enforce). Was 'openai/gpt-4o-mini' (a latent default
+    # pin that never resolved — it isn't in the registry — so this is behavior-neutral).
+    model: str = ""
     max_tokens: int = 4096
     temperature: float = 0.0
     system: str = ""
@@ -43,6 +57,10 @@ class InferenceRequest:
     # a domain (never a model); the router keeps only domain-capable sources. Empty =
     # generalist (matches any model). Orthogonal to task_class (difficulty/tier).
     domain: str = ""
+    # Why this call pins a specific `model` (bypassing domain routing). MUST be one of
+    # SANCTIONED_PIN_REASONS when `model` is non-empty, else the pin-gate rejects it
+    # (T-inference-pin-gate-enforce). Empty for the normal route-by-domain path.
+    pin_reason: str = ""
     # Agent context for budget ledger attribution and enforcement.
     agent_id: str = ""
     instance_id: str = ""

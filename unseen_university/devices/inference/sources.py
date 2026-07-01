@@ -818,7 +818,8 @@ class OllamaCloudSource(Source):
             from unseen_university.devices.inference.shim import InferenceRequest
 
             req = InferenceRequest(
-                model=test_model,
+                model=test_model,  # SANCTIONED pin — self-test targets one small model
+                pin_reason="inference_test",
                 messages=[{"role": "user", "content": "hello world"}],
                 system="",
                 max_tokens=10,

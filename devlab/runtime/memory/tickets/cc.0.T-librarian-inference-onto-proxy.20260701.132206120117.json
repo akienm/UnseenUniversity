@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-librarian-inference-onto-proxy.20260701.132206120117",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-inference-onto-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T19:22:06.120117+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-librarian-inference-onto-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-inference-onto-proxy",
+    "title": "[sprint] Librarian: route its inference through the Proxy + domain router (3 bypasses)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router",
+      "Librarian"
+    ],
+    "description": "**Problem (found during T-inference-migrate-pinners):** the librarian device bypasses the cost-optimizing router and, worse, the Proxy itself, in THREE places: (a) `librarian/recall.py:275` calls `anthropic.Anthropic().messages.create(model='claude-haiku-4-5-20251001')` DIRECTLY; (b) `librarian/memory_writer.py:84` does the same for tagging; both violate the hard rule 'ALL inference through the Proxy — no direct OR/Anthropic calls ever'. (c) `librarian/research.py:91` dispatches `model=selection.model` where `selection` comes from librarian's own `ModelSelection` tier system (`librarian/inference.py`) — an indirect model pin that sidesteps domain routing. **Proposed shape:** (a)+(b) replace the direct `anthropic` SDK calls with `InferenceDevice().dispatch(InferenceRequest(..., task_class=<tier>, domain=''))`; (c) retire or adapt `ModelSelection` so callers pass `{task_class, domain}` and the router picks the model — no `model=` pin unless a sanctioned pin_reason applies. **Affected files:** librarian/recall.py, librarian/memory_writer.py, librarian/research.py, librarian/inference.py (ModelSelection). **Design rules:** NO SQLITE; ALL inference through the Proxy; no direct anthropic/OR imports in device code; route by {domain, task_class}; log the routing crossing. **Scope boundary:** IN: the 3 librarian bypasses -> Proxy + domain routing; retire/adapt ModelSelection's model-pinning. OUT: other devices (already migrated); the pin-gate flip. **Test plan (stub-first red->green):** (1) grep shows ZERO `import anthropic` / direct `.messages.create(` in librarian device code; (2) librarian recall/write/research dispatch InferenceRequest with a task_class + domain and no literal model pin; (3) existing librarian tests pass or are updated to assert Proxy routing. **Completion criteria:** librarian does all inference via the Proxy with domain routing; no direct anthropic calls; no unsanctioned model pins.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.4,
+    "status": "sprint",
+    "created_at": "2026-07-01T19:21:57.562703+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every device does its inference through the Proxy and routes by {domain, task_class} — so no device holds a private model pin or a direct provider connection the cost-optimizing router can't see.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T19:21:57.613236+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "118c9b43-e0f1-44ba-bcb8-4704fb2776a6"
+  }
+}

@@ -20,7 +20,8 @@ Node shape (each element of the returned list):
         }
     }
 
-Routing: uses READER_EXTRACT_MODEL env var (default: qwen2.5:7b via Ollama).
+Routing: dispatches with task_class='worker', domain='' — the cost-optimizing
+router picks the cheapest capable source (no per-device model pin).
 The injected inference device controls the backend (INFERENCE_MODE=ollama|openrouter).
 
 D-reader-device-unified-uri-2026-05-28
@@ -30,14 +31,12 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from datetime import datetime, timezone
 from typing import Any
 
 log = logging.getLogger(__name__)
 
-_EXTRACT_MODEL = os.environ.get("READER_EXTRACT_MODEL", "qwen2.5:7b")
 _CONFIDENCE_THRESHOLD = 0.60
 
 _EXTRACT_PROMPT = """\
@@ -108,14 +107,16 @@ def _extract_chunk(
             {"role": "system", "content": _EXTRACT_PROMPT},
             {"role": "user", "content": user_content},
         ],
-        model=_EXTRACT_MODEL,
+        # Route by domain — entity/relation extraction is a moderate generalist task.
+        task_class="worker",
+        domain="",
         max_tokens=1024,
         temperature=0.2,
     )
 
     try:
         resp = inference.dispatch(req)
-        model_used = getattr(resp, "model", _EXTRACT_MODEL) or _EXTRACT_MODEL
+        model_used = getattr(resp, "model", "") or "router-selected"
         raw = resp.text.strip()
         parsed = json.loads(_clean_json(raw))
     except json.JSONDecodeError as exc:

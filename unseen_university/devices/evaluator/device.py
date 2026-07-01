@@ -408,7 +408,8 @@ class EvaluatorDevice(BaseDevice):
 
             req = InferenceRequest(
                 messages=[{"role": "user", "content": task}],
-                model=model,
+                model=model,  # SANCTIONED pin — dispatching each candidate model
+                pin_reason="model_competition",
                 max_tokens=2048,
                 temperature=0.0,
                 agent_id=agent_id,

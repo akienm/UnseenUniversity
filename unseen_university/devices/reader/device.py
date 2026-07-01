@@ -32,7 +32,6 @@ from .uri import FetchResult, fetch_uri
 log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
-_MODEL = os.environ.get("READER_MODEL", "openai/gpt-4o-mini")
 
 SummaryResult = dict[str, Any]  # {exec: str, detail: str, chunks: list[str]}
 
@@ -63,7 +62,9 @@ def _llm_summarize(text: str, tier: Literal["exec", "detail"], inference: Any) -
 
     req = InferenceRequest(
         messages=[{"role": "user", "content": f"{instruction}\n\n{text}"}],
-        model=_MODEL,
+        # Route by domain — summarization is a moderate generalist task.
+        task_class="worker",
+        domain="",
         max_tokens=max_tokens,
         temperature=0.0,
     )

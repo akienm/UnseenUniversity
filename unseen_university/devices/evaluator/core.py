@@ -25,8 +25,6 @@ _RESPONSE_FORMAT = (
     " Respond ONLY with valid JSON (no markdown, no prose):\n" + _JSON_SHAPE
 )
 
-_HAIKU_MODEL = "anthropic/claude-haiku-4-5-20251001"
-
 
 def _build_system(optimism: float) -> str:
     """Build an evaluation system prompt biased by optimism.
@@ -72,7 +70,10 @@ class EvaluatorCore:
     multi-judge orchestration — those belong in EvaluatorDevice.
     """
 
-    def __init__(self, inference_device=None, model: str = _HAIKU_MODEL) -> None:
+    def __init__(self, inference_device=None, model: str = "") -> None:
+        # Default '' routes by domain (analyst/reasoning tier — evaluation is a
+        # judgment task). A non-empty model is a pin — only sanctioned callers
+        # (inference-testing, model-competition) should pass one.
         self._inference = inference_device
         self._model = model
 
@@ -110,7 +111,9 @@ class EvaluatorCore:
             req = InferenceRequest(
                 messages=[{"role": "user", "content": prompt}],
                 system=system,
-                model=self._model,
+                model=self._model,  # '' by default → route by domain
+                task_class="analyst",
+                domain="",
                 max_tokens=1024,
                 temperature=0.0,
             )

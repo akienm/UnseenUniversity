@@ -40,7 +40,6 @@ log = logging.getLogger(__name__)
 _START_TIME = time.time()
 _PORT = int(os.environ.get("SUMMARIZER_PORT", "8085"))
 _CHUNK_MAX_WORDS = int(os.environ.get("SUMMARIZER_CHUNK_WORDS", "500"))
-_MODEL = os.environ.get("SUMMARIZER_MODEL", "openai/gpt-4o-mini")
 
 FormatType = Literal["exec", "detail", "chunks", "all"]
 
@@ -175,7 +174,9 @@ def _llm_summarize(text: str, tier: Literal["exec", "detail"], inference) -> str
 
     req = InferenceRequest(
         messages=[{"role": "user", "content": f"{instruction}\n\n{text}"}],
-        model=_MODEL,
+        # Route by domain — summarization is a moderate generalist task.
+        task_class="worker",
+        domain="",
         max_tokens=max_tokens,
         temperature=0.0,
     )
