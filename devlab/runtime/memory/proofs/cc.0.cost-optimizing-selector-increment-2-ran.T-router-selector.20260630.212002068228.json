@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.cost-optimizing-selector-increment-2-ran.T-router-selector.20260630.212002068228",
+  "emitter": "cc.0",
+  "namespace": [
+    "cost-optimizing-selector-increment-2-ran",
+    "T-router-selector"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-30T21:20:02.068228",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-router-selector"
+    ],
+    "commits": [
+      "8e814ad42fc035fc2fa3ead2489a0af13e8f1c43"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "cost-optimizing selector (increment 2) ranks by cost_class",
+    "intention": "The stateless selector ranks capable candidates by cost_class first, so an owned-local source beats a token-direct cloud source regardless of rule order — the cheapest capable source wins, not the highest-priority rule",
+    "test": "tests/inference/test_router_selector.py::test_cost_class_dominates_dollars",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_router_selector.py::test_cost_class_dominates_dollars",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        reg.register(_src(\"cloud\", \"token_direct\"))\n        models = ModelsRegistry([\n            ModelSpec(\"local-m\", \"local\", \"worker\", 0.0, 0.0, 8192),\n            ModelSpec(\"cloud-m\", \"cloud\", \"worker\", 0.01, 0.01, 8192),\n        ])\n        rules = [\n            RoutingRule(1, \"worker\", \"cloud-m\", \"cloud\", \"cloud\"),\n            RoutingRule(2, \"worker\", \"local-m\", \"local\", \"local\"),\n        ]\n        decision = RulesEngine(reg, models, rules).route(\"worker\")\n>       assert decision.source.name == \"local\"\nE       AssertionError: assert 'cloud' == 'local'\nE         \nE         - local\nE         + cloud\n\ntests/inference/test_router_selector.py:70: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_router_selector.py::test_cost_class_dominates_dollars\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "8e814ad42fc035fc2fa3ead2489a0af13e8f1c43",
+    "impl_paths": [
+      "tests/inference/test_flat_rate_routing.py",
+      "unseen_university/devices/inference/rules_engine.py"
+    ],
+    "ticket": "T-router-selector",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
