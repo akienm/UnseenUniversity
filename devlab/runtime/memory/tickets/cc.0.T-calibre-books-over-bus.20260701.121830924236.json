@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-calibre-books-over-bus.20260701.121830924236",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-calibre-books-over-bus"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T18:18:30.924236+00:00",
+  "links": {
+    "decisions": [
+      "D-calibre-device-encapsulation-2026-07-01"
+    ],
+    "tickets": [
+      "T-calibre-books-over-bus"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-calibre-books-over-bus",
+    "title": "[sprint] Books via the calibre MCP device over the bus — callers stop hardcoding library paths",
+    "size": "L",
+    "tags": [
+      "Calibre",
+      "Device",
+      "Bus"
+    ],
+    "decision_id": "D-calibre-device-encapsulation-2026-07-01",
+    "priority": 0.35,
+    "gate": "T-calibre-externalize-config",
+    "status": "sprint",
+    "intention": "I intend that callers get books through the calibre device's MCP tools over the bus, so the ebook library path is encapsulated in ONE device's data and no caller worries about paths.",
+    "description": "**Problem:** the whole point of the calibre device is MCP-bus access to the books so there are 'no more paths to worry about except encapsulated in the device's data'. But callers still hardcode the library path directly: reader/uri.py (_DEFAULT_CALIBRE_PATH), igor/tools/learner.py (_CALIBRE_DB metadata.db), igor/paths.py (ebooks_root/calibre_library). These duplicate the path the calibre device already owns. (Note: these were just repointed to /media in T-repoint-ebooks-off-vestigial-symlink as an interim; THIS ticket is the endpoint that removes the direct-path dependency entirely.) **Proposed shape:** migrate book access in reader + igor (learner) to call the calibre device's MCP tools (search_books/get_book_metadata/list_books/get_book_content) over the bus instead of opening the library path directly. After migration, the ONLY place the ebook library path exists is the calibre device's runtime config. **Affected files:** unseen_university/devices/reader/uri.py, unseen_university/devices/igor/tools/learner.py, unseen_university/devices/igor/paths.py (retire the ebook-path properties or repoint them at the device), and the calibre device MCP tool surface. **Design rules:** ALL book access via the calibre device over the bus; NO direct library-path opens in callers; NO SQLITE. **Scope boundary:** IN: reader + igor/learner book access moved to the bus; path properties retired/redirected. OUT: the device's own config externalization (T-calibre-externalize-config, gates this); new tools beyond what exists. **Test plan:** (1) reader fetches a book via the calibre device (bus/MCP), not a hardcoded path; (2) learner's Igor-tagged ingest goes through the device; (3) grep shows no direct ebook library-path opens remain in reader/igor. **Completion criteria:** reader + igor obtain books via the calibre MCP device; the library path exists only in the device's runtime config; tests green. **Note:** may SPLIT (reader vs igor/learner) at sprint time if too large for one unit.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-01T18:17:44.032769+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T18:17:44.032970+00:00"
+  }
+}

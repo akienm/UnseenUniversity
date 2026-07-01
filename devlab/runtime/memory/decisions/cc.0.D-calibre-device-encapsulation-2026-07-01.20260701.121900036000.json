@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-calibre-device-encapsulation-2026-07-01.20260701.121900036000",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-calibre-device-encapsulation-2026-07-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-01T12:19:00.036000",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-calibre-device-encapsulation-2026-07-01",
+    "title": "Calibre device = thin shim + MCP-bus book access; machine config in ~/.unseen_university/devices/calibre/, not repo; calibredb is the sanctioned NO-SQLITE exception",
+    "status": "open",
+    "date": "2026-07-01",
+    "spawned_tickets": [
+      "T-calibre-externalize-config",
+      "T-calibre-books-over-bus",
+      "T-consequence-D-calibre-device-encapsulation"
+    ],
+    "text": "# D-calibre-device-encapsulation-2026-07-01\n**title:** Calibre device = thin shim + MCP-bus book access; machine config in ~/.unseen_university/devices/calibre/ (not repo); calibredb is the sanctioned NO-SQLITE exception\n**date:** 2026-07-01\n**status:** open\n**spawned_tickets:** T-calibre-externalize-config, T-calibre-books-over-bus, T-consequence-D-calibre-device-encapsulation\n\n## Decision narrative (Akien, 2026-07-01)\nThe point of the calibre device is to provide MCP-bus access to the books: 'no more paths to worry about except encapsulated in the device's data.' The device should be little more than the shim + its MCP tools. It is the ONE sanctioned exception to NO-SQLITE — because Calibre's metadata.db is EXTERNAL and already there (owned by Calibre) — and even then we never `import sqlite3`; we shell out to `calibredb` (already the case). The shim's DATA (library_path, calibredb_path) is MACHINE-SPECIFIC — about Akien's computer, not the next installer's — so it belongs in `~/.unseen_university/devices/calibre/` (the established ~/.unseen_university/devices/<device>/ runtime convention: cc_0, granny_weatherwax already live there), NEVER baked into repo code or a repo-committed config.cfg.\n\n## Found state (2026-07-01)\nThe device is already thin (device.py ~230 lines) and already calibredb-only (no sqlite import). But: (a) a repo-committed config.cfg carries Akien's machine path AND is DEAD (never read — no loader; docstring lies about 'config/calibre.cfg'); (b) device.py hardcodes _LIBRARY_PATH_DEFAULT to Akien's path; (c) BOTH paths are WRONG — missing the 'Calibre Portable' segment (real lib: /media/akien/onedrive/AkiensMedia/Ebooks/Calibre Portable/Calibre Library, metadata.db verified there); (d) callers (reader/uri.py, igor/tools/learner.py, igor/paths.py) still hardcode the library path directly instead of using the device over the bus.\n\n## Hypothesis\nAfter these ship: the calibre device holds NO machine-specific path in repo code or a repo config; it reads library_path+calibredb_path from ~/.unseen_university/devices/calibre/config.cfg (env still overrides); the library path is correct (Calibre Portable segment); and callers get books via the calibre MCP device over the bus, so the ebook path exists in exactly one place — the device's runtime data.\n\n## Measurement Signal\ngrep shows no '/media/akien' or Akien-specific path in unseen_university/devices/calibre/*.py and the repo config.cfg is gone; CalibreDevice loads its path from uu_home()/devices/calibre/config.cfg; `calibredb --with-library` resolves the real library (search_books returns for a known title); no `import sqlite3` in the device; reader/igor no longer open the library path directly (they call the device over the bus).\n\n## Intention\nThe caller gets books over the bus with no paths to worry about; the only path data is encapsulated in the device's runtime data (about my machine, not the next installer's); calibredb is the one sanctioned external-SQLite exception."
+  }
+}

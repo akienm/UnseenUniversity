@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-D-calibre-device-encapsulation.20260701.121831059826",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-calibre-device-encapsulation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T18:18:31.059826+00:00",
+  "links": {
+    "decisions": [
+      "D-calibre-device-encapsulation-2026-07-01"
+    ],
+    "tickets": [
+      "T-consequence-D-calibre-device-encapsulation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-calibre-device-encapsulation",
+    "title": "[sprint] Consequence check: calibre config externalization + books-over-bus",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "decision_id": "D-calibre-device-encapsulation-2026-07-01",
+    "priority": 0.3,
+    "gate": "2026-07-15",
+    "status": "sprint",
+    "intention": "I intend that the predicted side-effects of encapsulating calibre config + bus access are observed before any becomes a silent regression.",
+    "description": "**What changed:** calibre device reads machine config from ~/.unseen_university/devices/calibre/ (repo config.cfg removed, code default de-hardcoded, path fixed to include Calibre Portable); callers move to MCP-bus book access. **Predicted unintended effects:** (1) removing the hardcoded default means a fresh checkout with NO runtime config.cfg gets an empty/placeholder path -> calibredb fails until configured (intended, but must fail LOUD with a clear 'configure ~/.unseen_university/devices/calibre/config.cfg' message, not a silent empty result); (2) other code or tests may still import the repo config.cfg or the old _LIBRARY_PATH_DEFAULT -> break on removal (grep before deleting); (3) the corrected path (Calibre Portable segment) may differ from what a previously-working caller expected if anything relied on the wrong-but-present path; (4) bus migration adds a live dependency on the calibre device being up — a book fetch now fails if calibre.0 is down where a direct path used to work offline. **Signals to watch:** device self_test/status shows the loaded library_path; calibredb_available true; search_books returns for a known title; grep clean of machine paths in repo; no caller ImportError on the removed config.cfg. **Gate condition:** check by 2026-07-15 or once the device runs on a live book query. **Affected files:** None — observation only. **Design rules:** none apply. **Scope boundary:** observe, annotate occurred/clear/partial, close. **Completion criteria:** predicted effects observed and annotated; ticket closed. **Test plan:** no tests — observation ticket.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-01T18:18:07.442768+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T18:18:07.442916+00:00"
+  }
+}
