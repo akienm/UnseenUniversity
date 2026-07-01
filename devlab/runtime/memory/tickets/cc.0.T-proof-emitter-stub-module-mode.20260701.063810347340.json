@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-proof-emitter-stub-module-mode.20260701.063810347340",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proof-emitter-stub-module-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T12:38:10.347340+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proof-emitter-stub-module-mode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proof-emitter-stub-module-mode",
+    "title": "[sprint] proof_emitter: accept a symbol-stub / new-module as authentic red",
+    "size": "M",
+    "tags": [
+      "Tooling",
+      "ProofOnClose",
+      "Workflow"
+    ],
+    "intention": "I intend that a new-module increment can earn a real commit-bound proof, so honest work stops closing shipped-unproven for a mere proof-binding-convention gap.",
+    "description": "**Problem (recurring — bit T-router-data-schema and T-router-live-resource-read):** proof_emitter requires the red state to fail on an ASSERTION about behavior. Two common, honest patterns can't produce that today, so they close shipped-unproven for a convention gap, NOT a real missing proof: (1) test+impl committed together (no red state in history); (2) a NEW MODULE — the test-only red stub fails on ModuleNotFoundError (CollectionError), which proof_emitter rejects as 'collateral error, not an assertion'. Both are proof-BINDING gaps, not missing-proof: the mechanism is fully tested green.\n**Proposed shape:** add a proof_emitter mode that synthesizes authentic assertion-red from a SINGLE green commit by reverting only the NON-TEST files touched by the commit to their parent state (or, for a new module, temporarily replacing it with a symbol-stub that imports but returns placeholder values), running the named test → expecting an assertion failure → then restoring and confirming green. This binds a real red→green proof to one commit without requiring stub-first commit ordering. Guard: refuse if reverting non-test files still leaves the test green (vacuous) or if it errors on collection (distinguish 'module missing entirely' from 'symbol-stub present').\n**Affected files:** devlab/claudecode/proof_emitter.py.\n**Design rules:** proof must stay commit-bound and honest (no green-against-dirty-tree); NO SQLite.\n**Scope boundary:** proof_emitter red-synthesis only. Does not change the proof-on-close gate or cc_queue close.\n**Test plan:** (1) a single commit adding a new module + its passing test → proof_emitter emits a proof (red synthesized by symbol-stub, green restored); (2) a vacuous test (passes even with non-test files reverted) → NO PROOF; (3) existing stub-first path (separate red commit) still works.\n**Completion criteria:** proof_emitter can emit an authentic red->green proof from a single test+impl commit (incl. a new module) without manual stub-first ordering; vacuous tests still rejected.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.4,
+    "status": "sprint",
+    "created_at": "2026-07-01T12:38:09.824893+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T12:38:09.872231+00:00"
+  }
+}
