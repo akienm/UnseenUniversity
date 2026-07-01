@@ -77,6 +77,51 @@ class TestParseTerminalResponse:
         assert result["status"] == "done"
 
 
+class TestNoSourceAvailabilitySignal:
+    """The load-bearing money-safety guard (T-router-failure-bump-escalation).
+
+    After the pin-gate/cost-record work, a 'no live source' condition RETURNS an error
+    InferenceResponse (finish_reason='error'/source_kind='none') — it does NOT raise. If
+    ToolLoop.run let that response flow through as if it were a model reply, the DS driver
+    would see 'no DONE' and classify it as a CAPABILITY failure → bump to a pricier tier →
+    PAID escalation because a source is down ('Hex-DOWN is not a branch'). This pins the one
+    line (toolloop.py) that converts that error response to the None availability signal.
+    """
+
+    def _run_with_response(self, response):
+        from unittest.mock import patch
+        loop = ToolLoop(max_turns=3)
+        ticket = {"id": "T-x", "title": "t", "tags": [], "description": "d"}
+        with patch("unseen_university.devices.inference.device.InferenceDevice") as MockDevice:
+            MockDevice.return_value.dispatch.return_value = response
+            return loop.run(ticket, "sys")
+
+    def test_no_source_error_response_returns_none(self):
+        """A no-source error response → None (AVAILABILITY), so the driver re-selects, never bumps."""
+        from unseen_university.devices.inference.shim import InferenceResponse
+        resp = InferenceResponse(
+            text="[InferenceDevice: no live inference source for task_class=worker]",
+            finish_reason="error", source_kind="none", tool_calls=None,
+        )
+        assert self._run_with_response(resp) is None
+
+    def test_source_kind_none_alone_returns_none(self):
+        """source_kind='none' is sufficient to signal availability failure (defensive: either flag)."""
+        from unseen_university.devices.inference.shim import InferenceResponse
+        resp = InferenceResponse(text="anything", finish_reason="stop", source_kind="none", tool_calls=None)
+        assert self._run_with_response(resp) is None
+
+    def test_healthy_done_response_is_not_swallowed(self):
+        """The guard is SPECIFIC — a live DONE response must NOT be misread as availability."""
+        from unseen_university.devices.inference.shim import InferenceResponse
+        resp = InferenceResponse(
+            text='{"status": "done", "result": "did the work"}',
+            finish_reason="stop", source_kind="cloud", tool_calls=None,
+        )
+        result = self._run_with_response(resp)
+        assert result is not None and "done" in result
+
+
 class TestMaxTurnsEnvelope:
     def test_max_turns_returns_json(self):
         """MAX_TURNS return value is now a JSON error envelope."""
