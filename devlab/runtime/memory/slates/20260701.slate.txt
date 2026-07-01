@@ -23,3 +23,5 @@ Next: Resume via /sprint-batch decision:D-inference-domain-routing-2026-07-01 or
 ## In-flight: In-flight: 3 decisions (D-inference-domain-routing, D-calibre-device-encapsulation, I-compiled-inference-residue intention) with 9 new tickets + 1 reshaped, all sprint status, ready for /sprint-batch; operational DS.0 dispatch on T-ds-smoke-hello as alternate next; tree clean + all pushed (94f9c17c). No blockers. Two independent batches, or live-test pick.
 
 ## In-flight: sprint-batch D-inference-domain-routing: 1/6 closed (T-inference-domain-tag, commit 91531831, shipped-unproven — additive-API proof lever). Next: T-inference-domain-prompt.
+
+## In-flight: sprint-batch D-inference-domain-routing: 2/6 closed (domain-tag 91531831, domain-prompt bb3af29d, both shipped-unproven — additive-API + behavior-preserving-move proof levers). Next: T-inference-migrate-pinners.
