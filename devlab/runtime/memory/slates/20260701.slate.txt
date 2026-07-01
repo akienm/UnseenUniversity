@@ -27,3 +27,5 @@ Next: Resume via /sprint-batch decision:D-inference-domain-routing-2026-07-01 or
 ## In-flight: sprint-batch D-inference-domain-routing: 2/6 closed (domain-tag 91531831, domain-prompt bb3af29d, both shipped-unproven — additive-API + behavior-preserving-move proof levers). Next: T-inference-migrate-pinners.
 
 ## In-flight: sprint-batch D-inference-domain-routing: 3/6 closed (domain-tag 91531831, domain-prompt bb3af29d, migrate-pinners 258168b8, all shipped-unproven). Filed T-librarian-inference-onto-proxy. Next: T-inference-pin-gate-enforce.
+
+## In-flight: sprint-batch D-inference-domain-routing: 4/6 closed (domain-tag 91531831, domain-prompt bb3af29d, migrate-pinners 258168b8, pin-gate 1bfbc843, all shipped-unproven). Bonus: fixed 3 pre-existing escalation tests. Filed 3 follow-ups (librarian-proxy, legacy-dispatch, mini-rack-routing). Next: T-inference-cost-learn-verify.
