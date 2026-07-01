@@ -115,16 +115,25 @@ def test_ollama_cloud_source_call_includes_tools():
 def _make_sources(flat_rate_available: bool, usage_available: bool) -> SourceRegistry:
     reg = SourceRegistry()
 
+    # Migrated to the cost-optimizing selector (D-inference-cost-optimizing-router):
+    # the mocks now carry cost_class + time_bucket so they exercise the SELECTOR path,
+    # not the tier-fallback. ollama_cloud=subscription still beats openrouter=token_direct
+    # (the taxonomy fix preserves this winner), so the assertions below hold — now for
+    # the right reason.
     flat_src = MagicMock(spec=Source)
     flat_src.name = "ollama_cloud"
     flat_src.available = flat_rate_available
     flat_src.billing_type = "flat_rate"
+    flat_src.cost_class = "subscription"
+    flat_src.time_bucket = "interactive"
     reg.register(flat_src)
 
     usage_src = MagicMock(spec=Source)
     usage_src.name = "openrouter"
     usage_src.available = usage_available
     usage_src.billing_type = "usage_based"
+    usage_src.cost_class = "token_direct"
+    usage_src.time_bucket = "interactive"
     reg.register(usage_src)
 
     return reg, flat_src, usage_src
@@ -274,16 +283,20 @@ def test_google_paid_source_billing_type_is_usage_based():
 # ── foreground=True routing ───────────────────────────────────────────────────
 
 
-def test_foreground_prefers_usage_based_over_flat_rate():
-    """foreground=True flips the billing-type sort: cloud (usage_based) wins over flat_rate."""
+def test_foreground_no_longer_inverts_cost():
+    """INTENTIONAL CHANGE (D-inference-cost-optimizing-router): foreground filters by TIME,
+    it no longer inverts cost to prefer cloud. With both sources interactive, foreground
+    grants nothing and argmin(cost) picks the cheaper cost_class (subscription < token_direct).
+    The old 'foreground prefers usage_based/OR' behaviour is gone — speed and capability are
+    now separate axes (TIME and DIFFICULTY), so latency no longer forces the pricier source.
+    """
     sources, flat_src, usage_src = _make_sources(flat_rate_available=True, usage_available=True)
     engine = RulesEngine(sources, _make_models(), _rules())
     decision = engine.route("worker", foreground=True)
     assert decision is not None
-    assert decision.source is usage_src, (
-        "foreground=True must prefer usage_based (cloud) over flat_rate (Ollama)"
+    assert decision.source is flat_src, (
+        "foreground no longer inverts cost — cheapest capable source wins"
     )
-    assert decision.model.model_id == "usage-model"
 
 
 def test_foreground_falls_back_to_flat_rate_when_cloud_unavailable():
@@ -322,18 +335,24 @@ def test_worker_routes_to_google_free_when_ollama_cloud_unavailable():
     google_src.name = "google_free"
     google_src.available = True
     google_src.billing_type = "flat_rate"  # the fix
+    google_src.cost_class = "free_throttled"
+    google_src.time_bucket = "interactive"
     reg.register(google_src)
 
     ollama_src = MagicMock(spec=Source)
     ollama_src.name = "ollama_cloud"
     ollama_src.available = False  # no OLLAMA_PRO_API_KEY
     ollama_src.billing_type = "flat_rate"
+    ollama_src.cost_class = "subscription"
+    ollama_src.time_bucket = "interactive"
     reg.register(ollama_src)
 
     or_src = MagicMock(spec=Source)
     or_src.name = "openrouter"
     or_src.available = True
     or_src.billing_type = "usage_based"
+    or_src.cost_class = "token_direct"
+    or_src.time_bucket = "interactive"
     reg.register(or_src)
 
     models = ModelsRegistry([

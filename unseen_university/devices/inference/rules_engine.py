@@ -1,12 +1,17 @@
 """
 rules_engine.py — Routing policy for the inference proxy mini-rack.
 
-Maps task_class → (Source, ModelSpec). Within a task_class, flat_rate sources
-are preferred over usage_based regardless of rule priority number. Priority is
-the tiebreaker only when billing_type is equal. Health-aware: skips unavailable
-sources. Session-affinity: same session_id stays on same model once assigned.
+Maps task_class → (Source, ModelSpec) via the cost-optimizing selector
+(D-inference-cost-optimizing-router): among available rule candidates, keep those
+fast enough (TIME eligibility, set by urgency) and capable enough (DIFFICULTY, from
+the task_class) and carrying any required features, then pick the cheapest by
+(cost_class, marginal dollars, priority). This replaced the binary flat_rate-vs-
+usage_based sort — cost_class distinguishes owned-local hardware from a metered
+subscription, which per-token cost cannot. Health-aware: skips unavailable sources.
+Session-affinity: same session_id stays on same model once assigned.
 
-Default rules — flat_rate (Ollama Pro) preferred, usage_based (OR) as fallback:
+Default rules — ranked at selection time by cost_class (owned-local < free-throttled
+< subscription < token-direct), not by rule order:
 
   Minion tier (trivial tasks, boilerplate):
     1. minion → qwen3.5-9b / openrouter (usage_based)
@@ -44,7 +49,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
-from unseen_university.devices.inference.routing_buckets import routing_crossing_record
+from unseen_university.devices.inference.routing_buckets import (
+    cost_class_rank,
+    difficulty_meets,
+    routing_crossing_record,
+    task_class_to_difficulty,
+    urgency_time_eligible,
+)
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
 log = logging.getLogger(__name__)
@@ -60,8 +71,9 @@ class RoutingRule:
 
 
 # Default ordered rules
-# Note: within a task_class, flat_rate sources are preferred regardless of priority
-# number — priority is only the tiebreaker when billing_type is equal.
+# Note: rule.priority is only the final tiebreaker — the selector ranks candidates by
+# cost_class first, then marginal dollars, then priority. A rule's position here does
+# not determine the winner; the source's cost_class + the model's dollars do.
 _DEFAULT_RULES: list[RoutingRule] = [
     # Minion tier
     RoutingRule(1, "minion", "qwen/qwen3.5-9b", "openrouter", "minion→qwen3.5-9b/OR"),
@@ -93,7 +105,7 @@ _DEFAULT_RULES: list[RoutingRule] = [
     RoutingRule(2, "creator", "anthropic/claude-haiku-4.5", "openrouter", "creator→haiku/OR"),
     # Batch tier — off-hours knowledge integration. Cost cascade: free local → flat-rate cloud → OR.
     # Intended for night-mode (00:00-06:00); route() applies a time-of-day gate.
-    RoutingRule(1, "batch", "qwen3-coder-next", "local_ollama", "batch→qwen3-coder-next/local-ollama"),
+    RoutingRule(1, "batch", "qwen3-coder-next", "ollama", "batch→qwen3-coder-next/ollama-local"),
     RoutingRule(2, "batch", "qwen3-coder-next", "ollama_cloud", "batch→qwen3-coder-next/ollama-pro"),
     RoutingRule(3, "batch", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "batch→qwen3-coder-30b/OR"),
 ]
@@ -139,15 +151,27 @@ class RulesEngine:
         session_id: str = "",
         hour: int | None = None,
         foreground: bool = False,
+        urgency: str | None = None,
+        required_features: list[str] | None = None,
     ) -> RoutingDecision | None:
         """
-        Return the best (Source, ModelSpec) for this task_class.
+        Return the cheapest capable (Source, ModelSpec) for this task_class.
+
+        The cost-optimizing selector (D-inference-cost-optimizing-router): among the
+        available rule candidates, keep those a call can actually use — fast enough
+        (TIME eligibility) and capable enough (DIFFICULTY) and carrying any required
+        features — then pick the cheapest by (cost_class, marginal dollars, priority).
 
         hour: inject local hour (0–23) for testing; defaults to current local hour.
               Used to apply the night-mode gate for batch tasks.
-        foreground: when True, prefer usage_based (cloud) sources over flat_rate.
-              Used for latency-sensitive tasks (e.g. sprint-ticket coding) that
-              require high-capability cloud models rather than local Ollama.
+        urgency: 'interactive' | 'normal' | 'batch' — how slow a source may be and
+              still be a candidate. Defaults to 'normal' (or 'interactive' when
+              foreground=True). This is the TIME eligibility filter, NOT a cost lever.
+        foreground: latency-sensitive shorthand for urgency='interactive'. It filters
+              by time only; it no longer inverts the cost preference (that conflated
+              speed with capability — now separate axes).
+        required_features: capability flags the chosen model must provide (e.g.
+              'tools'); a model lacking any is excluded.
 
         Returns None only if no source is available at all.
         """
@@ -155,8 +179,8 @@ class RulesEngine:
         # Outside that window, degrade to ollama_cloud → OR (no local GPU contention).
         night = _is_night_mode(hour)
         if task_class == "batch" and not night:
-            log.debug("rules: batch outside night-mode window — skipping local_ollama")
-            effective_rules = [r for r in self._rules if r.source_name != "local_ollama"]
+            log.debug("rules: batch outside night-mode window — skipping local ollama")
+            effective_rules = [r for r in self._rules if r.source_name != "ollama"]
         else:
             effective_rules = self._rules
         # Session affinity — same session stays on same model
@@ -200,31 +224,47 @@ class RulesEngine:
                 )
 
         if candidates:
-            # billing_rank sort key:
-            #   normal:     flat_rate=0 (preferred), usage_based=1 (fallback)
-            #   foreground: usage_based=0 (preferred), flat_rate=1 (fallback)
-            # Priority is the tiebreaker when billing_type is equal.
-            if foreground:
-                candidates.sort(
+            # Cost-optimizing selector (increment 2): two categorical filters, then argmin.
+            #   TIME eligibility — a call's urgency sets how slow a source may be.
+            #   DIFFICULTY capability — the model must handle the task_class's difficulty.
+            #   FEATURES — the model must carry any required capability flags.
+            # Survivors are ranked by (cost_class, marginal dollars, priority): the cheapest
+            # capable source wins. This replaces the binary billing_type sort — owned-local
+            # Hardware (cost_class) now correctly beats a metered subscription that per-token
+            # cost alone could not distinguish.
+            eff_urgency = urgency or ("interactive" if foreground else "normal")
+            required_difficulty = task_class_to_difficulty(task_class)
+            req_features = set(required_features or ())
+            eligible = [
+                (rule, source, model)
+                for (rule, source, model) in candidates
+                if urgency_time_eligible(getattr(source, "time_bucket", "interactive"), eff_urgency)
+                and difficulty_meets(model.difficulty_bucket, required_difficulty)
+                and req_features.issubset(set(getattr(model, "features", ()) or ()))
+            ]
+            if eligible:
+                eligible.sort(
                     key=lambda x: (
-                        0 if getattr(x[1], "billing_type", "usage_based") == "usage_based" else 1,
+                        cost_class_rank(getattr(x[1], "cost_class", "token_direct")),
+                        x[2].dollars_per_unit,
                         x[0].priority,
                     )
                 )
-                log.debug("rules: foreground=True — cloud (usage_based) preferred over flat_rate")
-            else:
-                candidates.sort(
-                    key=lambda x: (
-                        0 if getattr(x[1], "billing_type", "usage_based") == "flat_rate" else 1,
-                        x[0].priority,
-                    )
+                rule, source, model = eligible[0]
+                if session_id:
+                    self._session_map[session_id] = (rule.model_id, rule.source_name)
+                log.info(
+                    "rules: %s → %s (urgency=%s difficulty=%s)",
+                    task_class, rule.label, eff_urgency, required_difficulty,
                 )
-            rule, source, model = candidates[0]
-            if session_id:
-                self._session_map[session_id] = (rule.model_id, rule.source_name)
-            log.info("rules: %s → %s", task_class, rule.label)
-            log.info("rules: crossing %s", routing_crossing_record(source, model, task_class))
-            return RoutingDecision(source, model, rule.label)
+                log.info("rules: crossing %s", routing_crossing_record(source, model, task_class))
+                return RoutingDecision(source, model, rule.label)
+            # All candidates filtered out (too slow / too weak / missing a feature) —
+            # fall through to the tier / last-resort safety nets below.
+            log.debug(
+                "rules: all %d candidate(s) for %s filtered out (urgency=%s difficulty=%s)",
+                len(candidates), task_class, eff_urgency, required_difficulty,
+            )
 
         # Tier fallback — try cheapest available model in same tier
         for spec in self._models.by_tier(task_class):
