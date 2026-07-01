@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.day-20260630.20260701.093107646576",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260630"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-01T09:31:07.646576",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Day 2026-06-30",
+    "text": "## Done\n- T-igor-preparse-via-or-reroute — Reroute or delete preparse_via_openrouter (SUPERSEDED/withdrawn — scope absorbed by T-igor-delete-local-preparse (expanded to whole preparse concept) per Akien 202)\n- T-igor-inner-cc-assess — Delete inner_cc entirely (tool + dreaming usage) — open_question answered: dead (Deleted inner_cc tool (Proxy-bypassing direct-OR call) + training_pass.py (inner_cc-only); retired all 5 dependent featu)\n- T-igor-cloud-mode-assess — Delete cloud_mode (old routing, superseded by Proxy budget_gate/rules_engine) (Deleted cloud_mode.py + write-only-dead cloud_ok_override. Stripped is_cloud_training_active gate (embedding backfill un)\n- T-igor-delete-orphaned-reasoner-classes — Delete orphaned reasoner classes + relocate surviving consts (Excised 8 orphaned reasoner class bodies (Ollama/OpenRouter/Base/Local/API/Browser/ModelFamily/ClaudeFamily) + winnow tr)\n- T-igor-embedder-via-rack — Repoint embedder.py to the rack embeddings generator (SUPERSEDED by D-graph-tree-embeddings-teach-on-miss-2026-06-30 (esp. T-graph-embed-retire-nomic). The repoint reframed e)\n- T-graph-embed-verify-existence — Verify whether a current graph-tree embedder actually exists (don't trust 'it's built') (Resolved: no node-set+overlap embedder exists. The activation PRODUCER does exist — WordGraph.text_to_activation_vector()\n- T-graph-embed-backfill-existing — Backfill node-activation reps for existing memories (hard prerequisite of nomic deletion) (Moot — Igor is starting over (all old memories killed). There is no pre-existing corpus to strand, so no backfill is nee)\n- T-igor-strip-sudo-relay — Strip sudo_relay out of igor/tools — the rack device owns it; Igor reaches it over the bus (Yanked igor/tools/sudo_relay.py + __init__ export; rack device is sole owner. Verified+committed f22f3870: grep tools.su)\n- T-router-data-schema — Inference router increment 1 — the per-source + per-call data schema the selector reads (Increment-1 data schema shipped: routing_buckets.py (TIME/DIFFICULTY/COST_CLASS ordered axes + pure mappers task_class_t)\n- T-router-selector — Inference router increment 2 — the stateless selector: two bucket-filters + argmin(dollars) (Stateless cost-optimizing selector shipped: route() replaces the binary billing_type sort with TIME-eligibility x DIFFIC)\n"
+  }
+}

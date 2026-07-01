@@ -38,7 +38,7 @@
     "result": null,
     "role": "apprentice",
     "priority": 0.3,
-    "gate": "2026-07-01",
+    "gate": null,
     "related_to": null,
     "github_issue": null,
     "dispatched_at": null,
