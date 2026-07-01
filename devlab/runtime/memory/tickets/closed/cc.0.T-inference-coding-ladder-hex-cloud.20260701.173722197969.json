@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-inference-coding-ladder-hex-cloud",
-    "title": "[in_progress] Register the coding domain's full Ollama ladder: 2 Hex-local + 2 Ollama-Cloud flagships",
+    "title": "Register the coding domain's full Ollama ladder: 2 Hex-local + 2 Ollama-Cloud flagships",
     "size": "M",
     "tags": [
       "Inference",
@@ -30,13 +30,13 @@
     "decision_id": "D-coding-domain-hex-cloud-ladder-2026-07-01",
     "gate": null,
     "priority": 0.6,
-    "status": "in_progress",
+    "status": "closed",
     "created_at": "2026-07-01T23:37:10.752239+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Registered the coding domain's Ollama ladder: qwen3-coder:30b (Hex/code) + deepseek-r1:32b (Hex/DESIGN — fills the empty design rung) + qwen3-coder:480b-cloud + deepseek-v3.1:671b-cloud (Ollama Cloud flagships too large for Hex). All 4 RoutingRules under task_class='worker' so DS's escalation walk (which always sends task_class='worker' + required_difficulty) can actually reach the design rung — fixed the wiring gap where a designer/analyst rule would be invisible to DS. Intention reworded to lowest-cost-with-required-capabilities (a cheaper capable generalist still legitimately wins; nothing excluded). 6 new tests green; full inference suite only the 3 pre-existing mini-rack fails; live-confirmed Hex serving all 6 models.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-01T23:53:09.830046+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-01T23:37:10.796155+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "f7d76e16-65d4-41eb-b82d-2f78b45d04a4"
+    "inferred_intention_id": "f7d76e16-65d4-41eb-b82d-2f78b45d04a4",
+    "proven": false,
+    "unproven_reason": "The routing behaviors (local-first, cheapest-capable-when-Hex-down, cloud-flagship-when-cheapest-left, worker-task_class-visibility) are pinned by 6 additive tests the proof_emitter can't diff-invert (T-proof-emitter-additive-surface-mode). Live behavioral proof — a stuck coding task actually bumping code→design onto deepseek-r1:32b — is rung 3, still to run.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

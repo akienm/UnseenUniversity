@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-inference-ollama-liveness-clobbered-reapply.20260701.175236067663",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-ollama-liveness-clobbered-reapply"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T23:52:36.067663+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-domain-routing-2026-07-01"
+    ],
+    "tickets": [
+      "T-inference-ollama-liveness-clobbered-reapply"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-ollama-liveness-clobbered-reapply",
+    "title": "Re-ship the ollama honest-liveness ping — the fix was clobbered before commit",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Incident",
+      "Process"
+    ],
+    "description": "**What happened:** T-inference-ollama-honest-liveness (closed at 1c622e05) shipped its TESTS but NOT its fix. During the non-vacuity proof I neutered OllamaSource.ping, ran the tests, then reverted the neuter with `git checkout -- sources.py` — but the /api/tags ping edit was still UNCOMMITTED, so the checkout reverted it to HEAD's socket-based ping. I then `git add`ed + committed the (reverted) sources.py alongside the tests and closed the ticket WITHOUT a final full-suite run, so the 5 branch-specific liveness tests were red on HEAD and the honest-liveness behavior never actually shipped. The rung-1 smoke + rung-2 DS runs 'passed' only because Hex's socket was open (socket ping happened to agree). **Fix:** re-applied the /api/tags HTTP probe to OllamaSource.ping (200+non-empty→available; 404/URLError/empty→unavailable; fail-soft). Verified: 6 liveness tests green, full inference suite back to only the 3 pre-existing mini-rack fails, and live against real Hex (True on 10.0.0.100, False+no-raise on a dead port). **Root-cause lever:** never `git checkout -- <file>` to undo a neuter when the real change to that file is still uncommitted — it destroys the working change. Commit the change first, THEN neuter/restore; or stash-scope the neuter. **Affected files:** unseen_university/devices/inference/sources.py.\n\n**Design rules:** honest liveness; fail-soft. **Scope boundary:** IN — re-apply the ping fix. OUT — the ladder registration (its own ticket). **Test plan:** the existing tests/inference/test_ollama_liveness.py (6) now pass on HEAD (were red); live Hex probe confirms True/False.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-domain-routing-2026-07-01",
+    "gate": null,
+    "priority": 0.6,
+    "status": "closed",
+    "created_at": "2026-07-01T23:52:28.803936+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "Re-applied the /api/tags honest-liveness ping to OllamaSource (was clobbered by a git-checkout-over-uncommitted-change before 1c622e05). 6 liveness tests now green on HEAD (were red), full inference suite back to only the 3 pre-existing mini-rack fails, live-verified against real Hex (True on 10.0.0.100:11434, False+fail-soft on a dead port).",
+    "dispatched_at": null,
+    "completed_at": "2026-07-01T23:52:54.168122+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T23:52:28.848441+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "28459080-f86f-485d-b180-723795ad7caa",
+    "proven": false,
+    "unproven_reason": "The 6 liveness tests ARE the proof (a socket-only or hollow ping fails 5/6, proven earlier by neutering) but they're additive/branch tests the proof_emitter can't diff-invert (T-proof-emitter-additive-surface-mode). Now genuinely on HEAD + live-confirmed, unlike the clobbered first attempt.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}
