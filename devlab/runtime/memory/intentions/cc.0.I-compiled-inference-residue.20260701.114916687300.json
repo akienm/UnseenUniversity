@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.I-compiled-inference-residue.20260701.114916687300",
+  "emitter": "cc.0",
+  "namespace": [
+    "I-compiled-inference-residue"
+  ],
+  "category": "intentions",
+  "kind": "intention",
+  "emitted_at": "2026-07-01T11:49:16.687300",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "intention_id": "I-compiled-inference-residue",
+    "title": "The Residue: compile out every answerable step; hand the irreducible back to the human, clean",
+    "statement": "I intend that the system compiles cognition until only the irreducible residue remains in human hands: every step that has an answer is compiled out and cached, so the LLM resolver fires only on the genuinely novel and starves toward zero; and what never starves — the open-textured value-gates (CP1-CP6) and the striver that holds irreconcilable goods in tension — is handed back to the human, clean.",
+    "status": "active",
+    "date": "2026-07-01",
+    "origin": "web-Claude -> CC.0 handoff (2026-07-01); source ~/.unseen_university/akien/compiled-inference-the-residue.md",
+    "static_copy": "docs/ (-> press_releases/, T-docs-to-press-releases): a static snapshot points here as the live version",
+    "related": {
+      "decisions": [
+        "D-inference-cost-optimizing-router-2026-06-30",
+        "D-inference-domain-routing-2026-07-01",
+        "D-intentions-store-2026-06-30"
+      ],
+      "projects": [
+        "project_compiled_inference_vision",
+        "project_intentions_as_living_entities",
+        "project_pipeline_trajectory_gate_removal"
+      ]
+    },
+    "note": "This is the LIVE version (intentions are living entities: they compete/merge/decompose/prove). A static snapshot lives in the human-facing press_releases/ bucket and points back here. Layer-starve table is the load-bearing correction: resolvers starve to ~zero; proof-obligations starve partially (shapes cache); value-gates CP1-CP6 and the striver never starve, by design. This reconciles the two prior notes 'gates are scaffolding, proof corpus earns removal' (that is the PROOF layer) vs 'CP1-CP6 never compile' (that is the VALUE layer) — different layers, not a contradiction.",
+    "text": "# The Residue: What Doesn't Compile\n\n*A summary of the graph-tree / compiled-inference thesis, worked out from the resolver layer down to belief.*\n\n---\n\n## The core claim (holds, with one correction)\n\nYou can compile the LLM out of a software build by making each tree answer **one question** and caching the answer. The LLM becomes a *cold-path resolver* — it only fires on genuinely novel questions. As the graph matures, its workload starves toward zero.\n\nThat part is real. The correction: it doesn't starve to *zero*. It starves to a specific **residue**, and finding that residue is the whole payoff.\n\n## Questions are the forced unit\n\nAnything that must persist through change makes the **question** the stable thing and the **answer** the volatile thing — because answers rot, but \"what's the signature here?\" is the same question forever. This isn't a design choice; it's the only factoring that survives time. Meatware runs on it too.\n\n## The layers, and how fast each one starves\n\n| Layer | What it does | Does it starve? |\n|---|---|---|\n| **Resolvers** | Answer questions against the world | → near-zero. The thesis wins cleanly here. |\n| **Proof obligations** | What would prove this intention | → partially. Proof *shapes* recur and cache. |\n| **Gates (CP1–CP6)** | Should we do this at all | → never. |\n| **The striver** | Holds what the gates can't settle | → never, by design. |\n\n## Why the gates never starve\n\nThe six values are **open-textured**. CP4 (\"make everything suck less for everybody\") can fight *itself* — one intention helps users, another helps the ecosystem, both cite CP4 honestly. No cache, proof, or rule resolves that, because resolving it means deciding what the value *means* in a case it didn't anticipate. That's the irreducible residue.\n\nCrucially, the gates work by **contradiction-detection, not veto**. A new intention that can't be reconciled with the standing set (the six values are just the standing intentions installed first and never evictable) *halts* until reconciled. Contradiction is structural and moodless; a veto would have a dial and could go rose- or shit-colored. Keeping the gate mechanism as contradiction rather than scoring is what keeps the mood out of it.\n\n## The residue isn't a gap — it's the point\n\nThe system doesn't resolve to coherence. It **rests in tension**, and the resting is not a failure state. A system that reconciled every conflict into perfect coherence would have stopped striving — a finished value system violates its own **CP2** (FAIL = further advance in learning) and **CP6** (safety is built, never default), because nothing would be left to learn from or protect. The system *can't* finish, for the same reason it can't lie: finishing would break a gate.\n\n## Belief: the mechanism the striver actually uses\n\nFor the unanswerable questions, the striver doesn't get an answer — it installs a **functional myth**: a narrative constraint chosen for friction-reduction, held at full operational strength, and flagged *permanently as chosen* so it stays inspectable.\n\nThis is the unusual move, from *The Language of Optimization* [1]:\n\n- Most people treat a belief as a **truth claim** — right or wrong.\n- You treat a belief as a **load-bearing constraint** — its acceptance test is *usefulness*, not truth.\n\nThat's not relativism. It's engineering. And it lets **CP1 (\"I don't know\") and belief coexist without contradiction**: you can hold a belief at operational strength *while knowing it's a chosen fiction*, because you've split \"is this true\" from \"does this carry load.\" The essay's player/character split is the same seam as resolver/gate, one more time — the character chooses *within* constraints, the player chooses the constraints themselves.\n\n**The failure mode to guard (CP2 demands naming it):** a myth chosen for usefulness can become one you can no longer inspect, because questioning it reintroduces the friction it was installed to remove. That's a cached answer with no warden on it. The discipline isn't choosing useful beliefs — it's *never letting one forget it was chosen*. That's the warden, pointed inward.\n\n## The whole thing in one line\n\nYou can compile the LLM out of every step that has an answer. What's left in the chair is the one step that has no answer and never will — holding irreconcilable goods in tension, installing chosen myths to work from, and striving to be better anyway. That was never the LLM's job. It was always yours. **The machine just gets big enough to hand it back to you clean.**\n\n---\n\n### Reference\n\n[1] Akien Maciain, *The Language of Optimization: A Narrative Framework for Reducing Mental Friction* (2026). https://trainmymonkey.blogspot.com/2026/01/the-language-of-optimization-narrative.html\n"
+  }
+}

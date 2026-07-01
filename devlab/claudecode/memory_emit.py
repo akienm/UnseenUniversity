@@ -45,7 +45,7 @@ CATEGORIES = {
     "architecture", "artifacts", "boot", "chat.cc.0", "chat.igor", "slates",
     "sessions", "decisions", "builder_feedback", "judge", "notes",
     "design_patterns", "projects/acurite", "projects/uu", "projects/swadl",
-    "rules", "tickets", "proofs",
+    "rules", "tickets", "proofs", "intentions",
 }
 
 LINK_KINDS = ("decisions", "tickets", "commits", "whys")
