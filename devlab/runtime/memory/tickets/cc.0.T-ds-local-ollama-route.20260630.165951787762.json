@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-ds-local-ollama-route",
-    "title": "[sprint] Inference router increment 3 — register Hex as the first fully-described source",
+    "title": "[in_progress] Inference router increment 3 — register Hex as the first fully-described source",
     "size": "M",
     "tags": [
       "DickSimnel",
@@ -32,7 +32,7 @@
     "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
     "gate": null,
     "priority": 0.7,
-    "status": "sprint",
+    "status": "in_progress",
     "role": "master",
     "created_at": "2026-06-30T22:59:44.090719+00:00",
     "worker": null,
