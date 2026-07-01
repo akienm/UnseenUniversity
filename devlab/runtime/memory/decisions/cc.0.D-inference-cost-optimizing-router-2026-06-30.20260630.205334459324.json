@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-inference-cost-optimizing-router-2026-06-30.20260630.205334459324",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-inference-cost-optimizing-router-2026-06-30"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-30T20:53:34.459324",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
+    "title": "Inference routing is a cost-optimizing selector over rich data — two categorical bucket-filters + argmin(dollars), NOT a hardcoded cascade",
+    "status": "open",
+    "date": "2026-06-30",
+    "spawned_tickets": [
+      "T-router-data-schema",
+      "T-router-selector",
+      "T-ds-local-ollama-route",
+      "T-router-live-resource-read",
+      "T-consequence-D-inference-cost-optimizing-router"
+    ],
+    "text": "# D-inference-cost-optimizing-router-2026-06-30\n**title:** Inference routing = cost-optimizing selector over rich data (two bucket-filters + argmin dollars), not a hardcoded cascade\n**date:** 2026-06-30\n**status:** open\n**spawned_tickets:** T-router-data-schema, T-router-selector, T-ds-local-ollama-route, T-router-live-resource-read, T-consequence-D-inference-cost-optimizing-router\n\n## Akien's framing (verbatim intent)\nHARD AGREE — 'this was the intention all along. This is what I was trying to build. We finally have it right.' This epic is the convergence point of the compiled-inference vision, the tier-not-model contract, and inference-proxy-only: the router Akien has been building toward across the whole project.\n\n## Decision narrative\nThe Inference Proxy NEVER says 'this model then this model then this model.' Per call it asks ONE question — 'where is the lowest cost, in dollars AND time, to run THIS call given its estimated difficulty and required features?' — and picks the argmin over whatever sources CAN do it. The rule stays trivial; ALL richness lives in the per-source DATA. Both design-time open params resolved as CATEGORICAL BUCKETS, not continuous weights:\n- TIME is an eligibility filter: buckets = interactive-seconds / minutes / overnight; the call's URGENCY picks the eligible bucket; a free-but-slow source is simply NOT a candidate for interactive work (re-enters only for overnight). Buckets are LIVE, not static labels — Hex collapsed a bucket (an 8b job that needed a >5-min timeout on akiensyoga9i now runs in seconds), so the optimizer must READ live per-source latency or it re-exiles Hex.\n- DIFFICULTY is a capability filter: buckets = classify < code < design; the call's TASK-CLASS already IS the bucket (minion/worker/designer), so a-priori difficulty needs zero new machinery. Exactness is unnecessary because MECHANICAL-failure escalation bumps the difficulty bucket one rung and re-runs the SAME selector — one mechanism, dissolving the availability/capability escalation fork. Graph-tree falls out of the floor: classify is so cheap it shouldn't hit an LLM at all (cost_rank 0 / compiled inference).\nFINAL SHAPE: filter by (time_bucket eligible) x (difficulty_capable >= call bucket) x (features cover) -> argmin(dollars) -> on mechanical failure bump difficulty and re-run (terminates cleanly past the top bucket). Hex-DOWN is not a branch: an unavailable source is just absent from candidates -> next-cheapest wins; the down raises a separate system_alarm. Providers are open-ended (OR, ollama-local, ollama-cloud, anthropic, huggingface, 'a zillion more' + user combos) — the RULES must not grow to cover them; the DATA MODEL must be rich enough that the same selector keeps working as providers are added.\n\n## Decomposition (EPIC -> data-increments)\n(1) T-router-data-schema — the per-source descriptor {time_bucket, difficulty_capable, dollars_per_unit, features} + per-call mappers (urgency->time-bucket, task_class->difficulty-bucket) + crossing-log fields. Schema only, no selector.\n(2) T-router-selector — the trivial selector: two bucket-filters -> argmin(dollars); mechanical-failure difficulty-bump re-run (quality-judge deferred; terminates past top bucket); retire binary billing_type + foreground inversion + dead local_ollama.\n(3) T-ds-local-ollama-route (reshaped) — register Hex as the first fully-described source (dollars=0 owned-local, measured interactive time_bucket, per-tier difficulty), INFERENCE_ENDPOINT->Hex, DS drops model_override->worker tier. Supersedes the static cost-rank ladder.\n(4) T-router-live-resource-read — LIVE re-measurement so time_buckets never go stale (observed latency -> rolling window -> recompute bucket -> write back -> log transition); also sheds load off an overloaded-but-up source. The headline principle; time_bucket's missing corrector.\n\n## Hypothesis\nAfter these ship, inference routing picks the cheapest capable source per call by a trivial rule over data: a worker/DS call lands on Hex (free, interactive) instead of cloud when Hex is up and fast enough, cloud appears only on escalation or Hex-down, and adding a new provider is a data edit with ZERO edits to the selector.\n\n## Measurement Signal\nThe routing crossing-log line names the chosen source + its time/difficulty bucket + dollars; grep shows Hex winning interactive worker calls and cloud only on escalation/Hex-down. Adding a source = editing one data file, no selector code change. (Akien: 'we can just look at the logs on a ticket.')\n\n## Intention\nI intend that inference routing picks the cheapest capable source per call automatically, so adding a new provider is a data entry, never a code change."
+  }
+}

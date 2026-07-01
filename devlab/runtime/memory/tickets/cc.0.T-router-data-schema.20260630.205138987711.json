@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-router-data-schema.20260630.205138987711",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-router-data-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T02:51:38.987711+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-cost-optimizing-router-2026-06-30"
+    ],
+    "tickets": [
+      "T-router-data-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-router-data-schema",
+    "title": "[sprint] Inference router increment 1 — the per-source + per-call data schema the selector reads",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router",
+      "Schema"
+    ],
+    "intention": "I intend that a source can be described richly enough (time, capability, dollars, features) that a trivial selector picks the cheapest capable one — adding a provider becomes data, not code.",
+    "description": "**Problem:** routing today sorts candidates on a BINARY `billing_type` (rules_engine.py:200-219) with inverted labels — there is nowhere to describe a source richly enough for a cost-optimizing selector. Before the selector (increment 2) can exist, we need the DATA MODEL it reads. This is increment 1 of D-inference-cost-optimizing-router: **schema only, no selector logic.**\n**Buckets are CATEGORICAL, not scores (per the decision):** time is an *eligibility* filter, difficulty is a *capability* filter, dollars is the tiebreak. Do NOT model time or difficulty as continuous weights.\n**Proposed shape — add descriptor DATA (no behavior change to routing yet):**\n(1) **Per-source descriptor** on Source/ModelSpec: `time_bucket` (derived from a live/measured latency read — `interactive-seconds | minutes | overnight`), `difficulty_capable` (max capability bucket the model handles — `classify | code | design`), `dollars_per_unit` (cost-per-token; **0 for owned-local** like Hex/igor cluster), `features[]` (e.g. `tools`, `json_mode`, `vision`).\n(2) **Per-call mapping (pure functions, no new caller machinery):** `urgency -> eligible_time_bucket` and `task_class -> difficulty_bucket`. The task_class ALREADY exists — `minion=classify`, `worker=code`, `designer=design` — MAP it, don't invent a classifier (a-priori difficulty = the caller's declared class; exactness unnecessary because increment-2 escalation corrects underestimates).\n(3) **Crossing-log fields:** the routing crossing must log chosen `source` + `model` + `time_bucket` + `difficulty_bucket` + `dollars` (CLAUDE.md interface-crossing rule — this is the measurement signal for the whole epic).\n**Affected files:** unseen_university/devices/inference/sources.py (Source gains time_bucket/dollars_per_unit; owned-local sources = 0), models_registry.py (ModelSpec gains difficulty_capable + features + measured time_bucket), rules_engine.py (ADD pure `urgency->time_bucket` / `task_class->difficulty_bucket` mapping helpers + the log-field schema; do NOT rewrite the candidate sort — that is increment 2). Flat-file / in-registry storage only.\n**Design rules:** ALL inference through the Proxy; NO SQLite (Postgres or flat-file only); log the crossing.\n**Scope boundary:** schema + storage + mapping helpers + log-field definition ONLY. The selector that CONSUMES this is T-router-selector (increment 2, gated on this). Do NOT touch the candidate sort, foreground inversion, or register any real source's numbers here (that's increment 3 / Hex).\n**Test plan (red->green):** (1) a Source/ModelSpec round-trips all four descriptor fields; (2) `task_class->difficulty_bucket` returns classify/code/design for minion/worker/designer; `urgency->time_bucket` maps the urgency classes; (3) a stub crossing-log record contains all five fields; (4) existing routing tests still pass unchanged (proof the sort was NOT altered).\n**Completion criteria:** (1) Source + ModelSpec carry {time_bucket, difficulty_capable, dollars_per_unit, features}; owned-local dollars=0. (2) pure mappers exist for urgency->time-bucket and task_class->difficulty-bucket. (3) crossing-log schema includes the five fields. (4) no candidate-selection behavior changed (existing tests green).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "created_at": "2026-07-01T02:51:30.635534+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T02:51:30.679152+00:00"
+  }
+}

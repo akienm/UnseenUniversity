@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-router-live-resource-read.20260630.205139249347",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-router-live-resource-read"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-01T02:51:39.249347+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-cost-optimizing-router-2026-06-30"
+    ],
+    "tickets": [
+      "T-router-live-resource-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-router-live-resource-read",
+    "title": "[sprint] Inference router increment 4 — LIVE re-measurement so time_buckets never go stale",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router",
+      "Observability"
+    ],
+    "intention": "I intend that a source's time_bucket reflects its CURRENT speed, so a box that got faster (Hex) is promoted automatically and a box that degraded is demoted — buckets are live, not baked.",
+    "description": "**Problem — this is the headline principle, and increments 1-3 don't deliver it:** the whole design turns on time being LIVE ('Hex collapsed a bucket — same job, same dollars, now interactive instead of overnight'). Increments 1-3 add a `time_bucket` FIELD and populate it ONCE. That is a static label with finer granularity — the exact 'stale ollama=slow label exiles Hex' failure the epic exists to kill. Difficulty has a corrector (failure-bump); a wrong `time_bucket` has NONE and silently misroutes with no feedback path. This increment builds that feedback path. GATED on T-ds-local-ollama-route (needs at least one real source registered to re-measure).\n**Proposed shape:** a live resource-read that (1) records observed wall-clock latency per source from the crossing-log (increment 1 already logs it) and/or a lightweight periodic probe, (2) recomputes each source's `time_bucket` from a rolling window (thresholds: interactive-seconds / minutes / overnight), (3) writes the updated bucket back where the selector reads it, and (4) logs every bucket TRANSITION (source X: overnight->interactive) as a state change. A source that goes unreachable drops out (already handled by availability + system_alarm); this ticket handles the SPEED dimension, not up/down.\n**Scope note (load, not just speed):** consequence-effect #6 (Hex overloaded-but-up still always wins because dollars=0) is the SAME root gap — a busy source's latency rises, so re-measurement demotes its time_bucket and the selector naturally sheds load. No separate load-shedder needed IF re-measurement is responsive; tune the window for that.\n**Affected files:** unseen_university/devices/inference/ (a resource-read/metrics component + the write-back into the source descriptors; likely sources.py + a small monitor in the inference device). Reads the crossing-log; NO SQLite (flat-file / in-memory rolling window + Postgres only if shared).\n**Design rules:** ALL inference through the Proxy; NO SQLite; log every bucket transition (state change) and the read crossing.\n**Scope boundary:** the SPEED re-measurement + write-back + transition logging ONLY. Up/down availability and system_alarm already exist (increment 2). Does NOT add a quality judge.\n**Test plan (red->green):** (1) feed synthetic latencies below the interactive threshold -> source's time_bucket becomes interactive; feed slow latencies -> becomes overnight; (2) a bucket TRANSITION emits a state-change log line; (3) the selector, re-run after a re-measure, routes differently (a source promoted interactive now wins an interactive call it was excluded from before) — this is the Hex-collapsed-a-bucket scenario, proven; (4) rolling-window: one outlier does not flip the bucket (hysteresis).\n**Completion criteria:** time_bucket is DERIVED from observed/probed latency on a rolling window, written back where the selector reads, with transitions logged; a promote/demote changes routing on the next call; a single outlier doesn't thrash the bucket.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-inference-cost-optimizing-router-2026-06-30",
+    "gate": "T-ds-local-ollama-route",
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-07-01T02:51:35.113604+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-01T02:51:35.113686+00:00"
+  }
+}
