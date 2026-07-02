@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-granny-wake-not-launch.20260702.165350458148",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-wake-not-launch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T22:53:50.458148+00:00",
+  "links": {
+    "decisions": [
+      "D-shim-frontdoor-on-groundloop-2026-07-02"
+    ],
+    "tickets": [
+      "T-granny-wake-not-launch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-wake-not-launch",
+    "title": "[hold] Granny wakes-not-launches via the front-door; remove granny.yaml DS.0 launch_cmd + daemon static-worker handling",
+    "status": "hold",
+    "size": "M",
+    "tags": [
+      "architecture"
+    ],
+    "decision_id": "D-shim-frontdoor-on-groundloop-2026-07-02",
+    "priority": 0.45,
+    "target_difficulty": 2,
+    "role": "builder",
+    "related_to": "T-shim-frontdoor-on-groundloop",
+    "intention": "I intend that Granny never launches a worker — she calls the worker's own front-door to wake it — and the last surviving launch_cmd (DS.0) is removed.",
+    "description": "**Blocked on: T-shim-frontdoor-on-groundloop** (the wake path must exist before the launch_cmd is safe to remove, else DS.0 has no start path). Extends the CC rule (Granny must never spawn a worker) to DickSimnel, the one surviving launch_cmd.\n\n**What to build:**\n- Granny routes a ticket by CALLING the target worker's front-door (MCP via skeleton) to wake it; the front-door acks 'i'm on it' and spawns/wakes the device. Granny does NOT launch.\n- REMOVE the DS.0 launch_cmd from unseen_university/config/granny.yaml AND the daemon.py 'only DickSimnel.0 is static (needs launch_cmd)' static-worker handling.\n\n**Completion criteria:** with the DS.0 launch_cmd removed, Granny dispatching a ticket to a DOWN DickSimnel results in the front-door waking the device and receiving the ticket — no Granny-side subprocess. granny.yaml has no launch_cmd.\n\n**Test plan (real red->green):** integration — remove launch_cmd; Granny dispatches to a down DS; assert the front-door wakes the device and gets the ticket, and assert Granny spawned no subprocess. Red while Granny still relies on launch_cmd; green after the wake-call path.\n\n**Validation (runtime):** a Granny dispatch log shows a wake-CALL to the front-door (not a launch); the device-start log originates from the front-door, not Granny. Observable via Granny + Ground Loop logs.\n\n**Logging:** log.info('granny: waking <worker> via front-door for ticket=%s') ; ERROR if the wake-call is refused/unanswered (-> feeds the stall path).\n\n**Observable via:** log.info('granny: waking dicksimnel via front-door') with NO subprocess.Popen from Granny.\n\n**Affected files (indicative):** unseen_university/devices/granny/dispatch.py, unseen_university/devices/granny/daemon.py (static-worker handling), unseen_university/config/granny.yaml (remove launch_cmd).\n\n**Rollback:** git revert restores the launch_cmd + static-worker handling. DS is off until free inference, blast radius low; the front-door wake path must be proven first (the gate).\n\n**audit-emphasis:** needs-deep-smell (removing the last launch path — an orphaned front-door that can't spawn must trip the stall alarm, not silent-drop).\n\n**Scope boundary:** Granny wake-routing + launch_cmd removal; the MRU + stall alarm is T-granny-mru-and-stall-alarm.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T22:53:44.922442+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T22:53:44.969624+00:00"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-converge-worker-dispatch-onto-rules-engine.20260702.165403333423",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-converge-worker-dispatch-onto-rules-engine"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T22:54:03.333423+00:00",
+  "links": {
+    "decisions": [
+      "D-unified-capability-selector-deferred-2026-07-02"
+    ],
+    "tickets": [
+      "T-converge-worker-dispatch-onto-rules-engine"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-converge-worker-dispatch-onto-rules-engine",
+    "title": "[hold] DEFERRED convergence: worker-dispatch onto the shared capability-tag rules engine (unify with inference routing)",
+    "status": "hold",
+    "size": "L",
+    "tags": [
+      "architecture",
+      "design"
+    ],
+    "decision_id": "D-unified-capability-selector-deferred-2026-07-02",
+    "priority": 0.3,
+    "target_difficulty": 3,
+    "role": "master",
+    "related_to": "T-granny-wake-not-launch",
+    "intention": "I intend that worker-dispatch and inference-routing run on ONE capability-matching rules engine over tag/cost data, so a new capability (a mixin -> a tag) is selectable by both with no router change.",
+    "description": "**DEFERRED — Blocked on: T-shim-frontdoor-on-groundloop, T-shim-lease-instance-numbers, T-granny-wake-not-launch** (Akien: 'ticket converging when more of the restructuring is done'). Do NOT build until the front-door + leasing + Granny-wake restructuring has landed.\n\n**What this is:** Granny's worker-dispatch (match a ticket's required capabilities against shims' advertised TAGS, pick an available/wakeable worker) is the SAME operation as the inference router's cost-optimizing selector (argmin(dollars+time | difficulty+features) over capable sources). Converge them onto ONE rules engine parameterized by the data. Capability tags come from the composed capability mixins (CodingCapability -> CODEBUILDER); advertised via announce->manifest.\n\n**OPEN QUESTION to resolve at build time (Q&A in-ticket, per open_questions workflow):** descriptive tags vs required-capability tags. Tickets today carry TOPICAL tags ([architecture, bugfix, alarms]); the selector needs the ticket's REQUIRED capabilities — same tag list (add capability tags) OR a separate `requires:` field. Wrong choice mis-routes SILENTLY. This ticket likely re-splits into design (resolve the tag model) + build (wire dispatch onto the engine) once it thaws.\n\n**Match semantics:** caller-specified match-mode; DEFAULT = all required tags covered (strict AND); best-match/score optional.\n\n**Completion criteria (provisional — refine on thaw):** Granny dispatch and inference routing call ONE selector; adding a capability mixin makes a worker selectable with no router change; the required-vs-topical tag distinction is resolved and a mis-route is impossible (a required capability tag is matched, not a topical one).\n\n**Test plan:** deferred — define real red->green when the ticket thaws (a selector test proving one engine serves both callers over the same data shape).\n\n**Affected files (indicative, TBD on thaw):** the inference routing engine/compiler, unseen_university/devices/granny/ (dispatch calls the selector), the manifest/announce capability-tag advertisement.\n\n**audit-emphasis:** needs-deep-smell (a shared selector is high blast radius across inference + dispatch).\n\n**Scope boundary:** the convergence of the two selectors + the tag model. It does NOT block the near-term front-door work, which ships standalone.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T22:53:57.159034+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T22:53:57.205930+00:00"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-worker-pool-semantics.20260702.165338186528",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-pool-semantics"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T22:53:38.186528+00:00",
+  "links": {
+    "decisions": [
+      "D-worker-pool-leasing-and-singleton-2026-07-02"
+    ],
+    "tickets": [
+      "T-worker-pool-semantics"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-pool-semantics",
+    "title": "[hold] Pool semantics: max_instances (singleton = pool-of-1), .0 durable / 1+ ephemeral wiped on startup",
+    "status": "hold",
+    "size": "S",
+    "tags": [
+      "architecture"
+    ],
+    "decision_id": "D-worker-pool-leasing-and-singleton-2026-07-02",
+    "priority": 0.45,
+    "target_difficulty": 1,
+    "role": "builder",
+    "related_to": "T-shim-lease-instance-numbers",
+    "intention": "I intend that a worker class caps its pool at max_instances (singleton = 1) and that instance .0 is durable while 1+ wipe their folder on startup — so a singleton needs no special-casing.",
+    "description": "**Blocked on: T-shim-lease-instance-numbers** (extends the free-list with a cap + wipe rule). Homogeneity: a singleton is just max_instances=1.\n\n**What to build:**\n- A `max_instances` property on the device/class (default e.g. a sensible N; singletons set 1). The class-shim REFUSES to allocate beyond max_instances (returns no slot / the caller queues or Granny gets 'no capacity').\n- STARTUP WIPE: instance .0 NEVER wipes its folder (durable foreground/primary); instances 1+ WIPE their assigned ~/.unseen_university/devices/<ABBREV>.<N>/ folder on startup (clean slate).\n\n**Completion criteria:** a class with max_instances=1 (singleton, e.g. Granny) allocates DS.0/Granny.0 and REFUSES a second; a class with max_instances=3 allows .0-.2 and refuses .3; on startup DS.1's folder is wiped, DS.0's is preserved.\n\n**Test plan (real red->green):** unit — set max_instances=1, assert the 2nd allocate is refused; set 3, assert the 4th refused; assert startup wipes DS.1's folder but not DS.0's. Red before the cap/wipe exist; green after.\n\n**Validation (runtime):** Granny (singleton) only ever runs Granny.0; a restarted DS.1 comes up with an empty folder while DS.0 retains prior state. Observable via allocation-refused log + folder contents after startup.\n\n**Logging:** log.info('pool: max_instances=%d reached for <class>, allocation refused') ; log.info('startup: wiped %s (ephemeral)', instance_name) — skipped for .0.\n\n**Observable via:** log.warning('pool: no capacity for <class> (max_instances=1)') + DS.1 folder empty post-startup, DS.0 folder intact.\n\n**Affected files (indicative):** unseen_university/devices/<worker>/shim.py (cap in allocate), device.py (max_instances property), instance startup (folder wipe).\n\n**Rollback:** git revert — removes the cap (unbounded pool) + the wipe. No migration.\n\n**Scope boundary:** the cap + wipe only; leasing mechanics are T-shim-lease-instance-numbers.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T22:53:31.936030+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T22:53:31.981146+00:00"
+  }
+}

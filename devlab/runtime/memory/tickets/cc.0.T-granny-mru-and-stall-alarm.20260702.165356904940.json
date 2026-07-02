@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-mru-and-stall-alarm.20260702.165356904940",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-mru-and-stall-alarm"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T22:53:56.904940+00:00",
+  "links": {
+    "decisions": [
+      "D-shim-frontdoor-on-groundloop-2026-07-02"
+    ],
+    "tickets": [
+      "T-granny-mru-and-stall-alarm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-mru-and-stall-alarm",
+    "title": "[hold] Granny keeps an MRU of wakeable workers; no-wakeable + none-available -> system_alarm + stalled state + resume",
+    "status": "hold",
+    "size": "M",
+    "tags": [
+      "architecture",
+      "alarms"
+    ],
+    "decision_id": "D-shim-frontdoor-on-groundloop-2026-07-02",
+    "priority": 0.4,
+    "target_difficulty": 2,
+    "role": "builder",
+    "related_to": "T-granny-wake-not-launch",
+    "intention": "I intend that Granny, unable to wake or find any capable worker, PARKS on a system_alarm with a resume control instead of spinning forever.",
+    "description": "**Blocked on: T-granny-wake-not-launch** (needs the wake-call path first). Completes the Granny narrative from D-shim-frontdoor.\n\n**What to build:**\n- Granny keeps an MRU of WAKEABLE workers (availability flag = wakeable, front-door up) and tries them in recency order.\n- If NO worker can be woken AND none is available -> raise a system_alarm ('I''M STALLED! HELP!' — shared-attention, reuses the just-shipped alarm primitive), set Granny's state to STALLED, and expose a RESUME control; Granny PARKS (does not cycle forever).\n- Resume clears the stalled state and re-attempts dispatch.\n\n**Completion criteria:** with all workers unwakeable/unavailable, a dispatch raises exactly one 'granny-stalled' system_alarm, sets state STALLED, and stops cycling; hitting resume re-attempts. A wakeable worker appearing lets the MRU path proceed without the alarm.\n\n**Test plan (real red->green):** integration — no wakeable workers -> assert one system_alarm (signature 'granny-stalled') + state STALLED + no spin; then mark a worker wakeable + resume -> assert dispatch proceeds. Red before the MRU/stall path; green after.\n\n**Validation (runtime):** a genuinely stalled rack shows Granny STALLED with a resume button and a single 'granny-stalled' alarm (via `uu alarms`) rather than a hot loop. Observable via the alarm + Granny state.\n\n**Logging:** log.error('granny: STALLED — no wakeable/available worker for ticket=%s') at the alarm point; log.info('granny: resumed by operator').\n\n**Observable via:** a 'granny-stalled' system_alarm in ~/.unseen_university/operations/system_alarms/ + Granny state=STALLED.\n\n**Affected files (indicative):** unseen_university/devices/granny/ (MRU + stall + resume), unseen_university/system_alarms.py (raise_alarm caller). Links the shipped T-alarm-callsites + T-vetinari-owns-alarm-escalation (this is a new alarm source that Vetinari will escalate).\n\n**Rollback:** git revert removes the MRU + stall (back to prior dispatch). No migration.\n\n**audit-emphasis:** needs-deep-smell (the anti-infinite-cycle park is the point; a stall that still spins defeats it).\n\n**Scope boundary:** MRU + stall-alarm + park/resume; capability-tag routing is the deferred convergence.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T22:53:50.726178+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T22:53:50.771361+00:00"
+  }
+}

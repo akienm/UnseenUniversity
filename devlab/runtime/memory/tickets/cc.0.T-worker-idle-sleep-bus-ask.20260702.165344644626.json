@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-worker-idle-sleep-bus-ask.20260702.165344644626",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-idle-sleep-bus-ask"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T22:53:44.644626+00:00",
+  "links": {
+    "decisions": [
+      "D-worker-pool-leasing-and-singleton-2026-07-02"
+    ],
+    "tickets": [
+      "T-worker-idle-sleep-bus-ask"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-idle-sleep-bus-ask",
+    "title": "[hold] Shim idle-sleeps a device via bus ask ('whatcha workin on?'); busy/dead disambiguated by PID",
+    "status": "hold",
+    "size": "M",
+    "tags": [
+      "architecture"
+    ],
+    "decision_id": "D-worker-pool-leasing-and-singleton-2026-07-02",
+    "priority": 0.4,
+    "target_difficulty": 2,
+    "role": "builder",
+    "related_to": "T-shim-frontdoor-on-groundloop",
+    "intention": "I intend that the front-door shim shuts down an idle device (freeing its slot) after a timeout, detected by a bus ask, while never shutting down a busy one.",
+    "description": "**Blocked on: T-shim-frontdoor-on-groundloop** (needs the front-door that owns device lifecycle) and reads the lease (T-shim-lease-instance-numbers).\n\n**What to build:** on the front-door's periodic tick, the shim BUS-ASKS each live instance 'whatcha workin' on?' and decides:\n- reply 'idle past the timeout' -> shim shuts the device down (idle-sleep) and RELEASES its slot;\n- NO reply + PID alive -> busy heads-down mid-ticket (services mailbox only when idle) -> leave it;\n- NO reply + PID dead -> crashed -> release the slot.\nThe idle timeout is a CONFIG default (~2 min sketch), tunable.\n\n**Completion criteria:** an idle instance that replies 'idle > timeout' is shut down and its slot freed; a busy instance (no reply, PID alive) is left running; a dead PID (no reply) has its slot reclaimed.\n\n**Test plan (real red->green):** unit/integration — stub an instance's bus reply as 'idle Nmin' -> assert shutdown+release; stub no-reply with a live PID -> assert left alone; no-reply with a dead PID -> assert slot freed. Red before the idle-poll exists; green after.\n\n**Validation (runtime):** a DS.1 left idle past the timeout disappears (folder freed, slot reusable) while a DS.0 working a ticket stays up. Observable via the idle-sleep log + the freed slot.\n\n**Logging:** log.info('idle-sleep: shutting down %s (idle %ds)', instance_name, idle) ; log.warning('idle-poll: %s unreachable, PID %s dead -> reclaiming', instance_name, pid).\n\n**Observable via:** log.info('idle-sleep: shutting down DS.1') + slot 1 becoming free.\n\n**Affected files (indicative):** unseen_university/devices/<worker>/shim.py (poll + decision), the front-door tick loop, the bus control verb the instance answers.\n\n**Rollback:** git revert — devices stay up until explicitly stopped (no auto-sleep). No migration.\n\n**audit-emphasis:** needs-deep-smell (the busy-vs-dead disambiguation is the load-bearing correctness point — a wrong call kills a working instance).\n\n**Scope boundary:** the idle-detect + sleep + slot-release; leasing + pool cap are separate tickets.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T22:53:38.445612+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T22:53:38.489529+00:00"
+  }
+}

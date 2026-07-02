@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-unified-capability-selector-deferred-2026-07-02.20260702.165000168541",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-unified-capability-selector-deferred-2026-07-02"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-02T16:50:00.168541",
+  "links": {
+    "decisions": [
+      "D-agent-capability-mixins-over-domains-2026-07-02",
+      "D-worker-pool-leasing-and-singleton-2026-07-02"
+    ],
+    "tickets": [
+      "T-converge-worker-dispatch-onto-rules-engine"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-unified-capability-selector-deferred-2026-07-02",
+    "title": "DEFERRED convergence: worker-dispatch = inference-routing = one capability-tag rules engine over the same data",
+    "status": "open",
+    "date": "2026-07-02",
+    "spawned_tickets": [
+      "T-converge-worker-dispatch-onto-rules-engine"
+    ],
+    "text": "CAPTURED 2026-07-02 (live design session). A DEFERRED convergence: worker-dispatch and inference-routing are the SAME rules engine over the same-shaped data, to be unified once more of the restructuring is done (Akien: 'they're both the same shape of rules engine, so yeah'; 'ticket converging when more of the restructuring is done').\n\nCAPABILITY = TAGS: each device/shim advertises a set of capability TAGS (BUILDER, CODEBUILDER, ...). Tags come from the composed capability mixins — CodingCapability contributes CODEBUILDER; a device is the union of its mixins' tags. Compose a new capability -> a new advertised tag -> the selector can route to it with ZERO changes to the router (extends D-agent-capability-mixins-over-domains). BUILDER/CODEBUILDER is the general/specific split (a code-only ticket wants CODEBUILDER; an any-builder ticket wants BUILDER). Advertised via the existing announce -> manifest bus flow; Granny asks a shim carrying the matching tag 'got anybody?' and the shim owns the pool + the yes/no.\n\nONE RULES ENGINE, TWO CALLERS: Granny's worker-dispatch (match a ticket's required capabilities against shims' advertised tags, pick an available/wakeable worker) is the SAME operation as the inference router's cost-optimizing selector (argmin(dollars+time | difficulty+features) over capable sources — [[project_inference_cost_optimizing_router]]). One rules engine parameterized by the data, not two implementations. The inference router is the existing instance; worker-dispatch becomes the second caller. A routing compiler / compiled-rule already exists to build on (T-fix-routing-compiler-add-compiled-rule).\n\nMATCH SEMANTICS: the match-mode is up to the CALLER; the DEFAULT is ALL required tags covered by one source (strict AND). A caller may request a best-match/score instead (like the router's argmin over partial capability).\n\nOPEN (rides with THIS convergence, NOT the near-term front-door work): descriptive tags vs required-capability tags. Tickets today carry TOPICAL tags ([architecture, bugfix, alarms]) that describe the subject, not 'you must be a CODEBUILDER'. The selector needs the ticket's REQUIRED capabilities — either drawn from the same tag list (start tagging tickets with capability tags) or a separate `requires:` field. Getting this wrong mis-routes SILENTLY (topical tags matched against capability tags). Resolve when the convergence is built.\n\nSEQUENCING: DEFERRED. The near-term front-door + leasing restructuring ships standalone; today's Granny dispatch keeps working until then. This convergence is gated on that restructuring closing (front-door + leasing + Granny-wake). Filed as T-converge-worker-dispatch-onto-rules-engine (hold, gated on those tickets).\n\n## Hypothesis\nOnce unified, adding a worker capability (a mixin -> a tag) makes BOTH worker-dispatch and inference-routing able to select it with no router change; the two selectors share one rules engine and one capability-data shape.\n\n## Intention\nI intend that worker-dispatch and inference-routing converge onto a single capability-matching rules engine over tag/cost data — after the front-door/leasing restructuring lands, not before.\n\nRELATES TO: D-agent-capability-mixins-over-domains-2026-07-02 (tags from mixins), [[project_inference_cost_optimizing_router]], [[project_inference_tier_not_model_contract]], [[project_factory_vision]], D-worker-pool-leasing-and-singleton-2026-07-02."
+  }
+}

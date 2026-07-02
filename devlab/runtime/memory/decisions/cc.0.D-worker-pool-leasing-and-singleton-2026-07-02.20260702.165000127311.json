@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.D-worker-pool-leasing-and-singleton-2026-07-02.20260702.165000127311",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-worker-pool-leasing-and-singleton-2026-07-02"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-02T16:50:00.127311",
+  "links": {
+    "decisions": [
+      "D-worker-instance-identity-2026-07-02",
+      "D-shim-frontdoor-on-groundloop-2026-07-02",
+      "D-agent-capability-mixins-over-domains-2026-07-02"
+    ],
+    "tickets": [
+      "T-shim-lease-instance-numbers",
+      "T-worker-pool-semantics",
+      "T-worker-idle-sleep-bus-ask"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-worker-pool-leasing-and-singleton-2026-07-02",
+    "title": "Worker instance pool: per-class free-list leasing, singleton = pool-of-1, .0-durable/1+-ephemeral, idle-sleep via bus ask",
+    "status": "open",
+    "date": "2026-07-02",
+    "spawned_tickets": [
+      "T-shim-lease-instance-numbers",
+      "T-worker-pool-semantics",
+      "T-worker-idle-sleep-bus-ask"
+    ],
+    "text": "CAPTURED 2026-07-02 (live design session, downstream of D-worker-instance-identity + D-shim-frontdoor-on-groundloop). Specifies the instance POOL — how a worker class's instances are numbered, leased, wiped, and idle-slept: the machinery D-worker-instance-identity explicitly deferred ('the reusable-number leasing depends on the shim front-door').\n\nTWO-LEVEL LIFECYCLE (resolves D-shim-frontdoor Q1/Q2): the Ground Loop is a DUMB per-host daemon loop — it launches ONLY runme.py files and checks NOTHING; all supervision logic lives in the shim class. The shim + its runme.py IS the device's supervisor / front-door (the web-proxy pattern generalized, Akien's example: the web server is the DEVICE, the SHIM is the proxy; the daemon loop only keeps the proxy's runme.py ready; the proxy wakes the web server when a request arrives and it is down). So there are two levels: GL <-> front-door (the GL relaunches the runme.py, if the shim allows); front-door <-> device (the front-door wakes on work and idle-sleeps the heavy device). The GL never touches the heavy device directly.\n\nINSTANCE POOL PER CLASS (held in the class-shim): a free-list where the slot INDEX is the instance number and the slot VALUE is the live instance object (self), with a PID fallback persisted for crash-recovery.\n  - ALLOCATE: return the first index whose slot is None; if none, append a new slot at the end. The caller passes self, which is stored at that index -> instances structurally cannot collide (each slot holds a distinct live object).\n  - RELEASE (going down): the shim sets the slot to None; if that was the LAST slot, delete it (trim the trailing None).\n  - REBUILD after a front-door restart: the in-memory objects are gone, so the shim rebuilds by liveness-checking the persisted PIDs (dead PID = free slot). Devices spawned by the front-door normally die with it; the PID list covers orphan/crash recovery.\n  - The free-list is PER CLASS, held in that class' shim; the abbreviation namespaces the numbers.\n\nSINGLETON = POOL OF ONE (no special case): 'singleton' is just a class whose max_instances = 1 — the free-list never grows past slot 0. Orchestrators (Granny — 'how many orchestrators will we ever really need?') are pools of 1; builders (DickSimnel) are pools of N. ONE mechanism parameterized by a max_instances property on the device (Akien: many devices will be singletons; that property lives on the device). Reuses the exact leasing machinery — homogeneity over special-case ([[feedback_homogeneity_over_special_case]]).\n\nINDEX-0 ASYMMETRY: slot 0 is the DURABLE foreground/primary — its folder is NEVER wiped, and it is conceptually always 'the primary'. Instances 1+ are EPHEMERAL pool workers: on startup each WIPES its assigned folder (clean slate), except .0.\n\nDATA DIRS (Akien-corrected mid-session): the class-shim's data — including the single leases file — lives in ~/.unseen_university/devices/<CLASSNAME>/ (FULL name, e.g. devices/DickSimnel/). Each INSTANCE's state + logging lives in ~/.unseen_university/devices/<ABBREV>.<NUMBER>/ (e.g. devices/DS.0/, devices/DS.1/). The class-shim keys off the full name; instances key off the abbreviation.\n\nIDLE-SLEEP via BUS ASK: the shim asks each instance 'whatcha workin' on?' over the bus; the reply drives the sleep decision -\n  - reply 'idle past the timeout' -> shim shuts the device down (idle-sleep) and frees the slot;\n  - NO reply + PID alive -> the instance is busy heads-down mid-ticket (it services its mailbox only when idle/listening) -> leave it;\n  - NO reply + PID dead -> crashed -> free the slot.\n  The idle timeout (~2 min sketch) is a config default, not a design fork.\n\n## Hypothesis\nA worker class is a pool parameterized by max_instances; adding/removing an instance is a free-list lease/release, a singleton is max_instances=1, a dormant device is woken by its own shim and idle-slept by a bus poll — with zero supervision logic in the Ground Loop.\n\n## Intention\nI intend that instance lifecycle (number lease, folder wipe, idle-sleep, crash-recovery) is owned entirely by the class-shim over a per-class free-list, so the Ground Loop stays a dumb runme.py launcher and singletons need no special-casing.\n\nRELATES TO: D-worker-instance-identity-2026-07-02 (the leasing it deferred), D-shim-frontdoor-on-groundloop-2026-07-02 (the front-door that holds the pool), [[project_ground_loop_web_server]], [[feedback_external_state_principle]], [[feedback_homogeneity_over_special_case]], [[project_worker_types]]."
+  }
+}

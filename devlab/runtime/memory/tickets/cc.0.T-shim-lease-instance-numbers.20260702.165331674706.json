@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-shim-lease-instance-numbers.20260702.165331674706",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-lease-instance-numbers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T22:53:31.674706+00:00",
+  "links": {
+    "decisions": [
+      "D-worker-pool-leasing-and-singleton-2026-07-02"
+    ],
+    "tickets": [
+      "T-shim-lease-instance-numbers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-lease-instance-numbers",
+    "title": "[hold] Class-shim leases reusable instance numbers over a per-class free-list (live object + PID fallback)",
+    "status": "hold",
+    "size": "M",
+    "tags": [
+      "architecture"
+    ],
+    "decision_id": "D-worker-pool-leasing-and-singleton-2026-07-02",
+    "priority": 0.5,
+    "target_difficulty": 2,
+    "role": "builder",
+    "related_to": "T-shim-frontdoor-on-groundloop",
+    "intention": "I intend that a class-shim assigns each instance a reusable number from a per-class free-list, so instance_name numbers reuse freed slots and never collide.",
+    "description": "**Blocked on: T-shim-frontdoor-on-groundloop** (the shim must be the persistent front-door that holds the free-list). Wires the leasing D-worker-instance-identity deferred.\n\n**What to build:** a per-class free-list held in the class-shim: slot INDEX = instance number, slot VALUE = the live instance object (self), with a PID persisted per instance for crash-recovery.\n- ALLOCATE: return the first index whose slot is None; else append a new slot. Caller passes self -> stored at that index (no collision).\n- RELEASE: shim sets the slot to None; if it was the LAST slot, trim it.\n- REBUILD after a front-door restart: reconstruct from persisted PIDs, liveness-checking each (dead PID = free slot).\n- DATA DIRS: the leases file + class-shim state live in ~/.unseen_university/devices/<CLASSNAME>/ (full name, e.g. devices/DickSimnel/); each instance's state+logging lives in ~/.unseen_university/devices/<ABBREV>.<NUMBER>/ (e.g. devices/DS.0/).\n- The instance asks the shim for its number during __init__ (D-worker-instance-identity); instance_number stops defaulting to 0 and becomes the leased value.\n\n**Completion criteria:** allocating 3 instances yields DS.0/DS.1/DS.2; releasing DS.1 then allocating again REUSES slot 1 (DS.1); releasing the tail trims the list; a rebuild from PID files after dropping the in-memory list reconstructs the same taken/free set.\n\n**Test plan (real red->green):** unit — drive allocate/release/allocate on a class-shim, assert reuse of the freed index and tail-trim; simulate a front-door restart (drop in-memory list, keep PID files) and assert rebuild matches liveness. Red before the free-list exists; green after.\n\n**Validation (runtime):** devices/DickSimnel/ holds the leases file; a second live DS instance logs under devices/DS.1/; instance_name stays stable across a wake/sleep cycle. Observable via the leases file contents + per-instance folders.\n\n**Logging:** log.info('lease: assigned %s to <class>' , instance_name) on allocate; log.info('lease: released %s', instance_name) on release, at the shim boundary.\n\n**Observable via:** log.info('lease: assigned DS.1') + the appearance of ~/.unseen_university/devices/DS.1/.\n\n**Affected files (indicative):** unseen_university/devices/<worker>/shim.py + BaseShim (the free-list), unseen_university/capabilities/identity.py (instance_number from lease), the class-shim data dir.\n\n**Rollback:** git revert — falls back to instance_number defaulting to 0 (single foreground). No data migration.\n\n**audit-emphasis:** needs-deep-smell (concurrency on the free-list; the number-leak the consequence ticket watches).\n\n**Scope boundary:** the leasing free-list + data dirs + instance_number-from-lease. Pool cap/wipe (T-worker-pool-semantics) and idle-sleep (T-worker-idle-sleep-bus-ask) are separate.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T22:53:24.322438+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T22:53:24.369718+00:00"
+  }
+}
