@@ -42,6 +42,7 @@ from unseen_university.devices.inference.models_registry import (
     default_registry as _default_models,
 )
 from unseen_university.devices.inference.rules_engine import RulesEngine
+from unseen_university.devices.inference.domains import resolve_domain
 from unseen_university.devices.inference.routing_buckets import (
     bump_difficulty,
     inference_cost_record,
@@ -424,11 +425,11 @@ class InferenceDevice(BaseDevice):
                         session_id=request.session_id, foreground=request.foreground,
                         ticket_id=request.ticket_id,
                     )
-                    decision = self._rules.route(
+                    decision = resolve_domain(request.domain).select(
+                        self._rules,
                         task_class=request.task_class or "worker",
                         session_id=request.session_id,
                         foreground=request.foreground,
-                        domain=request.domain,
                         required_difficulty=req_difficulty,
                     )
             else:
@@ -440,19 +441,19 @@ class InferenceDevice(BaseDevice):
                     "dispatch: unknown model=%s — routing by task_class=%s via rules engine",
                     request.model, request.task_class or "worker",
                 )
-                decision = self._rules.route(
+                decision = resolve_domain(request.domain).select(
+                    self._rules,
                     task_class=request.task_class or "worker",
                     session_id=request.session_id,
                     foreground=request.foreground,
-                    domain=request.domain,
                     required_difficulty=req_difficulty,
                 )
         else:
-            decision = self._rules.route(
+            decision = resolve_domain(request.domain).select(
+                self._rules,
                 task_class=request.task_class or "worker",
                 session_id=request.session_id,
                 foreground=request.foreground,
-                domain=request.domain,
                 required_difficulty=req_difficulty,
             )
 
