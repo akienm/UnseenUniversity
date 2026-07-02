@@ -342,3 +342,34 @@ def test_minion_device_restart_resets_loop():
     old_loop = device._loop
     device.restart()
     assert device._loop is not old_loop
+
+
+# ── _map_signal: LoopResult → WorkerResult signal (R2: escalate target propagation) ──
+
+
+def test_map_signal_covers_all_outcomes():
+    """_map_signal maps every LoopResult outcome, preserving the escalate tier target."""
+    from unseen_university.devices.minion.tool_loop import _map_signal
+    from unseen_university.devices.inference.agentic_loop import (
+        LOOP_AVAILABILITY,
+        LOOP_COST_EXCEEDED,
+        LOOP_DONE,
+        LOOP_ESCALATE,
+        LOOP_MAX_TURNS,
+        LoopResult,
+    )
+    # done → DONE + notes from the envelope result
+    assert _map_signal(
+        LoopResult(LOOP_DONE, text="x", envelope={"status": "done", "result": "built it"})
+    ) == ("DONE", "built it")
+    # escalate carries the tier target THROUGH the mapping (R2 — the whole point)
+    assert _map_signal(
+        LoopResult(LOOP_ESCALATE, envelope={"status": "escalate", "result": "r", "target": "analyst"})
+    ) == ("ESCALATE: analyst", "r")
+    assert _map_signal(
+        LoopResult(LOOP_ESCALATE, envelope={"status": "escalate", "result": "r2", "target": "designer"})
+    ) == ("ESCALATE: designer", "r2")
+    # non-terminal outcomes have no target → default worker tier
+    assert _map_signal(LoopResult(LOOP_MAX_TURNS, text="mt"))[0] == "ESCALATE: worker"
+    assert _map_signal(LoopResult(LOOP_AVAILABILITY, text="down"))[0] == "ESCALATE: worker"
+    assert _map_signal(LoopResult(LOOP_COST_EXCEEDED, text="$$"))[0] == "ESCALATE: worker"

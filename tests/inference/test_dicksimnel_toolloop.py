@@ -385,3 +385,54 @@ class TestAgenticLoopLiveOR:
         assert result.outcome == LOOP_DONE, f"expected DONE, got {result.outcome}: {result.text[:80]!r}"
         tool_call_turns = [t for t in loop._turn_log if t["had_tool_calls"]]
         assert tool_call_turns, f"No tool_calls seen in any turn. turn_log: {loop._turn_log}"
+
+
+# ── bash-failure escalation hint (preserved from minion, generalized to the shared loop) ──
+
+
+def test_bash_failure_hint_after_three_consecutive_failures():
+    """After 3 consecutive failed Bash calls the loop appends an escalation hint to the result."""
+    responses = [_make_mock_response("", tool_calls=[_bash_call("false")]) for _ in range(3)]
+    responses.append(_make_mock_response('{"status": "done", "result": "ok"}'))
+    it = iter(responses)
+    seen_tool_content: list[str] = []
+
+    def dispatch(req):
+        seen_tool_content.extend(
+            m.get("content", "") for m in req.messages if m.get("role") == "tool"
+        )
+        return next(it)
+
+    device = MagicMock()
+    device.dispatch.side_effect = dispatch
+    loop = AgenticLoop(codec=NativeToolCodec(), max_turns=50, inference_device=device)
+    with patch(
+        "unseen_university.devices.inference.agentic_loop.execute_tool",
+        return_value="[Bash rc=1]\nboom",
+    ):
+        result = loop.run(system_prompt="s", initial_message="go", ticket_id="T")
+    assert result.outcome == LOOP_DONE
+    # The 3rd consecutive failure's tool result (seen on the 4th dispatch) carries the hint.
+    assert any("[HINT:" in c for c in seen_tool_content), "expected escalation hint after 3 bash fails"
+
+
+def test_bash_success_resets_failure_counter():
+    """A successful Bash call resets the counter — no hint until 3 *consecutive* failures."""
+    # fail, fail, success, fail → never 3 consecutive → no hint.
+    responses = [_make_mock_response("", tool_calls=[_bash_call("cmd")]) for _ in range(4)]
+    responses.append(_make_mock_response('{"status": "done", "result": "ok"}'))
+    it = iter(responses)
+    seen_tool_content: list[str] = []
+    exec_results = iter(["[Bash rc=1]\nx", "[Bash rc=1]\nx", "[Bash rc=0]\nok", "[Bash rc=1]\nx"])
+
+    def dispatch(req):
+        seen_tool_content.extend(m.get("content", "") for m in req.messages if m.get("role") == "tool")
+        return next(it)
+
+    device = MagicMock()
+    device.dispatch.side_effect = dispatch
+    loop = AgenticLoop(codec=NativeToolCodec(), max_turns=50, inference_device=device)
+    with patch("unseen_university.devices.inference.agentic_loop.execute_tool", side_effect=lambda *a, **k: next(exec_results)):
+        result = loop.run(system_prompt="s", initial_message="go", ticket_id="T")
+    assert result.outcome == LOOP_DONE
+    assert not any("[HINT:" in c for c in seen_tool_content), "no hint without 3 CONSECUTIVE fails"

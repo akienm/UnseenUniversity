@@ -447,6 +447,14 @@ def _outcome_from_envelope(env: dict | None) -> str:
     return LOOP_ESCALATE  # explicit escalate, prose finish, or unknown terminal
 
 
+def _bash_failed(result: str) -> bool:
+    """True if a Bash tool result is a failure (non-zero exit, or a denylist/timeout ERROR)."""
+    m = re.search(r"\[Bash rc=(\d+)\]", result)
+    if m:
+        return int(m.group(1)) != 0
+    return result.startswith("ERROR")
+
+
 class AgenticLoop:
     """The ONE multi-turn ReAct loop. Codec-parameterized; no escalation walk of its own."""
 
@@ -505,6 +513,7 @@ class AgenticLoop:
         running_cost = 0.0
         in_tok = out_tok = 0
         tools_called: list[str] = []
+        consecutive_bash_failures = 0
         source_billing_type = "usage_based"
         effective_max_turns = self._max_turns
         turn = 0
@@ -613,6 +622,16 @@ class AgenticLoop:
                 self._critic_advise(critic, call, turn, ticket_id)
                 result = execute_tool(call["name"], call["args"], cwd)
                 tools_called.append(call["name"])
+                # Soft escalation nudge: after 3 consecutive failed Bash calls, hint the model
+                # to escalate rather than grind (preserved from minion's loop; harmless + useful
+                # for any caller, native or text).
+                if call["name"] == "Bash":
+                    if _bash_failed(result):
+                        consecutive_bash_failures += 1
+                        if consecutive_bash_failures >= 3:
+                            result += "\n[HINT: 3 consecutive non-zero exits — consider escalating if stuck]"
+                    else:
+                        consecutive_bash_failures = 0
                 log.info("AgenticLoop: %s → %d chars result", call["name"], len(result))
                 self._critic_evaluate(critic, critic_judgments, call, result, turn, ticket_id)
                 codec.append_tool_result(messages, call, result)
