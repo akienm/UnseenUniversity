@@ -324,14 +324,12 @@ def test_run_inference_delegates_to_domain():
 
     d = DickSimnelDevice.__new__(DickSimnelDevice)
     d._active_ticket = None
-    with patch("unseen_university.devices.dicksimnel.device.resolve_domain") as mock_resolve:
-        domain = MagicMock()
-        domain.run.return_value = "DONE: fixed"
-        mock_resolve.return_value = domain
-        result = d._run_inference({"id": "T-tl", "title": "T", "tags": [], "description": "d"})
+    ticket = {"id": "T-tl", "title": "T", "tags": [], "description": "d"}
+    with patch("unseen_university.capabilities.base.CapabilityMixin.run_capability") as spy:
+        spy.return_value = "DONE: fixed"
+        result = d._run_inference(ticket)
 
-    mock_resolve.assert_called_once_with("coding")
-    domain.run.assert_called_once_with({"id": "T-tl", "title": "T", "tags": [], "description": "d"}, agent_id="dicksimnel")
+    spy.assert_called_once_with(ticket, agent_id="dicksimnel")
     assert result == "DONE: fixed"
 
 

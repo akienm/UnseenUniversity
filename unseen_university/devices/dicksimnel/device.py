@@ -43,11 +43,12 @@ _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "B
 # thin consumer of CodingDomain.run() — see _run_inference below.
 
 # DS holds no prompt/selection/loop/escalation logic: the coding path runs entirely
-# through the coding domain object (D-domain-object-encapsulation). DS is a thin consumer
-# that hands the ticket to CodingDomain.run() and relays DONE (result) or HALT (None).
-from unseen_university.devices.inference.domains import resolve_domain
+# through the coding domain object (D-domain-object-encapsulation), reached via the
+# CodingCapability mixin (D-agent-capability-mixins-over-domains, stream A). DS composes
+# the capability and delegates through it — it no longer resolves the domain directly.
+from unseen_university.capabilities import CodingCapability
 
-class DickSimnelDevice(BaseDevice):
+class DickSimnelDevice(CodingCapability, BaseDevice):
     """
     DickSimnel.0 — bus-dispatched sprint ticket worker.
 
@@ -336,16 +337,21 @@ class DickSimnelDevice(BaseDevice):
     # ── Inference ─────────────────────────────────────────────────────────────
 
     def _run_inference(self, ticket: dict) -> str | None:
-        """Work a coding ticket by delegating to the coding domain's run().
+        """Work a coding ticket by delegating through the CodingCapability mixin.
 
-        The escalation walk + the shared agentic loop now live in the domain object
-        (D-domain-object-encapsulation): CodingDomain.run() is the SINGLE escalation
-        owner (capability→bump, availability→re-select, past-top→halt, cost→halt — the
-        money-safety semantics, relocated from here). DS is a thin consumer: it supplies
-        the ticket and its agent identity and returns the DONE result, or None to HALT
-        (worker_listener declines; a system_alarm has fired inside the domain).
+        The escalation walk + shared agentic loop live in the coding domain object
+        (D-domain-object-encapsulation); the CodingCapability mixin
+        (D-agent-capability-mixins-over-domains, stream A) exposes that domain on this
+        device by composition. DS is a thin consumer: it hands the ticket + its agent
+        identity to run_capability (which delegates to CodingDomain.run) and relays the
+        DONE result, or None to HALT (worker_listener declines; a system_alarm has fired
+        inside the domain). No direct domain resolution remains on the device.
         """
-        return resolve_domain("coding").run(ticket, agent_id="dicksimnel")
+        # STUB (proof-first red state): does not yet route through the mixin — the real
+        # body delegates to self.run_capability in the next commit. Present so the routing
+        # test fails on an assertion-about-behaviour (run_capability never called), not on
+        # ImportError, and without triggering real inference against the old domain path.
+        return None
 
     def replay_and_analyze(self, ticket_id: str) -> dict:
         """Replay a closed ticket using the simulator to understand decision-making.

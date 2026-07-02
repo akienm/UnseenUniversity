@@ -203,29 +203,48 @@ class TestOneMechanismOnly:
             importlib.import_module("unseen_university.devices.dicksimnel.toolloop")
 
     def test_ds_run_inference_delegates_to_domain(self):
-        """DS._run_inference is a thin consumer: it delegates to CodingDomain.run() with
-        domain='coding' and NO task_class/model/tier args (T-thin-ds-to-domain-consumer)."""
+        """DS._run_inference routes through the CodingCapability mixin: it calls
+        run_capability(ticket, agent_id='dicksimnel') and relays the result unchanged
+        (D-agent-capability-mixins-over-domains, stream A). The mixin owns the delegation
+        to CodingDomain.run — DS resolves no domain directly."""
         from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         dev = DickSimnelDevice.__new__(DickSimnelDevice)
         ticket = {"id": "T-deleg", "description": "d", "tags": []}
-        with patch("unseen_university.devices.dicksimnel.device.resolve_domain") as mock_resolve:
-            domain = MagicMock()
-            domain.run.return_value = "DONE: delegated"
-            mock_resolve.return_value = domain
+        with patch("unseen_university.capabilities.base.CapabilityMixin.run_capability") as spy:
+            spy.return_value = "DONE: delegated"
             out = dev._run_inference(ticket)
-        mock_resolve.assert_called_once_with("coding")
-        domain.run.assert_called_once_with(ticket, agent_id="dicksimnel")
+        spy.assert_called_once_with(ticket, agent_id="dicksimnel")
         assert out == "DONE: delegated"
 
     def test_ds_run_inference_halt_returns_none(self):
-        """A domain HALT (None) is relayed unchanged — worker_listener declines on None."""
+        """A domain HALT (None), relayed through the mixin, is passed back unchanged —
+        worker_listener declines on None."""
         from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         dev = DickSimnelDevice.__new__(DickSimnelDevice)
-        with patch("unseen_university.devices.dicksimnel.device.resolve_domain") as mock_resolve:
-            domain = MagicMock()
-            domain.run.return_value = None
-            mock_resolve.return_value = domain
+        with patch("unseen_university.capabilities.base.CapabilityMixin.run_capability") as spy:
+            spy.return_value = None
             assert dev._run_inference({"id": "T-halt", "description": "d", "tags": []}) is None
+        spy.assert_called_once_with({"id": "T-halt", "description": "d", "tags": []}, agent_id="dicksimnel")
+
+    def test_ds_composes_coding_capability_no_direct_resolve(self):
+        """Structural proof the composition is load-bearing: DS IS-A CodingCapability, and
+        the class body holds NO direct resolve_domain call (the old path is REMOVED, not
+        retained alongside the mixin)."""
+        import inspect
+        from unseen_university.capabilities import CodingCapability
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
+        assert issubclass(DickSimnelDevice, CodingCapability)
+        src = inspect.getsource(DickSimnelDevice)
+        assert "resolve_domain(" not in src, "DickSimnelDevice must not resolve a domain directly"
+
+    def test_capability_mixin_does_not_intercept_construction(self):
+        """MRO safety (the composition adds no __init__ step to drop): the first class after
+        DickSimnelDevice in the MRO that defines __init__ is BaseDevice — the capability
+        mixins are __init__-transparent, so super().__init__() reaches BaseDevice unchanged."""
+        from unseen_university.device import BaseDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
+        first_init = next(c for c in DickSimnelDevice.__mro__[1:] if "__init__" in c.__dict__)
+        assert first_init is BaseDevice
 
     def test_ds_holds_no_prompt_or_selection_logic(self):
         """DS is thin: no prompt-building / skill-loading / selection logic remains on it
