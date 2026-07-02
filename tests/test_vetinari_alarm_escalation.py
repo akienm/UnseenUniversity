@@ -218,3 +218,35 @@ class TestAuditLogAlarmsEscalation:
                 alarm_entries = [e for e in entries if e.get("event") == "ALARM_ESCALATE"]
                 assert len(alarm_entries) >= 1
                 assert "new or reopened system alarm" in alarm_entries[0].get("reason", "")
+
+
+class TestDefaultPathRetry:
+    """The retry-on-failure contract must hold on the DEFAULT (production) channel-post
+    path — not only when a raising channel_post_fn is injected (T-vetinari-alarm-retry-
+    default-path). Production builds VetinariDevice() with no injected fn, so a swallowed
+    channel failure must still leave the alarm un-notified so the next sweep retries."""
+
+    def test_default_path_failed_post_leaves_alarm_unnotified(self, tmp_path):
+        import unseen_university.system_alarms as sa
+
+        def boom(_msg):
+            raise RuntimeError("channel down")
+
+        with patch("unseen_university.system_alarms.uu_home", lambda: str(tmp_path)):
+            with patch(
+                "unseen_university.devices.vetinari.device.uu_home", lambda: str(tmp_path)
+            ):
+                with patch("unseen_university.channel.post_to_channel", boom):
+                    from unseen_university.devices.vetinari.device import VetinariDevice
+
+                    # DEFAULT construction — no channel_post_fn (the production config)
+                    v = VetinariDevice()
+                    sa.raise_alarm("default-path:sig", "test.caller", "demo", emit_log=False)
+
+                    nagged = v.sweep_system_alarms()
+
+                    # Post failed on the default path → nothing escalated, alarm NOT stamped
+                    assert nagged == 0
+                    rec = sa.get_alarm("default-path:sig")
+                    assert rec is not None
+                    assert rec.get("notified_at") is None
