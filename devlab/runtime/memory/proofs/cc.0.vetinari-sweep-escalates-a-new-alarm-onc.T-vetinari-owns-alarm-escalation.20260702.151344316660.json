@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.vetinari-sweep-escalates-a-new-alarm-onc.T-vetinari-owns-alarm-escalation.20260702.151344316660",
+  "emitter": "cc.0",
+  "namespace": [
+    "vetinari-sweep-escalates-a-new-alarm-onc",
+    "T-vetinari-owns-alarm-escalation"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T15:13:44.316660",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-vetinari-owns-alarm-escalation"
+    ],
+    "commits": [
+      "22f2ab2e11d27e7053af6540271118675d60e423"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Vetinari sweep escalates a new alarm once",
+    "intention": "sweep_system_alarms posts a new system alarm to the channel and stamps it notified",
+    "test": "tests/test_vetinari_alarm_escalation.py::TestSweepEscalatesOpenAlarmOnce::test_sweep_escalates_open_alarm_once",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_vetinari_alarm_escalation.py::TestSweepEscalatesOpenAlarmOnce::test_sweep_escalates_open_alarm_once",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            # Redirect vetinari uu_home to tmp_path\n            with patch(\n                \"unseen_university.devices.vetinari.device.uu_home\", lambda: str(tmp_path)\n            ):\n                v, channel_calls, escalation_calls = _make_vetinari_with_spy(tmp_path)\n    \n                # Seed one alarm\n                sa.raise_alarm(\"test-alarm:demo\", \"test.caller\", \"demo alarm\", emit_log=False)\n    \n                # Sweep\n                nagged = v.sweep_system_alarms()\n    \n                # Assert: one alarm escalated\n>               assert nagged == 1\nE               assert 0 == 1\n\ntests/test_vetinari_alarm_escalation.py:66: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_vetinari_alarm_escalation.py::TestSweepEscalatesOpenAlarmOnce::test_sweep_escalates_open_alarm_once\n1 failed in 0.12s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "22f2ab2e11d27e7053af6540271118675d60e423",
+    "impl_paths": [
+      "unseen_university/devices/vetinari/device.py"
+    ],
+    "ticket": "T-vetinari-owns-alarm-escalation",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
