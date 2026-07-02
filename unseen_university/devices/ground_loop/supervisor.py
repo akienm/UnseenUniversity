@@ -32,6 +32,8 @@ import time
 from pathlib import Path
 from typing import Optional
 
+from unseen_university.system_alarms import raise_alarm
+
 log = logging.getLogger(__name__)
 
 _STALE_BORKED_HOURS = 24
@@ -86,6 +88,7 @@ class RunmeSupervisor:
 
     def _load(self, runme: Path, mtime: float) -> None:
         module_name = f"groundloop.{runme.parent.parent.name}"
+        device_name = runme.parent.parent.name
         log.info("SUPERVISOR|runme=%s|action=load|module=%s", runme.name, module_name)
         try:
             spec = importlib.util.spec_from_file_location(module_name, runme)
@@ -93,6 +96,11 @@ class RunmeSupervisor:
             spec.loader.exec_module(mod)
         except Exception as exc:
             log.error("SUPERVISOR|runme=%s|action=import_failed|exc=%s", runme.name, exc)
+            raise_alarm(
+                f"ground-loop-start-failed:{device_name}",
+                "unseen_university.devices.ground_loop.supervisor",
+                f"Failed to import runme.py for device {device_name}: {exc}",
+            )
             self._borkedit(runme, "import_failed")
             return
 
@@ -112,10 +120,16 @@ class RunmeSupervisor:
 
     def _run(self, runme: Path, mod) -> None:
         """Thread body: call start(), catch runtime errors → borkedit."""
+        device_name = runme.parent.parent.name
         try:
             mod.start()
         except Exception as exc:
             log.error("SUPERVISOR|runme=%s|action=runtime_error|exc=%s", runme.name, exc)
+            raise_alarm(
+                f"ground-loop-start-failed:{device_name}",
+                "unseen_university.devices.ground_loop.supervisor",
+                f"Runtime error in runme.py for device {device_name}: {exc}",
+            )
             self._borkedit(runme, "runtime_error")
 
     def _stop_plugin(self, runme: Path) -> None:

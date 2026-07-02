@@ -26,6 +26,8 @@ from collections import deque
 from pathlib import Path
 from typing import Optional
 
+from unseen_university.system_alarms import raise_alarm
+
 log = logging.getLogger(__name__)
 
 _SLOW_MS = int(os.getenv("IGOR_DB_SLOW_MS", "50"))
@@ -279,11 +281,19 @@ class PGDatabaseProxy:
         self._connect_errors: int = 0
         from psycopg2 import pool as pg_pool
 
-        self._pool = pg_pool.ThreadedConnectionPool(
-            minconn=3,
-            maxconn=20,
-            dsn=db_url,
-        )
+        try:
+            self._pool = pg_pool.ThreadedConnectionPool(
+                minconn=3,
+                maxconn=20,
+                dsn=db_url,
+            )
+        except Exception as exc:
+            raise_alarm(
+                "db-unreachable",
+                "unseen_university.db_proxy",
+                f"Postgres unreachable: {exc}",
+            )
+            raise
 
     def __call__(self) -> _PGContext:
         return _PGContext(self)

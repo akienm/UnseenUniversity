@@ -22,6 +22,8 @@ import sys
 import time
 from pathlib import Path
 
+from unseen_university.system_alarms import raise_alarm
+
 # UU repo root = parent of devices/igor/setup_assets/
 _UU_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -66,7 +68,15 @@ def restart_loop(igor_args: list[str]) -> None:
     )
     instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-Wild1")
     instance_dir = runtime_root / instance_id
-    instance_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        instance_dir.mkdir(parents=True, exist_ok=True)
+    except PermissionError as exc:
+        raise_alarm(
+            f"install-permission-denied:{instance_dir}",
+            "unseen_university.devices.igor.setup_assets.installer",
+            f"Permission denied creating instance directory {instance_dir}: {exc}",
+        )
+        raise
     restart_ts_file = instance_dir / "restart_timestamps.txt"
 
     launch_env = os.environ.copy()
@@ -88,7 +98,15 @@ def restart_loop(igor_args: list[str]) -> None:
                 except ValueError:
                     pass
         timestamps.append(now)
-        restart_ts_file.write_text("\n".join(str(t) for t in timestamps) + "\n")
+        try:
+            restart_ts_file.write_text("\n".join(str(t) for t in timestamps) + "\n")
+        except PermissionError as exc:
+            raise_alarm(
+                f"install-permission-denied:{restart_ts_file}",
+                "unseen_university.devices.igor.setup_assets.installer",
+                f"Permission denied writing restart timestamps file {restart_ts_file}: {exc}",
+            )
+            raise
 
         if len(timestamps) >= _CRASH_LOOP_THRESHOLD:
             msg = (

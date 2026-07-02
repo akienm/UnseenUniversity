@@ -3,7 +3,9 @@
 A *system alarm* is the Number 5 Crossbar trouble-ticket model: a should-not-
 happen event drops an **unignorable, deduped, flat-file artifact** instead of a
 log line that drowns in the noise. (Name: ``system_alarm`` — not "trouble
-ticket"/"ttix"; that was the metaphor.)
+ticket"/"ttix"; that was the metaphor.) A system alarm is **anything Akien AND
+Claude must look at together** — shared attention for critical failures Akien
+cannot delegate to Claude alone.
 
 Design (D-system-alarms-and-tier-requests-2026-06-23):
 - **Flat-file, NOT Postgres.** A DB-down event must itself be alarmable, so the
