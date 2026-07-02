@@ -19,7 +19,7 @@
   "body": {
     "decision_id": "D-agent-capability-mixins-over-domains-2026-07-02",
     "title": "Capability-mixins-over-Domains: the WORKER composition pattern (RECONCILED; scoped to stream A)",
-    "status": "reconciled",
+    "status": "open",
     "date": "2026-07-02",
     "supersedes_capture": "cc.0.D-agent-capability-mixins-over-domains-2026-07-02.20260702.103000672233",
     "spawned_tickets": [
