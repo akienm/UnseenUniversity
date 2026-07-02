@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-savestate-skill-run-cwd-independent.20260702.174343907992",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-savestate-skill-run-cwd-independent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T23:43:43.907992+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-savestate-skill-run-cwd-independent"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-savestate-skill-run-cwd-independent",
+    "title": "[triage] savestate skill's `python run <verb>` fails from any cwd but the skill dir — make the doc cwd-independent",
+    "status": "triage",
+    "size": "S",
+    "tags": [
+      "skills",
+      "docs",
+      "tooling"
+    ],
+    "priority": 0.2,
+    "target_difficulty": 1,
+    "role": "builder",
+    "intention": "I intend that the savestate skill's flush commands (midstream/close/close-header) run from ANY cwd — so a post-sprint or post-compact flush from the repo root doesn't silently fail with 'can't open file run'.",
+    "description": "**Found during the 2026-07-02 session.** skills/savestate/SKILL.md instructs `python run midstream \"...\"` (also `python run close`, `python run close-header`). The `run` script lives at skills/savestate/run (symlinked to ~/.claude/skills/savestate/run), so `python run` only resolves when cwd IS the skill dir. Invoked from the repo root (the normal cwd during a sprint / after /context-load), it fails: `python: can't open file '<repo>/run': [Errno 2] No such file or directory`. The flush then silently doesn't happen (the durable ticket/commit work is unaffected, but the slate ledger isn't updated). Workaround used this session: `python ~/.claude/skills/savestate/run <verb> ...`.\n\n**Fix (doc/instruction, pick one):**\n- Update skills/savestate/SKILL.md to invoke the script cwd-independently, e.g. `python \"$CLAUDE_SKILL_DIR/run\" <verb>` or an absolute-resolved path (the skill is always given its base dir), OR\n- Add a tiny cwd-independent entrypoint the doc calls, OR\n- Note explicitly that the commands must run from the skill dir and have the skill cd there first.\n\n**Same class likely affects other skills** that use the bare `python run <verb>` idiom (grep skills/*/SKILL.md for `python run `) — fix the pattern, not just savestate, if cheap.\n\n**Completion criteria:** following skills/savestate/SKILL.md verbatim from the repo root (cwd = repo root) successfully writes the midstream/close line to today's slate — no 'can't open file run' error.\n\n**Test plan:** doc/skill-instruction fix — validate by running the documented command from the repo root and confirming devlab/runtime/memory/slates/<today>.slate.txt gains the line. No automated assertion form (doc correctness) -> honest close is shipped-unproven naming 'no harness for skill-doc-from-arbitrary-cwd' unless a smoke test is added.\n\n**Affected files:** skills/savestate/SKILL.md (the `python run` invocations); possibly other skills/*/SKILL.md sharing the idiom.\n\n**Observable via:** the slate file gaining the flushed line when the skill is run from repo root (today it silently doesn't).\n\n**audit-emphasis:** doc-only.\n\n**Scope boundary:** make the documented invocation cwd-independent; not a rewrite of the run script's verbs.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T23:43:36.564328+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T23:43:36.615639+00:00"
+  }
+}
