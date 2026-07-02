@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-worker-instance-identity.20260702.144247422736",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-instance-identity"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T20:42:47.422736+00:00",
+  "links": {
+    "decisions": [
+      "D-worker-instance-identity-2026-07-02"
+    ],
+    "tickets": [
+      "T-worker-instance-identity"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-instance-identity",
+    "title": "[sprint] Worker instance identity surface: instance_name = abbrev.number; agent_id = self.instance_name",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "architecture"
+    ],
+    "decision_id": "D-worker-instance-identity-2026-07-02",
+    "priority": 0.5,
+    "target_difficulty": 1,
+    "role": "builder",
+    "intention": "I intend that DickSimnel addresses itself by its instance identity (instance_name='DS.0'), not its class id ('dicksimnel') — so agent_id in alarms/escalation names the instance.",
+    "description": "**Intention:** a worker addresses itself by instance, never by class id ('address instances, never classes'). This builds the identity SURFACE and rewires agent_id; the reusable-number leasing is downstream (gated on the shim front-door).\n\n**What to build:** a thin `IdentityMixin` (composition, consistent with the capability-mixin model) carrying:\n- `instance_abbreviation: str` — class attr (DickSimnel sets `\"DS\"`).\n- `instance_number: int = 0` — DEFAULT 0 for now (0 = foreground/primary). The reusable free-list LEASE from the shim is a separate downstream ticket (T-shim-lease-instance-numbers, D-shim-frontdoor-on-groundloop) — do NOT build leasing here; just default to 0.\n- `instance_name` property = `f\"{self.instance_abbreviation}.{self.instance_number}\"` -> `\"DS.0\"`.\nCompose `IdentityMixin` onto `DickSimnelDevice` (alongside `CodingCapability`). Then change `_run_inference` (device.py) from `agent_id=\"dicksimnel\"` to `agent_id=self.instance_name`.\n\n**Do NOT build here:** number leasing / shim front-door (D-shim-frontdoor-on-groundloop), personality-in-prompt layer (no consumer yet), Agent(BaseDevice) subclass (stream B). Scope is the identity surface + the agent_id rewire only.\n\n**Completion criteria:** a host mixing in `IdentityMixin(instance_abbreviation='DS')` has `instance_name == 'DS.0'`; `DickSimnelDevice._run_inference` calls `run_capability(ticket, agent_id='DS.0')` (i.e. `self.instance_name`), with NO literal `'dicksimnel'` agent_id left. Verify (grep) nothing downstream KEYS on the literal agent_id `'dicksimnel'` (escalation walk / system_alarm attribution read it as a label, not a routing key — confirm before shipping; if something matches on it, surface, don't silently break it).\n\n**Test plan (real red->green):** (1) unit: host with IdentityMixin(abbrev='DS') -> instance_name=='DS.0'. (2) spy `CapabilityMixin.run_capability`, drive `DickSimnelDevice._run_inference`, assert called with `agent_id='DS.0'` (was 'dicksimnel'). Red before instance_name exists / agent_id is the literal; green after.\n\n**Validation (runtime):** after ship, DS.0's escalation/alarm log lines carry `agent=DS.0`, not `agent=dicksimnel`. Observable via `~/.unseen_university/logs/dicksimnel/` INFO crossing lines showing `agent=DS.0`.\n\n**Affected files:** NEW `unseen_university/identity/instance_mixin.py` (or `unseen_university/capabilities/identity.py` — builder's call, thin mixin); `unseen_university/devices/dicksimnel/device.py` (compose mixin + agent_id rewire). NEW `tests/test_worker_instance_identity.py`.\n\n**Logging:** no new path; the existing capability->domain crossing INFO line now shows agent=DS.0 (the observable).\n\n**Scope boundary:** identity surface + agent_id rewire on DickSimnel only. Number leasing, front-door, personality layer, and any other device are out of scope.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "related_to": "D-shim-frontdoor-on-groundloop-2026-07-02",
+    "created_at": "2026-07-02T20:42:40.083531+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T20:42:40.127212+00:00"
+  }
+}

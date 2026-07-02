@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-shim-frontdoor-on-groundloop.20260702.144253856508",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-frontdoor-on-groundloop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T20:42:53.856508+00:00",
+  "links": {
+    "decisions": [
+      "D-shim-frontdoor-on-groundloop-2026-07-02"
+    ],
+    "tickets": [
+      "T-shim-frontdoor-on-groundloop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-frontdoor-on-groundloop",
+    "title": "[open_questions] Shim as persistent front-door on the Ground Loop (daemon + MCP receive) — resolve interface, then decompose",
+    "status": "open_questions",
+    "size": "L",
+    "tags": [
+      "architecture",
+      "design"
+    ],
+    "decision_id": "D-shim-frontdoor-on-groundloop-2026-07-02",
+    "priority": 0.4,
+    "target_difficulty": 3,
+    "role": "master",
+    "intention": "I intend that a worker's shim runs persistently on the Ground Loop as a wake-capable front-door, so the heavy device can be dormant while still reachable — verified when Granny's MCP wake-call to a DOWN worker is answered and wakes it.",
+    "description": "**DESIGN-FIRST (status open_questions):** the crux of D-shim-frontdoor-on-groundloop. The shim moves from living INSIDE the device process to being ATTACHED to the Ground Loop (the existing persistent supervisor, [[project_ground_loop_web_server]]) for daemon lifetime + MCP receive (via skeleton, the MCP aggregator). This makes the shim a wake-capable front-door that outlives its dormant device. This ticket resolves the interface, then the downstream build tickets get filed.\n\n**OPEN QUESTIONS to answer before build (Q&A in-ticket, per open_questions workflow):**\n- Q1: one Ground Loop per HOST hosting all worker shims (assumed), or a Ground Loop per shim?\n- Q2: the shim<->Ground-Loop attach interface — how does a shim register for daemon lifetime + an MCP receive endpoint through skeleton? (What does BaseShim gain? Does the Ground Loop own a registry of attached shims?)\n- Q3: the wake protocol — MCP verb + payload, the 'i'm on it' ack, the spawn/wake mechanics (front-door starts the device process), and the sleep/teardown trigger (idle timeout vs explicit).\n\n**What to build (this ticket):** the attach mechanism — a shim can attach to the Ground Loop and stay up as a front-door with an MCP receive endpoint, independent of its device's liveness; the availability flag becomes 'wakeable' (front-door up) rather than 'device running'. Prove: with the device DOWN, an MCP call to the front-door is received and the front-door can spawn/wake the device.\n\n**Completion criteria:** DickSimnel's shim attaches to the Ground Loop, survives the device being down, receives an MCP wake-call, and wakes the device — demonstrated end to end.\n\n**Test plan (real red->green):** integration — start the Ground Loop with DS's front-door attached, device NOT running; send the MCP wake verb; assert the front-door acks and the device process comes up and receives the ticket. Red before the attach/wake path exists; green after. (Interface Qs must be resolved first — this is why status is open_questions.)\n\n**Validation (runtime):** a wake-call to a down DS.0 produces a front-door ack log ('i'm on it') on the Ground Loop and a subsequent device-start log; the availability flag reads 'wakeable' while the device is down. Observable via Ground Loop logs + `~/.unseen_university/ground_loop/`.\n\n**DOWNSTREAM TICKETS (file AFTER Q1-Q3 resolve — deliberately NOT filed yet, to avoid hollow build tickets on an undesigned interface):** T-shim-lease-instance-numbers (M, wires D-worker-instance-identity leasing), T-granny-wake-not-launch (M, remove granny.yaml DS.0 launch_cmd + daemon static-worker handling), T-granny-mru-and-stall-alarm (M, MRU + stall->system_alarm+resume; links T-alarm-callsites-groundloop-db-install + T-vetinari-owns-alarm-escalation).\n\n**Rollback:** the attach path is additive (new front-door mode); the current in-process shim keeps working until the wake path is proven, so revert = stop attaching. DS is off until free inference so blast radius is low.\n\n**Logging:** front-door MUST log the wake-call receipt, the ack, and the device-spawn at INFO (interface crossings); log ERROR on a failed wake.\n\n**Observable via:** log.info('frontdoor: wake-call received for <worker>') and log.info('frontdoor: spawning device <worker>') on the Ground Loop.\n\n**Affected files (indicative — settle in design):** `unseen_university/devices/skeleton/` (MCP aggregation), the Ground Loop descriptor/host, `unseen_university/devices/<worker>/shim.py` + `BaseShim`. \n\n**Scope boundary:** the attach + wake front-door mechanism, proven on DickSimnel. Granny MRU/wake-routing, launch_cmd removal, and number leasing are the enumerated downstream tickets, filed after this closes.\n\n**audit-emphasis:** needs-deep-smell (architectural, HIGH blast radius on the shim/ground-loop boundary).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T20:42:47.709672+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T20:42:47.756259+00:00"
+  }
+}

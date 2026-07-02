@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-shim-frontdoor.20260702.144259482459",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-shim-frontdoor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T20:42:59.482459+00:00",
+  "links": {
+    "decisions": [
+      "D-shim-frontdoor-on-groundloop-2026-07-02"
+    ],
+    "tickets": [
+      "T-consequence-shim-frontdoor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-shim-frontdoor",
+    "title": "[sprint] Consequence check: shim-on-Ground-Loop front-door + Granny-wakes-not-launches",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "architecture"
+    ],
+    "decision_id": "D-shim-frontdoor-on-groundloop-2026-07-02",
+    "priority": 0.2,
+    "target_difficulty": 1,
+    "role": "builder",
+    "related_to": "T-shim-frontdoor-on-groundloop",
+    "gate": "2026-07-30",
+    "intention": "I intend that moving the shim onto the Ground Loop changed WHERE the shim lives (persistent front-door) without changing WHETHER a worker reliably receives and works a ticket — verified by observing a real wake->dispatch->work cycle after the change.",
+    "description": "**What changed:** the worker shim moves from in-process (dies with the device) to a persistent front-door attached to the Ground Loop; Granny stops launching (DS.0 launch_cmd removed) and instead MCP-calls the front-door to wake the device (T-shim-frontdoor-on-groundloop + downstream tickets).\n\n**Predicted unintended effects to watch:**\n- Orphaned front-door: front-door up but device won't spawn (bad launch_cmd path moved, env not inherited) -> Granny thinks worker is wakeable but wakes fail -> should trip the stall alarm, NOT silent-drop the ticket.\n- Double-listen: if both the old in-process listener AND the front-door receive dispatches during migration, a ticket could be worked twice. Confirm exactly one receiver.\n- Availability-flag meaning drift: consumers still reading the flag as 'running' (not 'wakeable') may mis-route. Grep flag readers.\n- Number-lease leak: front-door leases a number on wake but never releases on device teardown -> free-list exhausts, 0 (foreground) mis-assigned. Watch instance_name stability across a wake/sleep cycle.\n\n**Signals to watch:** a wake-call to a down worker yields exactly one device-start and one ticket-work; the stall alarm fires when a wake genuinely fails (not spuriously); instance_name stays 'DS.0' across restarts; no ticket worked twice.\n\n**Gate condition:** check by 2026-07-30 (after the front-door + Granny-wake tickets ship and a real wake cycle has run), or when the first non-.0 pool instance is created — whichever first.\n\n**Affected files:** none — observation/verification only.\n**Test plan:** no tests — observation ticket; annotate outcome (occurred/clear/partial) and close.\n**Scope boundary:** observe the predicted effects of the front-door migration + wake-not-launch on a live worker; does not cover the identity-surface ticket (that is low-risk S).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T20:42:54.106819+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "scraps_validated": "2026-07-02T20:42:54.150865+00:00"
+  }
+}

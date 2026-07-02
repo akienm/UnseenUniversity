@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-worker-instance-identity-2026-07-02.20260702.144101379991",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-worker-instance-identity-2026-07-02"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-02T14:41:01.379991",
+  "links": {
+    "decisions": [
+      "D-agent-capability-mixins-over-domains-2026-07-02",
+      "D-shim-frontdoor-on-groundloop-2026-07-02"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-worker-instance-identity-2026-07-02",
+    "title": "Worker instance identity: personality (class, in-prompt) vs address (instance_name = abbrev.number, shim-leased)",
+    "status": "open",
+    "date": "2026-07-02",
+    "spawned_tickets": [
+      "T-worker-instance-identity"
+    ],
+    "text": "CAPTURED 2026-07-02 (live design session, downstream of T-codebuilder-compose-ds which surfaced agent_id='dicksimnel' — a CLASS id where an INSTANCE address belongs; 'address instances, never classes'). Splits worker identity into two layers.\n\nPERSONALITY (class-level, lives in the shared base prompt): who 'DickSimnel / Dick Simnel' IS — full name, character, aliases. Identical for every DS instance; it does not vary by instance and is NOT a device field — it is prompt content the device class carries. (Akien: 'who that is is in the basic whatever prompting for all DS devices — that's the personality.')\n\nADDRESS (instance-level): instance_name = f'{instance_abbreviation}.{instance_number}' -> 'DS.0'. instance_abbreviation is a class attr ('DS'); instance_number is LEASED from the shim (see D-shim-frontdoor-on-groundloop) — REUSABLE (freed on teardown, reallocated), with 0 a SPECIAL case: the foreground / primary instance. The instance asks the shim for its number during __init__.\n\nagent_id BECOMES self.instance_name — unifying the alarms/escalation id with the routing id. Today they diverge: agent_id='dicksimnel' (a class/device id, flows into the escalation walk + system_alarm caller + logs) vs Granny's routing key 'DickSimnel.0'. One instance identity everywhere.\n\nRECONCILIATION with existing identities (no forced rename): instance_name 'DS.0' is canonical for agent_id. Granny's existing 'DickSimnel.0' resolves as an ALIAS — no forced granny.yaml name migration. DEVICE_ID 'dicksimnel' stays the class/device id. 'DS' + 'DickSimnel' + 'Dick Simnel' are aliases over the one address.\n\nSEQUENCING: the identity FIELDS + agent_id=self.instance_name are buildable NOW with instance_number defaulting to 0 (foreground) — a small independent win, ships before the shim front-door. The reusable-number LEASING depends on the shim front-door (D-shim-frontdoor-on-groundloop) and lands with it (downstream ticket T-shim-lease-instance-numbers, enumerated there).\n\nOPEN: where exactly the personality prompt lives (the coding domain's system prompt vs a dedicated personality layer) — resolve when a second capability/personality split gives it a consumer; do not build a speculative personality layer now.\n\n## Hypothesis\nAfter this lands, agent_id / alarms / escalation (and eventually routing) all read ONE instance identity; adding an instance costs a leased number, not a new id scheme. DS.0's alarm/escalation records read 'DS.0', not 'dicksimnel'.\n\n## Intention\nI intend that a worker addresses itself by its instance identity (instance_name), never by its class/device id — so alarms, escalation, and routing all name the same instance.\n\nRELATES TO: D-agent-capability-mixins-over-domains-2026-07-02 (the agent_id hardcode this fixes), D-shim-frontdoor-on-groundloop-2026-07-02 (number leasing), [[project_class_vs_instance_addressee]]."
+  }
+}
