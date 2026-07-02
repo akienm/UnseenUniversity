@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.ds-addresses-run-capability-by-instance.T-worker-instance-identity.20260702.145812620218",
+  "emitter": "cc.0",
+  "namespace": [
+    "ds-addresses-run-capability-by-instance",
+    "T-worker-instance-identity"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T14:58:12.620218",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-worker-instance-identity"
+    ],
+    "commits": [
+      "ad4a39684216f97916a204a1914133493d22a2f5"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "DS addresses run_capability by instance_name (DS.0), not the class id",
+    "intention": "DickSimnel._run_inference passes agent_id=self.instance_name ('DS.0'), never the class-id literal 'dicksimnel'",
+    "test": "tests/test_worker_instance_identity.py::test_run_inference_uses_instance_name_not_class_id",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_worker_instance_identity.py::test_run_inference_uses_instance_name_not_class_id",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            error_message = ('expected call not found.\\nExpected: %s\\n  Actual: %s'\n                    % (expected, actual))\n            raise AssertionError(error_message)\n    \n        def _error_message():\n            msg = self._format_mock_failure_message(args, kwargs)\n            return msg\n        expected = self._call_matcher(_Call((args, kwargs), two=True))\n        actual = self._call_matcher(self.call_args)\n        if actual != expected:\n            cause = expected if isinstance(expected, Exception) else None\n>           raise AssertionError(_error_message()) from cause\nE           AssertionError: expected call not found.\nE           Expected: run_capability({'id': 'T-id', 'description': 'd', 'tags': []}, agent_id='DS.0')\nE             Actual: run_capability({'id': 'T-id', 'description': 'd', 'tags': []}, agent_id='dicksimnel')\n\n/usr/lib/python3.12/unittest/mock.py:944: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_worker_instance_identity.py::test_run_inference_uses_instance_name_not_class_id\n1 failed in 0.20s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "ad4a39684216f97916a204a1914133493d22a2f5",
+    "impl_paths": [
+      "unseen_university/devices/dicksimnel/device.py"
+    ],
+    "ticket": "T-worker-instance-identity",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
