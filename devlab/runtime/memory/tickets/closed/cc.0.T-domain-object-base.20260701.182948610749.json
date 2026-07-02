@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-domain-object-base",
-    "title": "[sprint] Introduce the Domain object (BaseDomain + CodingDomain): owns selection + prompts",
+    "title": "Introduce the Domain object (BaseDomain + CodingDomain): owns selection + prompts",
     "size": "L",
     "tags": [
       "Inference",
@@ -30,13 +30,13 @@
     "decision_id": "D-domain-object-encapsulation-2026-07-01",
     "gate": null,
     "priority": 0.6,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-02T00:29:34.919874+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Domain object introduced: BaseDomain + CodingDomain own selection (delegating to RulesEngine selector via domain-name filter) + prompts (from domain-prompt store). Proxy resolves request.domain -> Domain object at its 3 route sites. Behavior-preserving via name-passthrough (unknown/generalist names carried through, never collapsed); 419 passed incl. 6 new domain-object tests, 3 pre-existing mini-rack fails unchanged. Commit 38768e41.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T03:12:13.408071+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-02T00:29:34.965631+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "78283ea6-406c-4b7e-803f-b4616058c2ac"
+    "inferred_intention_id": "78283ea6-406c-4b7e-803f-b4616058c2ac",
+    "proven": false,
+    "unproven_reason": "new-module stub-first lever: domains/ landed as a single impl commit, so proof_emitter's red run removes the ADDED files -> collateral ImportError (rejected), not authentic assertion-red. The load-bearing new behavior (domain filter flows through select) is covered by a non-vacuous red-able test, but proving via proof_emitter needs the stub-commit-then-impl-commit split this ticket didn't use.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
