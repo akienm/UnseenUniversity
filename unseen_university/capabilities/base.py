@@ -64,7 +64,10 @@ class CapabilityMixin:
         behaviour — agent_id feeds the escalation walk / system_alarm). The mixin adds no
         logic beyond logging the crossing; the escalation walk lives in the Domain.
         """
-        # STUB (proof-first red state): does not yet delegate — the real body wires the
-        # crossing log + self._domain.run(...) in the next commit. Present so the delegation
-        # test fails on an assertion-about-behaviour (run never called), not on ImportError.
-        return None
+        ticket_id = ticket.get("id", "?")
+        # Interface crossing (capability → domain): one INFO line per delegation.
+        log.info(
+            "capability: delegating to domain=%s | ticket=%s | agent=%s | urgency=%s",
+            self.capability_domain or "(generalist)", ticket_id, agent_id or "(none)", urgency,
+        )
+        return self._domain.run(ticket, agent_id=agent_id, urgency=urgency)
