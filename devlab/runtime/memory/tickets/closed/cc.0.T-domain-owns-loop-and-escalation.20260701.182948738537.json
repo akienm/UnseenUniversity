@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-domain-owns-loop-and-escalation",
-    "title": "[triage] Move the agentic loop + the SINGLE escalation owner into CodingDomain.run()",
+    "title": "Move the agentic loop + the SINGLE escalation owner into CodingDomain.run()",
     "size": "XL",
     "tags": [
       "Inference",
@@ -31,13 +31,13 @@
     "decision_id": "D-domain-object-encapsulation-2026-07-01",
     "gate": null,
     "priority": 0.55,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-02T00:29:40.588281+00:00",
     "worker": "claude",
     "created_by": null,
-    "result": null,
+    "result": "Full convergence: ONE shared AgenticLoop (inference/agentic_loop.py) with pluggable tool-call codec — NativeToolCodec (worker+, features=[tools]) + TextToolCodec (minion-tier small models that can't do native tools). BaseDomain.run() is the SINGLE escalation owner (money-safety walk relocated verbatim from DS: capability->bump, availability->re-select same difficulty, past-top->halt, cost->halt; step-tagged failure logging). DS._run_inference thin-delegates; dicksimnel/toolloop.py deleted; minion ToolLoop is a thin adapter (tier-targeted ESCALATE preserved; bash-fail hint restored+generalized). Commits b3ccc1f3 + 91ae4b73. Affected slice 481 passed incl. 16/16 ported money-safety tests + new adapter/hint/wiring tests; 3 pre-existing fails unchanged; full-suite 318 fails baseline-confirmed pre-existing (worktree-verified), 0 added.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T12:54:32.389771+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -46,6 +46,12 @@
     "role": "master",
     "scraps_validated": "2026-07-02T00:29:40.588423+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "7eb89f4d-10ac-4970-a827-3a44859f60d7"
+    "inferred_intention_id": "7eb89f4d-10ac-4970-a827-3a44859f60d7",
+    "proven": false,
+    "unproven_reason": "Behavioral parity of the load-bearing property (the money-safety escalation walk) IS proven non-vacuously by the 16 ported money-safety tests (availability->no-bump, past-top->clean-halt, capability->bump, cost->halt) which go red on a hollow walk. The only MISSING lever is proof_emitter's single-commit-new-file limitation: agentic_loop.py + domains landed as impl commits, so proof_emitter's in-place red removes the ADDED files -> collateral ImportError (rejected), not authentic assertion-red. A stub-commit-then-impl-commit split (or a proof-emitter mode for new modules) would let this close proven.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
