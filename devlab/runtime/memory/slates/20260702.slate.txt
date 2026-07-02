@@ -63,3 +63,9 @@ Next: Compact, then /sprint-batch on stream A tickets + alarm tickets.
 ## In-flight: T-capability-mixin-coding-capability CLOSED PROVEN (proof 66c18b2c). Ticket 2/2 T-codebuilder-compose-ds next: compose CodingCapability onto DickSimnel, structural-proof discipline.
 
 ## In-flight: T-codebuilder-compose-ds CLOSED PROVEN (proof fc1b2e36). Stream A build 2/2 done — capability-mixin pattern proven on DickSimnel. Decision A 2/3 shipped; consequence ticket date-gated 2026-07-16.
+
+## Session close 2026-07-02
+Done: Shipped stream A of D-agent-capability-mixins-over-domains: T-capability-mixin-coding-capability + T-codebuilder-compose-ds, both CLOSED PROVEN (stub-first red->green; proofs 66c18b2c, fc1b2e36) — capability-mixin worker pattern proven on DickSimnel. Then a design session: captured 2 decisions (D-worker-instance-identity, D-shim-frontdoor-on-groundloop) + filed 3 tickets. Filed T-outcome-check-reads-fs-store (palace->fs drift, 0.2).
+Next: Build runway is CLEAR. Sprint-ready: T-worker-instance-identity (S), alarm tickets (T-alarm-callsites-groundloop-db-install, T-vetinari-owns-alarm-escalation). T-shim-frontdoor-on-groundloop is open_questions (resolve Q1-Q3 interface before its downstream tickets). Stream B + consequence checks still gated.
+
+## In-flight: NONE — all work durable + pushed (HEAD 2d14e641). Stream A proven; design captured as decisions+tickets; runway clear for a post-compact build sprint.
