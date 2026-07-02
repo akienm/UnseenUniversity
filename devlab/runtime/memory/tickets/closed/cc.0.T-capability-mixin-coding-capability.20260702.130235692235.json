@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-capability-mixin-coding-capability",
-    "title": "[in_progress] Introduce CapabilityMixin + CodingCapability (thin mixin HAS-A a Domain, delegates)",
-    "status": "in_progress",
+    "title": "Introduce CapabilityMixin + CodingCapability (thin mixin HAS-A a Domain, delegates)",
+    "status": "closed",
     "size": "S",
     "tags": [
       "architecture"
@@ -33,9 +33,9 @@
     "created_at": "2026-07-02T19:02:27.860569+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Introduced unseen_university/capabilities/ — CapabilityMixin (thin HAS-A a Domain, lazy _domain, no __init__) + CodingCapability(capability_domain='coding'). run_capability delegates to Domain.run(ticket, agent_id, urgency) unchanged. Proven by red->green delegation test.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T19:29:50.475123+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -43,6 +43,13 @@
     "intention": "I intend that adding a task-capability to an agent costs one Domain + one thin capability-mixin, never a bespoke agent subclass.",
     "scraps_validated": "2026-07-02T19:02:27.905416+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "70270cd3-804e-4129-a93d-00744bce24c0"
+    "inferred_intention_id": "70270cd3-804e-4129-a93d-00744bce24c0",
+    "proven": true,
+    "proof_id": "cc.0.capabilitymixin-run-capability-delegates.T-capability-mixin-coding-capability.20260702.132908626075",
+    "proof_commit": "66c18b2ca584005188c745c91b549a7b3ce1741b",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

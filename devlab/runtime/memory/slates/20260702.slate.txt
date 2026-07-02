@@ -7,6 +7,7 @@
 - Filed T-fix-routing-compiler-add-compiled-rule (pre-existing selector fail, pri 0.2)
 - DESIGN SESSION (Akien's accumulated dump → sorted): captured the compiled-inference thesis + filed alarm tickets + captured the big refactor for review.
 
+- T-capability-mixin-coding-capability — Introduce CapabilityMixin + CodingCapability (thin mixin HAS-A a Domain, delegates) (Introduced unseen_university/capabilities/ — CapabilityMixin (thin HAS-A a Domain, lazy _domain, no __init__) + CodingCa)
 ## Filed today (sprint, NOT done)
 - T-alarm-callsites-groundloop-db-install (M) — alarm SOURCES: raise_alarm at ground_loop-start / db-unreachable / install-permission-denied; + docstring principle "an alarm = anything Akien and Claude must look at together". Linked D-system-alarms-and-tier-requests.
 - T-vetinari-owns-alarm-escalation (M) — alarm SINK: Vetinari (already the administrator) escalates unresolved alarms to Akien's feed / a Claude channel; wires the orphaned system_alarm_notifier. Depends (soft) on the sources ticket.
