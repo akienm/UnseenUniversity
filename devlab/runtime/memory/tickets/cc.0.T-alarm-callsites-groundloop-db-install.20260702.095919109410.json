@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-alarm-callsites-groundloop-db-install.20260702.095919109410",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-alarm-callsites-groundloop-db-install"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T15:59:19.109410+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-alarm-callsites-groundloop-db-install"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-alarm-callsites-groundloop-db-install",
+    "title": "[sprint] Give ground_loop / DB / installer a mouth: raise_alarm at three should-not-happen callsites",
+    "tags": [
+      "Observability",
+      "SystemAlarms",
+      "GroundLoop",
+      "Database",
+      "Installer"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "related_to": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "description": "The system_alarms primitive (raise_alarm, flat-file + DB-independent by design) is only fired from the inference device today. Three should-not-happen events that Akien and Claude must look at together currently drop no alarm — they die in a log line that drowns. Wire raise_alarm at each. This ticket is the alarm SOURCES; the sink/escalation (Vetinari → Akien's feed) is T-vetinari-owns-alarm-escalation.\n\nThe three callsites (each a distinct dedup signature):\n1. ground_loop fails to start — its own boot fails, or a daemon it supervises fails to come up (the recoveryclaude-territory event). signature e.g. `ground-loop-start-failed:<what>`.\n2. database failure — Postgres unreachable. MUST use the flat-file alarm (the module's founding rule: a DB-down event must itself be alarmable, so the alarm can never depend on the DB). signature `db-unreachable`.\n3. install / permission failure — the installer device hits a permissions error it can't proceed past. signature `install-permission-denied:<path-or-op>`.\n\nAlso encode the operating principle in system_alarms.py's module docstring: a system alarm = anything Akien AND Claude must look at together (the shared-attention definition Akien gave 2026-07-02).\n\n**Affected files:** unseen_university/devices/ground_loop/ (startup/daemon-launch path), the DB connect layer (unseen_university/devices/postgres/ or the shared psycopg connect point), unseen_university/devices/installer/ (permission-error path), unseen_university/system_alarms.py (docstring principle).\n**Design rules:** no-sqlite (alarms are flat-file and MUST NOT depend on the DB — already true, must stay true for the db-unreachable callsite); log-every-state-change-and-interface-crossing (an alarm is also a log line); test-plan-or-why-not.\n**Scope boundary:** IN — the three raise_alarm callsites + the docstring principle. OUT — the alarm mechanics (already exist); notification/escalation routing to a human (T-vetinari-owns-alarm-escalation); a general 'alarm on every device' sweep (only these three now).\n**Test plan:** for each callsite, simulate its failure condition and assert a deduped alarm is dropped with the expected signature and a caller-breakdown entry; specifically assert the db-unreachable alarm is produced with the DB unavailable (no DB dependency in the alarm path); a 2nd occurrence of the same signature increments rather than creating a new file.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T15:59:09.505392+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-02T15:59:09.551883+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "540b7af6-5d0c-41c2-b01b-54e7db7c087c"
+  }
+}

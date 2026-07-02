@@ -1,0 +1,28 @@
+# Slate — 2026-07-02
+
+## Done today
+- T-domain-owns-loop-and-escalation (XL) — shipped-unproven @b3ccc1f3+91ae4b73; ONE shared AgenticLoop + pluggable codec, BaseDomain.run() single escalation owner, 16/16 money-safety parity proven
+- T-thin-ds-to-domain-consumer (M) — shipped-unproven @165a52b3; DS now a pure coding-domain consumer (deleted prompt/skill/loop glue)
+  → D-domain-object-encapsulation batch COMPLETE 3/3 (base @38768e41 closed 07-01); consequence ticket date-gated 2026-07-15
+- Filed T-fix-routing-compiler-add-compiled-rule (pre-existing selector fail, pri 0.2)
+- DESIGN SESSION (Akien's accumulated dump → sorted): captured the compiled-inference thesis + filed alarm tickets + captured the big refactor for review.
+
+## Filed today (sprint, NOT done)
+- T-alarm-callsites-groundloop-db-install (M) — alarm SOURCES: raise_alarm at ground_loop-start / db-unreachable / install-permission-denied; + docstring principle "an alarm = anything Akien and Claude must look at together". Linked D-system-alarms-and-tier-requests.
+- T-vetinari-owns-alarm-escalation (M) — alarm SINK: Vetinari (already the administrator) escalates unresolved alarms to Akien's feed / a Claude channel; wires the orphaned system_alarm_notifier. Depends (soft) on the sources ticket.
+
+## Captured for review (durable, NOT yet work)
+- architecture/compiled-inference-thesis (thesis note) — three-layer starvation model (resolver→0 / proof-obligation→partial / gates CP1–CP6→never); contradiction-not-veto; warden(moodless invalidation)-vs-evaluator(appraisal dial) split; cortical columns → reference-frames-in-the-fascia ("same question" = same frame-position, not vector-cosine); decompose→triage "starvation gate" pipeline stage; intent-preservation keystone; belief-as-inspectable-tool. Source: ~/.unseen_university/akien/20260702.ClaudeWebOnCorticalColumnsAndEachQuestionATreeAndPrediction.txt
+- decision D-agent-capability-mixins-over-domains-2026-07-02 (status: open, spawns NO tickets yet) — THE BIG NEXT REFACTOR. Agent(root) + capability = MIXIN that HAS-A Domain object (CodingCapability has-a CodingDomain; compose, not is-a — don't re-fuse what D-domain-object-encapsulation just split). CodeBuilder = Agent + CodingCapability + glue. Domains generalize (coding → research/review/…). Three layers become KINDS OF MIXIN, not an inheritance spine. Retire Discworld CLASS names for functional ones BUT preserve the stance-vs-capability signal (the names silently encoded judgment-never-starves vs resolver-starves). Vetinari=strict admin (wrong to interview); Moist=people-person interviewer/intake (doesn't exist yet). Open Qs: compose-vs-is-a confirm, instance-handle de-Discworld?, layer/role taxonomy expression, Agent-vs-BaseDevice relation + migration blast radius.
+
+## Notes
+- Two filed tickets carry advisory warnings (missing Completion-criteria section / `I intend that…` line) — cosmetic, add on claim.
+
+## Session close 2026-07-02
+Done: Completed D-domain-object-encapsulation batch (3/3). Then a full design session from Akien's accumulated dump: filed 2 system-alarm tickets (sources + Vetinari sink), captured the compiled-inference thesis as an architecture intention-point, and captured D-agent-capability-mixins-over-domains as a decision-in-progress for review (the largest-yet-but-simplifying refactor: Agent + capability-mixins-over-Domains + de-Discworld naming).
+Next: FRESH SESSION to tackle D-agent-capability-mixins-over-domains — start by reconciling its 4 open questions (compose-vs-is-a, instance handles, layer/role taxonomy, Agent↔BaseDevice migration order) via the interview/reconcile step BEFORE spawning any tickets. Do NOT mass-file the rename. Alarm tickets (sources+sink) are sprint-ready if a build session is wanted instead.
+
+## In-flight
+NONE — clean break for a fresh-session refactor.
+
+✅ CLOSED

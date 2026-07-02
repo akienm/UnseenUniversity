@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.day-20260702.20260702.103228219592",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260702"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-02T10:32:28.219592",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Day 2026-07-02",
+    "text": "## Done\n- D-domain-object-encapsulation batch COMPLETE 3/3 (T-domain-owns-loop-and-escalation @b3ccc1f3+91ae4b73, T-thin-ds-to-domain-consumer @165a52b3; base closed 07-01). ONE shared AgenticLoop + pluggable codec; BaseDomain.run() single escalation owner; DS+minion thin consumers; dicksimnel/toolloop.py deleted; ~-400 lines.\n- Design session from Akien's accumulated dump: filed 2 system-alarm tickets (T-alarm-callsites-groundloop-db-install = sources, T-vetinari-owns-alarm-escalation = sink); captured architecture/compiled-inference-thesis (three-layer starvation, warden-vs-evaluator, reference-frames-in-fascia); captured decision D-agent-capability-mixins-over-domains-2026-07-02 (status open, for review) — the big next refactor: Agent + capability-mixins-over-Domains + de-Discworld naming.\n- Filed T-fix-routing-compiler-add-compiled-rule (pre-existing selector fail).\n"
+  }
+}
