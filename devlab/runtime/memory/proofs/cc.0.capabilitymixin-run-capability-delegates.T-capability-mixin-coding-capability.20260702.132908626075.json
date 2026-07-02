@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.capabilitymixin-run-capability-delegates.T-capability-mixin-coding-capability.20260702.132908626075",
+  "emitter": "cc.0",
+  "namespace": [
+    "capabilitymixin-run-capability-delegates",
+    "T-capability-mixin-coding-capability"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T13:29:08.626075",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-capability-mixin-coding-capability"
+    ],
+    "commits": [
+      "66c18b2ca584005188c745c91b549a7b3ce1741b"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "CapabilityMixin.run_capability delegates to its Domain's run()",
+    "intention": "run_capability forwards ticket+agent_id+urgency to Domain.run unchanged and returns its result verbatim",
+    "test": "tests/test_capability_mixin.py::test_run_capability_delegates_to_domain_run",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_capability_mixin.py::test_run_capability_delegates_to_domain_run",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "self = <MagicMock name='mock.run' id='127127906225712'>\nargs = ({'id': 'T-demo', 'title': 'demo'},)\nkwargs = {'agent_id': 'dicksimnel', 'urgency': 'normal'}\nmsg = \"Expected 'run' to be called once. Called 0 times.\"\n\n    def assert_called_once_with(self, /, *args, **kwargs):\n        \"\"\"assert that the mock was called exactly once and that that call was\n        with the specified arguments.\"\"\"\n        if not self.call_count == 1:\n            msg = (\"Expected '%s' to be called once. Called %s times.%s\"\n                   % (self._mock_name or 'mock',\n                      self.call_count,\n                      self._calls_repr()))\n>           raise AssertionError(msg)\nE           AssertionError: Expected 'run' to be called once. Called 0 times.\n\n/usr/lib/python3.12/unittest/mock.py:955: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_capability_mixin.py::test_run_capability_delegates_to_domain_run\n1 failed in 0.16s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "66c18b2ca584005188c745c91b549a7b3ce1741b",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-capability-mixin-coding-capability.20260702.130235692235.json",
+      "unseen_university/capabilities/base.py"
+    ],
+    "ticket": "T-capability-mixin-coding-capability",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
