@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-worker-instance-identity",
-    "title": "[in_progress] Worker instance identity surface: instance_name = abbrev.number; agent_id = self.instance_name",
-    "status": "in_progress",
+    "title": "Worker instance identity surface: instance_name = abbrev.number; agent_id = self.instance_name",
+    "status": "closed",
     "size": "S",
     "tags": [
       "architecture"
@@ -35,12 +35,19 @@
     "created_at": "2026-07-02T20:42:40.083531+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "IdentityMixin (capabilities/identity.py) gives a worker instance_name='<abbrev>.<number>'; DickSimnel composes it (instance_abbreviation='DS' -> 'DS.0') and _run_inference + the chat path now pass agent_id=self.instance_name instead of the class-id literal 'dicksimnel'. instance_number defaults to 0 (foreground); reusable leasing is downstream. Proven red->green (proof node asserts agent_id='DS.0').",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T20:58:22.190599+00:00",
     "required_files": [],
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-02T20:42:40.127212+00:00"
+    "scraps_validated": "2026-07-02T20:42:40.127212+00:00",
+    "proven": true,
+    "proof_id": "cc.0.ds-addresses-run-capability-by-instance.T-worker-instance-identity.20260702.145812620218",
+    "proof_commit": "ad4a39684216f97916a204a1914133493d22a2f5",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

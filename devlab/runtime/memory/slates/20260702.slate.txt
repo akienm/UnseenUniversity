@@ -9,6 +9,7 @@
 
 - T-capability-mixin-coding-capability — Introduce CapabilityMixin + CodingCapability (thin mixin HAS-A a Domain, delegates) (Introduced unseen_university/capabilities/ — CapabilityMixin (thin HAS-A a Domain, lazy _domain, no __init__) + CodingCa)
 - T-codebuilder-compose-ds — Compose CodingCapability onto the coding worker (DickSimnel) — prove the mixin delegation path (DickSimnelDevice now composes CodingCapability (class DickSimnelDevice(CodingCapability, BaseDevice)); _run_inference de)
+- T-worker-instance-identity — Worker instance identity surface: instance_name = abbrev.number; agent_id = self.instance_name (IdentityMixin (capabilities/identity.py) gives a worker instance_name='<abbrev>.<number>'; DickSimnel composes it (insta)
 ## Filed today (sprint, NOT done)
 - T-alarm-callsites-groundloop-db-install (M) — alarm SOURCES: raise_alarm at ground_loop-start / db-unreachable / install-permission-denied; + docstring principle "an alarm = anything Akien and Claude must look at together". Linked D-system-alarms-and-tier-requests.
 - T-vetinari-owns-alarm-escalation (M) — alarm SINK: Vetinari (already the administrator) escalates unresolved alarms to Akien's feed / a Claude channel; wires the orphaned system_alarm_notifier. Depends (soft) on the sources ticket.
