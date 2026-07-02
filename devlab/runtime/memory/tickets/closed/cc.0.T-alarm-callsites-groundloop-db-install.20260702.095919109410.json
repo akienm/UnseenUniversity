@@ -17,7 +17,7 @@
   },
   "body": {
     "id": "T-alarm-callsites-groundloop-db-install",
-    "title": "[in_progress] Give ground_loop / DB / installer a mouth: raise_alarm at three should-not-happen callsites",
+    "title": "Give ground_loop / DB / installer a mouth: raise_alarm at three should-not-happen callsites",
     "tags": [
       "Observability",
       "SystemAlarms",
@@ -25,7 +25,7 @@
       "Database",
       "Installer"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.4,
     "related_to": [
       "D-system-alarms-and-tier-requests-2026-06-23"
@@ -34,9 +34,9 @@
     "created_at": "2026-07-02T15:59:09.505392+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "raise_alarm wired at 3 should-not-happen callsites (5 insertions): ground_loop supervisor import+runtime failure (ground-loop-start-failed:<device>), db_proxy pool init (db-unreachable, FLAT-FILE ONLY, re-raises — the founding DB-independent invariant), installer mkdir+write PermissionError (install-permission-denied:<path>). Module docstring encodes the shared-attention principle. Proven red->green x3 (one proof per signature); the db-unreachable proof confirms the alarm drops with no database available.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T21:08:46.084252+00:00",
     "required_files": [],
     "github_issue": null,
     "decision_id": null,
@@ -46,6 +46,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-02T15:59:09.551883+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "540b7af6-5d0c-41c2-b01b-54e7db7c087c"
+    "inferred_intention_id": "540b7af6-5d0c-41c2-b01b-54e7db7c087c",
+    "proven": true,
+    "proof_id": "cc.0.db-unreachable-alarm-drops-flat-file-wit.T-alarm-callsites-groundloop-db-install.20260702.150759491370",
+    "proof_commit": "f0a0e8a3df705364113f4eda60d1a3a9c30060e8",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
