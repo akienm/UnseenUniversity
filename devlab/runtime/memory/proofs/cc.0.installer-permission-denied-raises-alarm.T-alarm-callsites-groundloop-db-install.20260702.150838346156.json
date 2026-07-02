@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.installer-permission-denied-raises-alarm.T-alarm-callsites-groundloop-db-install.20260702.150838346156",
+  "emitter": "cc.0",
+  "namespace": [
+    "installer-permission-denied-raises-alarm",
+    "T-alarm-callsites-groundloop-db-install"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T15:08:38.346156",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-alarm-callsites-groundloop-db-install"
+    ],
+    "commits": [
+      "4b94be9014a772267b4f6f938c77e78c6afe150b"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "installer permission-denied raises alarm",
+    "intention": "a mkdir PermissionError in the installer drops an 'install-permission-denied:<path>' alarm and re-raises",
+    "test": "tests/test_alarm_callsites.py::TestInstallerPermissionDenied::test_instance_dir_mkdir_permission_denied",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_alarm_callsites.py::TestInstallerPermissionDenied::test_instance_dir_mkdir_permission_denied",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "                mp.setenv(\"IGOR_INSTANCE_ID\", \"TestInstance\")\n    \n                # Attempt to call restart_loop — should fail with PermissionError\n                with pytest.raises(PermissionError):\n                    restart_loop([])\n    \n            # Alarm should be created with the path in the signature\n            alarms = sa.list_alarms()\n>           assert any(\n                a[\"signature\"].startswith(\"install-permission-denied:\")\n                for a in alarms\n            ), \"alarm should be created on mkdir PermissionError\"\nE           AssertionError: alarm should be created on mkdir PermissionError\nE           assert False\nE            +  where False = any(<generator object TestInstallerPermissionDenied.test_instance_dir_mkdir_permission_denied.<locals>.<genexpr> at 0x7ad8295a7ac0>)\n\ntests/test_alarm_callsites.py:177: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_alarm_callsites.py::TestInstallerPermissionDenied::test_instance_dir_mkdir_permission_denied\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "4b94be9014a772267b4f6f938c77e78c6afe150b",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.db-unreachable-alarm-drops-flat-file-wit.T-alarm-callsites-groundloop-db-install.20260702.150759491370.json",
+      "devlab/runtime/memory/proofs/cc.0.ground-loop-start-failure-raises-alarm.T-alarm-callsites-groundloop-db-install.20260702.150830230652.json",
+      "unseen_university/db_proxy.py",
+      "unseen_university/devices/ground_loop/supervisor.py",
+      "unseen_university/devices/igor/setup_assets/installer.py",
+      "unseen_university/system_alarms.py"
+    ],
+    "ticket": "T-alarm-callsites-groundloop-db-install",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
