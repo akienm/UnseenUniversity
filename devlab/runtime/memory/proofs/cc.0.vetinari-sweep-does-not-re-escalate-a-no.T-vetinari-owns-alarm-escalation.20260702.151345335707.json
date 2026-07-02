@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.vetinari-sweep-does-not-re-escalate-a-no.T-vetinari-owns-alarm-escalation.20260702.151345335707",
+  "emitter": "cc.0",
+  "namespace": [
+    "vetinari-sweep-does-not-re-escalate-a-no",
+    "T-vetinari-owns-alarm-escalation"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T15:13:45.335707",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-vetinari-owns-alarm-escalation"
+    ],
+    "commits": [
+      "8ab6d21dff44c01ce96c7ef7b7c51d0d864ac810"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Vetinari sweep does not re-escalate a notified alarm",
+    "intention": "a second sweep of an already-notified alarm escalates nothing (mark_notified dedup via notify_new_alarms)",
+    "test": "tests/test_vetinari_alarm_escalation.py::TestSweepDoesNotReEscalate::test_sweep_does_not_re_escalate",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_vetinari_alarm_escalation.py::TestSweepDoesNotReEscalate::test_sweep_does_not_re_escalate",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        import unseen_university.system_alarms as sa\n    \n        with patch(\"unseen_university.system_alarms.uu_home\", lambda: str(tmp_path)):\n            with patch(\n                \"unseen_university.devices.vetinari.device.uu_home\", lambda: str(tmp_path)\n            ):\n                v, channel_calls, escalation_calls = _make_vetinari_with_spy(tmp_path)\n    \n                # Seed one alarm\n                sa.raise_alarm(\"once-only:test\", \"test.caller\", \"demo\", emit_log=False)\n    \n                # First sweep\n                nagged1 = v.sweep_system_alarms()\n>               assert nagged1 == 1\nE               assert 0 == 1\n\ntests/test_vetinari_alarm_escalation.py:120: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_vetinari_alarm_escalation.py::TestSweepDoesNotReEscalate::test_sweep_does_not_re_escalate\n1 failed in 0.12s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "8ab6d21dff44c01ce96c7ef7b7c51d0d864ac810",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.vetinari-sweep-escalates-a-new-alarm-onc.T-vetinari-owns-alarm-escalation.20260702.151344316660.json",
+      "unseen_university/devices/vetinari/device.py"
+    ],
+    "ticket": "T-vetinari-owns-alarm-escalation",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
