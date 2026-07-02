@@ -17,14 +17,14 @@
   },
   "body": {
     "id": "T-vetinari-owns-alarm-escalation",
-    "title": "[in_progress] Vetinari escalates unresolved system alarms into Akien's feed / a Claude-readable channel",
+    "title": "Vetinari escalates unresolved system alarms into Akien's feed / a Claude-readable channel",
     "tags": [
       "Observability",
       "SystemAlarms",
       "Vetinari",
       "Governance"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.45,
     "related_to": [
       "D-system-alarms-and-tier-requests-2026-06-23",
@@ -34,9 +34,9 @@
     "created_at": "2026-07-02T15:59:16.130706+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Vetinari's periodic sweep (DirectiveListener ~5min block) now calls sweep_system_alarms(), which reuses the existing notify_new_alarms sink (send_fn=self._escalate_alarm) to escalate each new/reopened open system_alarm to the channel Akien+Claude read (pointing at 'uu alarms') and audit-log ALARM_ESCALATE. mark_notified dedup + reopened-re-post come from the existing notifier (no parallel path); a failed post returns False so it retries next sweep; shim hook is fail-open. Proven red->green x2 (escalate-once + no-re-escalate).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T21:13:56.529923+00:00",
     "required_files": [],
     "github_issue": null,
     "decision_id": null,
@@ -46,6 +46,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-02T15:59:16.130840+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "ddc090c1-edbb-4d69-b6d0-0ca474f4d910"
+    "inferred_intention_id": "ddc090c1-edbb-4d69-b6d0-0ca474f4d910",
+    "proven": true,
+    "proof_id": "cc.0.vetinari-sweep-does-not-re-escalate-a-no.T-vetinari-owns-alarm-escalation.20260702.151345335707",
+    "proof_commit": "8ab6d21dff44c01ce96c7ef7b7c51d0d864ac810",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
