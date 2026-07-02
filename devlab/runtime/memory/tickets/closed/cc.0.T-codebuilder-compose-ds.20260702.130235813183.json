@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-codebuilder-compose-ds",
-    "title": "[in_progress] Compose CodingCapability onto the coding worker (DickSimnel) — prove the mixin delegation path",
-    "status": "in_progress",
+    "title": "Compose CodingCapability onto the coding worker (DickSimnel) — prove the mixin delegation path",
+    "status": "closed",
     "size": "M",
     "tags": [
       "architecture"
@@ -34,15 +34,22 @@
     "created_at": "2026-07-02T19:02:33.199516+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "DickSimnelDevice now composes CodingCapability (class DickSimnelDevice(CodingCapability, BaseDevice)); _run_inference delegates to self.run_capability(ticket, agent_id='dicksimnel') — no direct resolve_domain call remains. 3 old-path tests rewritten to spy the mixin; added structural (no resolve_domain in class), composition (issubclass), and MRO-safety (mixin adds no __init__ step) tests. Proven by red->green routing test.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T19:37:00.156116+00:00",
     "required_files": [],
     "github_issue": null,
     "gate": null,
     "intention": "I intend that the one real coding worker exposes its capability purely by delegating through a composed mixin to CodingDomain, with no task logic in the agent class.",
     "scraps_validated": "2026-07-02T19:02:33.199589+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "9a2dc985-f3c1-4995-b6f4-79eb0552bd8b"
+    "inferred_intention_id": "9a2dc985-f3c1-4995-b6f4-79eb0552bd8b",
+    "proven": true,
+    "proof_id": "cc.0.dicksimneldevice-run-inference-routes-th.T-codebuilder-compose-ds.20260702.133640870266",
+    "proof_commit": "fc1b2e36299cf16faca981e894458f9417925c47",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
