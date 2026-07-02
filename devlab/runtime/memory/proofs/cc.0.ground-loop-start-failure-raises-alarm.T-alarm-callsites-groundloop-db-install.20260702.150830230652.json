@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.ground-loop-start-failure-raises-alarm.T-alarm-callsites-groundloop-db-install.20260702.150830230652",
+  "emitter": "cc.0",
+  "namespace": [
+    "ground-loop-start-failure-raises-alarm",
+    "T-alarm-callsites-groundloop-db-install"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T15:08:30.230652",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-alarm-callsites-groundloop-db-install"
+    ],
+    "commits": [
+      "9a7d2d1ad79891c3919a01f84361d7c2e8e17f0a"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "ground_loop start-failure raises alarm",
+    "intention": "a runme import failure in the supervisor drops a 'ground-loop-start-failed:<device>' alarm",
+    "test": "tests/test_alarm_callsites.py::TestGroundLoopStartFailure::test_import_failure_raises_alarm_and_propagates",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_alarm_callsites.py::TestGroundLoopStartFailure::test_import_failure_raises_alarm_and_propagates",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        test_device_dir.mkdir(parents=True)\n        runme_py = test_device_dir / \"runme.py\"\n        runme_py.write_text(\"raise RuntimeError('broken import')\")\n    \n        supervisor = RunmeSupervisor(tmp_path)\n        supervisor._load(runme_py, 0.0)\n    \n        # Alarm should be dropped with device name in signature\n        alarm = sa.get_alarm(\"ground-loop-start-failed:test_device\")\n>       assert alarm is not None, \"alarm should be created on import failure\"\nE       AssertionError: alarm should be created on import failure\nE       assert None is not None\n\ntests/test_alarm_callsites.py:52: AssertionError\n------------------------------ Captured log call -------------------------------\nERROR    unseen_university.devices.ground_loop.supervisor:supervisor.py:95 SUPERVISOR|runme=runme.py|action=import_failed|exc=broken import\nERROR    unseen_university.devices.ground_loop.supervisor:supervisor.py:133 SUPERVISOR|runme=runme.py|action=borkedit|reason=import_failed|borked=runme.borkedpy\n=========================== short test summary info ============================\nFAILED tests/test_alarm_callsites.py::TestGroundLoopStartFailure::test_import_failure_raises_alarm_and_propagates\n1 failed in 0.10s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "9a7d2d1ad79891c3919a01f84361d7c2e8e17f0a",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.db-unreachable-alarm-drops-flat-file-wit.T-alarm-callsites-groundloop-db-install.20260702.150759491370.json",
+      "unseen_university/db_proxy.py",
+      "unseen_university/devices/ground_loop/supervisor.py",
+      "unseen_university/devices/igor/setup_assets/installer.py",
+      "unseen_university/system_alarms.py"
+    ],
+    "ticket": "T-alarm-callsites-groundloop-db-install",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
