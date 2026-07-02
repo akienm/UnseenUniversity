@@ -736,7 +736,9 @@ class VetinariDevice(BaseDevice):
         Returns the number of alarms escalated.
         Reuses the existing dedup and reopened-re-post logic from notify_new_alarms.
         """
-        return 0  # STUB: escalation wiring not yet in place
+        from unseen_university.system_alarm_notifier import notify_new_alarms
+
+        return notify_new_alarms(send_fn=self._escalate_alarm, now=now)
 
     def _escalate_alarm(self, summary: str) -> bool:
         """Post a system alarm summary to the channel.
