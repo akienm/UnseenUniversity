@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-thin-ds-to-domain-consumer",
-    "title": "[sprint] Thin DS to a {query, domain, urgency} consumer of the domain object",
+    "title": "Thin DS to a {query, domain, urgency} consumer of the domain object",
     "size": "M",
     "tags": [
       "Inference",
@@ -30,13 +30,13 @@
     "decision_id": "D-domain-object-encapsulation-2026-07-01",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-02T00:29:42.780449+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "DS thinned to a pure coding-domain consumer: deleted _build_system_prompt, skill_load, _IBD_PREAMBLE, _SKILLS_DIR, and the SYSTEM_PROMPT alias — DS now holds NO prompt/selection/loop/escalation logic. _run_inference is the thin resolve_domain('coding').run(ticket, agent_id='dicksimnel') delegate (DONE->str, HALT->None); worker_listener consumes it unchanged. Obsolete TestDickSimnelSkillLoad deleted; prompt-resolution coverage redirected to the CodingDomain object; thinness + delegation + HALT-None pinned by tests. Commit 165a52b3, net -121 lines. Affected slice green (only pre-existing OR-cost-gate + 2 mini-rack fails). Completion criteria met: coding path runs entirely through CodingDomain.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T13:00:51.627055+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-02T00:29:42.780587+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "5ee77019-5618-4338-8326-e37dab8fee1f"
+    "inferred_intention_id": "5ee77019-5618-4338-8326-e37dab8fee1f",
+    "proven": false,
+    "unproven_reason": "Structural-proof-mode lever: this is a behavior-preserving deletion/thinning refactor (removing dead prompt-glue + a delegate that already existed from the prior ticket). proof_emitter can't prove refactors — deleting unreferenced code has no assertion-red form (nothing goes red when dead code is removed). The thinness IS pinned by structural tests (DS has no _build_system_prompt/skill_load/SYSTEM_PROMPT) and the delegation by a behavioral test (calls domain with domain='coding', no task_class/model/tier; relays DONE/HALT), but there's no red->green proof for a deletion.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
