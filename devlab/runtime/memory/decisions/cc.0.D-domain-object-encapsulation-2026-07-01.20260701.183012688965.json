@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-domain-object-encapsulation-2026-07-01.20260701.183012688965",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-domain-object-encapsulation-2026-07-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-01T18:30:12.688965",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-domain-object-encapsulation-2026-07-01",
+    "title": "Domain-object encapsulation: one object owns a domain's selection, prompts, loop, escalation",
+    "status": "open",
+    "date": "2026-07-01",
+    "spawned_tickets": [
+      "T-domain-object-base",
+      "T-domain-owns-loop-and-escalation",
+      "T-thin-ds-to-domain-consumer",
+      "T-consequence-D-domain-object-encapsulation"
+    ],
+    "text": "# D-domain-object-encapsulation-2026-07-01\n**title:** Domain-object encapsulation: one object owns a domain's selection, prompts, loop, escalation\n**date:** 2026-07-01\n**status:** open\n**spawned_tickets:** T-domain-object-base, T-domain-owns-loop-and-escalation, T-thin-ds-to-domain-consumer, T-consequence-D-domain-object-encapsulation\n\n## Decision narrative\nA domain (e.g. CodingDomain) becomes an OBJECT that solely owns, in one place: (1) model selection from what's available ('these please', cost-optimizing + availability-aware), (2) all the domain's prompts, (3) the prompt-driven agentic loop, and (4) escalation as the SINGLE escalation owner for that domain. Every inference consumer (DS and others) sends only {query, domain, urgency}; everything else is encapsulated. DS goes thin (a caller, not a driver). task_class/tier ('worker','minion',...) is removed FROM THE CODING PATH now; global removal across the 25 files that reference it is a follow-on once other consumers migrate. Scoped CODING-DOMAIN-FIRST to avoid an ocean-boil: prove the pattern on DS/coding, then generalize to minion/igor/evaluator. Extends D-inference-domain-routing (domain = container for model-eligibility AND prompt selection) to also own the loop + escalation; RELOCATES the T-router-failure-bump-escalation walk out of DS into the domain object (its correct house, where DONE is visible). OPEN QUESTION carried on T-domain-owns-loop-and-escalation (status=triage): does each domain contain its own loop, or supply prompts/models/policy to ONE SHARED loop (two loops already exist: minion + dicksimnel)? Shaped for shared-loop; Akien to confirm before that XL builds.\n\n## Hypothesis\nAfter these ship, DS (and every consumer) holds no model-selection, prompt, loop, or escalation logic; a coding-domain failure is diagnosed by looking at the CodingDomain object alone; there is exactly one escalation mechanism per domain, not several operating on the same data.\n\n## Measurement Signal\nDS._run_inference no longer contains the escalation walk or any rules_engine call (grep-able); the domain object is the only site that selects models + holds prompts + drives the loop + escalates; for a deliberately-failing coding ticket, you can point to WHICH step (select / prompt / loop / escalate) failed from that one object's logs.\n\n## Intention\nI intend that every inference consumer hands off {query, domain, urgency} and nothing else, and each domain object is the single owner of its model selection, prompts, loop, and escalation, so escalation can't fragment across trees and any failure is locatable in one place."
+  }
+}

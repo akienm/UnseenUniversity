@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-domain-owns-loop-and-escalation.20260701.182948738537",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-domain-owns-loop-and-escalation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T00:29:48.738537+00:00",
+  "links": {
+    "decisions": [
+      "D-domain-object-encapsulation-2026-07-01"
+    ],
+    "tickets": [
+      "T-domain-owns-loop-and-escalation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-domain-owns-loop-and-escalation",
+    "title": "[triage] Move the agentic loop + the SINGLE escalation owner into CodingDomain.run()",
+    "size": "XL",
+    "tags": [
+      "Inference",
+      "Domain",
+      "Escalation",
+      "Architecture"
+    ],
+    "description": "**Problem (the core cleanup):** the ReAct tool-loop lives in dicksimnel/toolloop.py and the escalation walk lives in DS._run_inference — escalation is driven from the consumer, and though the three former trees collapsed into ONE walk, it landed in the WRONG house (DS). Two things (DS walk + rules_engine selection) still operate on the same data.\n\n**OPEN QUESTION (Q1, for Akien — blocks sprint):** does each domain CONTAIN its own loop, or does the domain SUPPLY prompts/models/escalation-policy to ONE SHARED loop? Two loops already exist (minion/tool_loop.py, dicksimnel/toolloop.py). This ticket is shaped for the SHARED-loop reading — a per-domain loop COPY would re-create the duplication this whole decision is killing. Confirm before build.\n\n**Shape (shared-loop reading):** the domain object OWNS the escalation POLICY (which difficulty rung, when to bump vs re-select vs halt) and SUPPLIES its prompts + selected models to a single shared agentic loop. The domain 'drives' the loop by providing prompts + policy; the loop MECHANISM (turn-runner, tool dispatch, DONE-detection) is shared infrastructure the two existing loops converge into. CodingDomain.run(query, urgency) = select -> run shared loop with this domain's prompts -> read DONE-or-not -> apply this domain's escalation policy (capability=bump / availability=re-select / past-top=halt+alarm, the T-router-failure-bump-escalation semantics RELOCATED to where DONE is visible). DS._run_inference's walk is deleted. One escalation owner (the domain), one shared loop mechanism.\n\n**Affected files:** unseen_university/devices/inference/domains/coding.py (run()+policy); a shared loop module (converge dicksimnel/toolloop.py + minion/tool_loop.py — or, if Akien says per-domain, keep separate); unseen_university/devices/dicksimnel/device.py (walk removed in the thin-DS ticket).\n\n**Design rules:** availability != capability ('Hex-DOWN is not a branch'); ONE escalation owner; log every hop + WHICH step failed (select/prompt/loop/escalate) at the crossing; NO SQLITE.\n\n**Scope boundary:** IN — the escalation policy as the domain's, driving a shared loop; money-safety semantics preserved (bounded availability retries, past-top halt-no-loop). OUT — DS thinning (next ticket); migrating minion/igor consumers; task_class removal (follow-on decision).\n\n**Test plan (stub-first, PORT the escalation-driver tests):** re-point the money-safety tests (capability->bump, availability->no-bump, past-top->clean-halt-no-loop, no-source->None) at the domain's run()/policy instead of DS._run_inference; add: the shared loop is driven by CodingDomain.prompts; a forced capability failure logs WHICH step failed.\n\n**Completion criteria:** the domain is the only escalation owner for coding; exactly one loop mechanism remains (no per-domain copies unless Akien chose that); ported money-safety tests green; DS holds no walk.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-domain-object-encapsulation-2026-07-01",
+    "gate": "T-domain-object-base",
+    "priority": 0.55,
+    "status": "triage",
+    "created_at": "2026-07-02T00:29:40.588281+00:00",
+    "worker": "claude",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-02T00:29:40.588423+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7eb89f4d-10ac-4970-a827-3a44859f60d7"
+  }
+}

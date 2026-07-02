@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-domain-object-base.20260701.182948610749",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-domain-object-base"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T00:29:48.610749+00:00",
+  "links": {
+    "decisions": [
+      "D-domain-object-encapsulation-2026-07-01"
+    ],
+    "tickets": [
+      "T-domain-object-base"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-domain-object-base",
+    "title": "[sprint] Introduce the Domain object (BaseDomain + CodingDomain): owns selection + prompts",
+    "size": "L",
+    "tags": [
+      "Inference",
+      "Domain",
+      "Architecture"
+    ],
+    "description": "**Problem:** domain-specificity is scattered — model selection is in rules_engine, prompts in domain_prompts.py, and there's no object that IS 'the coding domain'. **Shape:** add a BaseDomain (in unseen_university/devices/inference/domains/) with a CodingDomain subclass owning (1) select(available_sources, registry) -> ordered capable candidates for this domain, cost-optimizing + availability-aware (delegating to the existing selector logic initially, but OWNED by the domain), and (2) prompts (system + loop prompts, absorbing domain_prompts.py's 'coding' entry). Behavior-preserving: the domain wraps existing selection + prompt behavior, relocated. The Proxy resolves a domain name -> Domain object. **Affected files:** NEW unseen_university/devices/inference/domains/{__init__,base,coding}.py; unseen_university/devices/inference/domain_prompts.py (coding prompt moves into CodingDomain, shim left or removed). **Design rules:** device.py/OOP-first; one import root; NO SQLITE. **Scope boundary:** IN — the Domain abstraction + CodingDomain owning selection+prompts, behavior-preserving. OUT — moving the loop/escalation (next ticket); thinning DS (next); removing task_class globally (follow-on decision). **Test plan (stub-first):** (1) CodingDomain.select() over a stub source set returns the same ordered candidates rules_engine.route(domain='coding') does today; (2) CodingDomain.prompts.system == the current domain_prompt('coding') text; (3) an unknown domain name resolves to a generalist/base behavior, not a crash. **Completion criteria:** CodingDomain exists and reproduces today's coding selection + prompt from one object; tests green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-domain-object-encapsulation-2026-07-01",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "created_at": "2026-07-02T00:29:34.919874+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-02T00:29:34.965631+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "78283ea6-406c-4b7e-803f-b4616058c2ac"
+  }
+}
