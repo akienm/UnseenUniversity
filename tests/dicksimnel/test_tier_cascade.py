@@ -204,16 +204,17 @@ class TestOneMechanismOnly:
 
     def test_ds_run_inference_delegates_to_domain(self):
         """DS._run_inference routes through the CodingCapability mixin: it calls
-        run_capability(ticket, agent_id='dicksimnel') and relays the result unchanged
-        (D-agent-capability-mixins-over-domains, stream A). The mixin owns the delegation
-        to CodingDomain.run — DS resolves no domain directly."""
+        run_capability(ticket, agent_id=self.instance_name == 'DS.0') and relays the result
+        unchanged (D-agent-capability-mixins-over-domains + D-worker-instance-identity). The
+        mixin owns the delegation to CodingDomain.run — DS resolves no domain directly, and
+        addresses itself by INSTANCE ('DS.0'), not by class id ('dicksimnel')."""
         from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         dev = DickSimnelDevice.__new__(DickSimnelDevice)
         ticket = {"id": "T-deleg", "description": "d", "tags": []}
         with patch("unseen_university.capabilities.base.CapabilityMixin.run_capability") as spy:
             spy.return_value = "DONE: delegated"
             out = dev._run_inference(ticket)
-        spy.assert_called_once_with(ticket, agent_id="dicksimnel")
+        spy.assert_called_once_with(ticket, agent_id="DS.0")
         assert out == "DONE: delegated"
 
     def test_ds_run_inference_halt_returns_none(self):
@@ -224,7 +225,7 @@ class TestOneMechanismOnly:
         with patch("unseen_university.capabilities.base.CapabilityMixin.run_capability") as spy:
             spy.return_value = None
             assert dev._run_inference({"id": "T-halt", "description": "d", "tags": []}) is None
-        spy.assert_called_once_with({"id": "T-halt", "description": "d", "tags": []}, agent_id="dicksimnel")
+        spy.assert_called_once_with({"id": "T-halt", "description": "d", "tags": []}, agent_id="DS.0")
 
     def test_ds_composes_coding_capability_no_direct_resolve(self):
         """Structural proof the composition is load-bearing: DS IS-A CodingCapability, and

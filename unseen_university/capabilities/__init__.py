@@ -10,5 +10,6 @@ from __future__ import annotations
 
 from unseen_university.capabilities.base import CapabilityMixin
 from unseen_university.capabilities.coding import CodingCapability
+from unseen_university.capabilities.identity import IdentityMixin
 
-__all__ = ["CapabilityMixin", "CodingCapability"]
+__all__ = ["CapabilityMixin", "CodingCapability", "IdentityMixin"]

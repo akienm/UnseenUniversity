@@ -46,9 +46,9 @@ _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "B
 # through the coding domain object (D-domain-object-encapsulation), reached via the
 # CodingCapability mixin (D-agent-capability-mixins-over-domains, stream A). DS composes
 # the capability and delegates through it — it no longer resolves the domain directly.
-from unseen_university.capabilities import CodingCapability
+from unseen_university.capabilities import CodingCapability, IdentityMixin
 
-class DickSimnelDevice(CodingCapability, BaseDevice):
+class DickSimnelDevice(IdentityMixin, CodingCapability, BaseDevice):
     """
     DickSimnel.0 — bus-dispatched sprint ticket worker.
 
@@ -58,6 +58,7 @@ class DickSimnelDevice(CodingCapability, BaseDevice):
     """
 
     DEVICE_ID = "dicksimnel"
+    instance_abbreviation = "DS"
 
     def __init__(self) -> None:
         super().__init__()

@@ -329,7 +329,7 @@ def test_run_inference_delegates_to_domain():
         spy.return_value = "DONE: fixed"
         result = d._run_inference(ticket)
 
-    spy.assert_called_once_with(ticket, agent_id="dicksimnel")
+    spy.assert_called_once_with(ticket, agent_id="DS.0")
     assert result == "DONE: fixed"
 
 
