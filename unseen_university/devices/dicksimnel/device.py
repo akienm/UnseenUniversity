@@ -348,7 +348,7 @@ class DickSimnelDevice(IdentityMixin, CodingCapability, BaseDevice):
         DONE result, or None to HALT (worker_listener declines; a system_alarm has fired
         inside the domain). No direct domain resolution remains on the device.
         """
-        return self.run_capability(ticket, agent_id="dicksimnel")
+        return self.run_capability(ticket, agent_id=self.instance_name)
 
     def replay_and_analyze(self, ticket_id: str) -> dict:
         """Replay a closed ticket using the simulator to understand decision-making.
@@ -451,7 +451,7 @@ class DickSimnelDevice(IdentityMixin, CodingCapability, BaseDevice):
                 messages=[{"role": "user", "content": message}],
                 system=system,
                 task_class="worker",
-                agent_id="dicksimnel",
+                agent_id=self.instance_name,
                 max_tokens=512,
                 timeout=30,
                 foreground=True,
