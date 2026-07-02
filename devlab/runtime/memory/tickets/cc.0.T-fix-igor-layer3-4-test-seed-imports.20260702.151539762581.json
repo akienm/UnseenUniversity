@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-fix-igor-layer3-4-test-seed-imports.20260702.151539762581",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-igor-layer3-4-test-seed-imports"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T21:15:39.762581+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-fix-igor-layer3-4-test-seed-imports"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-igor-layer3-4-test-seed-imports",
+    "title": "[triage] Fix pre-existing collection errors: tests/igor/test_layer3_* + test_layer4_nodes import missing claudecode.seed_layer* modules",
+    "status": "triage",
+    "size": "S",
+    "tags": [
+      "tests",
+      "pre-existing",
+      "igor"
+    ],
+    "priority": 0.2,
+    "target_difficulty": 1,
+    "role": "builder",
+    "intention": "I intend that the igor layer3/layer4 test suite collects without ImportError, so those tests actually run instead of silently erroring out at collection.",
+    "description": "**Pre-existing failure (found during the 2026-07-02 alarm/identity sprint batch; NOT caused by it — none of the batch's touched files appear in the traceback).** 9 test modules under tests/igor/ fail at COLLECTION with ModuleNotFoundError:\n- tests/igor/test_layer3_constrain.py -> `claudecode.seed_layer3_constrain`\n- tests/igor/test_layer3_decompose.py -> `claudecode.seed_layer3_decompose`\n- tests/igor/test_layer3_hypothesize.py -> `claudecode.seed_layer3_hypothesize`\n- tests/igor/test_layer3_observe.py -> `claudecode.seed_layer3_observe`\n- tests/igor/test_layer3_parse_goal.py -> `claudecode.seed_layer3_parse_goal`\n- tests/igor/test_layer3_replan.py -> `claudecode.seed_layer3_replan`\n- tests/igor/test_layer3_scope_check.py -> `claudecode.seed_layer3_scope_check`\n- tests/igor/test_layer3_situate.py -> `claudecode.seed_layer3_situate`\n- tests/igor/test_layer4_nodes.py -> `claudecode.seed_layer4_read_codebase`\n\n**Root cause (likely):** the `claudecode.*` import root no longer resolves — the seed modules were moved/renamed (e.g. to `devlab.claudecode.*` under the single-package reorg) or deleted, but these test imports weren't updated. Investigate whether the seed_layer* modules still exist and under what path; fix the imports (or delete the tests if the seeds are retired).\n\n**Completion criteria:** `python -m pytest tests/igor/ --co -q` collects with 0 errors (or the obsolete tests are removed with a note in the commit).\n\n**Test plan:** re-run the collection command above; assert no ERROR lines. If the seed modules are genuinely gone, the honest close is removing the dead tests.\n\n**Affected files:** tests/igor/test_layer3_*.py, tests/igor/test_layer4_nodes.py (imports); possibly the seed_layer* module locations.\n\n**Observable via:** the pytest collection summary line dropping from '9 errors' to '0 errors'.\n\n**Scope boundary:** import/collection fix only — not a rewrite of the layer3/4 test logic.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T21:15:32.371893+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-02T21:15:32.422138+00:00"
+  }
+}
