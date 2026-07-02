@@ -26,3 +26,28 @@ Next: FRESH SESSION to tackle D-agent-capability-mixins-over-domains — start b
 NONE — clean break for a fresh-session refactor.
 
 ✅ CLOSED
+
+---
+
+## Session 2 (2026-07-02) — RECONCILE of D-agent-capability-mixins-over-domains
+
+Ran the interview/reconcile on the big refactor (the slate's Next). Outcome: the captured decision was TWO orthogonal threads; SPLIT them.
+
+**Decompose audit (the load-bearing check):** of the 7 character-named devices, exactly ONE (DickSimnel) collapses to `Agent + capability-mixin`. The other 6 are governance/dispatch/scheduler/reasoner-proxy/dev/validator — each genuinely-unique. So capability-mixins is a WORKER pattern, narrow and real, NOT an everything-collapses claim. (Avoided the hollow-collapse trap.)
+
+**Resolved (A1–A4):**
+- A1 compose/HAS-A ✓ (CodingCapability has-a CodingDomain; don't re-fuse the split).
+- A2 handles stay terse/provisional (no handle rename); only CLASS names de-Discworld, in stream B. Device→instance-name web page later (NOT ticketed). Headology-for-intake noted (Granny is NOT the interviewer).
+- A3 taxonomy: TYPE + mixin category declares layer — plain BaseDevice=utility / Agent+CapabilityMixin=resolver(starves) / Agent+GovernanceMixin=judgment(never starves) / Agent+orchestration=dispatch·schedule.
+- A4 (AKIEN CORRECTION): **Agent is a SUBCLASS of BaseDevice, NOT a rename.** BaseDevice stays universal root; utilities stay plain devices. Blast radius shrinks — introduce Agent(BaseDevice), reparent only ~dozen agentic devices, incrementally. Order: prove-on-DS (stream A) → Agent subclass+reparent (B) → de-Discworld 6 + GovernanceMixin (B). "Everything is mixins over Agent, no inheritance spine" (Akien).
+
+**Durable output:**
+- Decision A reconciled → emitted (status=reconciled, scoped to worker capability-mixin pattern). Spawns tickets.
+- Decision B new+GATED → D-agent-subclass-and-de-discworld-2026-07-02 (Agent subclass + de-Discworld 6 + GovernanceMixin; open Qs B1–B4; held behind A's proof; spawns NO tickets).
+- Filed stream A tickets (audit-ticket PASS, amendments applied): T-capability-mixin-coding-capability (S), T-codebuilder-compose-ds (M, structural-proof discipline baked in per proof_emitter-cant-prove-refactors), T-consequence-agent-capability-mixins (S, gate 2026-07-16).
+- PlanningMixin deliberately NOT ticketed (no consumer yet = speculative).
+
+**Skipped /sorted deliberately** — no /design marker this session, so /sorted would sweep the whole convo incl. gated Decision B and mass-file the rename. Filed A directly instead.
+
+## Session 2 close
+Next: **stream A is sprint-ready** — /sprint-batch decision:D-agent-capability-mixins-over-domains (T-capability-mixin first, then T-codebuilder-compose-ds; consequence ticket is date-gated). Stream B (D-agent-subclass-and-de-discworld) stays GATED until A proves the pattern — reconcile B1–B4 only after A closes. Alarm tickets (T-alarm-callsites…, T-vetinari-owns-alarm-escalation) also still sprint-ready.

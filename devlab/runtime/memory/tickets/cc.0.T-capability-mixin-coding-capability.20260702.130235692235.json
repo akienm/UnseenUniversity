@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-capability-mixin-coding-capability.20260702.130235692235",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-capability-mixin-coding-capability"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T19:02:35.692235+00:00",
+  "links": {
+    "decisions": [
+      "D-agent-capability-mixins-over-domains-2026-07-02"
+    ],
+    "tickets": [
+      "T-capability-mixin-coding-capability"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-capability-mixin-coding-capability",
+    "title": "[sprint] Introduce CapabilityMixin + CodingCapability (thin mixin HAS-A a Domain, delegates)",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "architecture"
+    ],
+    "decision_id": "D-agent-capability-mixins-over-domains-2026-07-02",
+    "priority": 0.6,
+    "target_difficulty": 1,
+    "role": "builder",
+    "description": "**Intention:** I intend that adding a task-capability to an agent costs one Domain + one thin capability-mixin, never a bespoke agent subclass. This ticket builds the reusable mixin seam.\n\n**What to build:** A new package `unseen_university/capabilities/` with:\n- `base.py` — `CapabilityMixin`: a thin mixin that HAS-A a Domain object (composition, NOT is-a — the Domain already stands alone from D-domain-object-encapsulation; the mixin must NOT subclass or re-fuse the Domain). It resolves/holds its domain via `resolve_domain(<name>)` and exposes a single delegation method, e.g. `run_capability(self, ticket, *, agent_id) -> <domain result>` that calls `self._domain.run(ticket, agent_id=agent_id)`. The mixin carries NO task logic of its own — it is glue that exposes a Domain's capability on a host class.\n- `coding.py` — `CodingCapability(CapabilityMixin)` bound to domain name `\"coding\"` (wraps `CodingDomain` via `resolve_domain('coding')`).\n- `__init__.py` — export both.\n\n**Do NOT build in this ticket:** PlanningMixin (no consumer yet — would be a speculative empty mixin), the `Agent(BaseDevice)` subclass (stream B), any class rename (stream B). Scope is the capability-mixin mechanism only.\n\n**Completion criteria:** `CodingCapability` composes onto a plain host object and, when `run_capability(ticket, agent_id=...)` is called, delegates to `CodingDomain.run(...)` with the same arguments and returns its result unchanged.\n\n**Test plan (this exercises the NEW seam — real red->green):** unit test that constructs a host mixing in `CodingCapability`, monkeypatches/spies `CodingDomain.run` (or the resolved domain's `run`), calls `run_capability(ticket, agent_id='x')`, and asserts (a) the domain's `run` was called once with the same ticket + agent_id, (b) the return value is passed through unchanged. Red before the mixin exists / green after.\n\n**Affected files:** NEW `unseen_university/capabilities/{__init__,base,coding}.py`; reads `unseen_university/devices/inference/domains/{__init__.py resolve_domain, base.py BaseDomain.run, coding.py CodingDomain}`. No changes to existing domain files.\n\n**Logging:** log the capability->domain delegation crossing at INFO (interface crossing rule).\n\n**Scope boundary:** mechanism only; the worker composition that USES this mixin is T-codebuilder-compose-ds.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Observable via:** `log.info(\"capability: delegating to domain=coding ticket=<id> agent=<id>\")` at the CapabilityMixin.run_capability crossing — this line confirms the seam is live in production.\n**Cleanup:** none — the delegation test uses monkeypatch/spy only (no DB rows, files, or channel state).\n**Note:** `CapabilityMixin` is an OOP composition mixin, NOT an MCP capability-protocol capability (no handler/shim/skill-consumer surface) — the two-sided-build rule does not apply. Name collision is intentional-but-narrow; keep the docstring explicit.",
+    "created_at": "2026-07-02T19:02:27.860569+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": "I intend that adding a task-capability to an agent costs one Domain + one thin capability-mixin, never a bespoke agent subclass.",
+    "scraps_validated": "2026-07-02T19:02:27.905416+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "70270cd3-804e-4129-a93d-00744bce24c0"
+  }
+}

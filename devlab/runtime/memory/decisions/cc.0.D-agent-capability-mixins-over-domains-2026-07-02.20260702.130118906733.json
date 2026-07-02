@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-agent-capability-mixins-over-domains-2026-07-02.20260702.130118906733",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-agent-capability-mixins-over-domains-2026-07-02"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-02T13:01:18.906733",
+  "links": {
+    "decisions": [
+      "D-domain-object-encapsulation-2026-07-01",
+      "D-agent-subclass-and-de-discworld-2026-07-02"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-agent-capability-mixins-over-domains-2026-07-02",
+    "title": "Capability-mixins-over-Domains: the WORKER composition pattern (RECONCILED; scoped to stream A)",
+    "status": "reconciled",
+    "date": "2026-07-02",
+    "supersedes_capture": "cc.0.D-agent-capability-mixins-over-domains-2026-07-02.20260702.103000672233",
+    "spawned_tickets": [
+      "T-capability-mixin-coding-capability",
+      "T-codebuilder-compose-ds",
+      "T-consequence-agent-capability-mixins"
+    ],
+    "text": "RECONCILED 2026-07-02 (interview/reconcile of the 2026-07-02 capture). The captured decision was two orthogonal threads wearing one coat; the reconcile SPLIT them. THIS decision is stream A only: the capability-mixin WORKER composition pattern. Stream B (Agent subclass introduction + de-Discworld rename + GovernanceMixin) is a separate, gated decision: D-agent-subclass-and-de-discworld-2026-07-02.\n\nDECOMPOSE AUDIT (the load-bearing check — verify divergence before collapsing): of the 7 character-named devices, exactly ONE (DickSimnel) is a task-resolving worker that decomposes into Agent + capability-mixin. The other six are governance (Vetinari), dispatch (Granny), scheduler (Nanny), external-reasoner proxy (Igor), dev (Hubert), validator/utility (Scraps) — each carries genuinely-unique behavior a naive collapse would drop. So the capability-mixin move is a WORKER pattern, narrow and real, NOT an everything-collapses claim.\n\nRECONCILED SHAPE (all composition, no inheritance spine — Akien 2026-07-02: 'perfectly ok for everything to be mixins; agents are built from mixins'):\n- Agent is a SUBCLASS of BaseDevice (Akien correction 2026-07-02) — NOT a rename of it. BaseDevice stays the universal root (lifecycle/bus/identity/CoreValuesMixin) for ALL devices incl. pure utilities. Agent(BaseDevice) adds the agentic mixin-composition surface. Not all devices are agents: utilities (Postgres, Vault, Calibre, Scraps, Bus, Skeleton) stay plain BaseDevice.\n- CAPABILITY = a thin mixin that HAS-A a Domain object and exposes it by delegation (generalizes DS._run_inference -> resolve_domain('coding').run()). CodingCapability HAS-A CodingDomain (compose, NOT is-a — the Domain already stands alone from D-domain-object-encapsulation; making the mixin BE the domain would re-fuse what that split separated).\n- PLANNING = its own mixin (PlanningMixin, the 'make a plan' half). CAPTURED, NOT ticketed in A — no separable planning behavior exists yet, so building it now is a speculative empty mixin. Ticket when a second builder or a real plan/build split gives it a consumer.\n- CodeBuilder = Agent + CodingCapability (+ glue). 'Builder' is descriptive prose for an agent that carries planning + a domain capability, NOT an inheritance base class. DS.0 becomes a CodeBuilder instance.\n- GENERALIZATION: add a task type by adding a Domain + a thin capability-mixin; never subclass a bespoke agent. Homogeneity over special-case, parameterized by domain.\n\nRESOLVED OPEN QUESTIONS:\n- A1 (compose-vs-is-a): HAS-A / compose. Confirmed. CodingDomain stands alone; DS already delegates.\n- A2 (de-Discworld the handles): NO. Terse character handles (dicksimnel.0) stay as provisional pure addresses — may reshift later, zero churn now in dispatch/availability-flags/tmux-session names. Only CLASS names de-Discworld, and that is stream B. (A device->instance-name web page will be built later; NOT ticketed. Note: 'headology' was raised as good for intention-intake, but Granny is explicitly NOT who you want interviewing you — the interviewer role wants a people-reader; captured, not ticketed.)\n- A3 (taxonomy — how the stance-vs-capability signal survives the rename): a device's TYPE + mixin category declares its layer, grounded in the compiled-inference thesis starvation model — plain BaseDevice (NOT an Agent) = utility/service (doesn't starve, doesn't judge); Agent + CapabilityMixin(Domain) = resolver/worker (starves to zero; the Domain owns the escalation walk -> system_alarm HALT); Agent + GovernanceMixin = judgment (never starves); Agent + orchestration = dispatch/scheduler (Granny/Nanny). The signal is now enforced by TYPE, not by character names or convention.\n- A4 (Agent<->BaseDevice + migration order): Agent is a NEW SUBCLASS of BaseDevice (corrected from the first-draft 'Agent = renamed BaseDevice'). Blast radius shrinks: NO ~37-device base rename; introduce Agent(BaseDevice) and reparent only the ~dozen agentic devices onto it, incrementally. Order: (1) prove the capability-mixin pattern on DS -> CodeBuilder [stream A, still on today's BaseDevice root]; (2) introduce Agent(BaseDevice) + reparent agentic devices [stream B]; (3) de-Discworld the 6 class names + GovernanceMixin [stream B]. Same discipline as 'do NOT mass-file the rename'.\n\n## Hypothesis\nAfter stream A ships, adding or exposing a task-capability on an agent costs a Domain + a thin mixin only — the agent class carries NO task logic. DS.0 runs as CodeBuilder (composed) with behavior identical to thin-DS.\n\n## Intention\nI intend that adding a task-capability to an agent costs one Domain + one thin capability-mixin, never a bespoke agent subclass.\n\n## Signal\nCapabilityMixin delegation unit test passes (the seam is actually taken, not a retained direct call); CodeBuilder behavior parity with thin-DS; grep shows no coding/inference logic in the CodeBuilder class beyond the mixin.\n\nNEXT: stream A spawns 2 tickets (below). Stream B stays captured+gated behind A's proof.\n\nPROOF NOTE: this is a structural/composition refactor. Per reference_proof_emitter_cant_prove_refactors, ticket 2 must assert the NEW path is actually taken (CodeBuilder routes through CapabilityMixin -> CodingDomain, no retained direct call) OR close shipped-unproven naming the structural-proof lever — parity-green alone does NOT prove the composition is load-bearing."
+  }
+}

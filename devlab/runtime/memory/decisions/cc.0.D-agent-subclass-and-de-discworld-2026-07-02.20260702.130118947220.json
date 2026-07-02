@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.D-agent-subclass-and-de-discworld-2026-07-02.20260702.130118947220",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-agent-subclass-and-de-discworld-2026-07-02"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-02T13:01:18.947220",
+  "links": {
+    "decisions": [
+      "D-agent-capability-mixins-over-domains-2026-07-02"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-agent-subclass-and-de-discworld-2026-07-02",
+    "title": "Introduce Agent(BaseDevice) subclass + de-Discworld the character class names + GovernanceMixin (GATED behind stream A)",
+    "status": "open",
+    "date": "2026-07-02",
+    "spawned_tickets": [],
+    "text": "STATUS: captured for review, GATED. Spawns NO tickets yet — it is gated behind stream A's proof (D-agent-capability-mixins-over-domains-2026-07-02: prove the capability-mixin pattern on DS -> CodeBuilder first). Stream B of the 2026-07-02 reconcile split. Do NOT mass-file the rename (Akien standing instruction).\n\nWHY: the Discworld CLASS names became illegible ('unclear who does what'). This stream makes the type/role structure explicit WITHOUT reintroducing an inheritance spine.\n\nSHAPE:\n- Introduce Agent as a SUBCLASS of BaseDevice (NOT a rename — Akien 2026-07-02: 'agent is a subclass of device'). BaseDevice stays the universal root for ALL devices; Agent(BaseDevice) adds the agentic mixin-composition surface. Pure utilities (Postgres, Vault, Calibre, Scraps, Bus, Skeleton) stay plain BaseDevice and never become Agents.\n- Reparent only the ~dozen AGENTIC devices onto Agent, incrementally (agentic = resolves/judges/dispatches/schedules): the 7 character devices minus Scraps (Scraps is a plain validator utility), plus functional agents like Critic, Auditor, Improver, IntentExtractor, Evaluator, Classifier, Minion (audit each — agentic vs utility — before reparenting).\n- De-Discworld the 6 remaining character CLASS names to functional ones (DickSimnel becomes CodeBuilder in stream A; the 6: Vetinari, Granny, Nanny, Igor, Hubert, Scraps). Preserve the stance-vs-capability signal via mixin category (A3 taxonomy from stream A), NOT via the character names.\n- GovernanceMixin: extract Vetinari's admin/judgment concerns (factory specs, health rollups, threshold-escalate-to-Akien, + the alarm sink from T-vetinari-owns-alarm-escalation) into a GovernanceMixin. Agent + GovernanceMixin = judgment layer (never starves).\n- Instance HANDLES stay terse/provisional (stream A A2) — this stream renames CLASSES only.\n\nOPEN QUESTIONS to reconcile before spawning tickets (do this AFTER stream A proves the pattern):\n- B1: the exact functional class name for each of the 6 (Vetinari -> Administrator? Granny -> Dispatcher? Nanny -> Scheduler? Igor -> ? Hubert -> ? Scraps -> Validator?). Preserve role legibility.\n- B2: precise agentic-vs-utility line for the functional-named devices (which reparent onto Agent, which stay BaseDevice).\n- B3: GovernanceMixin scope + whether dispatch (Granny) and scheduler (Nanny) get their own orchestration mixin category or stay bespoke Agent subclasses.\n- B4: the interviewer/intake role (people-reader, NOT Granny, NOT Vetinari; Moist von Lipwig does not exist as a device yet) — is it in scope for the rename or a separate future device decision?\n\nNEXT: hold until stream A closes; then reconcile B1-B4 and spawn tickets."
+  }
+}

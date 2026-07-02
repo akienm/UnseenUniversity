@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-codebuilder-compose-ds.20260702.130235813183",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-codebuilder-compose-ds"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T19:02:35.813183+00:00",
+  "links": {
+    "decisions": [
+      "D-agent-capability-mixins-over-domains-2026-07-02"
+    ],
+    "tickets": [
+      "T-codebuilder-compose-ds"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-codebuilder-compose-ds",
+    "title": "[sprint] Compose CodingCapability onto the coding worker (DickSimnel) — prove the mixin delegation path",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "architecture"
+    ],
+    "decision_id": "D-agent-capability-mixins-over-domains-2026-07-02",
+    "priority": 0.55,
+    "target_difficulty": 2,
+    "role": "builder",
+    "related_to": "T-capability-mixin-coding-capability",
+    "description": "**Intention:** prove the capability-mixin WORKER pattern on the one real worker (DickSimnel) before any Agent-subclass or rename work (stream B). This is the prove-on-one-device step.\n\n**Depends on:** T-capability-mixin-coding-capability (CapabilityMixin + CodingCapability must exist).\n\n**What to build:** Make `DickSimnelDevice` (unseen_university/devices/dicksimnel/device.py:50) compose `CodingCapability` and route its inference through the mixin. Today `_run_inference` (device.py:338) directly calls `resolve_domain('coding').run(ticket, agent_id='dicksimnel')`. Replace that direct call with delegation THROUGH the mixin: `DickSimnelDevice(..., CodingCapability)` and `_run_inference` returns `self.run_capability(ticket, agent_id='dicksimnel')`. Keep the class name DickSimnelDevice (the DickSimnel->CodeBuilder rename and the Agent(BaseDevice) subclass are BOTH stream B — do NOT rename or reparent here).\n\n**Completion criteria:** DickSimnel's coding inference flows agent-class -> CodingCapability.run_capability -> CodingDomain.run; the DickSimnelDevice class holds NO direct resolve_domain/coding-logic call anymore (the direct call is REMOVED, not retained alongside the mixin).\n\n**PROOF DISCIPLINE (structural refactor — read reference_proof_emitter_cant_prove_refactors before closing):** parity-green alone does NOT prove the composition is load-bearing (the money-safety suite already passes on thin-DS; re-running it after wrapping the SAME CodingDomain proves the domain still works, not that the mixin path is taken). To close PROVEN, the test must assert the NEW path is actually exercised: spy on `CapabilityMixin.run_capability` (or the mixin's delegation method) and assert `_run_inference` routes through it, AND grep/AST-assert no direct `resolve_domain('coding')` call remains in DickSimnelDevice. If that assertion cannot be made cleanly, close **shipped-unproven** naming the structural-proof lever (structural-proof-mode). Do NOT let parity-green stand in as proof of the composition.\n\n**Test plan:** (1) NEW-path test: spy the mixin delegation method, drive `_run_inference`, assert it was called and no direct domain resolve remains in the class. (2) Regression: existing DickSimnel + coding-domain money-safety parity still green.\n\n**Affected files:** `unseen_university/devices/dicksimnel/device.py` (class def :50, `_run_inference` :338-348). Reads `unseen_university/capabilities/*`.\n\n**Logging:** the delegation crossing is logged by the mixin (from T-capability-mixin-coding-capability); ensure DickSimnel's dispatch still logs the ticket handoff at INFO.\n\n**Scope boundary:** composition + proof on DickSimnel only. No Agent subclass, no rename, no other device — those are stream B (D-agent-subclass-and-de-discworld-2026-07-02).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Rollback:** `git revert <hash>` restores the direct `resolve_domain('coding').run(...)` call in `_run_inference` — the change is a single-method reroute on the live coding worker, so revert fully restores prior behavior.\n**Observable via:** `log.info` delegation-crossing line from the mixin, tagged agent=dicksimnel, confirms DS routes through the composed path in production.",
+    "created_at": "2026-07-02T19:02:33.199516+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "intention": "I intend that the one real coding worker exposes its capability purely by delegating through a composed mixin to CodingDomain, with no task logic in the agent class.",
+    "scraps_validated": "2026-07-02T19:02:33.199589+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9a2dc985-f3c1-4995-b6f4-79eb0552bd8b"
+  }
+}

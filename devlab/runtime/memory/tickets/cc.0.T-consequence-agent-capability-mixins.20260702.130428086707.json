@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-agent-capability-mixins.20260702.130428086707",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-agent-capability-mixins"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T19:04:28.086707+00:00",
+  "links": {
+    "decisions": [
+      "D-agent-capability-mixins-over-domains-2026-07-02"
+    ],
+    "tickets": [
+      "T-consequence-agent-capability-mixins"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-agent-capability-mixins",
+    "title": "[sprint] Consequence check: capability-mixin composition on the coding worker",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "architecture"
+    ],
+    "decision_id": "D-agent-capability-mixins-over-domains-2026-07-02",
+    "priority": 0.2,
+    "target_difficulty": 1,
+    "role": "builder",
+    "related_to": "T-codebuilder-compose-ds",
+    "gate": "2026-07-16",
+    "intention": "I intend that the mixin composition on DickSimnel changed how the capability is exposed, not what the worker produces — verified by observing DS.0 in production after the change.",
+    "description": "**What changed:** DickSimnel's coding inference now flows through a composed `CodingCapability` mixin (delegating to `CodingDomain.run()`) instead of a direct `resolve_domain('coding').run()` call (T-codebuilder-compose-ds, on the mechanism from T-capability-mixin-coding-capability).\n\n**Predicted unintended effects to watch:**\n- MRO / __init__ cooperation: mixing CodingCapability into DickSimnelDevice adds a base to the MRO. If the mixin's __init__ (or domain resolution) doesn't cooperate with the existing DickSimnel/BaseDevice super() chain, device construction could silently drop a step. Watch for DS.0 failing to start or missing a normal init side-effect.\n- Delegation identity: confirm the mixin passes ticket + agent_id unchanged — a dropped/renamed kwarg would silently change escalation behavior (agent_id feeds the escalation walk / system_alarm HALT).\n- Double-resolve: if the mixin resolves the domain per-call while DS also holds a reference, watch for two CodingDomain instances / duplicated state.\n\n**Signals to watch:**\n- DS.0 dispatch still produces DONE results with same escalation behavior on a real coding ticket (no new HALTs).\n- The `capability: delegating to domain=coding` INFO line appears once per inference (not zero, not twice).\n- No new errors in ~/.unseen_university/logs/dicksimnel/ after the change ships.\n\n**Gate condition:** Check by 2026-07-16 (after stream A ships and DS.0 has run real tickets), or when stream B introduces Agent(BaseDevice) — whichever comes first.\n\n**Affected files:** none — observation/verification only.\n**Test plan:** no tests — observation ticket; annotate outcome occurred/clear/partial and close.\n**Scope boundary:** observe predicted effects of the composition on the live worker; does NOT cover stream B (Agent subclass / rename).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T19:04:25.235201+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "scraps_validated": "2026-07-02T19:04:25.280418+00:00"
+  }
+}
