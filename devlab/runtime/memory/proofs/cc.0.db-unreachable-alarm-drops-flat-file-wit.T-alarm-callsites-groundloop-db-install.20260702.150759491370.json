@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.db-unreachable-alarm-drops-flat-file-wit.T-alarm-callsites-groundloop-db-install.20260702.150759491370",
+  "emitter": "cc.0",
+  "namespace": [
+    "db-unreachable-alarm-drops-flat-file-wit",
+    "T-alarm-callsites-groundloop-db-install"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T15:07:59.491370",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-alarm-callsites-groundloop-db-install"
+    ],
+    "commits": [
+      "f0a0e8a3df705364113f4eda60d1a3a9c30060e8"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "db-unreachable alarm drops flat-file with NO database",
+    "intention": "when Postgres pool init fails, db_proxy drops a 'db-unreachable' flat-file alarm and re-raises, touching no DB",
+    "test": "tests/test_alarm_callsites.py::TestDbUnreachableRaisesAlarm::test_db_unreachable_raises_alarm_without_db",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_alarm_callsites.py::TestDbUnreachableRaisesAlarm::test_db_unreachable_raises_alarm_without_db",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            # Patch psycopg2.pool.ThreadedConnectionPool in the context where it's imported\n            mp.setattr(\"psycopg2.pool.ThreadedConnectionPool\", _boom)\n    \n            # Attempt to create proxy — should fail with the original exception\n            with pytest.raises(OperationalError, match=\"connection to server\"):\n                PGDatabaseProxy(\"postgresql://localhost/test\")\n    \n        # Alarm should be dropped despite DB being down\n        alarm = sa.get_alarm(\"db-unreachable\")\n>       assert alarm is not None, (\n            \"alarm must be created even with no database available \"\n            \"(this proves flat-file, DB-independent path)\"\n        )\nE       AssertionError: alarm must be created even with no database available (this proves flat-file, DB-independent path)\nE       assert None is not None\n\ntests/test_alarm_callsites.py:116: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_alarm_callsites.py::TestDbUnreachableRaisesAlarm::test_db_unreachable_raises_alarm_without_db\n1 failed in 0.10s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "f0a0e8a3df705364113f4eda60d1a3a9c30060e8",
+    "impl_paths": [
+      "unseen_university/db_proxy.py",
+      "unseen_university/devices/ground_loop/supervisor.py",
+      "unseen_university/devices/igor/setup_assets/installer.py",
+      "unseen_university/system_alarms.py"
+    ],
+    "ticket": "T-alarm-callsites-groundloop-db-install",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
