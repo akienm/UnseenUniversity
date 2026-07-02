@@ -747,9 +747,18 @@ class VetinariDevice(BaseDevice):
         Posts to the channel, audit-logs the escalation, and logs at INFO.
         Returns True on successful post, False on failure (so notify_new_alarms
         only stamps mark_notified when the post actually succeeded).
+
+        The poster (self._channel_post) signals a definitive failure by returning
+        False (the default path does this on a swallowed channel error). An
+        injecting caller that returns None on success still counts as success —
+        only an explicit False (or a raised exception) blocks the stamp so the
+        next sweep retries (T-vetinari-alarm-retry-default-path).
         """
         try:
-            self._channel_post(summary)
+            posted = self._channel_post(summary)
+            if posted is False:
+                log.warning("VetinariDevice: alarm escalation post failed — will retry: %s", summary)
+                return False
             self._audit_log(
                 event="ALARM_ESCALATE",
                 reason="new or reopened system alarm",
@@ -787,12 +796,20 @@ class VetinariDevice(BaseDevice):
         )
 
     @staticmethod
-    def _default_channel_post(message: str) -> None:
+    def _default_channel_post(message: str) -> bool:
+        """Post to the shared channel. Returns True on success, False on failure.
+
+        Still swallows the exception (no raise) so callers that ignore the return
+        (e.g. _escalate_to_akien) are unaffected — but the boolean lets the alarm
+        retry path (_escalate_alarm) detect a failed post on the DEFAULT path, not
+        only when a raising channel_post_fn is injected (T-vetinari-alarm-retry-default-path)."""
         try:
             from unseen_university.channel import post_to_channel
             post_to_channel(message)
+            return True
         except Exception as exc:
             log.warning("VetinariDevice: channel post failed: %s", exc)
+            return False
 
     # ── BaseDevice contract ───────────────────────────────────────────────────
 
