@@ -17,14 +17,14 @@
   },
   "body": {
     "id": "T-vetinari-owns-alarm-escalation",
-    "title": "[sprint] Vetinari escalates unresolved system alarms into Akien's feed / a Claude-readable channel",
+    "title": "[in_progress] Vetinari escalates unresolved system alarms into Akien's feed / a Claude-readable channel",
     "tags": [
       "Observability",
       "SystemAlarms",
       "Vetinari",
       "Governance"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.45,
     "related_to": [
       "D-system-alarms-and-tier-requests-2026-06-23",
