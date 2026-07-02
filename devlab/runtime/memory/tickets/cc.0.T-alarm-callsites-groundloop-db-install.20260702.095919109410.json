@@ -17,7 +17,7 @@
   },
   "body": {
     "id": "T-alarm-callsites-groundloop-db-install",
-    "title": "[sprint] Give ground_loop / DB / installer a mouth: raise_alarm at three should-not-happen callsites",
+    "title": "[in_progress] Give ground_loop / DB / installer a mouth: raise_alarm at three should-not-happen callsites",
     "tags": [
       "Observability",
       "SystemAlarms",
@@ -25,7 +25,7 @@
       "Database",
       "Installer"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.4,
     "related_to": [
       "D-system-alarms-and-tier-requests-2026-06-23"
