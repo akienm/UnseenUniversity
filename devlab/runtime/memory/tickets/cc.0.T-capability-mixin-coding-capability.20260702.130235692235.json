@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-capability-mixin-coding-capability",
-    "title": "[sprint] Introduce CapabilityMixin + CodingCapability (thin mixin HAS-A a Domain, delegates)",
-    "status": "sprint",
+    "title": "[in_progress] Introduce CapabilityMixin + CodingCapability (thin mixin HAS-A a Domain, delegates)",
+    "status": "in_progress",
     "size": "S",
     "tags": [
       "architecture"
