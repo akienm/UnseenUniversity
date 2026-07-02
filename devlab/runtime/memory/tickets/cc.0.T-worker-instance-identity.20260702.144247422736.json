@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-worker-instance-identity",
-    "title": "[sprint] Worker instance identity surface: instance_name = abbrev.number; agent_id = self.instance_name",
-    "status": "sprint",
+    "title": "[in_progress] Worker instance identity surface: instance_name = abbrev.number; agent_id = self.instance_name",
+    "status": "in_progress",
     "size": "S",
     "tags": [
       "architecture"
