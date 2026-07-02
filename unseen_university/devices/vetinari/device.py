@@ -727,6 +727,38 @@ class VetinariDevice(BaseDevice):
         )
         log.info("VetinariDevice: VETINARI_COMPLETE posted for directive %r", directive_id)
 
+    # ── System alarm escalation (T-vetinari-owns-alarm-escalation) ──────────────
+
+    def sweep_system_alarms(self, *, now=None) -> int:
+        """Escalate new/reopened system alarms to the channel.
+
+        Calls notify_new_alarms with self._escalate_alarm as the send_fn.
+        Returns the number of alarms escalated.
+        Reuses the existing dedup and reopened-re-post logic from notify_new_alarms.
+        """
+        return 0  # STUB: escalation wiring not yet in place
+
+    def _escalate_alarm(self, summary: str) -> bool:
+        """Post a system alarm summary to the channel.
+
+        Called by notify_new_alarms for each new/reopened alarm.
+        Posts to the channel, audit-logs the escalation, and logs at INFO.
+        Returns True on successful post, False on failure (so notify_new_alarms
+        only stamps mark_notified when the post actually succeeded).
+        """
+        try:
+            self._channel_post(summary)
+            self._audit_log(
+                event="ALARM_ESCALATE",
+                reason="new or reopened system alarm",
+                context={"summary": summary},
+            )
+            log.info("VetinariDevice: escalated system alarm — %s", summary)
+            return True
+        except Exception as exc:
+            log.warning("VetinariDevice: alarm escalation failed: %s", exc)
+            return False
+
     # ── Internal ──────────────────────────────────────────────────────────────
 
     def _escalate_to_akien(

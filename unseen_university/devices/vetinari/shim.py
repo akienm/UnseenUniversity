@@ -108,6 +108,7 @@ class DirectiveListener:
             now = time.time()
             if now - _last_progress_poll >= _PROGRESS_POLL_INTERVAL_S:
                 self._poll_active_directives()
+                self._sweep_system_alarms()
                 _last_progress_poll = now
 
             self._stop.wait(timeout=_POLL_INTERVAL_S)
@@ -121,6 +122,15 @@ class DirectiveListener:
                     self._device.check_directive_progress(directive["id"])
         except Exception as exc:
             log.warning("DirectiveListener: progress poll failed: %s", exc)
+
+    def _sweep_system_alarms(self) -> None:
+        """Sweep and escalate new/reopened system alarms. Fail-open."""
+        try:
+            count = self._device.sweep_system_alarms()
+            if count > 0:
+                log.info("DirectiveListener: swept %d system alarms", count)
+        except Exception as exc:
+            log.warning("DirectiveListener: alarm sweep failed: %s", exc)
 
     def _process(self, raw) -> None:
         try:
