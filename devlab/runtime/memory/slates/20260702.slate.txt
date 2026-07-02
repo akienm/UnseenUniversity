@@ -51,3 +51,9 @@ Ran the interview/reconcile on the big refactor (the slate's Next). Outcome: the
 
 ## Session 2 close
 Next: **stream A is sprint-ready** — /sprint-batch decision:D-agent-capability-mixins-over-domains (T-capability-mixin first, then T-codebuilder-compose-ds; consequence ticket is date-gated). Stream B (D-agent-subclass-and-de-discworld) stays GATED until A proves the pattern — reconcile B1–B4 only after A closes. Alarm tickets (T-alarm-callsites…, T-vetinari-owns-alarm-escalation) also still sprint-ready.
+
+## Session close 2026-07-02
+Done: Reconciled D-agent-capability-mixins-over-domains via decompose audit → Decision A (worker capability-mixin pattern, 3 tickets filed) + Decision B (Agent subclass + de-Discworld, GATED). Decision hygiene complete.
+Next: Compact, then /sprint-batch on stream A tickets + alarm tickets.
+
+## In-flight: NONE — stream A sprint-ready, stream B gated. Reconcile durable and committed.
