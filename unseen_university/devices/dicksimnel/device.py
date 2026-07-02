@@ -347,11 +347,7 @@ class DickSimnelDevice(CodingCapability, BaseDevice):
         DONE result, or None to HALT (worker_listener declines; a system_alarm has fired
         inside the domain). No direct domain resolution remains on the device.
         """
-        # STUB (proof-first red state): does not yet route through the mixin — the real
-        # body delegates to self.run_capability in the next commit. Present so the routing
-        # test fails on an assertion-about-behaviour (run_capability never called), not on
-        # ImportError, and without triggering real inference against the old domain path.
-        return None
+        return self.run_capability(ticket, agent_id="dicksimnel")
 
     def replay_and_analyze(self, ticket_id: str) -> dict:
         """Replay a closed ticket using the simulator to understand decision-making.
