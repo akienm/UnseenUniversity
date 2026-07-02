@@ -58,3 +58,5 @@ Done: Reconciled D-agent-capability-mixins-over-domains via decompose audit → 
 Next: Compact, then /sprint-batch on stream A tickets + alarm tickets.
 
 ## In-flight: NONE — stream A sprint-ready, stream B gated. Reconcile durable and committed.
+
+## In-flight: T-capability-mixin-coding-capability CLOSED PROVEN (proof 66c18b2c). Ticket 2/2 T-codebuilder-compose-ds next: compose CodingCapability onto DickSimnel, structural-proof discipline.

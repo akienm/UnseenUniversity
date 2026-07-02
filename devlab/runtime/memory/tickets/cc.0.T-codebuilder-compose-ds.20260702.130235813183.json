@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-codebuilder-compose-ds",
-    "title": "[sprint] Compose CodingCapability onto the coding worker (DickSimnel) — prove the mixin delegation path",
-    "status": "sprint",
+    "title": "[in_progress] Compose CodingCapability onto the coding worker (DickSimnel) — prove the mixin delegation path",
+    "status": "in_progress",
     "size": "M",
     "tags": [
       "architecture"
