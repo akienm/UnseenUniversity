@@ -72,3 +72,9 @@ Done: Shipped stream A of D-agent-capability-mixins-over-domains: T-capability-m
 Next: Build runway is CLEAR. Sprint-ready: T-worker-instance-identity (S), alarm tickets (T-alarm-callsites-groundloop-db-install, T-vetinari-owns-alarm-escalation). T-shim-frontdoor-on-groundloop is open_questions (resolve Q1-Q3 interface before its downstream tickets). Stream B + consequence checks still gated.
 
 ## In-flight: NONE — all work durable + pushed (HEAD 2d14e641). Stream A proven; design captured as decisions+tickets; runway clear for a post-compact build sprint.
+
+## Session close 2026-07-02
+Done: Shipped all 3 sprint-ready runway tickets PROVEN: T-worker-instance-identity (IdentityMixin -> DS.0, agent_id off the class-id literal), T-alarm-callsites-groundloop-db-install (raise_alarm at 3 sources; db-unreachable flat-file/no-DB invariant proven x3), T-vetinari-owns-alarm-escalation (sink reuses notify_new_alarms, no parallel dedup; proven x2). The 2 M alarm tickets' writing was delegated to Haiku; CC owned review+proof+close. Filed T-fix-igor-layer3-4-test-seed-imports (pre-existing collection errors, 0.2).
+Next: Runway's next layer is the front-door: T-shim-frontdoor-on-groundloop stays open_questions until Q1-Q3 (Ground-Loop-per-host / shim-attach interface / wake protocol) resolve; its downstream tickets (shim-lease-instance-numbers, granny-wake-not-launch, granny-mru-and-stall-alarm) file after. Stream B (D-agent-subclass-de-discworld) + consequence checks (2026-07-16, 2026-07-30) still gated. Note: savestate 'run' must be invoked as ~/.claude/skills/savestate/run, not from repo root.
+
+## In-flight: Batch complete: all 3 runway tickets (identity + 2 alarm) shipped PROVEN and pushed (HEAD 75cdfff8). Tree clean. No work in flight.
