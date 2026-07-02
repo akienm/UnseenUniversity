@@ -25,17 +25,15 @@ def test_coding_prompt_byte_identical_to_prior_ds_prompt():
     assert hashlib.sha256(text.encode("utf-8")).hexdigest() == _CODING_PROMPT_SHA256
 
 
-def test_system_prompt_alias_matches_domain_resolver():
-    """device.SYSTEM_PROMPT stays a byte-identical alias of the coding domain prompt."""
-    from unseen_university.devices.dicksimnel.device import SYSTEM_PROMPT
-    assert SYSTEM_PROMPT == domain_prompt("coding")
+def test_coding_domain_object_resolves_prompt_by_domain():
+    """The coding prompt lives on the CodingDomain object (D-domain-object-encapsulation).
 
-
-def test_ds_build_system_prompt_resolves_by_domain():
-    """DS consumes the prompt via the domain resolver (not a baked-in constant)."""
-    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
-    dev = DickSimnelDevice()
-    assert dev._build_system_prompt({"id": "T-x"}) == domain_prompt("coding")
+    DS holds no prompt anymore — it delegates to CodingDomain.run(), whose prompts.system
+    resolves from the domain-prompt store by name. This is the coding prompt's one home; DS
+    is a thin consumer of it.
+    """
+    from unseen_university.devices.inference.domains.coding import CodingDomain
+    assert CodingDomain().prompts.system == domain_prompt("coding")
 
 
 def test_unknown_domain_resolves_empty():

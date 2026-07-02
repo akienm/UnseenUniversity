@@ -35,7 +35,6 @@ log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
 _CC_QUEUE = Path(__file__).resolve().parents[2] / "devlab" / "claudecode" / "cc_queue.py"
-_SKILLS_DIR = Path.home() / ".claude" / "skills"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
 # The escalation walk (availability-vs-capability classification, difficulty bumping,
@@ -43,14 +42,10 @@ _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "B
 # (unseen_university/devices/inference/domains/, D-domain-object-encapsulation). DS is a
 # thin consumer of CodingDomain.run() — see _run_inference below.
 
-# The DS builder/coding system prompt now lives as DATA in the inference
-# router's domain-prompt store (prompts/coding.md), resolved by domain — the
-# router routes BOTH model and prompt by domain (T-inference-domain-prompt).
-# SYSTEM_PROMPT stays as a byte-identical alias for existing importers/tests.
-from unseen_university.devices.inference.domain_prompts import domain_prompt
+# DS holds no prompt/selection/loop/escalation logic: the coding path runs entirely
+# through the coding domain object (D-domain-object-encapsulation). DS is a thin consumer
+# that hands the ticket to CodingDomain.run() and relays DONE (result) or HALT (None).
 from unseen_university.devices.inference.domains import resolve_domain
-
-SYSTEM_PROMPT = domain_prompt("coding")
 
 class DickSimnelDevice(BaseDevice):
     """
@@ -340,47 +335,6 @@ class DickSimnelDevice(BaseDevice):
 
     # ── Inference ─────────────────────────────────────────────────────────────
 
-    def skill_load(self, name: str) -> str | None:
-        """Load a skill file from ~/.claude/skills/<name>/SKILL.md.
-
-        Returns the file content, or None if not found/unreadable.
-        Best-effort — missing skills warn and fall back gracefully.
-        """
-        skill_path = _SKILLS_DIR / name / "SKILL.md"
-        if not skill_path.exists():
-            log.debug("DickSimnel: skill %r not found at %s", name, skill_path)
-            return None
-        try:
-            content = skill_path.read_text()
-            log.info("DickSimnel: loaded skill %r (%d chars)", name, len(content))
-            return content
-        except Exception as exc:
-            log.warning("DickSimnel: skill load failed for %r: %s", name, exc)
-            return None
-
-    _IBD_PREAMBLE = (
-        "Before executing the sprint-ticket skill steps below, do three things:\n"
-        "1. State in one sentence the intention for this ticket: "
-        "'I intend that...'\n"
-        "2. State the hypothesis: what should be observably different when this ships?\n"
-        "3. Write the test that validates the hypothesis.\n"
-        "Then proceed with sprint-ticket as written.\n\n"
-    )
-
-    def _build_system_prompt(self, ticket: dict) -> str:
-        """Build system prompt for the ToolLoop, resolved by task DOMAIN.
-
-        DS is a coding worker, so it resolves the 'coding' domain prompt from the
-        router's domain-prompt store (data, not baked in — T-inference-domain-prompt).
-        This is the compact builder prompt (not the full sprint-ticket skill) so OR
-        models don't narrate the workflow instead of calling tools. The sprint-ticket
-        skill is CC-specific (memory_get, mcp__*, Agent) and too long (~9k chars)
-        for OR models — they interpret it as a workflow to explain, not execute.
-        """
-        return domain_prompt("coding")
-
-    # Internal tier cascade: cheapest first, escalate within Dick before going to CC.
-    # Each tier appends context from the prior attempt so the next model starts informed.
     def _run_inference(self, ticket: dict) -> str | None:
         """Work a coding ticket by delegating to the coding domain's run().
 

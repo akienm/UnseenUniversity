@@ -203,7 +203,8 @@ class TestOneMechanismOnly:
             importlib.import_module("unseen_university.devices.dicksimnel.toolloop")
 
     def test_ds_run_inference_delegates_to_domain(self):
-        """DS._run_inference is a thin consumer: it delegates to CodingDomain.run()."""
+        """DS._run_inference is a thin consumer: it delegates to CodingDomain.run() with
+        domain='coding' and NO task_class/model/tier args (T-thin-ds-to-domain-consumer)."""
         from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         dev = DickSimnelDevice.__new__(DickSimnelDevice)
         ticket = {"id": "T-deleg", "description": "d", "tags": []}
@@ -215,3 +216,23 @@ class TestOneMechanismOnly:
         mock_resolve.assert_called_once_with("coding")
         domain.run.assert_called_once_with(ticket, agent_id="dicksimnel")
         assert out == "DONE: delegated"
+
+    def test_ds_run_inference_halt_returns_none(self):
+        """A domain HALT (None) is relayed unchanged — worker_listener declines on None."""
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
+        dev = DickSimnelDevice.__new__(DickSimnelDevice)
+        with patch("unseen_university.devices.dicksimnel.device.resolve_domain") as mock_resolve:
+            domain = MagicMock()
+            domain.run.return_value = None
+            mock_resolve.return_value = domain
+            assert dev._run_inference({"id": "T-halt", "description": "d", "tags": []}) is None
+
+    def test_ds_holds_no_prompt_or_selection_logic(self):
+        """DS is thin: no prompt-building / skill-loading / selection logic remains on it
+        (T-thin-ds-to-domain-consumer completion criterion — the coding path is the domain's)."""
+        import unseen_university.devices.dicksimnel.device as ds
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
+        assert not hasattr(DickSimnelDevice, "_build_system_prompt")
+        assert not hasattr(DickSimnelDevice, "skill_load")
+        assert not hasattr(ds, "SYSTEM_PROMPT")
+        assert not hasattr(DickSimnelDevice, "_IBD_PREAMBLE")
