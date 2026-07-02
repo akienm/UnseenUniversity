@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.dicksimneldevice-run-inference-routes-th.T-codebuilder-compose-ds.20260702.133640870266",
+  "emitter": "cc.0",
+  "namespace": [
+    "dicksimneldevice-run-inference-routes-th",
+    "T-codebuilder-compose-ds"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T13:36:40.870266",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-codebuilder-compose-ds"
+    ],
+    "commits": [
+      "fc1b2e36299cf16faca981e894458f9417925c47"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "DickSimnelDevice._run_inference routes through the CodingCapability mixin (not a direct domain resolve)",
+    "intention": "_run_inference calls self.run_capability(ticket, agent_id='dicksimnel') and relays its result unchanged",
+    "test": "tests/dicksimnel/test_tier_cascade.py::TestOneMechanismOnly::test_ds_run_inference_delegates_to_domain",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/dicksimnel/test_tier_cascade.py::TestOneMechanismOnly::test_ds_run_inference_delegates_to_domain",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "self = <MagicMock name='run_capability' id='124963552402592'>\nargs = ({'description': 'd', 'id': 'T-deleg', 'tags': []},)\nkwargs = {'agent_id': 'dicksimnel'}\nmsg = \"Expected 'run_capability' to be called once. Called 0 times.\"\n\n    def assert_called_once_with(self, /, *args, **kwargs):\n        \"\"\"assert that the mock was called exactly once and that that call was\n        with the specified arguments.\"\"\"\n        if not self.call_count == 1:\n            msg = (\"Expected '%s' to be called once. Called %s times.%s\"\n                   % (self._mock_name or 'mock',\n                      self.call_count,\n                      self._calls_repr()))\n>           raise AssertionError(msg)\nE           AssertionError: Expected 'run_capability' to be called once. Called 0 times.\n\n/usr/lib/python3.12/unittest/mock.py:955: AssertionError\n=========================== short test summary info ============================\nFAILED tests/dicksimnel/test_tier_cascade.py::TestOneMechanismOnly::test_ds_run_inference_delegates_to_domain\n1 failed in 0.18s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "fc1b2e36299cf16faca981e894458f9417925c47",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260702.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-codebuilder-compose-ds.20260702.130235813183.json",
+      "unseen_university/devices/dicksimnel/device.py"
+    ],
+    "ticket": "T-codebuilder-compose-ds",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
