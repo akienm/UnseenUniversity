@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-fix-routing-compiler-add-compiled-rule.20260702.070210961106",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-routing-compiler-add-compiled-rule"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-02T13:02:10.961106+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-fix-routing-compiler-add-compiled-rule"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-routing-compiler-add-compiled-rule",
+    "title": "[sprint] Fix pre-existing fail: test_rules_engine_add_compiled_rule (compiled rule not selected)",
+    "tags": [
+      "Inference",
+      "Bug",
+      "Testing"
+    ],
+    "status": "sprint",
+    "priority": 0.2,
+    "description": "**Pre-existing failure** (predates D-domain-object-encapsulation; confirmed on baseline 033039e0 unrelated to loop convergence). tests/scraps/test_routing_compiler.py::test_rules_engine_add_compiled_rule asserts an added compiled rule wins routing (compiled:Platform/S->analyst) but the cost-optimizing selector returns the analyst-fallback (deepseek-v4-flash) instead — the compiled rule is filtered out (likely a difficulty/domain-eligibility mismatch on the compiled RoutingRule vs the analyst request). **Shape:** determine why add_compiled_rule + route() drops the compiled candidate; likely the compiled rule lacks a difficulty/domain the selector requires, or the test builds it with a stale expectation from before the cost-optimizing-router change. **Affected:** unseen_university/devices/inference/rules_engine.py (add_compiled_rule/route), tests/scraps/test_routing_compiler.py. **Test plan:** the test passes (compiled rule wins) OR the test is corrected to the intended post-cost-router behavior with a documented why. Related: D-inference-cost-optimizing-router. Found during T-thin-ds sprint 2026-07-02.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-02T13:02:05.124127+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-02T13:02:05.169610+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a743ad1f-38e7-4357-ae27-526cb0de9b6a"
+  }
+}
