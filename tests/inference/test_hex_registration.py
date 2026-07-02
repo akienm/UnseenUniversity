@@ -105,12 +105,13 @@ def test_ds_routes_by_tier_not_explicit_model():
     """DS routes by {domain, task_class} and never pins a model (tier-not-model contract).
 
     The old _TIER_CASCADE (empty model_override) is retired (T-router-failure-bump-escalation);
-    the invariant now lives in the ToolLoop request itself: model='' (route by domain),
-    task_class='worker', domain='coding'. An explicit model would bypass the cost-optimizing
-    selector AND trip the pin-gate.
+    the invariant now lives in the coding domain's shared-loop request: model='' (route by
+    domain), task_class='worker', domain='coding'. An explicit model would bypass the
+    cost-optimizing selector AND trip the pin-gate. Driven through the real DS path
+    (CodingDomain.run → shared AgenticLoop).
     """
     from unittest.mock import patch
-    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.inference.domains.coding import CodingDomain
 
     captured = {}
 
@@ -130,8 +131,9 @@ def test_ds_routes_by_tier_not_explicit_model():
             captured["req"] = req
             return _Resp()
 
-    with patch("unseen_university.devices.inference.device.InferenceDevice", return_value=_Dev()):
-        ToolLoop().run({"id": "T-x", "description": "d", "tags": []}, "sys")
+    with patch("unseen_university.devices.inference.device.InferenceDevice", return_value=_Dev()), \
+         patch("unseen_university.devices.inference.domains.coding._orientation_prefix", return_value=""):
+        CodingDomain().run({"id": "T-x", "description": "d", "tags": []})
 
     req = captured["req"]
     assert req.model == "", f"DS must not pin a model — got {req.model!r}"

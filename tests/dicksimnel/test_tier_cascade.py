@@ -1,19 +1,26 @@
-"""Tests for the DickSimnel escalation driver — the ONE difficulty walk.
+"""Tests for the escalation walk — the ONE difficulty walk, now OWNED by the domain.
 
-The old builder→creator→CC _TIER_CASCADE is retired (T-router-failure-bump-escalation):
-DS._run_inference now walks DIFFICULTY up one rung per CAPABILITY failure, re-selects at the
-SAME difficulty on an AVAILABILITY failure (never bumps to paid on a source-down), and halts
-cleanly past the top rung. The two money-safety properties — availability→no-bump and
-past-top→clean-halt-no-loop — are the load-bearing tests here.
+D-domain-object-encapsulation: the walk moved out of DS._run_inference into
+CodingDomain.run() (the single escalation owner), driving the shared AgenticLoop. DS is a
+thin consumer that delegates to it. These tests drive CodingDomain.run() with the shared
+loop mocked and assert the money-safety properties are preserved verbatim:
+capability→bump (spends up), availability→NO-bump (re-select same difficulty),
+past-top→clean-halt-no-loop, cost→halt. Plus: DS delegates to the domain, and the old
+per-device loop mechanism is gone (one mechanism only).
 """
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from unseen_university.devices.inference.rules_engine import _DEFAULT_RULES, RoutingRule
+from unseen_university.devices.inference.agentic_loop import (
+    LOOP_AVAILABILITY,
+    LOOP_COST_EXCEEDED,
+    LOOP_DONE,
+    LOOP_ESCALATE,
+    LoopResult,
+)
+from unseen_university.devices.inference.rules_engine import _DEFAULT_RULES
 
 
 # ── 1. rules_engine has creator-tier rules ────────────────────────────────────
@@ -39,58 +46,66 @@ class TestCreatorTierRulesExist:
             [r for r in _DEFAULT_RULES if r.task_class == "creator"],
             key=lambda r: r.priority,
         )
-        # Primary rule must have lower priority number than fallback
         assert creator_rules[0].priority < creator_rules[-1].priority
 
     def test_creator_tier_distinct_from_worker(self):
         creator_model_ids = {r.model_id for r in _DEFAULT_RULES if r.task_class == "creator"}
         worker_model_ids = {r.model_id for r in _DEFAULT_RULES if r.task_class == "worker"}
-        # At least one creator model should differ from worker models
-        assert creator_model_ids, "No creator rules found"
-        # They should not be identical sets (creator exists as its own tier)
+        assert creator_model_ids
         assert creator_model_ids != worker_model_ids
 
 
-# ── 2. The difficulty walk (T-router-failure-bump-escalation) ─────────────────
+# ── 2. The difficulty walk (now CodingDomain.run) ─────────────────────────────
 
 
-def _make_device():
-    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
-    dev = DickSimnelDevice.__new__(DickSimnelDevice)
-    dev._active_ticket = None
-    return dev
+def _to_loop_result(out: str | None) -> LoopResult:
+    """Translate a test's str|None intent into the typed LoopResult the walk now reads.
+
+    None → availability; COST_EXCEEDED: → cost; DONE:/done envelope → done; everything else
+    (ESCALATE, MAX_TURNS, prose) → capability (finished-but-not-done). Same classification
+    the old string-sniffing _classify_toolloop_result applied, now typed at the boundary.
+    """
+    if out is None:
+        return LoopResult(LOOP_AVAILABILITY)
+    s = out.strip()
+    if s.startswith("COST_EXCEEDED"):
+        return LoopResult(LOOP_COST_EXCEEDED, text=out)
+    if s.startswith("DONE:"):
+        return LoopResult(LOOP_DONE, text=out, envelope={"status": "done", "result": s[5:].strip()})
+    return LoopResult(LOOP_ESCALATE, text=out)
 
 
 def _drive(ticket, run_side_effect):
-    """Run _run_inference with ToolLoop patched. Returns (result, hops, alarms).
+    """Run CodingDomain.run() with the shared AgenticLoop patched. Returns (result, hops, alarms).
 
     `run_side_effect(escalation_hop, prior_attempt, call_index) -> str|None` produces each
-    attempt's ToolLoop.run return. `hops` is the escalation_hop passed to each attempt (the
-    walk's spine); `alarms` is the list of raised system_alarm signatures.
+    attempt's outcome (translated to a LoopResult). `hops` is the escalation_hop the domain
+    passes to each loop attempt (the walk's spine); `alarms` is the raised alarm signatures.
     """
+    from unseen_university.devices.inference.domains.coding import CodingDomain
+
     hops: list[int] = []
     alarms: list[str] = []
     idx = {"n": 0}
 
-    def fake_run(t, sp, escalation_hop=0, prior_attempt=""):
+    def fake_run(*, escalation_hop=0, prior_attempt="", **kw):
         hops.append(escalation_hop)
         out = run_side_effect(escalation_hop, prior_attempt, idx["n"])
         idx["n"] += 1
-        return out
+        return _to_loop_result(out)
 
     loop_mock = MagicMock()
     loop_mock.run.side_effect = fake_run
-    loop_mock._turn_log = []
 
     def fake_alarm(*, signature, caller, message, fatal=False):
         alarms.append(signature)
 
-    with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"), \
-         patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop") as MockLoop, \
-         patch("unseen_university.system_alarms.raise_alarm", side_effect=fake_alarm):
+    with patch("unseen_university.devices.inference.domains.base.AgenticLoop") as MockLoop, \
+         patch("unseen_university.system_alarms.raise_alarm", side_effect=fake_alarm), \
+         patch("unseen_university.devices.inference.domains.coding._orientation_prefix", return_value=""), \
+         patch("unseen_university.devices.inference.domains.base.domain_prompt", return_value="sys"):
         MockLoop.return_value = loop_mock
-        dev = _make_device()
-        result = dev._run_inference(ticket)
+        result = CodingDomain().run(ticket)
     return result, hops, alarms
 
 
@@ -98,7 +113,6 @@ class TestDifficultyWalk:
     def test_capability_failure_bumps_difficulty_with_hop(self):
         """Case 1: a CAPABILITY failure (MAX_TURNS) re-dispatches at the next difficulty (hop+1)."""
         ticket = {"id": "T-cap", "description": "d", "tags": []}
-        # hop 0 (code): capability fail; hop 1 (design): DONE.
         def se(hop, prior, i):
             if hop == 0:
                 return '{"status": "error", "result": "MAX_TURNS: 20 turns"}'
@@ -118,10 +132,9 @@ class TestDifficultyWalk:
 
     # ── money-safety property 1: availability must NOT bump to a pricier tier ──
     def test_availability_failure_does_not_bump_difficulty(self):
-        """Case 2 (MONEY SAFETY): an AVAILABILITY failure (None) re-selects at the SAME difficulty
-        — the hop does NOT increment, so the walk never escalates to a paid tier on a source-down."""
+        """Case 2 (MONEY SAFETY): an AVAILABILITY failure re-selects at the SAME difficulty —
+        the hop does NOT increment, so the walk never escalates to a paid tier on a source-down."""
         ticket = {"id": "T-avail", "description": "d", "tags": []}
-        # first attempt: no live source (None); retry: DONE.
         def se(hop, prior, i):
             return None if i == 0 else "DONE: source came back"
         result, hops, alarms = _drive(ticket, se)
@@ -133,7 +146,7 @@ class TestDifficultyWalk:
         """A PERSISTENT availability failure is bounded — it halts with an alarm, never loops."""
         ticket = {"id": "T-avail-dead", "description": "d", "tags": []}
         result, hops, alarms = _drive(ticket, lambda hop, prior, i: None)
-        # _MAX_AVAILABILITY_RETRIES=2 → 1 initial + 2 retries = 3 attempts, all at hop 0, then halt.
+        # max_availability_retries=2 → 1 initial + 2 retries = 3 attempts, all hop 0, then halt.
         assert hops == [0, 0, 0], f"availability retries must be bounded at same difficulty: {hops}"
         assert result is None
         assert any("availability-exhausted" in a for a in alarms)
@@ -175,3 +188,30 @@ class TestOneMechanismOnly:
         """Case 5: the old parallel _TIER_CASCADE mechanism is gone — one driver only."""
         from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         assert not hasattr(DickSimnelDevice, "_TIER_CASCADE")
+
+    def test_ds_classify_walk_removed(self):
+        """DS no longer holds the walk/classifier — the domain owns it now."""
+        import unseen_university.devices.dicksimnel.device as ds
+        assert not hasattr(ds, "_classify_toolloop_result")
+        assert not hasattr(ds, "_MAX_AVAILABILITY_RETRIES")
+
+    def test_ds_toolloop_module_deleted(self):
+        """The duplicate per-device loop module is gone (converged into agentic_loop)."""
+        import importlib
+        import pytest
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module("unseen_university.devices.dicksimnel.toolloop")
+
+    def test_ds_run_inference_delegates_to_domain(self):
+        """DS._run_inference is a thin consumer: it delegates to CodingDomain.run()."""
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
+        dev = DickSimnelDevice.__new__(DickSimnelDevice)
+        ticket = {"id": "T-deleg", "description": "d", "tags": []}
+        with patch("unseen_university.devices.dicksimnel.device.resolve_domain") as mock_resolve:
+            domain = MagicMock()
+            domain.run.return_value = "DONE: delegated"
+            mock_resolve.return_value = domain
+            out = dev._run_inference(ticket)
+        mock_resolve.assert_called_once_with("coding")
+        domain.run.assert_called_once_with(ticket, agent_id="dicksimnel")
+        assert out == "DONE: delegated"

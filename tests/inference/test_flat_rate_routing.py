@@ -76,7 +76,7 @@ def test_ollama_cloud_source_ping_returns_false_without_key():
 
 def test_ollama_cloud_source_call_includes_tools():
     """OllamaCloudSource.call() forwards req.tools to the API payload."""
-    from unseen_university.devices.dicksimnel.toolloop import TOOL_DEFINITIONS
+    from unseen_university.devices.inference.agentic_loop import TOOL_DEFINITIONS
 
     captured = {}
 
@@ -199,7 +199,7 @@ def test_flat_rate_at_priority_99_beats_usage_at_priority_1():
 
 def test_openrouter_forwards_tools_to_api():
     """OpenRouterSource.call() must include req.tools in the POST payload."""
-    from unseen_university.devices.dicksimnel.toolloop import TOOL_DEFINITIONS
+    from unseen_university.devices.inference.agentic_loop import TOOL_DEFINITIONS
 
     captured = {}
 

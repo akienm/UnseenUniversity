@@ -17,10 +17,21 @@ RulesEngine.route()).
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
+from unseen_university.devices.inference.agentic_loop import (
+    LOOP_AVAILABILITY,
+    LOOP_COST_EXCEEDED,
+    LOOP_DONE,
+    AgenticLoop,
+    LoopResult,
+    NativeToolCodec,
+)
 from unseen_university.devices.inference.domain_prompts import domain_prompt
 from unseen_university.devices.inference.rules_engine import RoutingDecision, RulesEngine
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -49,6 +60,14 @@ class BaseDomain:
 
     #: the domain identifier; '' = generalist. Subclasses set their own.
     name: str = ""
+    #: the a-priori difficulty tier this domain's work starts at (the walk bumps UP from here).
+    task_class: str = "worker"
+    #: whether the shared loop runs the advisory Critic for this domain (coding: yes).
+    critic_enabled: bool = False
+    #: bounded source-down retries at the SAME difficulty before the walk halts. Small and
+    #: hard: an infra blip re-selects next-cheapest, a persistent outage must not loop (and
+    #: must never walk onto paid tiers unbounded).
+    max_availability_retries: int = 2
 
     def __init__(self, name: str | None = None) -> None:
         if name is not None:
@@ -88,4 +107,151 @@ class BaseDomain:
             required_features=required_features,
             domain=self.name,
             required_difficulty=required_difficulty,
+        )
+
+    # ── The escalation walk: this domain is the SINGLE escalation owner ────────
+
+    def run(self, ticket: dict, *, urgency: str = "normal", agent_id: str = "") -> str | None:
+        """Work a ticket through the shared agentic loop, driving THIS domain's escalation walk.
+
+        The domain is the one escalation owner (D-domain-object-encapsulation): it supplies
+        prompts + the escalation policy to the shared AgenticLoop and reads the loop's typed
+        outcome. The money-safety walk (relocated from DS._run_inference, semantics identical):
+
+          - CAPABILITY failure (reached a terminal but never DONE: escalate/max-turns/prose):
+            bump difficulty ONE rung and re-run the domain-aware selector for a more-capable
+            (pricier) tier. The ONLY trigger that spends up.
+          - AVAILABILITY failure (no live source reached): NOT escalation — re-select the
+            next-cheapest at the SAME difficulty (bounded), 'Hex-DOWN is not a branch'. A
+            system_alarm fires if retries exhaust.
+          - Past the top difficulty rung: inference failure → system_alarm → HALT. Checked
+            BEFORE dispatch so the walk terminates cleanly and never loops.
+          - COST_EXCEEDED (a paid run hit its per-run cost cap): halt — a pricier tier costs more.
+
+        Returns the DONE result text, or None to HALT (a system_alarm has fired). Every hop
+        logs WHICH step failed (loop/select/escalate) at the crossing.
+        """
+        from unseen_university.devices.inference.routing_buckets import (
+            bump_difficulty,
+            task_class_to_difficulty,
+        )
+        from unseen_university import system_alarms
+
+        ticket_id = ticket.get("id", "?")
+        system_prompt = self.prompts.system
+        base_difficulty = task_class_to_difficulty(self.task_class)
+        escalation_hop = 0
+        prior_attempt = ""
+        availability_retries = 0
+
+        while True:
+            # Terminal check BEFORE dispatch: bumped past the top rung → inference failure.
+            required = bump_difficulty(base_difficulty, escalation_hop)
+            if required is None:
+                system_alarms.raise_alarm(
+                    signature=f"inference-capability-ceiling:{ticket_id}",
+                    caller=self.name or "domain",
+                    message=(
+                        f"capability ceiling for ticket {ticket_id}: escalated past the top "
+                        f"difficulty tier ('{base_difficulty}'+{escalation_hop}) and still no DONE "
+                        f"— inference failure, halting for analysis"
+                    ),
+                    fatal=False,
+                )
+                log.error("domain=%s crossing|step=escalate|ticket=%s|hop=%d|result=capability-ceiling-halt",
+                          self.name, ticket_id, escalation_hop)
+                return None
+
+            log.info("domain=%s crossing|step=loop|ticket=%s|hop=%d|difficulty=%s",
+                     self.name, ticket_id, escalation_hop, required)
+            try:
+                result = AgenticLoop(
+                    codec=NativeToolCodec(), critic_enabled=self.critic_enabled,
+                ).run(
+                    system_prompt=system_prompt,
+                    initial_message=self._initial_message(ticket),
+                    task_class=self.task_class,
+                    domain=self.name,
+                    ticket_id=ticket_id,
+                    agent_id=agent_id,
+                    escalation_hop=escalation_hop,
+                    prior_attempt=prior_attempt,
+                )
+            except Exception as exc:
+                # Defense in depth: the loop returns AVAILABILITY rather than raising, but any
+                # unexpected raise is treated as availability (re-select), never a paid bump.
+                log.error("domain=%s: loop raised for %s (hop=%d): %s",
+                          self.name, ticket_id, escalation_hop, exc)
+                result = LoopResult(LOOP_AVAILABILITY, text=str(exc))
+
+            cls = self._classify(result)
+            log.info("domain=%s crossing|step=classify|ticket=%s|hop=%d|outcome=%s|class=%s",
+                     self.name, ticket_id, escalation_hop, result.outcome, cls)
+
+            if cls == "done":
+                log.info("domain=%s: DONE for %s at hop=%d difficulty=%s",
+                         self.name, ticket_id, escalation_hop, required)
+                return result.text
+
+            if cls == "cost":
+                system_alarms.raise_alarm(
+                    signature=f"inference-cost-cap:{ticket_id}",
+                    caller=self.name or "domain",
+                    message=(
+                        f"cost cap hit for ticket {ticket_id} without completing — halting "
+                        f"(bumping to a pricier tier would only cost more)"
+                    ),
+                    fatal=False,
+                )
+                log.error("domain=%s crossing|step=loop|ticket=%s|result=cost-cap-halt: %s",
+                          self.name, ticket_id, (result.text or "").strip()[:120])
+                return None
+
+            if cls == "availability":
+                availability_retries += 1
+                if availability_retries > self.max_availability_retries:
+                    system_alarms.raise_alarm(
+                        signature=f"inference-availability-exhausted:{ticket_id}",
+                        caller=self.name or "domain",
+                        message=(
+                            f"no live source for ticket {ticket_id} after "
+                            f"{self.max_availability_retries} retries at difficulty '{required}' — halting"
+                        ),
+                        fatal=False,
+                    )
+                    log.error("domain=%s crossing|step=select|ticket=%s|result=availability-exhausted-halt",
+                              self.name, ticket_id)
+                    return None
+                log.warning("domain=%s crossing|step=select|ticket=%s|retry=%d/%d|difficulty=%s|reason=availability",
+                            self.name, ticket_id, availability_retries, self.max_availability_retries, required)
+                continue  # same hop → selector skips the down source, picks next-cheapest
+
+            # cls == 'capability': reached a terminal but never DONE → bump difficulty one rung.
+            prior_attempt = (result.text or "").strip()[:400]
+            escalation_hop += 1
+            log.info("domain=%s crossing|step=escalate|ticket=%s|hop→%d|reason=capability",
+                     self.name, ticket_id, escalation_hop)
+
+    def _classify(self, result: LoopResult) -> str:
+        """Map a typed LoopResult to the escalation policy's class.
+
+        The availability-vs-capability split is the whole safety of the walk — capability
+        bumps to a pricier tier, availability must NOT (it re-selects at the same difficulty).
+        """
+        if result.outcome == LOOP_DONE:
+            return "done"
+        if result.outcome == LOOP_COST_EXCEEDED:
+            return "cost"
+        if result.outcome == LOOP_AVAILABILITY:
+            return "availability"
+        return "capability"  # escalate / max_turns / error: the tier could not finish
+
+    def _initial_message(self, ticket: dict) -> str:
+        """Build the first user message for the loop from a ticket dict (generalist form)."""
+        ticket_id = ticket.get("id", "?")
+        return (
+            f"Ticket ID: {ticket_id}\n"
+            f"Title: {ticket.get('title', 'No title')}\n"
+            f"Tags: {', '.join(ticket.get('tags', []))}\n\n"
+            f"Description:\n{ticket.get('description', ticket.get('title', ''))}"
         )

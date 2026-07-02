@@ -29,7 +29,8 @@ from unseen_university.devices.scraps.orientation_classifier import (
     extract_keywords,
     query_relevant_files,
 )
-from unseen_university.devices.dicksimnel.toolloop import _build_initial_message, _orientation_prefix
+from unseen_university.devices.inference.domains.base import BaseDomain
+from unseen_university.devices.inference.domains.coding import CodingDomain, _orientation_prefix
 
 
 # ── extract_keywords ──────────────────────────────────────────────────────────
@@ -99,9 +100,9 @@ def test_builder_report_to_text_empty():
 
 def test_builder_report_to_text_with_files():
     report = BuilderReport(
-        keywords=["ToolLoop", "builder"],
+        keywords=["AgenticLoop", "builder"],
         relevant_files=[
-            {"path": "devices/dicksimnel/toolloop.py", "symbol": "ToolLoop", "kind": "class",
+            {"path": "devices/inference/agentic_loop.py", "symbol": "AgenticLoop", "kind": "class",
              "summary": "Multi-turn ReAct inference loop", "score": 3.0}
         ],
         task_shape="new-feature",
@@ -109,9 +110,9 @@ def test_builder_report_to_text_with_files():
     )
     text = report.to_text()
     assert "Builder Report" in text
-    assert "toolloop.py" in text
+    assert "agentic_loop.py" in text
     assert "new-feature" in text
-    assert "ToolLoop" in text
+    assert "AgenticLoop" in text
 
 
 # ── query_relevant_files (mocked DB) ─────────────────────────────────────────
@@ -124,16 +125,16 @@ def test_query_relevant_files_scores_symbol_higher():
     mock_cursor.__exit__ = MagicMock(return_value=False)
     # Two rows: one with keyword in symbol, one only in path
     mock_cursor.fetchall.return_value = [
-        ("devices/dicksimnel/toolloop.py", "ToolLoop", "class", "ToolLoop class"),
-        ("devices/foo/bar.py", "some_func", "function", "toolloop helper"),
+        ("devices/inference/agentic_loop.py", "AgenticLoop", "class", "AgenticLoop class"),
+        ("devices/foo/bar.py", "some_func", "function", "agenticloop helper"),
     ]
 
     with patch("psycopg2.connect", return_value=mock_conn):
-        matches = query_relevant_files(["ToolLoop"], "postgresql://test/db")
+        matches = query_relevant_files(["AgenticLoop"], "postgresql://test/db")
 
     assert len(matches) >= 1
-    # toolloop.py with symbol match should rank higher
-    assert matches[0].path == "devices/dicksimnel/toolloop.py"
+    # agentic_loop.py with symbol match should rank higher
+    assert matches[0].path == "devices/inference/agentic_loop.py"
     assert matches[0].score > matches[1].score if len(matches) > 1 else True
 
 
@@ -176,41 +177,43 @@ def test_classify_db_failure_returns_empty():
 
 
 def test_classify_returns_builder_report():
-    ticket = {"id": "T-test", "title": "Extend ToolLoop", "tags": ["Inference"], "description": "", "size": "M"}
+    ticket = {"id": "T-test", "title": "Extend AgenticLoop", "tags": ["Inference"], "description": "", "size": "M"}
     with patch("unseen_university.devices.scraps.orientation_classifier.query_relevant_files", return_value=[
-        FileMatch(path="devices/dicksimnel/toolloop.py", symbol="ToolLoop",
+        FileMatch(path="devices/inference/agentic_loop.py", symbol="AgenticLoop",
                   kind="class", summary="ReAct loop", score=3.0)
     ]):
         report = classify(ticket, db_url="postgresql://test/db")
     assert len(report.relevant_files) == 1
-    assert report.relevant_files[0]["path"] == "devices/dicksimnel/toolloop.py"
+    assert report.relevant_files[0]["path"] == "devices/inference/agentic_loop.py"
 
 
-# ── ToolLoop helpers ───────────────────────────────────────────────────────────
+# ── Domain initial-message + orientation prefix (moved from the DS ToolLoop) ────
 
-def test_build_initial_message_no_report():
+def test_initial_message_no_report():
+    """BaseDomain._initial_message builds the ticket message (no orientation prefix)."""
     ticket = {"id": "T-foo", "title": "Do a thing", "tags": ["Test"], "description": "details"}
-    msg = _build_initial_message(ticket)
+    msg = BaseDomain()._initial_message(ticket)
     assert "Ticket ID: T-foo" in msg
     assert "Do a thing" in msg
     assert "details" in msg
 
 
-def test_build_initial_message_with_report():
+def test_coding_initial_message_prepends_report():
+    """CodingDomain._initial_message prepends the orientation builder report to the message."""
     ticket = {"id": "T-foo", "title": "Do a thing", "tags": ["Test"], "description": "details"}
-    msg = _build_initial_message(ticket, builder_report_text="## Builder Report\nfile.py\n\n")
+    with patch("unseen_university.devices.inference.domains.coding._orientation_prefix",
+               return_value="## Builder Report\nfile.py\n\n"):
+        msg = CodingDomain()._initial_message(ticket)
     assert msg.startswith("## Builder Report")
     assert "Ticket ID: T-foo" in msg
 
 
 def test_orientation_prefix_fail_open():
     ticket = {"id": "T-foo", "title": "test", "tags": [], "description": "", "size": "S"}
-    with patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix.__module__",
-               new="unseen_university.devices.dicksimnel.toolloop"):
-        # Patch classify to raise — _orientation_prefix should return ""
-        with patch("unseen_university.devices.scraps.orientation_classifier.classify",
-                   side_effect=Exception("boom")):
-            result = _orientation_prefix(ticket)
+    # Patch classify to raise — _orientation_prefix should fail open and return ""
+    with patch("unseen_university.devices.scraps.orientation_classifier.classify",
+               side_effect=Exception("boom")):
+        result = _orientation_prefix(ticket)
     assert result == ""
 
 
@@ -226,7 +229,7 @@ def test_orientation_prefix_with_files():
     ticket = {"id": "T-foo", "title": "Extend ToolLoop", "tags": [], "description": "", "size": "M"}
     mock_report = BuilderReport(
         keywords=["ToolLoop"],
-        relevant_files=[{"path": "devices/dicksimnel/toolloop.py", "symbol": "ToolLoop",
+        relevant_files=[{"path": "devices/inference/agentic_loop.py", "symbol": "AgenticLoop",
                          "kind": "class", "summary": "ReAct loop", "score": 3.0}],
         task_shape="new-feature",
         estimated_complexity="M",

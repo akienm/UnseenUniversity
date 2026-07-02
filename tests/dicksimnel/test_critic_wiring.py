@@ -81,7 +81,8 @@ def test_critic_device_load_missing_file_is_noop(tmp_path):
     assert dev._agent.export_rules() == []
 
 
-# ── ToolLoop critic wiring ─────────────────────────────────────────────────────
+# ── AgenticLoop critic wiring (Critic runs when critic_enabled=True, e.g. CodingDomain) ──
+
 
 def _minimal_response(tool_name: str = "Bash", tool_arg: str = "ls", text: str = "") -> MagicMock:
     """Build a minimal InferenceDevice response mock with one tool call."""
@@ -94,6 +95,11 @@ def _minimal_response(tool_name: str = "Bash", tool_arg: str = "ls", text: str =
     resp.tool_calls = [tc]
     resp.cost_estimate = 0.0
     resp.source_billing_type = "usage_based"
+    resp.finish_reason = "stop"
+    resp.source_kind = "cloud"
+    resp.input_tokens = 0
+    resp.output_tokens = 0
+    resp.model = "test/model"
     return resp
 
 
@@ -103,22 +109,32 @@ def _done_response(text: str = '{"status":"done","result":"ok","error_class":nul
     resp.tool_calls = None
     resp.cost_estimate = 0.0
     resp.source_billing_type = "usage_based"
+    resp.finish_reason = "stop"
+    resp.source_kind = "cloud"
+    resp.input_tokens = 0
+    resp.output_tokens = 0
+    resp.model = "test/model"
     return resp
 
 
-def test_toolloop_calls_evaluate_decision_per_tool_call():
+def _run_loop(responses, ticket_id, critic_enabled=True):
+    from unseen_university.devices.inference.agentic_loop import AgenticLoop, NativeToolCodec
+
+    device = MagicMock()
+    device.dispatch.side_effect = responses
+    loop = AgenticLoop(
+        codec=NativeToolCodec(), max_turns=5, critic_enabled=critic_enabled, inference_device=device,
+    )
+    return loop.run(system_prompt="sys", initial_message="work the ticket", ticket_id=ticket_id)
+
+
+def test_loop_calls_evaluate_decision_per_tool_call():
     """After each tool call, CriticAgent.evaluate_decision is called."""
-    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
-
     responses = [_minimal_response("Bash", "ls"), _done_response()]
-    tool_result = "file1.py\n"
-
     mock_agent_eval = MagicMock(return_value=MagicMock(
         verdict="good", confidence=0.9, pattern="ok", improvement=None))
 
-    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value=tool_result), \
-         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+    with patch("unseen_university.devices.inference.agentic_loop.execute_tool", return_value="file1.py\n"), \
          patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
          patch("unseen_university.devices.critic.agent.CriticAgent.evaluate_decision", mock_agent_eval), \
          patch("unseen_university.devices.critic.agent.CriticAgent.analyze_pattern", return_value={
@@ -126,12 +142,7 @@ def test_toolloop_calls_evaluate_decision_per_tool_call():
              "failure_count": 0, "improvement_opportunities": [],
          }), \
          patch("unseen_university.devices.critic.device.CriticDevice._save_rules"):
-        mock_inf = MagicMock()
-        mock_inf_cls.return_value = mock_inf
-        mock_inf.dispatch.side_effect = responses
-
-        tl = ToolLoop(max_turns=5)
-        tl.run({"id": "T-test", "title": "t", "tags": [], "description": "d"}, "sys")
+        _run_loop(responses, "T-test")
 
     mock_agent_eval.assert_called_once()
     call_args = mock_agent_eval.call_args[0][0]
@@ -139,16 +150,13 @@ def test_toolloop_calls_evaluate_decision_per_tool_call():
     assert call_args.choice == "Bash"
 
 
-def test_toolloop_logs_critic_advisory_when_rule_fires(caplog):
+def test_loop_logs_critic_advisory_when_rule_fires(caplog):
     """When a critic rule matches the current tool context, an advisory is logged at INFO."""
     import logging
-    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
-    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
-         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+    with patch("unseen_university.devices.inference.agentic_loop.execute_tool", return_value="ok"), \
          patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
          patch("unseen_university.devices.critic.device.CriticDevice.get_recommendation",
                return_value={"action": "try different tool", "confidence": 0.85,
@@ -160,28 +168,19 @@ def test_toolloop_logs_critic_advisory_when_rule_fires(caplog):
              "failure_count": 0, "improvement_opportunities": [],
          }), \
          patch("unseen_university.devices.critic.device.CriticDevice._save_rules"):
-        mock_inf = MagicMock()
-        mock_inf_cls.return_value = mock_inf
-        mock_inf.dispatch.side_effect = responses
-
-        tl = ToolLoop(max_turns=5)
-        with caplog.at_level(logging.INFO, logger="unseen_university.devices.dicksimnel.toolloop"):
-            tl.run({"id": "T-adv", "title": "t", "tags": [], "description": "d"}, "sys")
+        with caplog.at_level(logging.INFO, logger="unseen_university.devices.inference.agentic_loop"):
+            _run_loop(responses, "T-adv")
 
     assert "Critic advisory" in caplog.text
     assert "error_not_recovered" in caplog.text
 
 
-def test_toolloop_saves_rules_at_sprint_end():
-    """_save_rules is called when critic has judgments after sprint completes."""
-    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
-
+def test_loop_saves_rules_at_sprint_end():
+    """_save_rules is called when critic has judgments after the loop completes."""
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
     save_mock = MagicMock()
-    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
-         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+    with patch("unseen_university.devices.inference.agentic_loop.execute_tool", return_value="ok"), \
          patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
          patch("unseen_university.devices.critic.agent.CriticAgent.evaluate_decision", return_value=MagicMock(
              verdict="good", confidence=0.9, pattern="ok", improvement=None)), \
@@ -190,33 +189,20 @@ def test_toolloop_saves_rules_at_sprint_end():
              "failure_count": 0, "improvement_opportunities": [],
          }), \
          patch("unseen_university.devices.critic.device.CriticDevice._save_rules", save_mock):
-        mock_inf = MagicMock()
-        mock_inf_cls.return_value = mock_inf
-        mock_inf.dispatch.side_effect = responses
-
-        tl = ToolLoop(max_turns=5)
-        tl.run({"id": "T-save", "title": "t", "tags": [], "description": "d"}, "sys")
+        _run_loop(responses, "T-save")
 
     save_mock.assert_called_once()
 
 
-def test_toolloop_continues_when_critic_unavailable():
-    """Sprint completes even if CriticDevice raises on import."""
-    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
-
+def test_loop_continues_when_critic_unavailable():
+    """The loop completes even if CriticDevice raises on init — critic is non-fatal."""
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
-    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
-         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+    with patch("unseen_university.devices.inference.agentic_loop.execute_tool", return_value="ok"), \
          patch("unseen_university.devices.critic.device.CriticDevice.__init__",
                side_effect=RuntimeError("critic down")):
-        mock_inf = MagicMock()
-        mock_inf_cls.return_value = mock_inf
-        mock_inf.dispatch.side_effect = responses
+        result = _run_loop(responses, "T-nocrit")
 
-        tl = ToolLoop(max_turns=5)
-        result = tl.run({"id": "T-nocrit", "title": "t", "tags": [], "description": "d"}, "sys")
-
-    # Sprint must complete — critic failure is non-fatal
+    # The loop must complete — critic failure is non-fatal.
     assert result is not None
+    assert result.outcome == "done"
