@@ -17,8 +17,8 @@
   },
   "body": {
     "id": "T-vetinari-alarm-retry-default-path",
-    "title": "[in_progress] Fix hollow retry contract: Vetinari alarm escalation retry-on-failure is dead on the default (production) channel-post path",
-    "status": "in_progress",
+    "title": "Fix hollow retry contract: Vetinari alarm escalation retry-on-failure is dead on the default (production) channel-post path",
+    "status": "closed",
     "size": "S",
     "tags": [
       "architecture",
@@ -34,13 +34,20 @@
     "created_at": "2026-07-02T21:19:53.872988+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "_default_channel_post returns bool (False on swallowed failure); _escalate_alarm treats 'posted is False' as failure so mark_notified is only stamped on a real post — retry-on-failure now holds on the DEFAULT (production) path, not just with an injected raising fn. Non-False (incl. None from injecting callers) still counts as success, preserving the happy path. Proven red->green on the default config; all 7 escalation tests green.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-02T21:21:27.746095+00:00",
     "required_files": [],
     "github_issue": null,
     "decision_id": null,
     "gate": null,
-    "scraps_validated": "2026-07-02T21:19:53.918474+00:00"
+    "scraps_validated": "2026-07-02T21:19:53.918474+00:00",
+    "proven": true,
+    "proof_id": "cc.0.vetinari-alarm-retry-holds-on-the-defaul.T-vetinari-alarm-retry-default-path.20260702.152119026231",
+    "proof_commit": "5096702c6422366728ae1d17353025b0773998ce",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
