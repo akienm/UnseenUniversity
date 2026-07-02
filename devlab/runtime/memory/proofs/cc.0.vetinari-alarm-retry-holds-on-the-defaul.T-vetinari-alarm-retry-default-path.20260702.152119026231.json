@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.vetinari-alarm-retry-holds-on-the-defaul.T-vetinari-alarm-retry-default-path.20260702.152119026231",
+  "emitter": "cc.0",
+  "namespace": [
+    "vetinari-alarm-retry-holds-on-the-defaul",
+    "T-vetinari-alarm-retry-default-path"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T15:21:19.026231",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-vetinari-alarm-retry-default-path"
+    ],
+    "commits": [
+      "5096702c6422366728ae1d17353025b0773998ce"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Vetinari alarm retry holds on the default channel-post path",
+    "intention": "with the default VetinariDevice() and post_to_channel raising, a failed sweep leaves the alarm un-notified (retryable)",
+    "test": "tests/test_vetinari_alarm_escalation.py::TestDefaultPathRetry::test_default_path_failed_post_leaves_alarm_unnotified",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_vetinari_alarm_escalation.py::TestDefaultPathRetry::test_default_path_failed_post_leaves_alarm_unnotified",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "                    from unseen_university.devices.vetinari.device import VetinariDevice\n    \n                    # DEFAULT construction — no channel_post_fn (the production config)\n                    v = VetinariDevice()\n                    sa.raise_alarm(\"default-path:sig\", \"test.caller\", \"demo\", emit_log=False)\n    \n                    nagged = v.sweep_system_alarms()\n    \n                    # Post failed on the default path → nothing escalated, alarm NOT stamped\n>                   assert nagged == 0\nE                   assert 1 == 0\n\ntests/test_vetinari_alarm_escalation.py:249: AssertionError\n----------------------------- Captured stderr call -----------------------------\n2026-07-02 15:21:18.913 | WARNING  | logging:callHandlers:1762 - VetinariDevice: channel post failed: channel down\n2026-07-02 15:21:18.913 | DEBUG    | logging:callHandlers:1762 - VetinariDevice: audit ALARM_ESCALATE directive='' reason='new or reopened system alarm'\n2026-07-02 15:21:18.914 | INFO     | logging:callHandlers:1762 - VetinariDevice: escalated system alarm — SYSTEM ALARM: default-path:sig (1×) — run: uu alarms\n=========================== short test summary info ============================\nFAILED tests/test_vetinari_alarm_escalation.py::TestDefaultPathRetry::test_default_path_failed_post_leaves_alarm_unnotified\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "5096702c6422366728ae1d17353025b0773998ce",
+    "impl_paths": [
+      "unseen_university/devices/vetinari/device.py"
+    ],
+    "ticket": "T-vetinari-alarm-retry-default-path",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
