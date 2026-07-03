@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-granny-wake-not-launch",
-    "title": "[sprint] Granny wakes-not-launches via the front-door; remove granny.yaml DS.0 launch_cmd + daemon static-worker handling",
-    "status": "sprint",
+    "title": "Granny wakes-not-launches via the front-door; remove granny.yaml DS.0 launch_cmd + daemon static-worker handling",
+    "status": "closed",
     "size": "M",
     "tags": [
       "architecture"
@@ -35,12 +35,19 @@
     "created_at": "2026-07-02T22:53:44.922442+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Granny no longer launches any worker — removed _launch_builder, its run_once launch block, _last_launch_attempt, GRANNY_BUILDER_LAUNCH_RETRY_S (kept GRANNY_BUILDER_COOLDOWN_S); removed DS.0 launch_cmd from granny.yaml (kept the bus routing entry). Granny dispatches to dicksimnel.0 as for any worker; the Ground-Loop-managed front-door writes the WAKEABLE flag and wakes the device on dispatch arrival — bus-dispatch-wakes, NOT an MCP wake-call (divergence recorded in D-shim-frontdoor; gate-verified no consumer expects a front-door MCP wake tool). Proven behaviorally: run_once with a down worker + sprint ticket calls NO subprocess.Popen (red with the launch machinery present, green with it removed — genuine discriminator: test config carries a launch_cmd the old block would have spawned). Orphaned-front-door stall detection deferred to T-granny-mru-and-stall-alarm; the existing stale-dispatched watchdog escalates un-acked work meanwhile. Pre-existing granny test failures (CC.0 not in _default_config) are unrelated + already ticketed (T-granny-rules-engine-test-fix, T-granny-bus-setstatus-test-fix).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T03:41:13.229739+00:00",
     "required_files": [],
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-02T22:53:44.969624+00:00"
+    "scraps_validated": "2026-07-02T22:53:44.969624+00:00",
+    "proven": true,
+    "proof_id": "cc.0.granny-never-spawns-a-down-worker-via-su.T-granny-wake-not-launch.20260702.214059567067",
+    "proof_commit": "2362f08c879e7715e1008167036ad46b3d0b79a0",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

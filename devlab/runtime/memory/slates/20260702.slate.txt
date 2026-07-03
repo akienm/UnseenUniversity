@@ -17,6 +17,7 @@
 - T-shim-lease-instance-numbers — Class-shim leases reusable instance numbers over a per-class free-list (live object + PID fallback) (Per-class instance leasing shipped: reusable InstancePool free-list (slot idx = instance number, slot = pid+create_time+)
 - T-worker-pool-semantics — Pool semantics: max_instances (singleton = pool-of-1), .0 durable / 1+ ephemeral wiped on startup (Pool cap + ephemeral wipe shipped (singleton = max_instances=1, no special case). InstancePool.allocate returns None whe)
 - T-worker-idle-sleep-bus-ask — Shim idle-sleeps a device via bus ask ('whatcha workin on?'); busy/dead disambiguated by PID (Idle-sleep shipped as a race-free refinement (instance owns the idle decision, fire-and-forget — divergence from D-worke)
+- T-granny-wake-not-launch — Granny wakes-not-launches via the front-door; remove granny.yaml DS.0 launch_cmd + daemon static-worker handling (Granny no longer launches any worker — removed _launch_builder, its run_once launch block, _last_launch_attempt, GRANNY_)
 ## Filed today (sprint, NOT done)
 - T-alarm-callsites-groundloop-db-install (M) — alarm SOURCES: raise_alarm at ground_loop-start / db-unreachable / install-permission-denied; + docstring principle "an alarm = anything Akien and Claude must look at together". Linked D-system-alarms-and-tier-requests.
 - T-vetinari-owns-alarm-escalation (M) — alarm SINK: Vetinari (already the administrator) escalates unresolved alarms to Akien's feed / a Claude channel; wires the orphaned system_alarm_notifier. Depends (soft) on the sources ticket.
