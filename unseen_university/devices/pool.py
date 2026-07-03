@@ -115,7 +115,6 @@ def wipe_ephemeral_instance_dir(abbreviation: str, instance_number: int, home: O
     """
     if instance_number == 0:
         return False
-    return False  # STUB: ephemeral wipe not implemented yet (proof red state)
 
     if home is None:
         from unseen_university._uu_root import uu_home
@@ -200,7 +199,12 @@ class InstancePool:
             The slot index (instance number), or None if max_instances is set and capacity is reached.
         """
         idx = self.first_free()
-        # STUB: capacity cap not enforced yet (proof red state)
+
+        # Check capacity
+        if self._max_instances is not None and idx >= self._max_instances:
+            log.warning("pool: no capacity for %s (max_instances=%d)", self._class_name, self._max_instances)
+            return None
+
         slot = {"pid": pid, "create_time": create_time, "handle": handle}
 
         if idx == len(self._slots):
