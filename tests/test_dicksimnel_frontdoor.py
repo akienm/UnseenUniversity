@@ -57,19 +57,26 @@ def test_ensure_device_awake_spawns_when_down():
         assert call_args[1]["env"]["UU_FRONTDOOR"] == "1"
 
 
-def test_ensure_device_awake_does_not_spawn_when_alive():
-    """Device should NOT spawn if already alive. Anti-hollow test."""
+def test_ensure_device_awake_does_not_spawn_when_alive(tmp_path, monkeypatch):
+    """Device should NOT spawn if already alive. Anti-hollow test.
+
+    Adapted for pool-based frontdoor: pre-populate pool with a live slot.
+    """
+    # Monkeypatch uu_home to avoid real filesystem writes
+    monkeypatch.setattr("unseen_university._uu_root.uu_home", lambda: str(tmp_path))
+
     with patch(
         "unseen_university.devices.dicksimnel.frontdoor.DickSimnelFrontDoor._connect_bus"
     ) as mock_connect:
         mock_connect.return_value = MagicMock()
 
         fd = DickSimnelFrontDoor()
-        fd._proc = _make_alive_proc()  # Device already alive
+        # Pre-populate pool with a live slot (instance 0)
+        fd._pool.allocate(pid=12345, create_time=1000.0, handle=_make_alive_proc())
 
         with patch("subprocess.Popen") as mock_popen:
             fd._ensure_device_awake()
-            # Popen should NOT be called
+            # Popen should NOT be called because pool already has a taken slot
             assert mock_popen.call_count == 0
 
 
@@ -226,8 +233,14 @@ def test_remove_available_flag_idempotent():
             fd._remove_available()
 
 
-def test_device_alive_check():
-    """_device_alive should return True only if proc is not None and poll() is None."""
+def test_device_alive_check(tmp_path, monkeypatch):
+    """_device_alive should return True only if pool has taken slots.
+
+    Adapted for pool-based frontdoor: pool.taken() determines device alive status.
+    """
+    # Monkeypatch uu_home to avoid real filesystem writes
+    monkeypatch.setattr("unseen_university._uu_root.uu_home", lambda: str(tmp_path))
+
     with patch(
         "unseen_university.devices.dicksimnel.frontdoor.DickSimnelFrontDoor._connect_bus"
     ) as mock_connect:
@@ -235,21 +248,26 @@ def test_device_alive_check():
 
         fd = DickSimnelFrontDoor()
 
-        # Case 1: _proc is None
-        fd._proc = None
+        # Case 1: pool is empty
         assert fd._device_alive() is False
 
-        # Case 2: _proc is alive (poll() returns None)
-        fd._proc = _make_alive_proc()
+        # Case 2: pool has taken slot (device alive)
+        fd._pool.allocate(pid=100, create_time=1000.0)
         assert fd._device_alive() is True
 
-        # Case 3: _proc is dead (poll() returns non-None)
-        fd._proc = _make_dead_proc()
+        # Case 3: pool released the slot (device no longer alive)
+        fd._pool.release(0)
         assert fd._device_alive() is False
 
 
-def test_spawn_device_env_var():
-    """Spawned device should receive UU_FRONTDOOR=1 in environment."""
+def test_spawn_device_env_var(tmp_path, monkeypatch):
+    """Spawned device should receive UU_FRONTDOOR=1 and UU_INSTANCE_NUMBER in environment.
+
+    Adapted for pool-based frontdoor: _spawn_device now takes instance number n.
+    """
+    # Monkeypatch uu_home to avoid real filesystem writes
+    monkeypatch.setattr("unseen_university._uu_root.uu_home", lambda: str(tmp_path))
+
     with patch(
         "unseen_university.devices.dicksimnel.frontdoor.DickSimnelFrontDoor._connect_bus"
     ) as mock_connect:
@@ -261,12 +279,14 @@ def test_spawn_device_env_var():
             with patch("subprocess.Popen") as mock_popen:
                 with patch("builtins.open", create=True):
                     mock_popen.return_value = _make_alive_proc()
-                    fd._spawn_device()
+                    # Call _spawn_device with instance number 0
+                    fd._spawn_device(n=0)
 
-                    # Check env var was set
+                    # Check env vars were set
                     call_args = mock_popen.call_args
                     env = call_args[1]["env"]
                     assert env["UU_FRONTDOOR"] == "1"
+                    assert env["UU_INSTANCE_NUMBER"] == "0"
 
 
 def test_start_method_writes_flag_then_runs():

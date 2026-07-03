@@ -8,9 +8,9 @@ the address half:
     instance_name = f"{instance_abbreviation}.{instance_number}"   ->  "DS.0"
 
 `instance_abbreviation` is a class attr the device sets ("DS"). `instance_number`
-defaults to 0 — the foreground/primary instance. The REUSABLE-number lease from the
-shim front-door (D-shim-frontdoor-on-groundloop, downstream ticket
-T-shim-lease-instance-numbers) is NOT built here; the instance simply defaults to 0.
+is now a property that reads the UU_INSTANCE_NUMBER env var (default 0 = foreground/primary
+instance). The REUSABLE-number lease from the shim front-door (D-shim-frontdoor-on-groundloop,
+downstream ticket T-shim-lease-instance-numbers) sets this env var on spawn.
 
 The PERSONALITY half ("who Dick Simnel is" — full name, character, aliases) is class-level
 prompt content, not a device field, and lives in the shared base prompt — deliberately out
@@ -22,6 +22,8 @@ transparency the capability mixins rely on (see CapabilityMixin).
 """
 
 from __future__ import annotations
+
+import os
 
 
 class IdentityMixin:
@@ -35,9 +37,14 @@ class IdentityMixin:
     #: Class-level short address prefix the device sets, e.g. "DS".
     instance_abbreviation: str = ""
 
-    #: The instance's number. Defaults to 0 (foreground/primary). Reusable-number
-    #: leasing from the shim front-door lands downstream; until then every instance is 0.
-    instance_number: int = 0
+    @property
+    def instance_number(self) -> int:
+        """The instance's number from the UU_INSTANCE_NUMBER env var.
+
+        Defaults to 0 (foreground/primary instance). The shim front-door sets this
+        env var on spawn via the InstancePool lease system (D-worker-pool-leasing-and-singleton-2026-07-02).
+        """
+        return int(os.environ.get("UU_INSTANCE_NUMBER", "0"))
 
     @property
     def instance_name(self) -> str:

@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Optional
 
 from unseen_university._uu_root import uu_home
+from unseen_university.devices.pool import InstancePool
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class DickSimnelFrontDoor:
 
     def __init__(self) -> None:
         """Initialize front-door state. Constructs bus connection (fail-soft)."""
-        self._proc: Optional[subprocess.Popen] = None
+        self._pool = InstancePool("DickSimnel")
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._bus = self._connect_bus()
@@ -61,6 +62,7 @@ class DickSimnelFrontDoor:
         Called by runme.py start() in a daemon thread. Blocks in run_forever.
         """
         self._write_available()
+        self._pool.rebuild()
         self.run_forever()
 
     def _write_available(self) -> None:
@@ -111,22 +113,50 @@ class DickSimnelFrontDoor:
             if self._device_alive():
                 return
 
-            self._spawn_device()
+            # Get the first free slot
+            n = self._pool.first_free()
+
+            # Spawn the device subprocess
+            proc = self._spawn_device(n)
+            if proc is None:
+                # Spawn failed; will retry on next wake
+                return
+
+            # Determine create_time from the spawned process (lazy psutil)
+            create_time = self._get_create_time(proc)
+
+            # Create instance directory
+            instance_dir = Path(uu_home()) / "devices" / f"DS.{n}"
+            try:
+                instance_dir.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                log.warning(
+                    "DickSimnelFrontDoor: failed to mkdir instance dir %s: %s",
+                    instance_dir,
+                    exc,
+                )
+
+            # Allocate to the pool
+            self._pool.allocate(pid=proc.pid, create_time=create_time, handle=proc)
 
     def _device_alive(self) -> bool:
-        """Check if device process is still alive."""
-        return self._proc is not None and self._proc.poll() is None
+        """Check if device process is still alive.
 
-    def _spawn_device(self) -> None:
-        """Spawn DickSimnel.0 device subprocess with UU_FRONTDOOR env var set.
+        Returns True if the pool has any taken (live) slots.
+        """
+        return bool(self._pool.taken())
+
+    def _spawn_device(self, n: int) -> Optional[subprocess.Popen]:
+        """Spawn DickSimnel.{n} device subprocess with UU_FRONTDOOR and UU_INSTANCE_NUMBER env vars set.
 
         Logs at INFO on wake and spawn; ERROR on spawn failure.
+        Returns the Popen handle on success, or None on failure.
         """
-        log.info("DickSimnelFrontDoor: wake received for DickSimnel.0")
+        log.info("DickSimnelFrontDoor: wake received for DickSimnel.%d", n)
 
         # Prepare log file for device output
         log_dir = Path(uu_home()) / "ground_loop" / "logs"
-        log_path = log_dir / "dicksimnel.frontdoor-device.log"
+        log_path = log_dir / f"dicksimnel.frontdoor-device-{n}.log"
 
         try:
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -138,14 +168,15 @@ class DickSimnelFrontDoor:
             device_log = subprocess.DEVNULL
 
         log.info(
-            "DickSimnelFrontDoor: spawning device DickSimnel.0 at %s",
+            "DickSimnelFrontDoor: spawning device DickSimnel.%d at %s",
+            n,
             log_path if device_log is not subprocess.DEVNULL else "DEVNULL",
         )
 
-        env = {**os.environ, "UU_FRONTDOOR": "1"}
+        env = {**os.environ, "UU_FRONTDOOR": "1", "UU_INSTANCE_NUMBER": str(n)}
 
         try:
-            self._proc = subprocess.Popen(
+            proc = subprocess.Popen(
                 [sys.executable, "-m", "unseen_university.devices.dicksimnel"],
                 env=env,
                 stdout=device_log,
@@ -154,12 +185,31 @@ class DickSimnelFrontDoor:
             # Close our handle so we don't leak FDs (Popen dups the fd)
             if device_log is not subprocess.DEVNULL:
                 device_log.close()
-            log.info("DickSimnelFrontDoor: spawned device pid=%d", self._proc.pid)
+            log.info("DickSimnelFrontDoor: spawned device pid=%d", proc.pid)
+            return proc
         except Exception as exc:
             log.error("DickSimnelFrontDoor: spawn failed: %s", exc)
             if device_log is not subprocess.DEVNULL:
                 device_log.close()
-            # Leave _proc as-is; will retry on next wake
+            # Return None to signal failure; will retry on next wake
+            return None
+
+    def _get_create_time(self, proc: subprocess.Popen) -> Optional[float]:
+        """Get the process creation time from psutil, if available.
+
+        Returns the Unix timestamp of process creation, or None if psutil is unavailable
+        or the process info cannot be read.
+        """
+        try:
+            import psutil
+
+            try:
+                p = psutil.Process(proc.pid)
+                return p.create_time()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                return None
+        except ImportError:
+            return None
 
     def stop(self) -> None:
         """Signal loop to stop and remove availability flag."""
