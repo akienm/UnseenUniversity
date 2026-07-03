@@ -17,7 +17,7 @@
   },
   "body": {
     "id": "T-cc-tmux-session-dot-naming-broken",
-    "title": "[sprint] superclaude .cc.N tmux naming is broken (dots->underscores): dead scan + kill-server footgun",
+    "title": "superclaude .cc.N tmux naming is broken (dots->underscores): dead scan + kill-server footgun",
     "size": "M",
     "tags": [
       "Launcher",
@@ -27,13 +27,13 @@
     "decision_id": null,
     "gate": null,
     "priority": 0.45,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-03T22:37:08.845451+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Dot-free tmux session naming (hostname_cc_N) across superclaude, rescueclaude, constants.py, cc_worker_listener.py, stop_cc_minions.py. tmux mangles dots -> '_', which broke the free-slot scan, in-place equality, and reached kill-server. comms:// bus addresses stay dotted (separate namespace). PROVEN: hermetic red->green (dotted code fails the detect/find tests; underscore passes).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T23:00:53.572069+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -42,6 +42,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-03T22:37:08.889583+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "e10b9c77-4043-4fbb-a95d-eb81bf733fbd"
+    "inferred_intention_id": "e10b9c77-4043-4fbb-a95d-eb81bf733fbd",
+    "proven": true,
+    "proof_id": "cc.0.dot-free-tmux-session-naming.T-cc-tmux-session-dot-naming-broken.20260703.170037989196",
+    "proof_commit": "2014e68fc41a6a7bb0cd44a85f19ee257f5cc906",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
