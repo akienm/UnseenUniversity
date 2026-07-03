@@ -15,7 +15,9 @@ log = logging.getLogger(__name__)
 
 
 def main() -> None:
+    from unseen_university.devices.pool import wipe_ephemeral_instance_dir
     device = DickSimnelDevice()
+    wipe_ephemeral_instance_dir(device.instance_abbreviation, device.instance_number)
     device._shim.start()
     log.info("DickSimnel: started — waiting for tickets (Ctrl+C to stop)")
 

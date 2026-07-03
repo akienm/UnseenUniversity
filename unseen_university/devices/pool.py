@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -94,6 +95,41 @@ def _default_liveness(pid: int, create_time: Optional[float]) -> bool:
         return True
 
 
+def wipe_ephemeral_instance_dir(abbreviation: str, instance_number: int, home: Optional[str] = None) -> bool:
+    """
+    Wipe an ephemeral instance directory, resetting it to empty state.
+
+    If instance_number == 0, returns False immediately (slot 0 is the durable
+    foreground — NEVER wiped).
+
+    Otherwise, resolves home (default uu_home()), computes the instance directory
+    path, removes it entirely, recreates it empty, logs at INFO, and returns True.
+
+    Args:
+        abbreviation: Device abbreviation (e.g., "DS" for DickSimnel).
+        instance_number: Instance slot number.
+        home: Runtime data dir root. Defaults to uu_home().
+
+    Returns:
+        True if wiped, False if slot 0 or not applicable.
+    """
+    if instance_number == 0:
+        return False
+    return False  # STUB: ephemeral wipe not implemented yet (proof red state)
+
+    if home is None:
+        from unseen_university._uu_root import uu_home
+
+        home = uu_home()
+
+    d = Path(home) / "devices" / f"{abbreviation}.{instance_number}"
+    if d.exists():
+        shutil.rmtree(d)
+    d.mkdir(parents=True, exist_ok=True)
+    log.info("startup: wiped %s.%d (ephemeral)", abbreviation, instance_number)
+    return True
+
+
 class InstancePool:
     """
     Free-list manager for worker instance slots.
@@ -120,9 +156,11 @@ class InstancePool:
         *,
         liveness: Optional[Callable[[int, Optional[float]], bool]] = None,
         home: Optional[str] = None,
+        max_instances: Optional[int] = None,
     ) -> None:
         self._class_name = class_name
         self._liveness = liveness or _default_liveness
+        self._max_instances = max_instances
 
         if home is None:
             from unseen_university._uu_root import uu_home
@@ -146,7 +184,7 @@ class InstancePool:
                 return i
         return len(self._slots)
 
-    def allocate(self, pid: int, create_time: Optional[float] = None, handle=None) -> int:
+    def allocate(self, pid: int, create_time: Optional[float] = None, handle=None) -> Optional[int]:
         """
         Allocate a slot for a new process instance.
 
@@ -159,9 +197,10 @@ class InstancePool:
             handle: Popen handle, or None. Never persisted.
 
         Returns:
-            The slot index (instance number).
+            The slot index (instance number), or None if max_instances is set and capacity is reached.
         """
         idx = self.first_free()
+        # STUB: capacity cap not enforced yet (proof red state)
         slot = {"pid": pid, "create_time": create_time, "handle": handle}
 
         if idx == len(self._slots):

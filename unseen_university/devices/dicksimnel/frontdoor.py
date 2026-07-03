@@ -25,6 +25,7 @@ from typing import Optional
 
 from unseen_university._uu_root import uu_home
 from unseen_university.devices.pool import InstancePool
+from unseen_university.devices.dicksimnel.consts import MAX_INSTANCES
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class DickSimnelFrontDoor:
 
     def __init__(self) -> None:
         """Initialize front-door state. Constructs bus connection (fail-soft)."""
-        self._pool = InstancePool("DickSimnel")
+        self._pool = InstancePool("DickSimnel", max_instances=MAX_INSTANCES)
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._bus = self._connect_bus()
@@ -137,7 +138,10 @@ class DickSimnelFrontDoor:
                 )
 
             # Allocate to the pool
-            self._pool.allocate(pid=proc.pid, create_time=create_time, handle=proc)
+            alloc_result = self._pool.allocate(pid=proc.pid, create_time=create_time, handle=proc)
+            if alloc_result is None:
+                log.warning("DickSimnelFrontDoor: pool at capacity — not recording spawn")
+                return
 
     def _device_alive(self) -> bool:
         """Check if device process is still alive.

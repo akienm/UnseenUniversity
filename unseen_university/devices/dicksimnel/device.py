@@ -30,6 +30,7 @@ from pathlib import Path
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 from .shim import DickSimnelShim
+from .consts import MAX_INSTANCES
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ class DickSimnelDevice(IdentityMixin, CodingCapability, BaseDevice):
 
     DEVICE_ID = "dicksimnel"
     instance_abbreviation = "DS"
+    max_instances = MAX_INSTANCES
 
     def __init__(self) -> None:
         super().__init__()
