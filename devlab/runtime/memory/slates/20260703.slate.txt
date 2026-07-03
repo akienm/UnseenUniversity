@@ -8,3 +8,5 @@ Next: T-converge-worker-dispatch (L, deferred per decision) is the only remainin
 - T-compact-at-150k-context: native /compact at ~150K context tokens; remove dead /autocompact cadence
 - T-fold-weekly-into-daily: retire weekly/monthly audit cadence, fold into daily day-close (Q1: fold shape)
 - T-self-diagnostic-trouble-tickets: alarm emitters attach failure-time diagnostics (No.5 Crossbar); ANCHOR -> decompose via /sorted
+
+## In-flight: POST-DAY-CLOSE (07-02 closed, 10 tickets proven). 3 tickets filed this tail, all pushed: (1) T-compact-at-150k-context [SPRINT] — native /compact at ~150K ctx replacing dead /autocompact hook (settings.json hook already removed, backup .bak-20260703); (2) T-fold-weekly-into-daily [OPEN_QUESTIONS Q1: fold shape a/b/c] — retire weekly audit cadence into daily; (3) T-self-diagnostic-trouble-tickets [OPEN_QUESTIONS, ANCHOR] — alarms carry failure-time diagnostics (No.5 Crossbar), decompose via /sorted, Q1 schema + Q2 probe-timing pending. Reboot imminent — clean restart + reload.
