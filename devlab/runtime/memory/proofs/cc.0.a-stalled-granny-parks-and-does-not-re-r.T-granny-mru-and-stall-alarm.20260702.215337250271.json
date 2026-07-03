@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.a-stalled-granny-parks-and-does-not-re-r.T-granny-mru-and-stall-alarm.20260702.215337250271",
+  "emitter": "cc.0",
+  "namespace": [
+    "a-stalled-granny-parks-and-does-not-re-r",
+    "T-granny-mru-and-stall-alarm"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T21:53:37.250271",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-mru-and-stall-alarm"
+    ],
+    "commits": [
+      "975089fc23a757501a194196a920c620571e1db1"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "A stalled Granny parks and does not re-raise (anti-spin)",
+    "intention": "with no wakeable worker and pending work, two run_once calls raise the granny-stalled alarm exactly ONCE — the second parks; a build without the is_stalled park re-raises every cycle",
+    "test": "tests/granny/test_granny_stall.py::test_stalled_granny_parks_no_respin",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/granny/test_granny_stall.py::test_stalled_granny_parks_no_respin",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "             patch(\"unseen_university.devices.granny.workflow_executor.get_executor\", side_effect=mock_get_executor):\n            # First call: should raise alarm and set stalled\n            daemon.run_once(config, imap=None)\n            assert mock_alarm.call_count == 1\n            assert stall_state.is_stalled() is True\n    \n            # Second call: is_stalled() early-returns, no alarm\n            daemon.run_once(config, imap=None)\n>           assert mock_alarm.call_count == 1  # Not incremented\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE           AssertionError: assert 2 == 1\nE            +  where 2 = <MagicMock name='raise_alarm' id='126680402682144'>.call_count\n\ntests/granny/test_granny_stall.py:94: AssertionError\n------------------------------ Captured log call -------------------------------\nERROR    unseen_university.devices.granny.daemon:daemon.py:926 granny: STALLED — no wakeable/available worker for ticket=T-stall-test\nERROR    unseen_university.devices.granny.daemon:daemon.py:926 granny: STALLED — no wakeable/available worker for ticket=T-stall-test\n=========================== short test summary info ============================\nFAILED tests/granny/test_granny_stall.py::test_stalled_granny_parks_no_respin\n1 failed in 0.10s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "975089fc23a757501a194196a920c620571e1db1",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260702.slate.txt",
+      "unseen_university/devices/granny/daemon.py",
+      "unseen_university/devices/granny/stall_state.py"
+    ],
+    "ticket": "T-granny-mru-and-stall-alarm",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
