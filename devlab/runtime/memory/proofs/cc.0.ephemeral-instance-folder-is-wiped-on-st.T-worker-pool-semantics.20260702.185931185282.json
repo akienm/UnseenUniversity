@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.ephemeral-instance-folder-is-wiped-on-st.T-worker-pool-semantics.20260702.185931185282",
+  "emitter": "cc.0",
+  "namespace": [
+    "ephemeral-instance-folder-is-wiped-on-st",
+    "T-worker-pool-semantics"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T18:59:31.185282",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-worker-pool-semantics"
+    ],
+    "commits": [
+      "e03b7d1dc167c656d42dac669a4099d8a33ab7a0"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Ephemeral instance folder is wiped on startup but slot 0 is preserved",
+    "intention": "wipe_ephemeral_instance_dir removes DS.1 folder contents (number 1) but preserves DS.0 (number 0) — a no-op-wipe build leaves DS.1 intact",
+    "test": "tests/test_pool_semantics.py::test_ephemeral_dir_wiped_but_zero_preserved",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_pool_semantics.py::test_ephemeral_dir_wiped_but_zero_preserved",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        ds_0_dir = tmp_path / \"devices\" / \"DS.0\"\n        ds_0_dir.mkdir(parents=True, exist_ok=True)\n        marker_0 = ds_0_dir / \"marker.txt\"\n        marker_0.write_text(\"slot-0-marker\")\n    \n        # Create DS.1 with marker\n        ds_1_dir = tmp_path / \"devices\" / \"DS.1\"\n        ds_1_dir.mkdir(parents=True, exist_ok=True)\n        marker_1 = ds_1_dir / \"marker.txt\"\n        marker_1.write_text(\"slot-1-marker\")\n    \n        # Wipe DS.1 (ephemeral)\n        result_1 = wipe_ephemeral_instance_dir(\"DS\", 1, home=str(tmp_path))\n>       assert result_1 is True\nE       assert False is True\n\ntests/test_pool_semantics.py:75: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_pool_semantics.py::test_ephemeral_dir_wiped_but_zero_preserved\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "e03b7d1dc167c656d42dac669a4099d8a33ab7a0",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.instancepool-refuses-to-allocate-beyond.T-worker-pool-semantics.20260702.185907594295.json",
+      "devlab/runtime/memory/slates/20260702.slate.txt",
+      "unseen_university/devices/pool.py"
+    ],
+    "ticket": "T-worker-pool-semantics",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
