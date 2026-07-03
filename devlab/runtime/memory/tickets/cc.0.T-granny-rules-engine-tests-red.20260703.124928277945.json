@@ -17,8 +17,8 @@
   },
   "body": {
     "id": "T-granny-rules-engine-tests-red",
-    "title": "[sprint] 20 pre-existing failures in test_granny_rules_engine (match_rule returns None vs CC.0)",
-    "status": "sprint",
+    "title": "[in_progress] 20 pre-existing failures in test_granny_rules_engine (match_rule returns None vs CC.0)",
+    "status": "in_progress",
     "size": "M",
     "tags": [
       "granny",

@@ -131,10 +131,13 @@ def _default_config() -> dict:
             "DickSimnel.0": {"dispatch": "bus", "mailbox": "dicksimnel.0"},
         },
         "rules": [
+            # HIGH-inertia tags → CC.0 (careful worker), mirrors config/granny.yaml.
+            {"when": {"tags_any": ["Security", "Provenance", "Auth", "Brainstem", "Database"]},
+             "route_to": "CC.0"},
             {"when": {"role_in": ["guru"]}, "route_to": "akien"},
-            {"when": {"role_in": ["master"]}, "route_to": "CC.1"},
+            {"when": {"role_in": ["master"]}, "route_to": "CC.0"},
             {"when": {"role_in": ["builder", "creator"]}, "route_to": "DickSimnel.0"},
-            {"route_to": "CC.1"},
+            {"route_to": "CC.0"},
         ],
     }
 

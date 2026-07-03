@@ -17,22 +17,23 @@ workers:
     worker_name: dicksimnel
 
 rules:
-  # HIGH-inertia tags go to the active sprint worker (CC.1) for careful handling.
+  # HIGH-inertia tags go to CC.0 (this box's careful worker) for careful handling.
   # No hardcoded worker_id — availability check gates the actual dispatch.
   - when:
       tags_any: [Security, Provenance, Auth, Brainstem, Database]
-    route_to: CC.1
+    route_to: CC.0
 
-  # Role ladder: guru=Akien, master=CC.1 (active sprint), builder=DickSimnel
+  # Role ladder: guru=Akien, master=CC.0 (this box; a local CC.1 builder would crash
+  # this 4-core/16GB box — the builder is DickSimnel.0 running off-machine on Hex).
   - when:
       role_in: [guru]
     route_to: akien       # post NEEDS_AKIEN channel nudge, set worker=akien, do not dispatch
   - when:
       role_in: [master]
-    route_to: CC.1
+    route_to: CC.0
   - when:
       role_in: [builder, creator]
     route_to: DickSimnel.0
 
-  # Default fallback — no role = conservative, goes to CC.1 (sprint worker)
-  - route_to: CC.1
+  # Default fallback — no role = conservative, goes to CC.0
+  - route_to: CC.0

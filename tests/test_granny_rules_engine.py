@@ -27,6 +27,39 @@ def _no_db_gated_tickets(monkeypatch):
     )
 
 
+@pytest.fixture(autouse=True)
+def _run_once_dispatch_env(monkeypatch):
+    """Set up the run_once dispatch environment for unit tests.
+
+    Two pieces of live/persisted state must be simulated, or run_once dispatches nothing:
+
+    1. CC.0 self-announce. In production CC.0 writes ~/.granny/announced/CC.0.json when
+       cc_worker_listener starts, and run_once merges it via _load_announced_workers().
+       Unit tests have no announce file, so without this CC.0 is unresolvable. Shape
+       mirrors the real announce: cc.0 mailbox, worker_name=claude, one_at_a_time +
+       cascade_if_idle=True (CC.0 absorbs idle tickets). Tests that need DickSimnel routing
+       patch _cascade_active_workers to prevent absorption.
+    2. Not stalled. run_once early-returns when is_stalled() is True (PARK guard). The
+       persisted stall flag leaks across processes, so pin it False for dispatch tests.
+       (is_stalled is imported inside run_once from stall_state — patch it there.)
+    """
+    monkeypatch.setattr(
+        "unseen_university.devices.granny.daemon._load_announced_workers",
+        lambda: {
+            "CC.0": {
+                "dispatch": "bus",
+                "mailbox": "cc.0",
+                "worker_name": "claude",
+                "one_at_a_time": True,
+                "cascade_if_idle": True,
+            }
+        },
+    )
+    monkeypatch.setattr(
+        "unseen_university.devices.granny.stall_state.is_stalled", lambda: False
+    )
+
+
 # ── match_rule ────────────────────────────────────────────────────────────────
 
 
@@ -73,9 +106,12 @@ class TestMatchRule:
         ticket = {"id": "T-1", "tags": ["Security"], "role": "builder"}
         assert match_rule(ticket, _rules()) == "CC.0"
 
-    def test_empty_rules_returns_cc_fallback(self):
+    def test_empty_rules_defers(self):
+        # No catch-all rule → match_rule returns None (the caller logs a warning and
+        # defers). The old hardcoded 'CC.0' last-resort was removed on purpose so a
+        # misconfigured rule set can't blindly fire a ticket at a hardcoded worker.
         ticket = {"id": "T-1", "tags": [], "role": "builder"}
-        assert match_rule(ticket, []) == "CC.0"
+        assert match_rule(ticket, []) is None
 
     def test_none_tags_handled(self):
         ticket = {"id": "T-1", "tags": None, "role": "builder"}
@@ -215,7 +251,7 @@ class TestRunOnce:
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
 
-        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox, *, worker_name=None):
             dispatched_ids.append(ticket["id"])
             return True
 
@@ -244,7 +280,7 @@ class TestRunOnce:
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
 
-        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox, *, worker_name=None):
             dispatched.append(ticket["id"])
             return True
 
@@ -266,7 +302,7 @@ class TestRunOnce:
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
 
-        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox, *, worker_name=None):
             dispatched.append(ticket["id"])
             return True
 
@@ -282,9 +318,13 @@ class TestRunOnce:
 
         assert "T-B" in dispatched, "cleared-gated ticket must be dispatched"
 
-    def test_cleared_gated_tickets_returns_empty_on_db_error(self):
-        """_cleared_gated_tickets() returns [] when DB is unreachable — never raises."""
-        with patch("unseen_university.devices.granny.daemon._DB_URL", "postgresql://bad:bad@127.0.0.1:9/bad"):
+    def test_cleared_gated_tickets_returns_empty_on_store_error(self):
+        """_cleared_gated_tickets() returns [] when the ticket store errors — never raises.
+
+        Postgres was dropped from the ticket path (tickets live in the filesystem
+        ticket_store); the fail-open contract is unchanged — any error -> [].
+        """
+        with patch("unseen_university.ticket_store.list", side_effect=RuntimeError("store down")):
             result = _cleared_gated_tickets()
         assert result == []
 
@@ -315,7 +355,7 @@ class TestRunOnce:
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
 
-        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox, *, worker_name=None):
             dispatched_mailboxes.append(worker_mailbox)
             return True
 
@@ -337,7 +377,7 @@ class TestRunOnce:
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
 
-        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox, *, worker_name=None):
             dispatched_mailboxes.append(worker_mailbox)
             return True
 
