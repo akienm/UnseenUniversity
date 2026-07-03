@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-tmux-session-dot-naming-broken.20260703.163716615653",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-tmux-session-dot-naming-broken"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T22:37:16.615653+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-cc-tmux-session-dot-naming-broken"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-tmux-session-dot-naming-broken",
+    "title": "[sprint] superclaude .cc.N tmux naming is broken (dots->underscores): dead scan + kill-server footgun",
+    "size": "M",
+    "tags": [
+      "Launcher",
+      "Infra"
+    ],
+    "description": "Surfaced 2026-07-03 while spinning up a CC.1 to test the numbering (Akien: 'that'll test the numbering for your shim'). tmux reserves '.' for session.window.pane targeting and silently stores session names with dots converted to underscores: `tmux new-session -s akiendelllinux.cc.1` creates `akiendelllinux_cc_1`, and `tmux ... -t akiendelllinux.cc.1` parses as session=akiendelllinux/window=cc/pane=1 and fails ('can't find pane: cc.1'). VERIFIED on this box's tmux. Three consequences, all in bin/superclaude:\n(1) FREE-SLOT SCAN DEAD (lines 305-322 and 313-322): `tmux has-session -t ${hostname}.cc.N` with dots can never match an underscore-stored session, so the scan always reports every slot free -> the number never increments; two CCs collide on .cc.0.\n(2) IN-PLACE EQUALITY NEVER HOLDS (line 338): CC_TMUX_SESSION (dotted) != `tmux display-message '#{session_name}'` (underscore) when you target the real session -> falls through to the else branch.\n(3) KILL-SERVER FOOTGUN (line 353): that else branch runs `tmux kill-server`, which would nuke sudo-relay and every other session — a data-loss/uptime hazard (CP6).\n\n**Proposed shape (needs Akien's design call on the separator):** use a dot-free tmux session name consistently (e.g. `${hostname}_cc_${N}` or `${hostname}-cc-${N}`) for ALL tmux operations (new-session, has-session, send-keys, display-message, kill-session), while keeping the logical worker identity (CC.0/CC.1, ~/.granny/available/CC.N.available.*, announce) as its own separate dotted name — the two namespaces must not be conflated. Separately: scope the else-branch cleanup to `kill-session -t <the stale name>` only; NEVER `kill-server` (CP6 — no whole-server kill).\n\n**Affected files:** bin/superclaude (lines ~283-360). Likely HIGH inertia (load-bearing launcher) — pause for Akien pre-approval before the fix sprint.\n**Design rules:** none in ticket_design_checks directly; CP6 (no unscoped destructive ops) governs the kill-server fix.\n**Scope boundary:** IN — dot-free tmux session naming end-to-end in superclaude + replace kill-server with scoped kill-session. OUT — building the CC shim device (T-cc-shim-reachability-gate-backoff), Granny dispatch wiring, the logical worker-name namespace redesign.\n**Test plan:** a shell/pytest harness that (a) creates two sessions via the launcher's naming and asserts distinct incremented names actually exist in `tmux ls`, (b) asserts the free-slot scan detects an existing session (no false-free), (c) asserts the launch path never calls `kill-server` (grep/trace). Proof-lever: red = current dotted names produce a false-free scan / kill-server reachable; green = incremented dot-free names + scoped kill only.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.45,
+    "status": "sprint",
+    "created_at": "2026-07-03T22:37:08.845451+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-03T22:37:08.889583+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e10b9c77-4043-4fbb-a95d-eb81bf733fbd"
+  }
+}
