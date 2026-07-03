@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-frontdoor-bringup-hardening.20260703.112723478410",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-frontdoor-bringup-hardening"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T17:27:23.478410+00:00",
+  "links": {
+    "decisions": [
+      "D-granny-pull-dispatch-model-2026-07-03"
+    ],
+    "tickets": [
+      "T-frontdoor-bringup-hardening"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-frontdoor-bringup-hardening",
+    "title": "[sprint] DickSimnel front-door bring-up hardening: is_blocked() gate + 'coming' ack to orchestrator",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "dicksimnel",
+      "worker-dispatch",
+      "shim"
+    ],
+    "priority": 0.55,
+    "role": "master",
+    "decision_id": "D-granny-pull-dispatch-model-2026-07-03",
+    "related_to": "T-converge-worker-dispatch-onto-rules-engine",
+    "intention": "I intend that when the DickSimnel front-door is asked to bring DS.0 up, it first checks the shim's is_blocked() gate and, on spawn, reports 'coming' back to the orchestrator — so a blocked device is never spawned and Granny knows a worker is en route rather than guessing.",
+    "description": "PHASE 1 (of D-granny-pull-dispatch-model). Reconciliation verdict PARTIAL: the front-door launches DS.0 on a bus-wake (frontdoor.py:108-109 idle_wait -> _ensure_device_awake -> _spawn_device frontdoor.py:164-204), but it (a) never consults shim.is_blocked() (which EXISTS at shim.py:79-81) before spawning, and (b) sends no 'coming' acknowledgement back to the orchestrator. Add both: gate the spawn on not-blocked, and emit a lightweight 'device coming' bus reply to the waker so Granny can distinguish 'launching' from 'no worker'.\n\n**Affected files:** unseen_university/devices/dicksimnel/frontdoor.py (spawn path), possibly unseen_university/devices/dicksimnel/shim.py (expose is_blocked to the front-door).\n**Design rules:** log-every-interface-crossing (the 'coming' ack is a bus crossing — log at INFO); no-sqlite (n/a).\n**Scope boundary:** IN — is_blocked() pre-spawn gate + 'coming' ack on spawn. OUT — the pull/poll redesign (that is T-converge-worker-dispatch), class-encoded semaphore (T-availability-semaphore-build-class), or changing what wakes the front-door.\n**Test plan:** unit — front-door with a blocked shim does NOT spawn (red: spawns anyway; green: no subprocess, logs blocked); front-door on wake with an unblocked shim emits a 'coming' bus message (red: silent; green: ack present).\n**Completion criteria:** front-door consults is_blocked() before every spawn and emits a 'coming' ack; both verified by test.\n**Rollback:** git revert — front-door returns to unconditional spawn-on-wake.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T17:26:50.889946+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T17:26:50.934257+00:00"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-availability-semaphore-build-class.20260703.112723599503",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-availability-semaphore-build-class"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T17:27:23.599503+00:00",
+  "links": {
+    "decisions": [
+      "D-granny-pull-dispatch-model-2026-07-03"
+    ],
+    "tickets": [
+      "T-availability-semaphore-build-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-availability-semaphore-build-class",
+    "title": "[dependency] Availability semaphore encodes build CLASS/level, not a bare .true touch-file",
+    "status": "dependency",
+    "size": "M",
+    "tags": [
+      "worker-dispatch",
+      "granny",
+      "capability"
+    ],
+    "priority": 0.45,
+    "role": "master",
+    "decision_id": "D-granny-pull-dispatch-model-2026-07-03",
+    "gate": "T-converge-worker-dispatch-onto-rules-engine",
+    "related_to": "T-converge-worker-dispatch-onto-rules-engine",
+    "intention": "I intend that a worker's availability semaphore carries WHICH build class/level it is — so the orchestrator can tell 'a builder exists but not of sufficient level' apart from 'no builder at all', instead of treating availability as a bare present/absent boolean.",
+    "description": "PHASE 2 (of D-granny-pull-dispatch-model). Reconciliation verdict ABSENT: the flag is a bare presence touch-file (DickSimnelShim._write_available writes 'true' shim.py:62; CC _mark_available .touch() worker_shim.py:230-234; is_available only tests .exists() availability.py:40-46). Encode the build class/level in the semaphore (in the filename or contents) and teach the availability read to return class/level, so 'found-but-insufficient-level' becomes expressible. Couples with T-converge-worker-dispatch (the capability-tag rules engine consumes this) — gate on it so the tag/level vocabulary is settled first.\n\n**Affected files:** unseen_university/devices/granny/availability.py (read/parse class), unseen_university/devices/dicksimnel/shim.py + frontdoor.py (_write_available), unseen_university/devices/claude/worker_shim.py (_mark_available).\n**Design rules:** log-every-state-change (availability write is a state change); no-sqlite (flat-file semaphore); external-state (class lives in the flag, not memory).\n**Scope boundary:** IN — encode + read build class/level in the availability semaphore across DS + CC shims. OUT — the routing decision that USES the level (T-converge), the alarm's use of insufficient-level (T-no-builders-alarm-done-right).\n**Test plan:** availability read returns the worker's class/level (red: only bool; green: class present); a lower-level worker is distinguishable from absent (red: both read 'unavailable'; green: 'present-insufficient' vs 'absent').\n**Completion criteria:** the availability semaphore carries build class/level and the availability API returns it; 'insufficient level' is distinguishable from 'absent'.\n**Rollback:** revert to presence-only .true; readers fall back to boolean.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T17:26:58.283943+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T17:26:58.284002+00:00"
+  }
+}

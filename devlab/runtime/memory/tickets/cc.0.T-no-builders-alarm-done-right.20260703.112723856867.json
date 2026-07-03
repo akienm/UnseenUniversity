@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-no-builders-alarm-done-right.20260703.112723856867",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-no-builders-alarm-done-right"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T17:27:23.856867+00:00",
+  "links": {
+    "decisions": [
+      "D-granny-pull-dispatch-model-2026-07-03"
+    ],
+    "tickets": [
+      "T-no-builders-alarm-done-right"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-no-builders-alarm-done-right",
+    "title": "[dependency] No-builders-available alarm: rekey, clear-on-builder-online, re-poll not park",
+    "status": "dependency",
+    "size": "M",
+    "tags": [
+      "granny",
+      "system-alarm",
+      "worker-dispatch"
+    ],
+    "priority": 0.45,
+    "role": "master",
+    "decision_id": "D-granny-pull-dispatch-model-2026-07-03",
+    "gate": "T-availability-semaphore-build-class",
+    "related_to": "T-self-diagnostic-trouble-tickets",
+    "intention": "I intend that when no capable builder is available, Granny raises a correctly-keyed 'No builders available' singleton alarm that increments on each 10-min re-check, keeps re-polling instead of parking, and clears itself the moment a builder comes online — so the gap is visible and self-healing, not a dead-parked daemon.",
+    "description": "PHASE 2 (of D-granny-pull-dispatch-model). Reconciliation verdict PARTIAL: the 2026-07-02 alarm is raise_alarm('granny-stalled', ...daemon, 'I'M STALLED! HELP! no wakeable/available worker...') at daemon.py:923-927, which then set_stalled() and PARKS Granny (run_once early-returns while stalled, daemon.py:757-759). raise_alarm is already singleton-by-signature with a counter (system_alarms.py:206-231), so that property holds. Gaps: (1) rekey from generic 'granny-stalled' to the issue-specific 'no-builders-available' (distinguish from other stalls); (2) Granny NEVER calls close_alarm (grep: zero callers) — add a clear when a builder comes online; (3) replace park-until-resume with a 10-min re-poll cadence so the alarm re-increments while still checking. Use the class/level from T-availability-semaphore-build-class to raise the 'found but insufficient level' variant. Structured failure-time diagnostics on this alarm are T-self-diagnostic-trouble-tickets' job — this ticket wires the lifecycle (key/clear/cadence), that ticket fills the evidence payload.\n\n**Affected files:** unseen_university/devices/granny/daemon.py (rekey, close_alarm-on-builder-online, re-poll cadence vs park), unseen_university/system_alarms.py (only if close_alarm needs a caller-friendly wrapper).\n**Design rules:** log-every-state-change (alarm raise/clear are state changes — INFO); external-state (alarm record persists in the flat-file store).\n**Scope boundary:** IN — alarm key, clear-on-builder-online, re-poll cadence (not park). OUT — the structured diagnostics payload (T-self-diagnostic-trouble-tickets), the availability class encoding it reads (T-availability-semaphore-build-class, gated).\n**Test plan:** no-builder condition raises 'no-builders-available' (red: 'granny-stalled'/none; green: correct key); a builder coming online clears it (red: stays open; green: close_alarm fired, record cleared); Granny re-polls on cadence rather than parking (red: parked/early-return forever; green: re-check every ~10 min, counter increments).\n**Completion criteria:** alarm is issue-keyed, auto-clears when a builder appears, and Granny keeps re-polling on a 10-min cadence instead of parking.\n**Rollback:** revert to the park-on-granny-stalled behavior.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T17:27:10.734618+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T17:27:10.734691+00:00"
+  }
+}

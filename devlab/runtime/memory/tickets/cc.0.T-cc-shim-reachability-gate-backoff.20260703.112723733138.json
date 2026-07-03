@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-shim-reachability-gate-backoff.20260703.112723733138",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-shim-reachability-gate-backoff"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T17:27:23.733138+00:00",
+  "links": {
+    "decisions": [
+      "D-granny-pull-dispatch-model-2026-07-03"
+    ],
+    "tickets": [
+      "T-cc-shim-reachability-gate-backoff"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-shim-reachability-gate-backoff",
+    "title": "[dependency] CC shim gates 'available?' on tmux reachability; 10-min backoff on no-builder",
+    "status": "dependency",
+    "size": "M",
+    "tags": [
+      "claude-shim",
+      "worker-dispatch",
+      "granny"
+    ],
+    "priority": 0.45,
+    "role": "master",
+    "decision_id": "D-granny-pull-dispatch-model-2026-07-03",
+    "intention": "I intend that CC advertises itself available only when its shim can actually reach it (in a tmux window), and that a no-builder-found outcome makes Granny back off for 10 minutes before re-polling — so Granny never routes to an unreachable CC and never hot-loops when no builder is up.",
+    "description": "PHASE 2 (of D-granny-pull-dispatch-model). Two coupled reconciliation PARTIALs: (a) CC shim reachability — _tmux_session_exists EXISTS (worker_shim.py:223-228) but is only surfaced in self_test (worker_shim.py:170-180); it does NOT gate the availability answer, which is a static touch-flag set at listener start (worker_shim.py:230-234). Wire reachability to gate availability: no tmux window -> not available. (b) Backoff — GRANNY_BUILDER_COOLDOWN_S=600 EXISTS (daemon.py:417) but is applied ONLY after a dispatch-ack timeout (daemon.py:570); there is no backoff on a 'no builder found' outcome (today it goes straight to the stall/park path daemon.py:919-929). Apply a 10-min backoff-before-re-poll on the no-builder outcome.\n\n**Affected files:** unseen_university/devices/claude/worker_shim.py (gate availability on _tmux_session_exists), unseen_university/devices/granny/daemon.py (no-builder backoff path), unseen_university/devices/granny/availability.py (cooldown helpers).\n**Design rules:** log-every-state-change (availability + backoff transitions at INFO); no-sqlite.\n**Scope boundary:** IN — reachability-gated CC availability + no-builder 10-min backoff. OUT — the alarm raised when backoff exhausts (T-no-builders-alarm-done-right), the poll/pull redesign (T-converge).\n**Test plan:** CC shim with no tmux session reports unavailable (red: available anyway; green: not available); a no-builder poll sets a 600s backoff before the next re-poll (red: immediate re-poll; green: backoff observed).\n**Completion criteria:** CC availability answer is false when not in a tmux window; a no-builder outcome triggers a 10-min backoff before re-poll.\n**Rollback:** revert — CC availability returns to static flag; Granny drops straight to stall on no-builder.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T17:27:04.514629+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T17:27:04.514695+00:00"
+  }
+}

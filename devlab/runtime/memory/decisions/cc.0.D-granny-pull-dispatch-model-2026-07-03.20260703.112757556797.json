@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-granny-pull-dispatch-model-2026-07-03.20260703.112757556797",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-pull-dispatch-model-2026-07-03"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-03T11:27:57.556797",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-pull-dispatch-model-2026-07-03",
+    "title": "Granny PULL-dispatch + shim-owns-startup + class-semaphore + self-clearing no-builders alarm",
+    "status": "open",
+    "date": "2026-07-03",
+    "spawned_tickets": [
+      "T-frontdoor-bringup-hardening",
+      "T-availability-semaphore-build-class",
+      "T-cc-shim-reachability-gate-backoff",
+      "T-no-builders-alarm-done-right",
+      "T-consequence-D-granny-pull-dispatch-model"
+    ],
+    "text": "# D-granny-pull-dispatch-model-2026-07-03\n**title:** Granny PULL-dispatch + shim-owns-startup + class-semaphore + self-clearing no-builders alarm\n**date:** 2026-07-03\n**status:** open\n**spawned_tickets:** T-frontdoor-bringup-hardening, T-availability-semaphore-build-class, T-cc-shim-reachability-gate-backoff, T-no-builders-alarm-done-right, T-consequence-D-granny-pull-dispatch-model\n\n## Decision narrative\nAuthoritative dispatch/worker-bring-up model (Akien 2026-07-03), reconciled against code. Load-bearing points: (1) Ground Loop is PASSIVE — heartbeat caller + startup-error->rescueclaude only; device startup lives in the SHIM, not Ground Loop (there is NO 'registering' with Ground Loop). (2) Granny ASKS (polls) shims tagged by role/class 'any builder available?' rather than reading availability flags directly + routing by static config rule (today's behavior). (3) The shim owns startup: if the device is not blocked from startup, the shim launches it and reports 'coming' to the orchestrator. (4) Availability is a file semaphore that encodes the build CLASS/level, not a bare boolean — so 'found but not sufficient level' is distinct from 'none at all'. (5) CC is just another polled shim; its shim answers 'available?' by tmux reachability (not in tmux -> 'no'); on 'no'/no-builder, Granny backs off 10 min (600s) before re-polling. (6) No builders -> system_alarm 'No builders available': a singleton keyed by the issue with a counter incremented ~every 10 min, re-issued until fixed, CLEARED when a builder comes online. (7) The alarm carries failure-time diagnostics ('tried twice 10 min apart, none found' / 'found but insufficient level') — the T-self-diagnostic-trouble-tickets pattern in the wild.\n\nSequencing (Akien-confirmed): Phase 1 = prove DS.0 builds on Hex FIRST (shakes out the inference compiler + DS prompts), running on today's role-based dispatch (T-ds-smoke-hello, T-consequence-D-ds-first-live-build-on-hex) plus front-door hardening (T-frontdoor-bringup-hardening). Phase 2 = deep-repair this dispatch/alarm model (the other three child tickets), and re-prove via the consequence checks. Not fastest-path: complete each part correctly because later work depends on it.\n\nLinks to EXISTING tickets (not re-drafted): pull/capability-tag routing = T-converge-worker-dispatch-onto-rules-engine (the poll+capability-tag rules engine, #2 of the semaphore couples to it); structured alarm diagnostics = T-self-diagnostic-trouble-tickets (granny-stalled is one of its listed emitters). Phase-1 proof tickets: T-ds-smoke-hello, T-consequence-D-ds-first-live-build-on-hex.\n\n## Hypothesis\nAfter these ship, Granny finds and launches DS.0 by asking a builder-tagged shim (not by reading a static flag), matches on build class/level, and a no-builder condition raises a singleton 'no-builders-available' alarm carrying its probe evidence that auto-clears when a builder comes online — instead of parking the daemon.\n\n## Measurement Signal\nLog/records: a Granny 'poll builder -> available/coming' interface-crossing line; an availability semaphore file that carries a class/level token; a system_alarms record keyed 'no-builders-available' with a counter that increments on re-check AND a close/clear event when a builder appears; Granny keeps re-polling (cadence log) rather than early-returning parked.\n\n## Intention\nI intend that Granny dispatches work by polling role-tagged shims that own their device's startup, so any capable builder (especially DS.0) is found, launched, and matched by level — and when none exist, a self-clearing, self-diagnostic alarm makes the gap visible instead of silently starving or parking. This serves the overarching goal: reach the loop where CC+Akien hand DS.0 real tickets/background tasks run on Hex, learning as we go, deep-repairing everything in the way."
+  }
+}
