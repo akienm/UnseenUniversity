@@ -40,6 +40,7 @@ Run as: python -m unseen_university.devices.granny.daemon
 from __future__ import annotations
 from unseen_university._uu_root import uu_config_dir
 from unseen_university.identity import home_db_url
+from unseen_university.system_alarms import raise_alarm
 
 import json
 import logging
@@ -748,8 +749,11 @@ def run_once(config: dict, *, imap=None) -> None:
     skipped and only legacy (tmux_send_keys / set_worker) paths are used.
     """
     from unseen_university.devices.granny.availability import check_and_expire_cooldowns, is_available
+    from unseen_university.devices.granny.stall_state import is_stalled, set_stalled, record_dispatch
 
     granny_mailbox = config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT)
+
+    # STUB: park guard not yet added (proof red state)
     # Merge static config + self-announced workers; announced workers take precedence.
     # This replaces the static 'workers:' YAML block for self-announcing workers.
     workers_cfg = {**config.get("workers", {}), **_load_announced_workers()}
@@ -890,6 +894,7 @@ def run_once(config: dict, *, imap=None) -> None:
 
         if ok:
             dispatched_this_cycle.add(target)
+            record_dispatch(target)
             # Cascade: update the ticket's worker field — prefer workers_cfg worker_name,
             # fall back to the legacy _WORKER_ID_TO_NAME dict.
             if is_cascade:
@@ -905,6 +910,20 @@ def run_once(config: dict, *, imap=None) -> None:
             )
         else:
             log.warning("Granny: dispatch failed for %s → %s", tid, target)
+
+    # STALL detection: if we have pending work but didn't dispatch anything
+    # and no worker is currently available, raise alarm and park.
+    if tickets and not dispatched_this_cycle and not any(
+        is_available(w) for w, wc in workers_cfg.items() if isinstance(wc, dict)
+    ):
+        _stall_tid = tickets[0].get("id", "?")
+        raise_alarm(
+            "granny-stalled",
+            "unseen_university.devices.granny.daemon",
+            "I'M STALLED! HELP! no wakeable/available worker for pending sprint work",
+        )
+        set_stalled(_stall_tid, "no wakeable/available worker")
+        log.error("granny: STALLED — no wakeable/available worker for ticket=%s", _stall_tid)
 
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
