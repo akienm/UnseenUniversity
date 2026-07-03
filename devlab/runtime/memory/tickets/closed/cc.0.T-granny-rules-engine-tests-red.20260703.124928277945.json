@@ -17,8 +17,8 @@
   },
   "body": {
     "id": "T-granny-rules-engine-tests-red",
-    "title": "[in_progress] 20 pre-existing failures in test_granny_rules_engine (match_rule returns None vs CC.0)",
-    "status": "in_progress",
+    "title": "20 pre-existing failures in test_granny_rules_engine (match_rule returns None vs CC.0)",
+    "status": "closed",
     "size": "M",
     "tags": [
       "granny",
@@ -32,9 +32,9 @@
     "created_at": "2026-07-03T18:49:20.463349+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "ROOT: the package-collapse refactor (a5f4dab0) wrote CC.1 into the dispatch config (_default_config + granny.yaml) for a builder never run on this 4-core/16GB box, so master/catch-all tickets routed to a non-running CC.1 -> no dispatch -> stall alarm -> Granny parked. Fixed: reverted CC.1->CC.0 (this session's worker), restored the high-inertia tags_any rule to _default_config (mirrors granny.yaml). Reconciled 20 stale tests: empty-rules->None, CC.0 self-announce + not-stalled run_once fixture, fake_bus worker_name kwarg, DB-error->ticket_store-error. 27/27 green (commit 085f4280). Sibling test_granny_bus_dispatch.py (10 same-root failures) filed as T-granny-bus-dispatch-tests-red.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T20:11:27.631184+00:00",
     "required_files": [],
     "github_issue": null,
     "decision_id": null,
@@ -43,6 +43,12 @@
     "target_difficulty": 1,
     "scraps_validated": "2026-07-03T18:49:20.507180+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "057c94d3-676d-4714-83a6-25784f5e7c4a"
+    "inferred_intention_id": "057c94d3-676d-4714-83a6-25784f5e7c4a",
+    "proven": false,
+    "unproven_reason": "proof_emitter can't prove a REGRESSION fix: its red->green model looks for the red at the pre-implementation state, but here the correct behavior (master->CC.0) predates the CC.1 regression, so the pre-feature state is already green. The authentic red is an intermediate commit (a5f4dab0's CC.1 config), which proof_emitter can't target. Fix IS empirically proven (20 tests red->green; test_master_role_routes_to_cc went CC.1-red -> CC.0-green). Missing lever: a proof mode that reds against a named regressing commit, not the pre-feature state.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
