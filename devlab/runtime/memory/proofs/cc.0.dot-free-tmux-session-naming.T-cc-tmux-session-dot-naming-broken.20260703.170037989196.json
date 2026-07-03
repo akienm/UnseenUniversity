@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.dot-free-tmux-session-naming.T-cc-tmux-session-dot-naming-broken.20260703.170037989196",
+  "emitter": "cc.0",
+  "namespace": [
+    "dot-free-tmux-session-naming",
+    "T-cc-tmux-session-dot-naming-broken"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-03T17:00:37.989196",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-cc-tmux-session-dot-naming-broken"
+    ],
+    "commits": [
+      "2014e68fc41a6a7bb0cd44a85f19ee257f5cc906"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "dot-free tmux session naming",
+    "intention": "the CC session scan detects a real underscore-stored session and increments past it (a dotted name never could)",
+    "test": "tests/test_cc_session_naming.py::test_detect_increments_past_real_underscore_session",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_cc_session_naming.py::test_detect_increments_past_real_underscore_session",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        the (real, underscore) session set, so it collided on slot 0 instead of\n        advancing — the core bug.\n        \"\"\"\n        import unseen_university.devices.claude.constants as m\n        fake = MagicMock(stdout=\"testhost_cc_0\\nother\\n\", returncode=0)\n        with patch(\"socket.gethostname\", return_value=\"testhost\"), \\\n             patch(\"subprocess.run\", lambda *a, **kw: fake):\n            got = m._detect_session_name()\n>       assert got == \"testhost_cc_1\"\nE       AssertionError: assert 'testhost.cc.0' == 'testhost_cc_1'\nE         \nE         - testhost_cc_1\nE         ?         ^  ^^\nE         + testhost.cc.0\nE         ?         ^  ^^\n\ntests/test_cc_session_naming.py:176: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_cc_session_naming.py::test_detect_increments_past_real_underscore_session\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "2014e68fc41a6a7bb0cd44a85f19ee257f5cc906",
+    "impl_paths": [
+      "bin/rescueclaude",
+      "bin/superclaude",
+      "devlab/claudecode/stop_cc_minions.py",
+      "devlab/runtime/memory/tickets/cc.0.T-cc-session-naming-reload-harness-fragility.20260703.170017878545.json",
+      "tests/claude/test_cc_session_resolution.py",
+      "unseen_university/devices/claude/constants.py",
+      "unseen_university/devices/granny/cc_worker_listener.py"
+    ],
+    "ticket": "T-cc-tmux-session-dot-naming-broken",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
