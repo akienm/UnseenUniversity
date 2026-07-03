@@ -92,3 +92,5 @@ Done: Shipped 4 tickets PROVEN: T-worker-instance-identity (DS.0 identity surfac
 Next: T-shim-frontdoor-on-groundloop (SPRINT, L) is the single buildable foundation — the whole front-door chain (lease, pool-semantics, idle-sleep, granny-wake, granny-mru, converge) is HOLD behind it. Build front-door first. Stream B (de-Discworld) + consequence checks (2026-07-16, 2026-07-30) still gated.
 
 ## In-flight: Session clean: 4 tickets shipped proven + full front-door design captured (2 decisions, 7 tickets). Nothing in flight. Next build target: T-shim-frontdoor-on-groundloop.
+
+## In-flight: T-shim-frontdoor-on-groundloop CLOSED PROVEN (proof 6e2d0262, stub->impl red->green; anti-hollow: live handle -> no spawn). Front-door foundation shipped: DickSimnelFrontDoor persistent runme.py, wake-only idle_wait (single consumer), liveness-gated spawn, UU_FRONTDOOR single-flag-writer. Writing delegated to Haiku; CC owned spec+review+proof+close. HEAD 3997dc84. Downstream hold tickets (lease/pool/idle-sleep/granny-wake/mru/converge) now dependency-satisfied but NOT self-unblocked (Akien unblocks holds).
