@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.granny-never-spawns-a-down-worker-via-su.T-granny-wake-not-launch.20260702.214059567067",
+  "emitter": "cc.0",
+  "namespace": [
+    "granny-never-spawns-a-down-worker-via-su",
+    "T-granny-wake-not-launch"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T21:40:59.567067",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-wake-not-launch"
+    ],
+    "commits": [
+      "2362f08c879e7715e1008167036ad46b3d0b79a0"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Granny never spawns a down worker via subprocess (no launch machinery)",
+    "intention": "run_once with a down worker and a sprint ticket waiting calls no subprocess.Popen — the removed _launch_builder would have spawned it",
+    "test": "tests/granny/test_granny_no_launch.py::test_granny_never_spawns_a_down_worker",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/granny/test_granny_no_launch.py::test_granny_never_spawns_a_down_worker",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <MagicMock name='Popen' id='128805789358640'>\n\n    def assert_not_called(self):\n        \"\"\"assert that the mock was never called.\n        \"\"\"\n        if self.call_count != 0:\n            msg = (\"Expected '%s' to not have been called. Called %s times.%s\"\n                   % (self._mock_name or 'mock',\n                      self.call_count,\n                      self._calls_repr()))\n>           raise AssertionError(msg)\nE           AssertionError: Expected 'Popen' to not have been called. Called 1 times.\nE           Calls: [call('echo would-launch', shell=True, start_new_session=True, stdout=-3, stderr=-3)].\n\n/usr/lib/python3.12/unittest/mock.py:905: AssertionError\n=========================== short test summary info ============================\nFAILED tests/granny/test_granny_no_launch.py::test_granny_never_spawns_a_down_worker\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "2362f08c879e7715e1008167036ad46b3d0b79a0",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260702.slate.txt",
+      "tests/granny/test_builder_launch.py",
+      "unseen_university/devices/granny/daemon.py"
+    ],
+    "ticket": "T-granny-wake-not-launch",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
