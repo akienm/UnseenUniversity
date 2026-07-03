@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-inference-status-report.20260703.145419715896",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-status-report"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T20:54:19.715896+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-status-report"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-status-report",
+    "title": "[sprint] At-a-glance inference-router status report (providers, models, costs, Hex, in-flight)",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "inference",
+      "observability",
+      "diagnostics"
+    ],
+    "priority": 0.5,
+    "role": "master",
+    "related_to": "T-inference-mark-anthropic-defunct",
+    "intention": "I intend that the inference router exposes a single at-a-glance status report CC.0 (and Akien) can read to assess the whole inference substrate — every provider's status, every known model with cost/usage/account-type, Hex's health, and in-flight jobs — so nobody hand-assembles it by curling /api/tags and grepping the rules engine (exactly what I did for the DS.0/Hex readiness check).",
+    "description": "Akien 2026-07-03, watching me hand-assemble Hex readiness (curl 10.0.0.100/api/tags + grep rules_engine): this should be a first-class REPORT the router gives. Surface, at a glance:\n\n**Per PROVIDER (Source):** name; status (available / unavailable / DEFUNCT with reason — the Source.available/defunct/defunct_reason fields, added in T-inference-mark-anthropic-defunct); account type (billing_type/cost_class: flat_rate subscription / usage_based / owned_local); live reachability (ping/HTTP probe, e.g. Hex up in Nms).\n\n**Per known MODEL (name-drift tolerant — list what's ACTUALLY there, so renamed/updated models reflect reality):** model name; provider; cost per million (in/out, from models_registry); last-used date (from the cost_record logs / budget_ledger); availability on the provider (live query — e.g. ollama /api/tags for Hex, so we see 'devstral-small-2:24b present on Hex'). Because we probe live, name drift as models change is handled — the report shows current names + when each was last used.\n\n**Hex at a glance:** up/down, latency, which models are loaded (this is the DS.0-readiness view I built by hand).\n\n**In-flight jobs (stretch):** current inference calls + how long each has been running (from the inference device's active-call tracking).\n\n**Where it lives:** a status_report() method on InferenceDevice (unseen_university/devices/inference/device.py) assembling from SourceRegistry (provider/model status + live probes), models_registry (costs), and cost-record logs (last-used/usage); surfaced via a CC-facing command (e.g. `uu inference status`) and/or the device's web feed. Read-only — no routing changes.\n\n**Affected files:** unseen_university/devices/inference/device.py (status_report), sources.py (a live-probe/reachability helper per Source), models_registry.py (cost lookups), the cost-record log reader (last-used); a CC-facing entry point (bin/uu subcommand or a skill).\n**Design rules:** inference-proxy-only (report reads through the proxy's registry, doesn't bypass it); log-every-interface-crossing (live probes are crossings — log at DEBUG); no-sqlite.\n**Scope boundary:** IN — a read-only status report assembling provider status + model cost/usage/availability + Hex health + (stretch) in-flight jobs, surfaced to CC. OUT — changing routing/selection; a full web dashboard (a text/JSON report + optional feed line is enough); rewriting the cost ledger.\n**Test plan:** unit — status_report() returns a structure listing each registered provider with its status (available/defunct) and each known model with cost + last-used; a defunct provider (anthropic) shows DEFUNCT+reason; a live-probe helper returns reachable/unreachable for a stubbed endpoint (red: field missing/raises; green: present). Integration against the real registry shows Hex + devstral.\n**Completion criteria:** one command/method returns the at-a-glance report (providers+status, models+cost+last-used+availability, Hex health); anthropic shows DEFUNCT; the report never raises when a provider is down (fail-soft).\n**Rollback:** git revert — additive report, no routing impact.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T20:54:11.860125+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T20:54:11.904411+00:00"
+  }
+}
