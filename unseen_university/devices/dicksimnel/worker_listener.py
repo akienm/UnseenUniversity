@@ -128,7 +128,7 @@ class DickSimnelWorkerListener:
 
         # After draining batch: check idle shutdown (only if no dispatch was in this batch)
         if (quit_timeout is not None and not dispatch_seen and self._device is not None
-                and self._last_active is not None):  # STUB: busy-guard not yet added (proof red state)
+                and self._device._active_ticket is None and self._last_active is not None):
             idle_elapsed = time.monotonic() - self._last_active
             if idle_elapsed >= quit_timeout:
                 log.info(
