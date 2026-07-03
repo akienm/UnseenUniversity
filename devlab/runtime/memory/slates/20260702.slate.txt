@@ -104,3 +104,5 @@ Next: T-shim-frontdoor-on-groundloop (SPRINT, L) is the single buildable foundat
 ## In-flight: T-worker-pool-semantics CLOSED PROVEN x2 (cap + wipe). Chain 3/6 done: front-door + leasing + pool-semantics all proven. NEXT: T-worker-idle-sleep-bus-ask (M). Proof-emitter note: emit+commit each proof right after impl, do NOT interleave a slate commit (shifts parent_ref).
 
 ## In-flight: T-worker-idle-sleep-bus-ask CLOSED PROVEN (c5a4244d, busy-never-killed). Chain 4/6 done: front-door + leasing + pool-semantics + idle-sleep. NEXT: T-granny-wake-not-launch (M) — Granny wakes via bus, no launch_cmd/_launch_builder spawn; also owns per-instance mailbox routing + multi-spawn (deferred here from earlier tickets).
+
+## In-flight: T-granny-wake-not-launch CLOSED PROVEN (2362f08c, no-Popen). Chain 5/6 done: front-door+leasing+pool-semantics+idle-sleep+granny-wake. LAST buildable: T-granny-mru-and-stall-alarm (M) — MUST close the orphaned-front-door stall detection deferred twice. Converge (L) stays deferred per decision. Pre-existing granny CC.0-config test fails are unrelated + ticketed.
