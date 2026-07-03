@@ -28,6 +28,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
+from unseen_university._uu_root import uu_root
 
 from .shim import DickSimnelShim
 from .consts import MAX_INSTANCES
@@ -35,7 +36,10 @@ from .consts import MAX_INSTANCES
 log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
-_CC_QUEUE = Path(__file__).resolve().parents[2] / "devlab" / "claudecode" / "cc_queue.py"
+# Canonical repo-root resolution — immune to the file's depth (parents[N] broke when the
+# single-package reorg moved this file one level deeper: parents[2] landed on the package
+# dir, not the repo root, so cc_queue.py was unreachable and DS.0 couldn't fetch tickets).
+_CC_QUEUE = Path(uu_root()) / "devlab" / "claudecode" / "cc_queue.py"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
 # The escalation walk (availability-vs-capability classification, difficulty bumping,

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-reorg-parents-path-sweep.20260703.152142030910",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reorg-parents-path-sweep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T21:21:42.030910+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-reorg-parents-path-sweep"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reorg-parents-path-sweep",
+    "title": "[sprint] Sweep reorg-fallout parents[N] repo-root path derivations to uu_root()",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "reorg-fallout",
+      "paths",
+      "devices"
+    ],
+    "priority": 0.55,
+    "role": "builder",
+    "description": "The single-package collapse (a5f4dab0) moved device files one level deeper (devices/X -> unseen_university/devices/X) but left Path(__file__).resolve().parents[N] path derivations unchanged, so parents[2] now lands on the unseen_university/ PACKAGE dir instead of the repo root. Any such path targeting a REPO-ROOT dir (devlab/, skills/, wild_igor/) is now broken. Surfaced 2026-07-03 by the first live DS.0-on-Hex build: dicksimnel/device.py:38 _CC_QUEUE pointed at a non-existent unseen_university/devlab/... so DS.0 couldn't fetch ANY ticket (fixed inline, commit TBD, canonical uu_root()).\n\n**Confirmed same bug (fix each — repo-root targets):**\n- unseen_university/devices/vetinari/device.py:103 (_CC_QUEUE — Vetinari can't fetch tickets)\n- unseen_university/devices/web_server/server.py:1319 (devlab/claudecode/stop_cc_minions.py)\n- unseen_university/devices/installer/shim.py:30 (parents[2]/skills — skills/ is at repo root per feedback_skills_in_repo)\n- unseen_university/devices/web_server/server.py:130 (parents[2]/wild_igor/web_ui/dist — verify wild_igor location)\n\n**Do NOT touch (correct — package-relative target):**\n- unseen_university/devices/web_server/server.py:1719 (parents[2]/devices/identities.yaml — identities.yaml genuinely lives under unseen_university/devices/, so parents[2] is right here).\n\n**Fix pattern:** replace repo-root-relative Path(__file__).resolve().parents[N] with Path(uu_root()) (from unseen_university._uu_root import uu_root) — immune to file depth. PER-SITE JUDGMENT REQUIRED: confirm each target lives at repo-root (-> uu_root()) vs under the package (-> keep parents[N] or package-relative). Sweep ALL parents[N] path derivations repo-wide (grep -rn 'parents\\[' unseen_university/), not just the ones listed.\n\n**Affected files:** vetinari/device.py, web_server/server.py (x2 broken, x1 leave), installer/shim.py, + any others the full grep finds.\n**Design rules:** uu-root-canonical (UU_ROOT via uu_root(), not fragile parents[N]); repo-wide-sweep-not-scoped (grep ALL parents[N], per reference_sweep_guard_extensionless_scripts).\n**Scope boundary:** IN — fix every parents[N] that targets a repo-root dir to uu_root(); leave package-relative ones. OUT — the dicksimnel one (already fixed).\n**Test plan:** per-fixed-site, assert the resolved path exists + is NOT under unseen_university/ when the target is repo-root (mirror tests/test_dicksimnel_cc_queue_path.py). A repo-wide guard test: no parents[N] in devices/ resolves to a non-existent path.\n**Completion criteria:** every repo-root-targeting parents[N] uses uu_root() and resolves to an existing path; package-relative ones untouched; a test guards each.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T21:21:34.114933+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T21:21:34.167583+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "27481f31-a5e8-4213-94c3-39ce660ebeab"
+  }
+}

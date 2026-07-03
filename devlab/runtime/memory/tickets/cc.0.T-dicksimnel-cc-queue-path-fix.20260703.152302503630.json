@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-dicksimnel-cc-queue-path-fix.20260703.152302503630",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-cc-queue-path-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T21:23:02.503630+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-cc-queue-path-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-cc-queue-path-fix",
+    "title": "[sprint] Fix DS.0 _CC_QUEUE path (reorg fallout — parents[2] -> uu_root())",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "dicksimnel",
+      "reorg-fallout",
+      "paths"
+    ],
+    "priority": 0.6,
+    "role": "builder",
+    "related_to": "T-reorg-parents-path-sweep",
+    "description": "Fixed inline during the first live DS.0-on-Hex build. dicksimnel/device.py:38 _CC_QUEUE used Path(__file__).resolve().parents[2] which regressed to the unseen_university/ package dir after the single-package reorg moved device.py one level deeper -> cc_queue.py unreachable -> DS.0 couldn't fetch ANY ticket. Now uses Path(uu_root()). Proven by the live E2E: DS.0 fetched T-ds-smoke-hello and built /tmp/ds_smoke/SMOKE_OK.txt on devstral@Hex.\n**Affected files:** unseen_university/devices/dicksimnel/device.py, tests/test_dicksimnel_cc_queue_path.py.\n**Design rules:** uu-root-canonical.\n**Scope boundary:** IN — the dicksimnel _CC_QUEUE fix + test. OUT — the sibling sites (T-reorg-parents-path-sweep).\n**Test plan:** tests/test_dicksimnel_cc_queue_path.py — _CC_QUEUE resolves to <root>/devlab/claudecode/cc_queue.py + exists + not under the package dir.\n**Completion criteria:** _CC_QUEUE.exists() is True; DS.0 fetches a ticket; test green.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T21:22:58.964758+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T21:22:59.008303+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "30388ad7-bb06-4807-81c7-c8bc32448701"
+  }
+}
