@@ -17,18 +17,18 @@
   },
   "body": {
     "id": "T-launcher-help-and-1m-flags",
-    "title": "[awaiting_validation] superclaude/rescueclaude gain --help and --1m flags; root scripts become bin/ pass-throughs",
+    "title": "superclaude/rescueclaude gain --help and --1m flags; root scripts become bin/ pass-throughs",
     "size": "M",
     "priority": 8,
-    "status": "awaiting_validation",
+    "status": "closed",
     "intention": "An operator can launch CC with a 1M-token context window via `--1m` (off by default), see wrapper+claude help via `--help`, and the root launcher scripts contain no logic of their own — they only call bin/.",
     "description": "Three changes to the launchers. (1) --1m flag on bin/superclaude and bin/rescueclaude: when present, export ANTHROPIC_MODEL=opus[1m] (Claude Code's documented 1M-context model alias; Opus 1M is auto-included on Max/Team/Enterprise, no usage-credit gating) and consume the flag so it is NOT forwarded to claude. Off by default (unset → current behavior). Mechanism confirmed via claude-code-guide agent: 1M is enabled by the [1m] model-alias suffix, NOT a beta header or ANTHROPIC_BETAS. (2) --help flag on both: print superclaude/rescueclaude's own wrapper flags first, then exec `claude --help`. (3) Root-level superclaude and superclaude.ps1 become thin pass-throughs that do nothing but exec the canonical bin/ equivalents with all args forwarded — eliminating the stale duplicate logic currently at the repo root (the May-28 root copies shadow the June-23 bin/ canonical).\n\nPurpose: --1m is a forgetfulness A/B lever — relaunch the same Opus session with a 200K vs 1M window to test long-context coherence.\n\n**Affected files:** bin/superclaude, bin/rescueclaude, superclaude (root), superclaude.ps1 (root)\n**Design rules:** none apply (bash/powershell launcher scripts; no memory-shape, no persistence, no sqlite). delete-after-merge: root scripts collapse to pass-throughs (remove-behind the duplicated logic).\n**Scope boundary:** IN — --help + --1m on superclaude & rescueclaude; root superclaude/superclaude.ps1 → pass-throughs. OUT — resumeclaude (not requested), bin/superclaude.bat, sonnet[1m] variant or a configurable model (--1m pins opus[1m]; revisit if a non-Opus 1M test is needed), removing root scripts entirely (they stay as pass-throughs for compatibility).\n**Test plan:** (a) `bash -n` syntax-clean on bin/superclaude, bin/rescueclaude, root superclaude. (b) Stub `claude` on PATH; run `rescueclaude --1m --new` and assert the stub sees ANTHROPIC_MODEL=opus[1m] and does NOT receive --1m or --new in its argv. (c) `superclaude --help` with the stub prints the wrapper-flags block then invokes `claude --help` (this path short-circuits before rack-server/tmux, so it is hermetically runnable). (d) root `superclaude --help` execs bin/superclaude and produces the same output. superclaude's full --1m path runs through tmux+rack and is not hermetically testable here — Akien's relaunch is the end-to-end validation.\n**Completion criteria:** all four files syntax-clean; rescueclaude --1m stub test passes (var set, flags stripped); superclaude --help + root pass-through produce the wrapper block then claude help; committed referencing this ticket.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-27T02:06:21.678728+00:00",
     "worker": null,
     "created_by": null,
-    "result": "Implemented --1m (ANTHROPIC_MODEL=opus[1m], off by default, flag consumed) + --help (wrapper flags then claude --help) on bin/superclaude and bin/rescueclaude; root superclaude + superclaude.ps1 collapsed to thin bin/ pass-throughs. Proofs (stubbed claude): rescueclaude --1m --new sets opus[1m] + strips both flags + forwards -p hello; no-flags leaves model unset and resumes; bin/superclaude --help and root ./superclaude --help both emit the wrapper block then exec claude --help; bash -n clean on all 3 shells. superclaude full --1m path (rack+tmux) validated by Akien relaunch.",
+    "result": "Validated by Akien 2026-07-03 (--1m used in production, loved with auto-compact-at-threshold) + inspection (root superclaude collapsed to 10-line exec pass-through; --1m/--help present in bin/superclaude). Promoted to default by T-launcher-1m-default-fresh-session.",
     "dispatched_at": null,
-    "completed_at": "2026-06-27T02:10:52.089424+00:00",
+    "completed_at": "2026-07-03T16:44:29.919751+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -37,6 +37,12 @@
     "target_difficulty": 1,
     "role": "apprentice",
     "scraps_validated": "2026-06-27T02:06:21.729018+00:00",
-    "commit_hash": "fbde6d04"
+    "commit_hash": "fbde6d04",
+    "proven": false,
+    "unproven_reason": "No launcher-script behavioral proof harness: bash wrappers have no red->green assertion form (proof_emitter can't prove shell-launcher changes). Missing lever: a hermetic launcher-spawn proof mode asserting ANTHROPIC_MODEL + fresh-vs-resume from the launched env.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

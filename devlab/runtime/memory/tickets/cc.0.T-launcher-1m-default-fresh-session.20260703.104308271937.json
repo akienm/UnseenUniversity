@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-launcher-1m-default-fresh-session.20260703.104308271937",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-launcher-1m-default-fresh-session"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T16:43:08.271937+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-launcher-1m-default-fresh-session"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-launcher-1m-default-fresh-session",
+    "title": "[sprint] Make --1m the default and retire session-reuse (always-fresh conversation); drop the --new flag",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "launcher",
+      "session-management",
+      "claude-shim"
+    ],
+    "priority": 0.55,
+    "role": "master",
+    "intention": "I intend that bin/superclaude and bin/rescueclaude launch with the 1M context window AND a fresh conversation by DEFAULT — because --1m is validated-in-production (Akien: 'used it for some time, love it with auto-compact-at-threshold') and the reasons for reusing/resuming named sessions are gone — so the operator gets max-context + clean-slate without passing any flag.",
+    "description": "Akien 2026-07-03: 'make --1m --new the defaults for superclaude and rescueclaude' — then refined to: --1m becomes the default, and --new is REMOVED entirely (sessions are always fresh, so the flag is redundant). Follow-on to T-launcher-help-and-1m-flags (which shipped --1m as opt-in, off-by-default; now validated and being promoted to default).\n\n**Two default flips + one removal:**\n(1) --1m DEFAULT: default ANTHROPIC_MODEL=opus[1m] in both launchers. PRESERVE an inverse escape (e.g. --200k / --no-1m) that unsets it back to the 200K window — the 200K-vs-1M forgetfulness A/B lever from T-launcher-help-and-1m-flags must survive the default-flip, not be destroyed (do-it-right: flip the default, keep the lever).\n(2) Always-fresh conversation: retire claude-conversation REUSE/RESUME. A launch always starts a fresh conversation (no --continue / no resume-picker). Akien: 'the whole reason for reusing sessions has been removed.'\n(3) Remove --new: bin/rescueclaude's --new flag (start-fresh-instead-of-resume) is redundant once fresh is unconditional — delete the flag + its help text.\n\n**⚠ CRITICAL — fresh-conversation ≠ unnamed-tmux. DO NOT touch CC_TMUX_SESSION.** The tmux SESSION NAMING is load-bearing in 6+ readers: instance identity (skills/context-load/run, skills/savestate/run), Granny worker routing (unseen_university/devices/granny/cc_worker_listener.py), LOUD notif delivery (unseen_university/notification_dispatcher.py, unseen_university/system_alarm_notifier.py), instance resolution (unseen_university/devices/claude/constants.py). The change is ONLY about the claude *conversation* (no --continue/resume history); the tmux session name CC_TMUX_SESSION must still be set and still resolve CC.0/CC.1. Verify context-load Step 0 availability-restore and Granny routing still work after the change.\n\n**Affected files:** bin/superclaude, bin/rescueclaude. (Root superclaude/superclaude.ps1 are already thin bin/ pass-throughs — no change needed there.)\n**Design rules:** none apply (bash launcher scripts; no memory-shape, persistence, or sqlite). delete-after-merge: remove --new flag + help text once fresh is unconditional.\n**Scope boundary:** IN — --1m default + inverse escape flag; always-fresh conversation; remove --new; PRESERVE CC_TMUX_SESSION naming. OUT — resumeclaude; changing CC_TMUX_SESSION semantics or instance-identity; superclaude.bat/.ps1 beyond flag parity.\n**Test plan:** no automated tests because these are bash launcher wrappers. Acceptance (state as the check): (a) `bin/superclaude --help` shows 1M as the DEFAULT and names the --200k/--no-1m inverse; (b) a launched session has ANTHROPIC_MODEL=opus[1m] with no resumed history; (c) inside a launched session `echo $CC_TMUX_SESSION` is still set and context-load Step 0 resolves the instance; (d) `--new` no longer appears in rescueclaude help/handling.\n**Validation (runtime):** a bare `superclaude` launch => opus[1m] + fresh conversation + CC_TMUX_SESSION still resolves the CC instance in context-load; Granny routing to CC.0 unaffected.\n**Rollback:** git revert restores opt-in --1m (off by default) and the --new flag.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n**Completion criteria:** both launchers default to opus[1m] + fresh conversation with a working inverse (--200k/--no-1m); --new removed; CC_TMUX_SESSION still resolves the instance in context-load and Granny routing.",
+    "related_to": "T-launcher-help-and-1m-flags",
+    "target_difficulty": 1,
+    "created_at": "2026-07-03T16:43:00.627587+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-03T16:43:00.672272+00:00"
+  }
+}

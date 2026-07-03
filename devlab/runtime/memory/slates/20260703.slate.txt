@@ -10,3 +10,13 @@ Next: T-converge-worker-dispatch (L, deferred per decision) is the only remainin
 - T-self-diagnostic-trouble-tickets: alarm emitters attach failure-time diagnostics (No.5 Crossbar); ANCHOR -> decompose via /sorted
 
 ## In-flight: POST-DAY-CLOSE (07-02 closed, 10 tickets proven). 3 tickets filed this tail, all pushed: (1) T-compact-at-150k-context [SPRINT] — native /compact at ~150K ctx replacing dead /autocompact hook (settings.json hook already removed, backup .bak-20260703); (2) T-fold-weekly-into-daily [OPEN_QUESTIONS Q1: fold shape a/b/c] — retire weekly audit cadence into daily; (3) T-self-diagnostic-trouble-tickets [OPEN_QUESTIONS, ANCHOR] — alarms carry failure-time diagnostics (No.5 Crossbar), decompose via /sorted, Q1 schema + Q2 probe-timing pending. Reboot imminent — clean restart + reload.
+
+## In-flight: /ticket batch (Akien 2026-07-03 post-reload). Answered 3 open items + filed 3 new + closed 1:
+- CLOSED T-launcher-help-and-1m-flags (shipped-unproven: no launcher-proof harness; --1m validated in prod).
+- NEW T-launcher-1m-default-fresh-session [SPRINT]: --1m becomes DEFAULT + always-fresh conversation + REMOVE --new; PRESERVE CC_TMUX_SESSION naming (load-bearing: identity/Granny-routing/notif in 6+ readers).
+- NEW T-levers-doc-compact-threshold [DEPENDENCY on T-compact-at-150k]: document the compact-threshold lever in docs/the_ownership_gap/2.Levers.md; doc must match shipped mechanism, not plan.
+- NEW T-consolidate-copilot-prebuild-into-python [TRIAGE]: capture 'move pre-build into Python' (copilot-at-work tickets) into the build-packet lineage; needs copilot ticket contents from Akien.
+- T-fold-weekly-into-daily -> SPRINT: Q1 answered (a) progressive-across-week.
+- T-self-diagnostic-trouble-tickets: Q1 answered (JSON, causal-chain (b) rec); Q2 still open; ANCHOR -> /sorted. Design note added: diagnostics = a build-input data pack 'one layer before what's-needed-to-build' (feeds a debug->repair->build LLM handoff).
+- T-converge-worker-dispatch-onto-rules-engine -> SPRINT (UNDEFERRED: 3 blockers closed 07-02; Akien: 'we don't defer').
+Next: T-launcher-1m-default-fresh-session and T-fold-weekly-into-daily are sprint-ready; T-compact-at-150k unblocks the levers-doc ticket. Friday extras (eval-run/weekly-retro/audit-expert) still NOT run.

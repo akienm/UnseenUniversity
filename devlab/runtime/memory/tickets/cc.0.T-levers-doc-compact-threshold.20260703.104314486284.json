@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-levers-doc-compact-threshold.20260703.104314486284",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-levers-doc-compact-threshold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T16:43:14.486284+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-levers-doc-compact-threshold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-levers-doc-compact-threshold",
+    "title": "[dependency] Document how one sets the native-compact threshold as an Environment Lever in 2.Levers.md",
+    "status": "dependency",
+    "size": "S",
+    "tags": [
+      "docs",
+      "ownership-gap",
+      "session-management"
+    ],
+    "priority": 0.4,
+    "role": "master",
+    "intention": "I intend that docs/the_ownership_gap/2.Levers.md documents HOW an operator sets the compact-firing threshold (the knob that keeps a long session fresh) — so the 'context window is disposable' mindset has its concrete, actionable environment lever written down where the levers live.",
+    "description": "Akien 2026-07-03: 'add how one sets the native compact threshold to the levers listed in docs/the_ownership_gap/2.Levers.md --- that's an important one.' The threshold is the auto-compact-at-threshold mechanism 'we have now and have just adjusted' (Akien) — i.e. what T-compact-at-150k-context lands on (native /compact fired at ~150K context tokens).\n\n**Blocked on T-compact-at-150k-context.** That ticket is still `sprint` (unbuilt) and nothing sets the threshold in settings.json today — so this doc MUST describe the mechanism that ticket actually ships (native-auto vs a fired /compact at N tokens vs a hook), not the plan. Discovery step in the sprint: read the shipped T-compact-at-150k mechanism and document THAT.\n\n**What to write:** a new subsection under `## Environment Levers` (pair it conceptually with the Mindset lever 'The context window is disposable' at line ~143) — e.g. `### The compact threshold` — covering: (1) what the threshold is; (2) the concrete how-to (the command/setting/knob an operator changes to move it); (3) the why (avoids the 'Opus felt like Haiku' context-rot without relying on the harness's late native trigger); (4) cross-ref to T-compact-at-150k-context.\n\n**Affected files:** docs/the_ownership_gap/2.Levers.md\n**Design rules:** none apply (documentation prose; no code, memory-shape, or persistence).\n**Scope boundary:** IN — one new lever subsection describing the real threshold-setting mechanism + why + cross-ref. OUT — building/altering the mechanism (that is T-compact-at-150k-context); rewriting other lever sections.\n**Test plan:** no automated tests because this is doc prose. Acceptance (state as the check): the subsection exists, names the CONCRETE knob/command an operator uses, and matches the mechanism T-compact-at-150k-context actually shipped (no stale/planned description); `grep -i 'compact' docs/the_ownership_gap/2.Levers.md` returns the new lever.\n**Validation (runtime):** a reader can follow the subsection to change the compact threshold and it works against the shipped mechanism.\n**Rollback:** git revert removes the subsection.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n**Completion criteria:** 2.Levers.md contains a compact-threshold lever subsection naming the concrete knob, matching the shipped T-compact-at-150k mechanism (not the plan).",
+    "related_to": "T-compact-at-150k-context",
+    "gate": "T-compact-at-150k-context",
+    "target_difficulty": 1,
+    "created_at": "2026-07-03T16:43:08.534770+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "scraps_validated": "2026-07-03T16:43:08.584867+00:00"
+  }
+}
