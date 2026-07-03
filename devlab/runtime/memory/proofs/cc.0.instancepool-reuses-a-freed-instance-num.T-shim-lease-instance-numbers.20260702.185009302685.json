@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.instancepool-reuses-a-freed-instance-num.T-shim-lease-instance-numbers.20260702.185009302685",
+  "emitter": "cc.0",
+  "namespace": [
+    "instancepool-reuses-a-freed-instance-num",
+    "T-shim-lease-instance-numbers"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T18:50:09.302685",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-shim-lease-instance-numbers"
+    ],
+    "commits": [
+      "ad15ee4e7a108af4060b7dd681603987b9ead449"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "InstancePool reuses a freed instance number instead of leaking a new one",
+    "intention": "after allocating 0,1,2 and releasing slot 1, the next allocate returns 1 (the reused freed slot), not 3 — a monotonic-append build fails this",
+    "test": "tests/test_instance_pool.py::test_freed_slot_is_reused_not_appended",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_instance_pool.py::test_freed_slot_is_reused_not_appended",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        This is the anti-hollow test: a hollow build that always appends (never\n        reuses) would fail this exactly.\n        \"\"\"\n        pool = InstancePool(\"Test\", home=str(tmp_path))\n        assert pool.allocate(pid=100) == 0\n        assert pool.allocate(pid=101) == 1\n        assert pool.allocate(pid=102) == 2\n    \n        pool.release(1)\n    \n        # Next allocate should reuse slot 1, not append at 3\n>       assert pool.allocate(pid=103) == 1\nE       assert 3 == 1\nE        +  where 3 = allocate(pid=103)\nE        +    where allocate = <unseen_university.devices.pool.InstancePool object at 0x7205fc165100>.allocate\n\ntests/test_instance_pool.py:85: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_instance_pool.py::test_freed_slot_is_reused_not_appended - ...\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "ad15ee4e7a108af4060b7dd681603987b9ead449",
+    "impl_paths": [
+      "unseen_university/devices/pool.py"
+    ],
+    "ticket": "T-shim-lease-instance-numbers",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
