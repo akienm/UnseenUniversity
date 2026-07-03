@@ -11,7 +11,12 @@
 # can fix things. Baking a connection string in here would (a) defeat the
 # start-even-without-the-DB contract and (b) commit a credential to the repo. Both no.
 
-CC_TMUX_SESSION=akiendelllinux_cc_RESCUE
+# Session name: <hostname>_cc_RESCUE — derived, not hardcoded, so recovery is
+# portable across boxes. Underscores not dots: tmux mangles dotted session names
+# ('.' -> '_'), which breaks targeting (T-cc-tmux-session-dot-naming-broken).
+# Fallback to 'localhost' keeps the launch unfailable if `hostname` is unavailable.
+_CC_HOST="$(hostname 2>/dev/null | cut -d. -f1 | tr '[:upper:]' '[:lower:]')"
+CC_TMUX_SESSION="${_CC_HOST:-localhost}_cc_RESCUE"
 # Repo dir is overridable ONLY for hermetic chaos-testing of the recovery path;
 # defaults to the real location. A read-only path select with a safe default —
 # it cannot make the launch fail. (T-launcher-unfailable-recovery)

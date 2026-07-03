@@ -96,21 +96,21 @@ class TestResolveSessionName:
 
 class TestFindExistingCcSession:
     def test_finds_hostname_pattern(self, monkeypatch):
-        """Returns first hostname.cc.N session found."""
+        """Returns first hostname_cc_N session found."""
         import socket
         import subprocess
         import unseen_university.devices.claude.constants as m
         from unittest.mock import MagicMock
 
         hostname = socket.gethostname().split(".")[0].lower()
-        fake = MagicMock(stdout=f"other-session\n{hostname}.cc.1\n{hostname}.cc.2\n", returncode=0)
+        fake = MagicMock(stdout=f"other-session\n{hostname}_cc_1\n{hostname}_cc_2\n", returncode=0)
         monkeypatch.setattr(subprocess, "run", lambda *a, **kw: fake)
 
         result = m._find_existing_cc_session()
-        assert result == f"{hostname}.cc.1"
+        assert result == f"{hostname}_cc_1"
 
     def test_falls_back_to_claude_main(self, monkeypatch):
-        """Returns claude-main when no hostname.cc.N session found."""
+        """Returns claude-main when no hostname_cc_N session found."""
         import subprocess
         import unseen_university.devices.claude.constants as m
         from unittest.mock import MagicMock

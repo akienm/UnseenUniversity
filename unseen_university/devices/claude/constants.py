@@ -36,7 +36,12 @@ def cc_session_path() -> Path:
 
 
 def _detect_session_name() -> str:
-    """Return <hostname>.cc.N — lowest N with no existing tmux session.
+    """Return <hostname>_cc_N — lowest N with no existing tmux session.
+
+    Underscores, not dots: tmux reserves '.' for session.window.pane targeting
+    and silently stores dotted names with '.' -> '_', so a dotted scan can never
+    match a real session (T-cc-tmux-session-dot-naming-broken). Must stay in sync
+    with bin/superclaude's derivation and uu_bash_profile_processor.sh's default.
 
     For startup use only (find a free slot before the session exists).
     To find the *running* session, use _resolve_session_name() instead.
@@ -51,14 +56,14 @@ def _detect_session_name() -> str:
     except Exception:
         existing = set()
     for n in range(16):
-        name = f"{hostname}.cc.{n}"
+        name = f"{hostname}_cc_{n}"
         if name not in existing:
             return name
-    return f"{hostname}.cc.0"
+    return f"{hostname}_cc_0"
 
 
 def _find_existing_cc_session() -> str | None:
-    """Scan running tmux sessions for hostname.cc.N or legacy claude-main."""
+    """Scan running tmux sessions for hostname_cc_N or legacy claude-main."""
     hostname = socket.gethostname().split(".")[0].lower()
     try:
         result = subprocess.run(
@@ -67,7 +72,7 @@ def _find_existing_cc_session() -> str | None:
         )
         sessions = result.stdout.splitlines()
         for name in sessions:
-            if name.startswith(f"{hostname}.cc."):
+            if name.startswith(f"{hostname}_cc_"):
                 return name
         if "claude-main" in sessions:
             return "claude-main"
@@ -85,7 +90,7 @@ def _resolve_session_name() -> str:
       2. cc_session.txt flat file — written by superclaude at startup; survives
          across hook subprocess spawns even when env var is absent (e.g. session
          started before hostname-naming change shipped).
-      3. tmux session scan — finds hostname.cc.N or legacy claude-main when
+      3. tmux session scan — finds hostname_cc_N or legacy claude-main when
          neither env var nor file is available (migration safety net).
       4. _detect_session_name() slot-find — startup fallback when no session
          exists yet and we need a name to create one.

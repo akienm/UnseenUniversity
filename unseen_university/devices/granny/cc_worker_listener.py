@@ -40,7 +40,7 @@ _GRANNY_MAILBOX_DEFAULT = os.environ.get("GRANNY_MAILBOX", "granny.0")
 _CC_MAILBOX_DEFAULT = os.environ.get("CC_MAILBOX", "cc.0")
 _CC_SESSION_DEFAULT = (
     os.environ.get("CC_TMUX_SESSION")
-    or socket.gethostname().split(".")[0].lower() + ".cc.0"
+    or socket.gethostname().split(".")[0].lower() + "_cc_0"
 )
 _POLL_INTERVAL_S = int(os.environ.get("CC_LISTENER_POLL_INTERVAL", "5"))
 _NAG_INTERVAL_S = int(os.environ.get("CC_SHIM_NAG_INTERVAL", "600"))

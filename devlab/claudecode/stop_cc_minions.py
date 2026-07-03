@@ -27,10 +27,14 @@ sys.path.insert(0, str(_UU_ROOT))
 
 _HOSTNAME = socket.gethostname().split(".")[0].lower()
 _PROTECTED_SESSIONS = frozenset({
-    # New naming: <hostname>.cc.N — protect all primary CC instances on this host.
-    # Minion sessions are named cc-T-<slug> so the cc.N suffix never collides.
-    _HOSTNAME + ".cc.0",
-    _HOSTNAME + ".cc.1",
+    # Naming: <hostname>_cc_N — protect all primary CC instances on this host.
+    # Underscores, not dots: tmux stores dotted session names with '.' -> '_', so
+    # a dotted guard would never match the real session and could fail to protect
+    # a primary CC (T-cc-tmux-session-dot-naming-broken). Minion sessions are named
+    # cc-T-<slug> so the _cc_N suffix never collides.
+    _HOSTNAME + "_cc_0",
+    _HOSTNAME + "_cc_1",
+    _HOSTNAME + "_cc_RESCUE",  # rescueclaude recovery session — never kill
     "claude-main",  # legacy name, safe to keep during transition
     "granny",
     "web-server",

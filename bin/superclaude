@@ -280,11 +280,15 @@ mkdir -p "${IGOR_HOME}/logs"
 # Start rack server if not already running (D335)
 start_rack_server
 
-# Derive tmux session name: <hostname>.cc.N (T-cc-session-hostname-naming).
+# Derive tmux session name: <hostname>_cc_N (T-cc-session-hostname-naming).
+# Underscores, not dots: tmux reserves '.' for session.window.pane targeting and
+# stores dotted session names with '.' -> '_', so a dotted `-t hostname.cc.N`
+# never matches the real session and the free-slot scan is always false-free
+# (T-cc-tmux-session-dot-naming-broken). Must match constants.py + uu_bash_profile.
 # CC_TMUX_SESSION env var wins if already set (explicit override).
 # CLAUDE_TMUX_SESSION is the legacy override name — also accepted.
 # When already inside tmux, use the current session name rather than detecting.
-# Outside tmux: find the first N where <hostname>.cc.N doesn't exist yet.
+# Outside tmux: find the first N where <hostname>_cc_N doesn't exist yet.
 _CC_HOSTNAME=$(hostname | cut -d. -f1 | tr '[:upper:]' '[:lower:]')
 if [[ -n "${CC_TMUX_SESSION:-}" ]]; then
     _CC_SESSION="$CC_TMUX_SESSION"
@@ -292,18 +296,18 @@ elif [[ -n "${CLAUDE_TMUX_SESSION:-}" ]]; then
     _CC_SESSION="$CLAUDE_TMUX_SESSION"
 elif [[ -n "${TMUX:-}" ]]; then
     _CURRENT_SESSION=$(tmux display-message -p '#{session_name}')
-    # If already in a correctly-named CC session (*.cc.N), reuse it
-    if [[ "$_CURRENT_SESSION" =~ \.cc\.[0-9]+$ ]]; then
+    # If already in a correctly-named CC session (*_cc_N), reuse it
+    if [[ "$_CURRENT_SESSION" =~ _cc_[0-9]+$ ]]; then
         _CC_SESSION="$_CURRENT_SESSION"
     else
         # Session name is wrong (e.g., claude-main). Kill it and create the correct one.
-        echo "Killing stale session '$_CURRENT_SESSION' (does not match *.cc.N pattern)"
+        echo "Killing stale session '$_CURRENT_SESSION' (does not match *_cc_N pattern)"
         tmux kill-session -t "$_CURRENT_SESSION" 2>/dev/null || true
         sleep 0.5
         # Now find the right session name
-        _CC_SESSION="${_CC_HOSTNAME}.cc.0"
+        _CC_SESSION="${_CC_HOSTNAME}_cc_0"
         for _n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-            _CANDIDATE="${_CC_HOSTNAME}.cc.${_n}"
+            _CANDIDATE="${_CC_HOSTNAME}_cc_${_n}"
             if ! tmux has-session -t "$_CANDIDATE" 2>/dev/null; then
                 _CC_SESSION="$_CANDIDATE"
                 break
@@ -313,13 +317,13 @@ elif [[ -n "${TMUX:-}" ]]; then
 else
     _CC_SESSION=""
     for _n in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-        _CANDIDATE="${_CC_HOSTNAME}.cc.${_n}"
+        _CANDIDATE="${_CC_HOSTNAME}_cc_${_n}"
         if ! tmux has-session -t "$_CANDIDATE" 2>/dev/null; then
             _CC_SESSION="$_CANDIDATE"
             break
         fi
     done
-    _CC_SESSION="${_CC_SESSION:-${_CC_HOSTNAME}.cc.0}"
+    _CC_SESSION="${_CC_SESSION:-${_CC_HOSTNAME}_cc_0}"
 fi
 # Export both names so CC (CC_TMUX_SESSION) and legacy tooling (CLAUDE_TMUX_SESSION) agree.
 export CC_TMUX_SESSION="$_CC_SESSION"
@@ -331,7 +335,7 @@ _CC_SESSION_FILE="${IGOR_HOME:-${HOME}/.unseen_university}/claudecode/cc_session
 mkdir -p "$(dirname "$_CC_SESSION_FILE")"
 printf '%s\n' "$_CC_SESSION" > "$_CC_SESSION_FILE"
 
-# Session name for -n / --remote-control: use the stable hostname.cc.N name
+# Session name for -n / --remote-control: use the stable hostname_cc_N name
 # (T-cc-session-name-regression: the old hostname-YYMMDD.HHMMSS format was wrong).
 SESSION_NAME="$_CC_SESSION"
 
