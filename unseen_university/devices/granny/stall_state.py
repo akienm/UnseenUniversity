@@ -119,4 +119,4 @@ def mru_order(candidates: list[str]) -> list[str]:
         mru_rank = mru_map.get(candidate, len(mru_list) + 1000)
         return (mru_rank, original_indices[candidate])
 
-    return list(candidates)  # STUB: no recency ordering (proof red state)
+    return sorted(candidates, key=sort_key)

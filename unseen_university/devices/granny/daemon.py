@@ -753,7 +753,10 @@ def run_once(config: dict, *, imap=None) -> None:
 
     granny_mailbox = config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT)
 
-    # STUB: park guard not yet added (proof red state)
+    # PARK guard: if stalled, stop cycling until manually resumed
+    if is_stalled():
+        log.info("granny: STALLED — parked; resume to continue")
+        return
     # Merge static config + self-announced workers; announced workers take precedence.
     # This replaces the static 'workers:' YAML block for self-announcing workers.
     workers_cfg = {**config.get("workers", {}), **_load_announced_workers()}
