@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-worker-pool-semantics",
-    "title": "[sprint] Pool semantics: max_instances (singleton = pool-of-1), .0 durable / 1+ ephemeral wiped on startup",
-    "status": "sprint",
+    "title": "Pool semantics: max_instances (singleton = pool-of-1), .0 durable / 1+ ephemeral wiped on startup",
+    "status": "closed",
     "size": "S",
     "tags": [
       "architecture"
@@ -35,12 +35,19 @@
     "created_at": "2026-07-02T22:53:31.936030+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Pool cap + ephemeral wipe shipped (singleton = max_instances=1, no special case). InstancePool.allocate returns None when first_free() >= max_instances; wipe_ephemeral_instance_dir rmtrees+recreates an instance's folder for number>0 (slot 0 durable, never wiped). MAX_INSTANCES lives in a lightweight consts.py both the front-door (caps its pool) and device (class attr) read without importing the heavy device; __main__ wipes on boot. Two proofs: cap-refusal (uncapped build returns 1 not None) + wipe-vs-preserve (no-op build leaves DS.1 intact), both stub->impl red->green. Scope-held: multi-instance spawn policy + per-instance mailbox = T-granny-wake.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T00:59:45.224153+00:00",
     "required_files": [],
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-02T22:53:31.981146+00:00"
+    "scraps_validated": "2026-07-02T22:53:31.981146+00:00",
+    "proven": true,
+    "proof_id": "cc.0.ephemeral-instance-folder-is-wiped-on-st.T-worker-pool-semantics.20260702.185931185282",
+    "proof_commit": "e03b7d1dc167c656d42dac669a4099d8a33ab7a0",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
