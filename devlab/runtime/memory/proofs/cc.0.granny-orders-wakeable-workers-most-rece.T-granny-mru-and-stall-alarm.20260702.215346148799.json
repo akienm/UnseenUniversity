@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.granny-orders-wakeable-workers-most-rece.T-granny-mru-and-stall-alarm.20260702.215346148799",
+  "emitter": "cc.0",
+  "namespace": [
+    "granny-orders-wakeable-workers-most-rece",
+    "T-granny-mru-and-stall-alarm"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T21:53:46.148799",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-mru-and-stall-alarm"
+    ],
+    "commits": [
+      "9ff0a3cc0edc6cb92b7f91fa2c76c3a47652c1f0"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Granny orders wakeable workers most-recently-dispatched first (MRU)",
+    "intention": "after record_dispatch('A') then record_dispatch('B'), mru_order(['A','B']) returns ['B','A'] — a build without recency ordering returns them in input order",
+    "test": "tests/granny/test_granny_stall.py::test_mru_orders_most_recent_first",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/granny/test_granny_stall.py::test_mru_orders_most_recent_first",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        # Monkeypatch FIRST\n        monkeypatch.setattr(stall_state, \"_STATE\", tmp_path / \"stall_state.json\")\n        monkeypatch.setattr(stall_state, \"_MRU\", tmp_path / \"mru.json\")\n    \n        # Record dispatches in order: A, then B\n        stall_state.record_dispatch(\"A\")\n        stall_state.record_dispatch(\"B\")\n    \n        # B should rank first (most recent), A second\n        result = stall_state.mru_order([\"A\", \"B\"])\n>       assert result == [\"B\", \"A\"]\nE       AssertionError: assert ['A', 'B'] == ['B', 'A']\nE         \nE         At index 0 diff: 'A' != 'B'\nE         Use -v to get more diff\n\ntests/granny/test_granny_stall.py:112: AssertionError\n=========================== short test summary info ============================\nFAILED tests/granny/test_granny_stall.py::test_mru_orders_most_recent_first\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "9ff0a3cc0edc6cb92b7f91fa2c76c3a47652c1f0",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.a-stalled-granny-parks-and-does-not-re-r.T-granny-mru-and-stall-alarm.20260702.215337250271.json",
+      "devlab/runtime/memory/slates/20260702.slate.txt",
+      "unseen_university/devices/granny/daemon.py",
+      "unseen_university/devices/granny/stall_state.py"
+    ],
+    "ticket": "T-granny-mru-and-stall-alarm",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
