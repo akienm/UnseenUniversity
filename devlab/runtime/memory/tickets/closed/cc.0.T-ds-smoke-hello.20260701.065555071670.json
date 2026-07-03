@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-ds-smoke-hello",
-    "title": "[sprint] Smoke: write /tmp/ds_smoke/SMOKE_OK.txt then DONE",
+    "title": "Smoke: write /tmp/ds_smoke/SMOKE_OK.txt then DONE",
     "size": "S",
     "tags": [
       "DickSimnel",
@@ -31,17 +31,23 @@
     "decision_id": "D-ds-first-live-build-on-hex-2026-06-30",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-01T12:55:54.585468+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "FIRST PROVEN LIVE DS.0 BUILD ON HEX. DS.0 fetched the ticket, routed worker->devstral-small-2:24b@Hex, the agentic ToolLoop called Write, and /tmp/ds_smoke/SMOKE_OK.txt was created with exact content 'dicksimnel smoke ok'; result 'DONE: wrote smoke file'; cost $0.00; 3 turns/~15s. Ran the build CORE directly (dev._run_inference), not via Granny dispatch (avoided churning the 87-ticket queue on the first run); Granny->DS.0 dispatch is separately test-green (T-granny-rules-engine-tests-red).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T21:23:03.650737+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
-    "scraps_validated": "2026-07-01T12:55:54.629016+00:00"
+    "scraps_validated": "2026-07-01T12:55:54.629016+00:00",
+    "proven": false,
+    "unproven_reason": "Build proven by live artifact (/tmp/ds_smoke/SMOKE_OK.txt, exact content, built on Hex) — a hollow build can't fake it. No proof_emitter harness for a live-inference-build artifact; and the Granny->DS.0 dispatch half was not run live (test-green only). Lever: a live-build-artifact proof mode + a controlled single-ticket Granny dispatch E2E.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

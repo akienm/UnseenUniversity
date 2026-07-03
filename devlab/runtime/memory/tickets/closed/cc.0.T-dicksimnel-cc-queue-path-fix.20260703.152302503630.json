@@ -17,8 +17,8 @@
   },
   "body": {
     "id": "T-dicksimnel-cc-queue-path-fix",
-    "title": "[sprint] Fix DS.0 _CC_QUEUE path (reorg fallout — parents[2] -> uu_root())",
-    "status": "sprint",
+    "title": "Fix DS.0 _CC_QUEUE path (reorg fallout — parents[2] -> uu_root())",
+    "status": "closed",
     "size": "S",
     "tags": [
       "dicksimnel",
@@ -32,9 +32,9 @@
     "created_at": "2026-07-03T21:22:58.964758+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "device.py:38 _CC_QUEUE now Path(uu_root())/devlab/claudecode/cc_queue.py; exists()=True; DS.0 fetches tickets. tests/test_dicksimnel_cc_queue_path.py green (2/2).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T21:23:02.803914+00:00",
     "required_files": [],
     "github_issue": null,
     "decision_id": null,
@@ -43,6 +43,12 @@
     "target_difficulty": 1,
     "scraps_validated": "2026-07-03T21:22:59.008303+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "30388ad7-bb06-4807-81c7-c8bc32448701"
+    "inferred_intention_id": "30388ad7-bb06-4807-81c7-c8bc32448701",
+    "proven": false,
+    "unproven_reason": "Reorg-regression fix (proof_emitter can't red a regression — the correct path predates the reorg; see reference_proof_emitter_cant_prove_refactors). Empirically proven: the live DS.0 build fetched the ticket + wrote SMOKE_OK.txt (impossible without the fix), and the unit test asserts _CC_QUEUE resolves+exists. Lever: a proof mode reding against the regressing commit.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
