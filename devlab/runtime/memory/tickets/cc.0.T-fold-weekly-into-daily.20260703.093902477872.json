@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-fold-weekly-into-daily.20260703.093902477872",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fold-weekly-into-daily"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T15:39:02.477872+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-fold-weekly-into-daily"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fold-weekly-into-daily",
+    "title": "[open_questions] Retire the weekly/monthly audit cadence; fold eval-run + weekly-retro + audit-expert into daily day-close",
+    "status": "open_questions",
+    "size": "M",
+    "tags": [
+      "skills",
+      "day-close",
+      "cadence"
+    ],
+    "priority": 0.5,
+    "role": "master",
+    "intention": "I intend that the day-close ritual has NO weekly-gated or monthly-gated branch — the audit/eval/retro work that lived on the Friday/first-Monday cadence is absorbed into the daily flow, so coverage is continuous and no single day carries a heavy batch.",
+    "description": "Akien 2026-07-03: 'weekly was supposed to go away and be wrapped into daily.' Today day-close step 13.5 gates three heavyweight skills behind `date +%u = 5` (Friday: /eval-run + /weekly-retro + /audit-expert) and a first-Monday-of-month branch (/audit-expert --mode=monthly). That weekly cadence is being retired.\n\n**Q1 (design fork — needs Akien): what shape does 'wrapped into daily' take?**\n  (a) RECOMMENDED — rotate a slice per weekday: each day runs one dimension (e.g. Mon=eval-run, Tue=retro delta, Wed/Thu/Fri=2-3 experts) so a full week still covers what the weekly did, but no heavy day and daily cost stays bounded.\n  (b) Run all three every day (full coverage daily; ~5-7x the audit cost — likely too heavy).\n  (c) Lighter daily variants of each (a fast eval subset, a 1-line retro delta, 1 random expert/day) that together approximate the weekly over a week.\nA1: <pending Akien>\n\n**What to build (once Q1 answered):**\n- Remove step 13.5 (Friday block) and the first-Monday monthly block from skills/day-close/SKILL.md.\n- Fold the chosen daily form into the day-close steps (new step, or inline into the audit step 4/5).\n- Reconcile with the audit-emphasis/telemetry substrate if the daily form reads it.\n- Ensure /eval-run, /weekly-retro (rename? it's no longer weekly), /audit-expert still work when invoked directly (don't delete the skills, just change WHO calls them and WHEN).\n\n**Affected files:** skills/day-close/SKILL.md (remove weekly/monthly gates, add daily fold), possibly skills/weekly-retro/ (rename to retro or daily-retro), skills/eval-run/ + skills/audit-expert/ (mode params for a daily slice)\n**Design rules:** none apply (skill-cadence change); audit-feedback check on touched skills/\n**Scope boundary:** IN: retire weekly+monthly gating in day-close, fold into daily per Q1. OUT: deleting the eval-run/audit-expert/weekly-retro skills themselves (they stay as callable units); changing WHAT each audit checks.\n**Test plan:** no automated tests because: this is a skill-prose/cadence change (skills are markdown rituals, not code). Verification is a dry-run of day-close on a non-Friday showing the daily audit slice runs, and on a Friday showing NO special heavy batch. State this dry-run as the acceptance check.\n**Validation (runtime):** a day-close on any weekday runs its audit slice (a log/slate line naming which dimension ran); no day-of-week branch remains in SKILL.md (grep 'date +%u' returns nothing in day-close).\n**Observable via:** slate 'Done today' notes the daily audit slice that ran; `grep -c 'date +%u' skills/day-close/SKILL.md` == 0 after.\n**Rollback:** git revert restores the weekly/monthly gates.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T15:38:55.045840+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T15:38:55.090412+00:00"
+  }
+}
