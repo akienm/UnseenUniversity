@@ -1,3 +1,7 @@
 - T-slate-writer-dirty-tree: Background slate writer dirties tree during proof emission; defer writes or gate
 
 ## In-flight: T-slate-writer-dirty-tree filed (S, devex friction); clean end of 6-ticket proven chain.
+
+## Session close 2026-07-03
+Done: Day-close for 2026-07-02 complete: 10 tickets proven (full front-door/worker-pool chain), slate terminated + CLOSED, roll-up note + GitHub Discussion #21 posted.
+Next: T-converge-worker-dispatch (L, deferred per decision) is the only remaining chain ticket — ask Akien whether to un-defer or pick new work. Friday extras (eval-run/weekly-retro/audit-expert) NOT auto-run — surface to Akien.
