@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-ds0-dispatch-e2e.20260703.162253095046",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-ds0-dispatch-e2e"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T22:22:53.095046+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-ds0-dispatch-e2e"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-ds0-dispatch-e2e",
+    "title": "[dependency] Full autonomous E2E: Granny dispatches a real ticket -> DS.0 wakes -> builds -> closes",
+    "status": "dependency",
+    "size": "M",
+    "tags": [
+      "dicksimnel",
+      "granny",
+      "worker-dispatch",
+      "e2e"
+    ],
+    "priority": 0.5,
+    "role": "master",
+    "gate": "T-ds-listener-proof-on-close",
+    "related_to": "T-ds-listener-proof-on-close",
+    "intention": "I intend that the full autonomous pipeline runs unassisted end-to-end — Granny dispatches a real builder ticket, DS.0's front-door wakes it, DS.0 builds on Hex and CLOSES the ticket through the proof-on-close gate — so the CC.0+Akien-push / DS.0-build loop turns without me driving each step.",
+    "description": "The autonomous complement to T-ds-fullcycle-observe-run (which drives DS.0 directly). Prove the FULL loop through Granny: a real builder ticket -> Granny routes builder->DickSimnel.0 (fixed today, 27 tests green) -> DS.0 front-door wakes the device on the bus dispatch -> DS.0 builds on Hex -> _post_result closes (needs T-ds-listener-proof-on-close first, else it escalates at close). Prereqs to handle in the run: (a) DS.0's front-door must be RUNNING to receive the dispatch (shim owns startup — GL is passive; survey flagged the front-door isn't auto-started); (b) do it CONTROLLED — the sprint queue currently holds ~87 tickets (82 master/5 builder), so a blind Granny restart would churn them all; scope to a single builder ticket (e.g. T-ds-smoke-hello or the path-sweep), or gate the others, before restarting Granny; (c) Granny is currently self-parked (is_stalled) — resume + reload config. Gated on the close fix so the loop can actually COMPLETE.\n\n**Affected files:** none new expected (integration run); any wake/front-door gap found gets its own fix.\n**Design rules:** log-every-interface-crossing (dispatch/wake/close crossings); ground-loop-is-passive (front-door start is the shim's job, not GL).\n**Scope boundary:** IN — a single controlled real ticket dispatched via Granny -> DS.0 wake -> build -> close, observed end-to-end. OUT — unleashing the full 87-ticket queue; the standing-CC.1 builder path.\n**Test plan:** integration/observation — the dispatched ticket reaches status=closed via the Granny->DS.0->Hex->close path, with the handshake (dispatch->ack->done) logged; no manual step in the middle.\n**Completion criteria:** a real ticket goes from Granny dispatch to closed via DS.0-on-Hex with zero manual intervention; the handshake + build + close are logged.\n**Rollback:** n/a (observation); park Granny again after.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T22:22:49.141407+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T22:22:49.193532+00:00"
+  }
+}
