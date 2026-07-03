@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-inference-mark-anthropic-defunct",
-    "title": "[in_progress] Mark the anthropic inference source zero-balance/unavailable (browser-auth, no key)",
-    "status": "in_progress",
+    "title": "Mark the anthropic inference source zero-balance/unavailable (browser-auth, no key)",
+    "status": "closed",
     "size": "M",
     "tags": [
       "inference",
@@ -36,13 +36,19 @@
     "created_at": "2026-07-03T18:10:46.445501+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Added a first-class Source.defunct flag: __post_init__ forces available=False and check_and_update()/ping() never revive a defunct source, so policy (zero balance) beats live connectivity — a stale ANTHROPIC_API_KEY can't bring it back. AnthropicSource is defunct-by-policy (browser-auth, 5x Max, zero balance) and default_registry() registers it explicitly-defunct (replacing the temporary Ollama-test comment) so it's VISIBLE in source info as OFF and re-enabling other test-disabled sources can't revive it. Removes only designer rule 7 (last-resort direct anthropic); designer keeps gemini free/paid/OR — no tier stranded. 4 targeted tests pass (tests/inference/test_defunct_source.py); inference source/routing regression suite green. Commit 1c35ff0c.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T18:51:12.958713+00:00",
     "required_files": [],
     "github_issue": null,
     "gate": null,
     "target_difficulty": 1,
-    "scraps_validated": "2026-07-03T18:10:46.445573+00:00"
+    "scraps_validated": "2026-07-03T18:10:46.445573+00:00",
+    "proven": false,
+    "unproven_reason": "Committed impl+test atomically instead of stub-first, so proof_emitter can't isolate an authentic assertion-red: a NEW-field feature reverted-to-red loses the field itself, making the test error on the missing kwarg rather than assert-fail. Behavior IS covered by test_defunct_overrides_ping (passes; would fail without the enforcement). Missing lever: stub-first commit discipline (field-first commit, enforcement-second) — or a proof mode that reverts only the enforcement hunk, not the whole commit.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
