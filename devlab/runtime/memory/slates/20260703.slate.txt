@@ -21,3 +21,15 @@ Next: T-converge-worker-dispatch (L, deferred per decision) is the only remainin
 - T-converge-worker-dispatch-onto-rules-engine -> SPRINT (UNDEFERRED: 3 blockers closed 07-02; Akien: 'we don't defer').
 Next: T-launcher-1m-default-fresh-session and T-fold-weekly-into-daily are sprint-ready; T-compact-at-150k unblocks the levers-doc ticket. Friday extras (eval-run/weekly-retro/audit-expert) still NOT run.
 - D-granny-pull-dispatch-model-2026-07-03: Granny PULL-dispatch + shim-owns-startup + class-semaphore + self-clearing no-builders alarm — T-frontdoor-bringup-hardening (Phase1/sprint), T-availability-semaphore-build-class, T-cc-shim-reachability-gate-backoff, T-no-builders-alarm-done-right (Phase2/dependency), T-consequence-D-granny-pull-dispatch-model. Links: T-converge-worker-dispatch, T-self-diagnostic-trouble-tickets, T-ds-smoke-hello, T-consequence-D-ds-first-live-build-on-hex.
+- T-launcher-1m-default-fresh-session: launcher 1M-default + always-fresh + drop --new (in_progress)
+
+## In-flight: T-launcher-1m-default-fresh-session CLOSED (shipped-unproven; commit 569bf200). 1M-context now DEFAULT in bin/superclaude + bin/rescueclaude via clearing CLAUDE_CODE_DISABLE_1M_CONTEXT (.bashrc sets =1); --200k/--no-1m = inverse A/B lever. Dropped fragile ANTHROPIC_MODEL=opus[1m]; rescueclaude always-fresh (RESUME_ARGS=()), --new removed. Akien on 5x Max plan, browser auth, NO API keys anymore. Launcher Phase-0 DONE.
+
+## NEXT (Akien-flagged 'clean up next', part of DS.0 course — deep-repair everything in the way): .bashrc / env / creds / device-data-layout cleanup. Sonnet left a mess:
+  - Migrate ALL AI/Igor/Anthropic/OpenRouter/Ollama/UU vars OUT of ~/.bashrc into ~/.unseen_university/uu_bash_profile.sh (migration was started, left incomplete).
+  - Debris to remove: ~/.unseen_university/uu_bash_profile.sh.pre-uu-rename.bak; ~/.unseen_university/.env (should NOT exist); reconcile ~/.unseen_university/uu.env.
+  - Creds: akien creds at ~/.unseen_university/akien/akien.credentials.cfg; Igor creds -> instance dir.
+  - Inference proxy: mark the Anthropic key as zero-balance/defunct (browser auth now; testing it returns zero). OpenRouter ~$20 — Akien re-enables later to burn+test, won't top up.
+  - DEVICE-DATA LAYOUT (Akien 2026-07-03): in ~/.unseen_university/devices/, class and INSTANCE dirs are FLAT SIBLINGS, not nested. e.g. devices/DickSimnel + devices/DS.0; devices/igor + devices/IgorWild1 (NOT devices/igor/IgorWild1). Easier to see/traverse. Reverses the earlier nested example.
+  - Launcher follow-on: with no keys, superclaude require_api_key()/OR-var-stripping may be vestigial — review during this cleanup (NOT in the launcher ticket).
+  Capture via /sorted after verifying actual on-disk file state (exact-id preflight before any rm).
