@@ -45,36 +45,37 @@ else
   RECOVERY_NOTES+=("venv unavailable at ${_venv} (python3 missing or venv creation failed). CC is starting anyway — rebuild from inside, e.g.  python3 -m venv .venv && pip install -e .")
 fi
 # ── Wrapper flags (consumed here, never forwarded to claude) ──────────────────
-# --new : start a FRESH RESCUE conversation instead of resuming the picker —
-#         same display/remote-control name (still the RESCUE instance), just a new
-#         conversation, so it boots with current tools, not a stale tool set.
-# --1m  : use the 1M-token context window. Off by default. The control is the
-#         CLAUDE_CODE_DISABLE_1M_CONTEXT env var, which .bashrc exports =1 for
-#         session hygiene; --1m UNSETS it for this launch so the 1M window is
-#         allowed. It does NOT touch the model — there is no "opus[1m]" model and
-#         the [1m] suffix does not gate the context window; pick the model with
-#         /model as usual. Opus 1M is auto-included on Max/Team/Enterprise (no
-#         credit gate). (T-launcher-help-and-1m-flags)
-# --help: print these wrapper flags, then claude's own --help.
+# Recovery ALWAYS starts a fresh conversation (no resume-picker) so it boots with
+# the current tool set, not a stale one — the old --new flag was the only reason
+# to override a resuming default, and since we no longer resume, it is removed
+# (T-launcher-1m-default-fresh-session).
+# 1M context is ON BY DEFAULT: the launcher clears the CLAUDE_CODE_DISABLE_1M_CONTEXT=1
+# that .bashrc exports for hygiene, so the 1M Opus window is allowed (auto-included
+# on the Max plan). The [1m] model suffix IS real and documented — the control here
+# is the kill-switch env var (the prior "there is no opus[1m] model" comment was wrong).
+# --1m           : explicitly ensure 1M (redundant now — kept for muscle memory).
+# --200k/--no-1m : disable 1M for this launch (restores the 200K window; A/B lever).
+# --help         : print these wrapper flags, then claude's own --help.
 # Flags may appear in any order; everything else is forwarded to claude.
-RESUME_ARGS=(--resume "$CC_TMUX_SESSION")
+RESUME_ARGS=()                          # always fresh — no resume-picker.
+unset CLAUDE_CODE_DISABLE_1M_CONTEXT    # 1M on by default; --200k re-sets it below.
 PASS_ARGS=()
 for arg in "$@"; do
   case "$arg" in
-    --new)  RESUME_ARGS=() ;;
     --1m)   unset CLAUDE_CODE_DISABLE_1M_CONTEXT ;;
+    --200k|--no-1m) export CLAUDE_CODE_DISABLE_1M_CONTEXT=1 ;;
     --help|-h)
       cat <<'HELP'
 rescueclaude — the "everything's borked" recovery launcher.
 
   Wrapper flags (consumed by rescueclaude, NOT passed to claude):
-    --new       Start a fresh RESCUE conversation instead of resuming the picker.
-    --1m        Use the 1M-token context window (unsets the inherited
-                CLAUDE_CODE_DISABLE_1M_CONTEXT=1 from .bashrc). Off by default.
-                Does not change the model — pick it with /model. Opus 1M is
-                auto-included on Max/Team/Enterprise.
-    --help, -h  Show this message, then claude's own --help below.
+    --1m            Explicitly ensure the 1M-token context window. 1M is now the
+                    DEFAULT (a bare `rescueclaude` already gets it) — redundant,
+                    kept for muscle memory.
+    --200k, --no-1m Disable the 1M window for this launch (restores 200K).
+    --help, -h      Show this message, then claude's own --help below.
 
+  Recovery always starts a fresh conversation (the old --new is now the default).
   All other arguments are forwarded to claude.
 ──────────────────────────────────────────────────────────────────────────────
 HELP
