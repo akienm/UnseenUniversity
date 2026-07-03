@@ -115,7 +115,7 @@ class DickSimnelFrontDoor:
 
     def _device_alive(self) -> bool:
         """Check if device process is still alive."""
-        return False  # STUB: liveness gate not yet implemented (proof red state)
+        return self._proc is not None and self._proc.poll() is None
 
     def _spawn_device(self) -> None:
         """Spawn DickSimnel.0 device subprocess with UU_FRONTDOOR env var set.
