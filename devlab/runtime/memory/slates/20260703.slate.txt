@@ -15,7 +15,7 @@ Next: T-converge-worker-dispatch (L, deferred per decision) is the only remainin
 - CLOSED T-launcher-help-and-1m-flags (shipped-unproven: no launcher-proof harness; --1m validated in prod).
 - NEW T-launcher-1m-default-fresh-session [SPRINT]: --1m becomes DEFAULT + always-fresh conversation + REMOVE --new; PRESERVE CC_TMUX_SESSION naming (load-bearing: identity/Granny-routing/notif in 6+ readers).
 - NEW T-levers-doc-compact-threshold [DEPENDENCY on T-compact-at-150k]: document the compact-threshold lever in docs/the_ownership_gap/2.Levers.md; doc must match shipped mechanism, not plan.
-- NEW T-consolidate-copilot-prebuild-into-python [TRIAGE]: capture 'move pre-build into Python' (copilot-at-work tickets) into the build-packet lineage; needs copilot ticket contents from Akien.
+- 'move pre-build into Python' = ALREADY TICKETED (T-uu-build-packet-compiler [sprint], deterministic build_packet.json; source reading 202603031000_CopilotPrompt...). Discarded my duplicate T-consolidate-copilot-prebuild-into-python; self-diagnostic design-note repointed to that lineage.
 - T-fold-weekly-into-daily -> SPRINT: Q1 answered (a) progressive-across-week.
 - T-self-diagnostic-trouble-tickets: Q1 answered (JSON, causal-chain (b) rec); Q2 still open; ANCHOR -> /sorted. Design note added: diagnostics = a build-input data pack 'one layer before what's-needed-to-build' (feeds a debug->repair->build LLM handoff).
 - T-converge-worker-dispatch-onto-rules-engine -> SPRINT (UNDEFERRED: 3 blockers closed 07-02; Akien: 'we don't defer').
