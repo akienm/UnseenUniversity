@@ -7,3 +7,4 @@ Done: Day-close for 2026-07-02 complete: 10 tickets proven (full front-door/work
 Next: T-converge-worker-dispatch (L, deferred per decision) is the only remaining chain ticket — ask Akien whether to un-defer or pick new work. Friday extras (eval-run/weekly-retro/audit-expert) NOT auto-run — surface to Akien.
 - T-compact-at-150k-context: native /compact at ~150K context tokens; remove dead /autocompact cadence
 - T-fold-weekly-into-daily: retire weekly/monthly audit cadence, fold into daily day-close (Q1: fold shape)
+- T-self-diagnostic-trouble-tickets: alarm emitters attach failure-time diagnostics (No.5 Crossbar); ANCHOR -> decompose via /sorted

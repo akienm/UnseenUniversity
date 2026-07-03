@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-self-diagnostic-trouble-tickets.20260703.094354009688",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-diagnostic-trouble-tickets"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T15:43:54.009688+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-self-diagnostic-trouble-tickets"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-diagnostic-trouble-tickets",
+    "title": "[open_questions] Trouble-ticket emitters SHALL attach failure-time diagnostics (self-diagnostic System Alarms, No.5 Crossbar lineage)",
+    "status": "open_questions",
+    "size": "L",
+    "tags": [
+      "system-alarms",
+      "diagnostics",
+      "architecture",
+      "observability"
+    ],
+    "priority": 0.6,
+    "role": "master",
+    "intention": "I intend that no System Alarm is ever raised as a bare assertion of failure ('Hex is down') — every trouble ticket carries the diagnostic evidence gathered AT failure time (what was tested, what responded, what didn't, what recovery was attempted and how it failed), so the alarm is self-explaining and, later, machine-actionable input to automated diagnostic + repair systems.",
+    "description": "Akien 2026-07-03, foundational principle. System Alarm is the top-level escalation for anything that needs attention and can't be handled any other way. The rework: **ALL TROUBLE-TICKET EMITTERS SHALL INCLUDE DIAGNOSTICS TAKEN AT FAILURE TIME.**\n\n**Basis / why:** the No.5 Crossbar telephone exchange's trouble tickets were inherently self-diagnostic — the trouble recorder punched WHAT it had tested and WHERE the fault localized, not just 'call failed'. We adopt the same discipline. We should never emit 'Hex is down' without the alarm itself proving: was the network path to Hex working? does Hex answer pings? is the box up but ollama down? was a restart attempted over ssh and did it fail with a specific error? The diagnostic chain IS the ticket. This becomes the structured INPUT to automated diagnostic/repair systems we will invent later — so the diagnostics must be machine-readable, not just prose.\n\n**Current gap (concrete):** `raise_alarm(signature, caller, message, level, emit_log, fatal, now)` carries only a human one-liner `message`; the persisted record has signature/count/callers/last_message/level — NO structured diagnostics field. ~11 emitters can fire bare failures: db_proxy.py:291, inference/device.py:314+512, inference/domains/base.py:151+197+213, ground_loop/supervisor.py:99+128, granny/daemon.py:923 (the granny-stalled alarm added 2026-07-02 — itself a bare 'no wakeable worker' with no proof it probed the workers), igor/setup_assets/installer.py:74+104.\n\n**This is an ANCHOR ticket — it should decompose (recommend /sorted) into:**\n  (1) DECISION capturing this principle + the No.5 Crossbar basis + the machine-actionable-input intent.\n  (2) MECHANISM ticket: raise_alarm gains a structured `diagnostics` param (persisted in the record); a small DiagnosticProbe / evidence-record shape (each probe = {check, expected, observed, ok}); a helper to run an ordered probe chain and collect evidence.\n  (3) PER-EMITTER tickets: each of the ~11 callsites runs its failure-time probe chain and attaches it (e.g. Hex-down runs: network-reachable -> ping -> ollama-port -> ssh-restart-attempt, each with observed result).\n  (4) ENFORCEMENT ticket: an audit/gate — an alarm raised without diagnostics is a defect (like proof-on-close for alarms); flag bare emitters.\n\n**Q1 (design fork — needs Akien or a design session): the diagnostics schema.** Options: (a) a flat list of probe-records [{check, expected, observed, ok, ts}]; (b) a causal chain (ordered, each step gates the next, localizes the fault to the first failing link — closest to the crossbar model); (c) freeform structured dict per emitter. RECOMMEND (b) — the causal chain is what makes it self-diagnostic AND machine-actionable.\nA1: <pending>\n\n**Q2: do probes run synchronously at raise time (simple, but slow alarms) or is the evidence gathered by the emitter BEFORE calling raise_alarm (emitter owns its probe chain)?** RECOMMEND the latter — the emitter knows what to test; raise_alarm just persists the attached evidence. Keeps system_alarms transport-agnostic.\nA2: <pending>\n\n**Affected files:** unseen_university/system_alarms.py (diagnostics field + record persistence), the ~11 emitter callsites above, a new diagnostics/probe module, an enforcement audit check\n**Design rules:** no-sqlite (n/a); external-state (diagnostics persist in the alarm record flat-file); test-plan-or-why-not\n**Scope boundary (this anchor):** IN: capture the principle + decompose into decision + mechanism + per-emitter + enforcement. OUT of THIS ticket: building any single piece (those are the children). Do NOT start coding raise_alarm changes under this id — split first.\n**Test plan:** per-child. Mechanism child: raise_alarm with diagnostics persists them in the record (red: field dropped; green: present). Per-emitter child: the emitter's probe chain runs and the alarm record contains the ordered evidence with the first-failing link marked (red: bare message; green: evidence chain). Enforcement child: an alarm with empty diagnostics is flagged by the audit.\n**Validation (runtime):** `uu alarms` on a real Hex-down shows the probe chain (net ok -> ping ok -> ollama-port FAIL -> ssh-restart FAIL: <error>) not just 'Hex is down'; the first-failing link localizes the fault.\n**Observable via:** the alarm record JSON in ~/.unseen_university/operations/system_alarms/ contains a non-empty diagnostics/evidence array; log.info naming the localized fault link.\n**Rollback:** diagnostics field is additive; reverting the mechanism leaves message-only alarms (prior behavior).\n**audit-emphasis:** needs-deep-smell (the WHOLE point is no bare failures — an emitter that attaches an empty or hollow diagnostics chain defeats it; enforcement must catch that).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T15:43:47.602009+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T15:43:47.656271+00:00"
+  }
+}
