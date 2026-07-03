@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.dicksimnel-shim-front-door-wakes-the-dev.T-shim-frontdoor-on-groundloop.20260702.180244678180",
+  "emitter": "cc.0",
+  "namespace": [
+    "dicksimnel-shim-front-door-wakes-the-dev",
+    "T-shim-frontdoor-on-groundloop"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T18:02:44.678180",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-shim-frontdoor-on-groundloop"
+    ],
+    "commits": [
+      "6e2d0262c2e64f2f3cff37b3b7c6064294bc82f3"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "DickSimnel shim front-door wakes the device only when down",
+    "intention": "the front-door spawns the DickSimnel device iff it is not alive — a live Popen handle produces no spawn (single consumer, no double-work)",
+    "test": "tests/test_dicksimnel_frontdoor.py::test_ensure_device_awake_does_not_spawn_when_alive",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_dicksimnel_frontdoor.py::test_ensure_device_awake_does_not_spawn_when_alive",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \"\"\"Device should NOT spawn if already alive. Anti-hollow test.\"\"\"\n        with patch(\n            \"unseen_university.devices.dicksimnel.frontdoor.DickSimnelFrontDoor._connect_bus\"\n        ) as mock_connect:\n            mock_connect.return_value = MagicMock()\n    \n            fd = DickSimnelFrontDoor()\n            fd._proc = _make_alive_proc()  # Device already alive\n    \n            with patch(\"subprocess.Popen\") as mock_popen:\n                fd._ensure_device_awake()\n                # Popen should NOT be called\n>               assert mock_popen.call_count == 0\nE               AssertionError: assert 1 == 0\nE                +  where 1 = <MagicMock name='Popen' id='127653123826720'>.call_count\n\ntests/test_dicksimnel_frontdoor.py:73: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_dicksimnel_frontdoor.py::test_ensure_device_awake_does_not_spawn_when_alive\n1 failed in 0.12s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "6e2d0262c2e64f2f3cff37b3b7c6064294bc82f3",
+    "impl_paths": [
+      "unseen_university/devices/dicksimnel/frontdoor.py"
+    ],
+    "ticket": "T-shim-frontdoor-on-groundloop",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
