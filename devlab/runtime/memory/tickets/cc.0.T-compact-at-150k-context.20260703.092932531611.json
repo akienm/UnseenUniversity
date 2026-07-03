@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-compact-at-150k-context.20260703.092932531611",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-compact-at-150k-context"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T15:29:32.531611+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-compact-at-150k-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-compact-at-150k-context",
+    "title": "[sprint] Replace dead /autocompact cadence with native /compact fired at ~150K context tokens",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "infrastructure",
+      "session-management",
+      "claude-shim"
+    ],
+    "priority": 0.6,
+    "role": "master",
+    "intention": "I intend that a CC session compacts (via native /compact) when its live context reaches ~150K tokens — so long sessions stay fresh (avoid the 'Opus felt like Haiku' context-rot) without relying on the harness's late context-%% native trigger, and without the retired /autocompact machinery.",
+    "description": "Akien 2026-07-03: 'let's try 150K. and we can now remove autocompact.' The old ticket-close cadence hook (cc_compact_cadence.py) is dead three ways: (1) settings.json registered it as `python3 -m devices.claude.cc_compact_cadence` but post single-package-reorg the module is `unseen_university.devices.claude.cc_compact_cadence` — import fails, silently no-ops (`|| true`); (2) baseline desynced (102 vs current 2); (3) it only counts /sprint-ticket closes via sprint_token_log.py, so manual cc_queue.py closes never increment it. It also fires the RETIRED /autocompact (native /compact is canonical per feedback_native_compact_no_autocompact). There is NO native Claude Code setting for a numeric token compaction threshold — native auto-compact is context-%%-based (fired ~300K this session). So 150K must be implemented as a hook.\n\nThe settings.json Stop-hook REGISTRATION was already removed 2026-07-03 (backup ~/.claude/settings.json.bak-20260703). This ticket does the rest.\n\n**What to build:**\n1. New Stop hook (replace cc_compact_cadence): reads the Stop-hook stdin payload's `transcript_path`, sums the session's context tokens (or reads the harness-provided usage), and when live context >= CC_COMPACT_AT_TOKENS (default 150000) injects native `/compact` (NOT /autocompact) into the CC tmux session — same tmux send-keys pattern, command `/compact`. Guard against re-fire (the compaction turn itself must not re-trigger: after firing, record a baseline / cooldown so it doesn't loop).\n2. DELETE the dead machinery: cc_compact_cadence.py, its COMPACT_EVERY_N / compact_baseline_path / sprint_tokens_log_path constants IF unused elsewhere (grep first), and the ClaudeShim.start() registration that adds the Stop hook (so it isn't re-added on shim start).\n3. Register the new hook (via ClaudeShim.start() or settings.json — match the existing pattern).\n\n**Affected files:** unseen_university/devices/claude/cc_compact_cadence.py (delete/replace), unseen_university/devices/claude/constants.py (COMPACT_EVERY_N etc.), unseen_university/devices/claude/shim.py (ClaudeShim.start hook registration), ~/.claude/settings.json (new hook registration), tests/ (new proof test)\n**Design rules:** test-plan-or-why-not; no-sqlite (n/a); external-state (baseline/cooldown on disk, shim-owned)\n**Scope boundary:** IN: token-threshold Stop hook firing native /compact + full removal of dead ticket-close cadence machinery + re-fire guard. OUT: changing the native harness auto-compact behavior (can't); tuning the threshold live (env var CC_COMPACT_AT_TOKENS is enough).\n**Test plan (real red->green):** unit test the decision fn should_compact_by_tokens(current_tokens, threshold, cooldown_state) -> bool: returns True at >=150000 when not in cooldown, False below, False when in cooldown (re-fire guard). Stub: guard/threshold logic absent -> re-fires or never fires -> RED; impl -> GREEN. Plus a test that the injected command string is `/compact`, not `/autocompact`.\n**Validation (runtime):** a long session posts a `/compact` (visible in tmux + the session compacts) when context crosses ~150K, and does NOT re-fire on the post-compaction turn.\n**Logging:** log.info('cc-compact: context=%d >= %d, firing native /compact') at fire; log.debug for below-threshold ticks.\n**Observable via:** log.info('cc-compact: firing native /compact') + the /compact appearing in the CC tmux pane.\n**Rollback:** git revert restores prior (dead) hook; the settings.json registration is already removed so no compaction hook runs until this ships.\n**audit-emphasis:** needs-deep-smell (re-fire guard is the point; a trigger that loops on its own compaction turn is the failure mode).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T15:29:25.152752+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T15:29:25.196879+00:00"
+  }
+}
