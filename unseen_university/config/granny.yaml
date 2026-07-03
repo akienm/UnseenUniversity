@@ -10,12 +10,11 @@ exact_match: false
 workers:
   # CC workers self-announce via ~/.granny/announced/<worker_id>.json when
   # cc_worker_listener starts. No static entries needed — they'd become debris.
-  # DickSimnel.0 stays here because Granny needs launch_cmd to auto-start it.
+  # DickSimnel.0's front-door (Ground-Loop-managed) wakes it on bus dispatch; no launch_cmd.
   DickSimnel.0:
     dispatch: bus
     mailbox: dicksimnel.0
     worker_name: dicksimnel
-    launch_cmd: "cd /home/akien/dev/src/UnseenUniversity && .venv/bin/python3 -m unseen_university.devices.dicksimnel"
 
 rules:
   # HIGH-inertia tags go to the active sprint worker (CC.1) for careful handling.
