@@ -161,10 +161,13 @@ class InstancePool:
         Returns:
             The slot index (instance number).
         """
-        # STUB: monotonic-append only — freed slots are NOT reused yet (proof red state)
-        idx = len(self._slots)
+        idx = self.first_free()
         slot = {"pid": pid, "create_time": create_time, "handle": handle}
-        self._slots.append(slot)
+
+        if idx == len(self._slots):
+            self._slots.append(slot)
+        else:
+            self._slots[idx] = slot
 
         self._persist()
         log.info("lease: assigned %s.%d", self._class_name, idx)
