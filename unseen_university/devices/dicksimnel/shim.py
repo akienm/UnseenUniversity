@@ -15,6 +15,7 @@ Lifecycle:
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -52,6 +53,10 @@ class DickSimnelShim(BaseShim):
 
     def _write_available(self) -> None:
         """Write .true flag so Granny considers DickSimnel available for dispatch."""
+        # Front-door-spawned device skips flag management (front-door owns the flag)
+        if os.environ.get("UU_FRONTDOOR"):
+            log.debug("DickSimnelShim: UU_FRONTDOOR set — skipping flag write")
+            return
         _FLAG_DIR.mkdir(parents=True, exist_ok=True)
         _AVAILABLE_FLAG.write_text("true")
         self._flag_written = True
@@ -59,6 +64,10 @@ class DickSimnelShim(BaseShim):
 
     def _remove_available(self) -> None:
         """Remove .true flag; Granny will defer future dispatches until start() is called again."""
+        # Front-door-spawned device skips flag management (front-door owns the flag)
+        if os.environ.get("UU_FRONTDOOR"):
+            log.debug("DickSimnelShim: UU_FRONTDOOR set — skipping flag removal")
+            return
         try:
             _AVAILABLE_FLAG.unlink()
             log.info("DickSimnelShim: availability flag removed")
