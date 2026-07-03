@@ -70,6 +70,12 @@ class Source:
 
     name: str
     available: bool = True
+    # A defunct source is intentionally, PERMANENTLY off — decommissioned, zero balance,
+    # or no credential by policy — distinct from a source that merely failed a ping and may
+    # recover. __post_init__ forces available=False, and check_and_update() never pings it
+    # back on, so re-enabling sibling sources can't accidentally revive it.
+    defunct: bool = False
+    defunct_reason: str = ""
     # "flat_rate" = subscription (prefer over usage-based); "usage_based" = pay-per-token
     billing_type: str = "usage_based"
     # Cost axis for the cost-optimizing router (D-inference-cost-optimizing-router):
@@ -90,6 +96,11 @@ class Source:
     # override the class attribute; no constructor churn).
     is_local: ClassVar[bool] = False
 
+    def __post_init__(self) -> None:
+        # A defunct source starts (and stays) unavailable regardless of its ping.
+        if self.defunct:
+            self.available = False
+
     def ping(self) -> bool:
         raise NotImplementedError
 
@@ -97,7 +108,14 @@ class Source:
         raise NotImplementedError
 
     def check_and_update(self) -> bool:
-        """Ping and update self.available. Returns new availability."""
+        """Ping and update self.available. Returns new availability.
+
+        A defunct source is never pinged and never becomes available — the policy
+        (zero balance / decommissioned) wins over live connectivity.
+        """
+        if self.defunct:
+            self.available = False
+            return False
         self.available = self.ping()
         return self.available
 
@@ -364,7 +382,15 @@ class AnthropicSource(Source):
     BETA_HEADERS = "prompt-caching-2024-07-31"
 
     def __init__(self) -> None:
-        super().__init__(name="anthropic")
+        # DEFUNCT by policy: Akien is on a 5x Max plan via browser auth — there is NO paid
+        # Anthropic API key and the direct-API balance is zero. Registered-but-defunct so the
+        # source info shows it explicitly OFF (not silently absent), and re-enabling the other
+        # test-disabled sources can't revive it. Re-enable by removing defunct=True.
+        super().__init__(
+            name="anthropic",
+            defunct=True,
+            defunct_reason="browser-auth (5x Max); no paid Anthropic API key; zero balance",
+        )
 
     def _api_key(self) -> str:
         # Check env first (ANTHROPIC_API_KEY, then REAL_ANTHROPIC_API_KEY)
@@ -380,6 +406,9 @@ class AnthropicSource(Source):
         raise RuntimeError("ANTHROPIC_API_KEY not set (checked env + akien.credentials.cfg)")
 
     def ping(self) -> bool:
+        # Defunct by policy — never available, even if a stale key/connectivity exists.
+        if self.defunct:
+            return False
         # No key → source unavailable regardless of connectivity
         try:
             if not self._api_key():
@@ -1007,7 +1036,7 @@ def default_registry() -> SourceRegistry:
       3. google_free  — Google AI Studio free tier, $0 (rate-limited)
       4. google       — Google AI Studio paid, ~$0.10-0.40/1M + 75% auto-cache
       5. openrouter   — cloud fallback for non-Google models
-      6. anthropic    — direct Anthropic API with prompt caching
+      6. anthropic    — registered DEFUNCT (zero balance, browser-auth) — visible but never selected
 
     Routing prefers flat_rate sources (ollama_cloud) over usage_based within
     the same tier — see RulesEngine.route().
@@ -1018,8 +1047,13 @@ def default_registry() -> SourceRegistry:
         base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
     ))
     reg.register(GoogleSource(free_tier=True))   # google_free
+    # Anthropic is registered DEFUNCT (not commented out): Akien is on a 5x Max plan via
+    # browser auth — no paid API key, zero balance. Registering it (available=False, defunct)
+    # keeps it VISIBLE in the source info as explicitly OFF, and means re-enabling the
+    # test-disabled sources below can't accidentally revive it. Re-enable by editing
+    # AnthropicSource.__init__ (remove defunct=True). (T-inference-mark-anthropic-defunct)
+    reg.register(AnthropicSource())
     # TEMPORARY: Ollama-only test (2026-06-12) — small ticket validation
     # reg.register(GoogleSource(free_tier=False))  # google — disabled for test
     # reg.register(OpenRouterSource())             # openrouter — DISABLED for Ollama-only test
-    # reg.register(AnthropicSource())              # anthropic direct API — stay disabled
     return reg
