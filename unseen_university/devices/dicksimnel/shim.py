@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
+import signal
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -104,6 +105,7 @@ class DickSimnelShim(BaseShim):
             bus=bus,
             device=self._device,
             on_bus_failure=self._handle_bus_failure,
+            on_idle_shutdown=self._on_idle_shutdown,
         )
         self._listener.start()
         log.info("DickSimnelShim: started")
@@ -181,3 +183,8 @@ class DickSimnelShim(BaseShim):
         if self._flag_written:
             self._remove_available()
         log.info("DickSimnelShim: rollback complete")
+
+    def _on_idle_shutdown(self) -> None:
+        """Called by the listener when idle timeout is detected. Terminate cleanly via SIGTERM."""
+        log.info("DickSimnelShim: idle-sleep — terminating process")
+        os.kill(os.getpid(), signal.SIGTERM)

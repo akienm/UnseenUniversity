@@ -29,6 +29,9 @@ from unseen_university.devices.dicksimnel.consts import MAX_INSTANCES
 
 log = logging.getLogger(__name__)
 
+IDLE_POLL_INTERVAL_S = float(os.environ.get("DICKSIMNEL_IDLE_POLL_INTERVAL_S", "120"))
+IDLE_TIMEOUT_S = float(os.environ.get("DICKSIMNEL_IDLE_TIMEOUT_S", "120"))
+
 
 class DickSimnelFrontDoor:
     """
@@ -44,6 +47,7 @@ class DickSimnelFrontDoor:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._bus = self._connect_bus()
+        self._sweeper_thread: threading.Thread | None = None
 
     def _connect_bus(self):
         """Return a bus connection for idle_wait, or None if unavailable."""
@@ -58,12 +62,19 @@ class DickSimnelFrontDoor:
             return None
 
     def start(self) -> None:
-        """Write availability flag, then enter run_forever loop.
+        """Write availability flag, start sweeper thread, then enter run_forever loop.
 
         Called by runme.py start() in a daemon thread. Blocks in run_forever.
         """
         self._write_available()
         self._pool.rebuild()
+        # Start the idle sweeper thread (daemon)
+        self._sweeper_thread = threading.Thread(
+            target=self._run_idle_sweeper, daemon=True, name="dicksimnel-idle-sweeper"
+        )
+        self._sweeper_thread.start()
+        log.info("DickSimnelFrontDoor: idle sweeper thread started")
+        # Now enter main loop
         self.run_forever()
 
     def _write_available(self) -> None:
@@ -229,3 +240,38 @@ class DickSimnelFrontDoor:
             log.info("DickSimnelFrontDoor: availability flag removed")
         except FileNotFoundError:
             pass
+
+    def _run_idle_sweeper(self) -> None:
+        """Idle sweeper thread loop: periodically fire quit_if_idle to all live instances."""
+        while not self._stop.is_set():
+            try:
+                self._idle_sweep()
+            except Exception as exc:
+                log.warning("DickSimnelFrontDoor: idle_sweep error: %s", exc)
+            # Wait on stop event with timeout (so loop can exit promptly)
+            self._stop.wait(timeout=IDLE_POLL_INTERVAL_S)
+
+    def _idle_sweep(self) -> None:
+        """Send quit_if_idle to all live instances and cull dead processes."""
+        if self._bus is None:
+            return
+
+        from unseen_university.devices.bus.envelope import Envelope
+
+        # Send quit_if_idle to each live instance
+        for n in self._pool.taken():
+            try:
+                env = Envelope.now(
+                    from_device="dicksimnel-frontdoor",
+                    to_device=f"dicksimnel.{n}",
+                    payload={"kind": "quit_if_idle", "idle_timeout": IDLE_TIMEOUT_S},
+                )
+                self._bus.append(f"dicksimnel.{n}", env)
+                log.info("DickSimnelFrontDoor: quit_if_idle sent to dicksimnel.%d", n)
+            except Exception as exc:
+                log.warning("DickSimnelFrontDoor: failed to send quit_if_idle to dicksimnel.%d: %s", n, exc)
+
+        # Cull dead processes from pool
+        reclaimed = self._pool.cull_dead()
+        if reclaimed:
+            log.info("DickSimnelFrontDoor: culled dead instances: %s", reclaimed)

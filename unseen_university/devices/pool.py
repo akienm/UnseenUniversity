@@ -288,6 +288,38 @@ class InstancePool:
         """
         return [i for i, slot in enumerate(self._slots) if slot is not None]
 
+    def cull_dead(self) -> list[int]:
+        """
+        In-memory cull of dead processes.
+
+        Iterates over all slots, checks liveness via self._liveness(pid, create_time),
+        and marks dead slots as None. Trims trailing Nones, persists, and returns the
+        list of reclaimed slot indices.
+
+        Unlike rebuild(), operates in-memory and preserves live slot Popen handles.
+
+        Returns:
+            List of reclaimed (now-dead) slot indices.
+        """
+        reclaimed = []
+
+        for i, slot in enumerate(self._slots):
+            if slot is not None:
+                pid = slot.get("pid")
+                create_time = slot.get("create_time")
+
+                # Check liveness
+                if not self._liveness(pid, create_time):
+                    self._slots[i] = None
+                    reclaimed.append(i)
+
+        # Trim trailing Nones
+        while self._slots and self._slots[-1] is None:
+            self._slots.pop()
+
+        self._persist()
+        return reclaimed
+
     def _persist(self) -> None:
         """Write leases.json to disk (pid + create_time only; no Popen handles)."""
         # Ensure parent directory exists

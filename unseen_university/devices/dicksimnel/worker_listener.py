@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+import time
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ class DickSimnelWorkerListener:
         device=None,
         poll_interval: float = _POLL_INTERVAL_S,
         on_bus_failure=None,
+        on_idle_shutdown=None,
     ) -> None:
         self._bus = bus
         self._device_mailbox = device_mailbox
@@ -54,8 +56,15 @@ class DickSimnelWorkerListener:
         # Callable[[DickSimnelWorkerListener], None] — called after _FAILURE_THRESHOLD
         # consecutive receive failures. Shim injects this to handle reconnect.
         self.on_bus_failure = on_bus_failure
+        # Callable[[], None] — called when instance detects idle timeout. Shim injects
+        # this to trigger clean shutdown (SIGTERM).
+        self._on_idle_shutdown = on_idle_shutdown
+        # Idle clock — tracks last active ticket completion
+        self._idle_timeout_s = float(os.environ.get("DICKSIMNEL_IDLE_TIMEOUT_S", "120"))
+        self._last_active = None
 
     def start(self) -> None:
+        self._last_active = time.monotonic()
         self._thread = threading.Thread(target=self._run, daemon=True, name="dicksimnel-listener")
         self._thread.start()
         log.info(
@@ -94,6 +103,10 @@ class DickSimnelWorkerListener:
             return
         self._consecutive_failures = 0
 
+        # Drain-safe: track if we saw any dispatch or quit_if_idle in this batch
+        dispatch_seen = False
+        quit_timeout = None
+
         for env in envelopes:
             payload = env.payload if hasattr(env, "payload") else {}
             kind = payload.get("kind")
@@ -103,11 +116,27 @@ class DickSimnelWorkerListener:
                     "DickSimnelWorkerListener: dispatch received ticket=%s from=%s",
                     ticket_id, env.from_device,
                 )
+                dispatch_seen = True
                 self._handle_dispatch(ticket_id, env.from_device)
             elif kind in ("halt", "priority"):
                 log.info("DickSimnelWorkerListener: %s envelope — stopping listener", kind)
                 self._stop.set()
                 return
+            elif kind == "quit_if_idle":
+                # Fire-and-forget: do NOT act in loop — just record the timeout for after-loop check
+                quit_timeout = payload.get("idle_timeout", self._idle_timeout_s)
+
+        # After draining batch: check idle shutdown (only if no dispatch was in this batch)
+        if (quit_timeout is not None and not dispatch_seen and self._device is not None
+                and self._last_active is not None):  # STUB: busy-guard not yet added (proof red state)
+            idle_elapsed = time.monotonic() - self._last_active
+            if idle_elapsed >= quit_timeout:
+                log.info(
+                    "idle-sleep: %s idle %.0fs — self-exiting",
+                    self._device_mailbox, idle_elapsed
+                )
+                if self._on_idle_shutdown:
+                    self._on_idle_shutdown()
 
     def _send(self, to_device: str, payload: dict) -> None:
         if self._bus is None:
@@ -231,3 +260,4 @@ class DickSimnelWorkerListener:
 
         log.info("DickSimnel: task_outcome|ticket=%s|outcome=%s", ticket_id, _task_outcome)
         self._device._active_ticket = None
+        self._last_active = time.monotonic()
