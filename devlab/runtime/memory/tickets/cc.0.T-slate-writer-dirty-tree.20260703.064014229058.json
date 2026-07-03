@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-slate-writer-dirty-tree.20260703.064014229058",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slate-writer-dirty-tree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T12:40:14.229058+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-slate-writer-dirty-tree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slate-writer-dirty-tree",
+    "title": "[triage] Background slate writer dirties tree mid-proof; fix or gate writes",
+    "status": "triage",
+    "size": "S",
+    "tags": [
+      "infrastructure",
+      "devex"
+    ],
+    "priority": 0.5,
+    "role": "master",
+    "intention": "I intend that `proof_emitter.py` never has to use `parent_ref` gymnastics to work around uncommitted slate changes that appeared between stub+impl commits; the slate-writing mechanism should either batch-write or gate itself behind proof_emitter's clean-tree gate.",
+    "description": "**Friction during proof-on-close sprints:** when proof_emitter runs and the working tree is dirty (because a background writer touched today's slate.txt between commits), the proof binds to the wrong commit. Workaround: manually specify `parent_ref=<stub_sha>` to point proof_emitter at the stub commit. This saved cycles during T-granny-mru-and-stall-alarm (used `parent_ref` twice). Not blocking, but a pattern that will recur every sprint with multiple proof commits.\n\n**Root:** something (likely the slate sync daemon or a background monitoring process) writes to `devlab/runtime/memory/slates/YYYYMMDD.slate.txt` asynchronously between stub→impl commits, leaving the tree dirty. When proof_emitter checks `git status --porcelain | wc -l`, it detects the dirt and refuses to emit (correctly fail-safe). The workaround (manual parent_ref) is a dev overhead that accumulates.\n\n**Shape:** either (1) batch the slate writes so they land atomically AFTER proof commits close out (late-binding), or (2) wrap proof_emitter calls in a gate that temporarily pauses the slate writer during proofs. Option 1 is simpler; option 2 is tighter if the slate writer is a daemon.\n\n**Affected files:** devlab/claudecode/proof_emitter.py (where the dirt is detected), devlab/claudecode/slate_sync.py or similar (the writer)\n\n**Design rules:** none apply (infrastructure/ergonomic issue)\n\n**Scope boundary:** fix the dirt/timing issue ONLY; do NOT change proof_emitter's fail-safe (it should always refuse to emit with uncommitted work). In scope: defer writes, or gate them. Out of scope: weakening the clean-tree check, or having proof_emitter auto-amend on dirty.\n\n**Test plan:** during a stub→impl sprint pair (e.g., a proof node that runs twice), assert that proof_emitter succeeds on both runs WITHOUT requiring `parent_ref=` override. A passing test here means the tree stayed clean across all commits (stub + impl + proof commits) without manual intervention.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T12:40:07.666255+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T12:40:07.715727+00:00"
+  }
+}

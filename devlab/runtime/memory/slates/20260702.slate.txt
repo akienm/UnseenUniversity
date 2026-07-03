@@ -113,3 +113,37 @@ Done: Shipped the ENTIRE buildable front-door/worker-pool chain — 6 tickets CL
 Next: T-converge-worker-dispatch-onto-rules-engine (L) is the ONLY remaining chain ticket — DEFERRED per D-unified-capability-selector (Akien: converge when more restructuring done); it now gates T-granny-consume-mru-in-dispatch. Ask Akien whether to un-defer converge or pick new work. Pre-existing granny CC.0-config test failures (test_granny_bus_dispatch/rules_engine) are unrelated + already ticketed (T-granny-rules-engine-test-fix, T-granny-bus-setstatus-test-fix).
 
 ## In-flight: Buildable front-door chain COMPLETE (6/6 proven, HEAD 2b4c96dc). Nothing more buildable without Akien un-deferring converge. Tree clean, all pushed.
+
+---
+
+## Done today (2026-07-02 → session spanned into 07-03) — day-close consolidation
+
+Shipped **10 tickets CLOSED PROVEN** across the session (all stub→impl red→green, several anti-hollow-verified by neuter):
+
+**Stream A — capability mixins (4 tickets, pre-compact):**
+- T-capability-mixin-coding-capability (proof 66c18b2c) — CodingCapability mixin
+- T-codebuilder-compose-ds (proof fc1b2e36) — DS composes the mixin
+- T-worker-instance-identity — IdentityMixin → DS.0 agent_id off the env, not the class literal
+- T-alarm-callsites-groundloop-db-install — raise_alarm at 3 sources, db-unreachable flat-file invariant (×3)
+- T-vetinari-owns-alarm-escalation — sink reuses notify_new_alarms (×2)
+- T-vetinari-alarm-retry-default-path (4e217094) — advisor-caught hollow retry-proof fix
+
+**Front-door / worker-pool chain (6 tickets, post-compact):**
+- T-shim-frontdoor-on-groundloop (6e2d0262) — wake-only-when-down, single-consumer idle_wait
+- T-shim-lease-instance-numbers (ad15ee4e) — free-list reuse, psutil create_time defeats PID-reuse
+- T-worker-pool-semantics (e03b7d1d) — max_instances cap + ephemeral-wipe (×2 proofs)
+- T-worker-idle-sleep-bus-ask (c5a4244d) — busy instance never self-exits
+- T-granny-wake-not-launch (2362f08c) — Granny never spawns a subprocess (launch machinery removed)
+- T-granny-mru-and-stall-alarm (975089fc + 9ff0a3cc) — anti-spin park + MRU recency (×2 proofs)
+
+**Design captured:** 4 decisions (D-worker-instance-identity, D-shim-frontdoor-on-groundloop [Q1-Q3 resolved], D-worker-pool-leasing-and-singleton, D-unified-capability-selector-deferred) + 2 recorded refinements (instance-owns-idle-decision, bus-dispatch-wakes-vs-MCP).
+
+**Housekeeping filed:** T-granny-consume-mru-in-dispatch (named MRU-consumption gap), T-slate-writer-dirty-tree (devex friction), T-fix-igor-layer3-4-test-seed-imports, T-savestate-skill-run-cwd, T-outcome-check-reads-fs-store.
+
+**Corrected memory:** hold-gate rule (was overcorrected → "proceed on dependency-cleared tickets").
+
+**Next (carried to 07-03):** T-converge-worker-dispatch-onto-rules-engine (L) is the ONLY remaining chain ticket — DEFERRED per D-unified-capability-selector (Akien: converge when more restructuring done). Pre-existing granny CC.0-config test failures unrelated + already ticketed.
+
+Final HEAD: 2b4c96dc. Tree clean, all pushed.
+
+✅ CLOSED

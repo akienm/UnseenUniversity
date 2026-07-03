@@ -1,0 +1,3 @@
+- T-slate-writer-dirty-tree: Background slate writer dirties tree during proof emission; defer writes or gate
+
+## In-flight: T-slate-writer-dirty-tree filed (S, devex friction); clean end of 6-ticket proven chain.
