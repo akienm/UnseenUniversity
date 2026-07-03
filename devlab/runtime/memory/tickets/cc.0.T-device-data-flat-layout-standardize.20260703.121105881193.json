@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-device-data-flat-layout-standardize.20260703.121105881193",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-device-data-flat-layout-standardize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T18:11:05.881193+00:00",
+  "links": {
+    "decisions": [
+      "D-env-creds-device-cleanup-2026-07-03"
+    ],
+    "tickets": [
+      "T-device-data-flat-layout-standardize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-device-data-flat-layout-standardize",
+    "title": "[sprint] Standardize ~/.unseen_university/devices/ to flat class+instance sibling dirs, consistent naming",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "device-data",
+      "layout",
+      "identity"
+    ],
+    "priority": 0.5,
+    "role": "master",
+    "decision_id": "D-env-creds-device-cleanup-2026-07-03",
+    "related_to": "D-worker-instance-identity-2026-07-02",
+    "intention": "I intend that a device's runtime-data dirs under ~/.unseen_university/devices/ are FLAT SIBLINGS — the class dir and each instance dir side by side, not nested — with a consistent naming convention, so the data folder is easy to see and traverse.",
+    "description": "Akien 2026-07-03: seeing `devices/DickSimnel` and `devices/DS.0` side by side, he prefers the FLAT layout (class dir + instance dir as siblings) over nesting (NOT `devices/DickSimnel/DS.0`). Same for Igor: `devices/igor` + `devices/IgorWild1` (NOT `devices/igor/IgorWild1`, reversing an earlier nested example). Reason: easier to see/traverse.\n\nCurrent on-disk (~/.unseen_university/devices/): `DickSimnel`+`DS.0` already flat-sibling (good), but `cc_0` and `granny_weatherwax` are inconsistent (casing + instance-naming: cc_0 vs DS.0; granny_weatherwax vs DickSimnel). Standardize the convention and reconcile existing dirs to it. Decide+document the canonical form: class dir = <ClassName>, instance dir = <Abbrev>.<n> (e.g. DS.0) or the class's instance_name — reconcile with IdentityMixin.instance_name (capabilities/identity.py) and D-worker-instance-identity so the on-disk dir matches what the code computes.\n\n**Affected files:** whatever code resolves a device's runtime-data dir under uu_home()/devices/ (grep 'devices' in _uu_root.py / device base / pool.py); the on-disk dirs themselves (migrate cc_0/granny_weatherwax to convention).\n**Design rules:** check-new-paths-unseen-university (confirm dir moves under ~/.unseen_university); log-every-state-change (device data-dir resolution).\n**Scope boundary:** IN — define+document the flat class+instance sibling convention, make the code resolve dirs that way, reconcile existing inconsistent dirs (cc_0, granny_weatherwax). OUT — the identity/naming semantics themselves (D-worker-instance-identity); de-Discworld renaming (D-agent-subclass-and-de-discworld).\n**Test plan:** integration — a device resolves its runtime-data dir to the flat sibling path; class and instance dirs are siblings (red: nested or inconsistent; green: flat + convention-named). Verify no code hardcodes the old cc_0/granny_weatherwax paths.\n**Completion criteria:** devices/ uses flat class+instance sibling dirs with one documented naming convention; existing dirs reconciled; code resolves to the flat path.\n**Rollback:** git revert the resolver change; restore moved dirs from snapshot.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T18:10:40.117540+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T18:10:40.117600+00:00"
+  }
+}

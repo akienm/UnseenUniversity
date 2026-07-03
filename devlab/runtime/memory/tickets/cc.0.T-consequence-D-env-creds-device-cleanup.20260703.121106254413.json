@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-D-env-creds-device-cleanup.20260703.121106254413",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-env-creds-device-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T18:11:06.254413+00:00",
+  "links": {
+    "decisions": [
+      "D-env-creds-device-cleanup-2026-07-03"
+    ],
+    "tickets": [
+      "T-consequence-D-env-creds-device-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-env-creds-device-cleanup",
+    "title": "[sprint] Consequence check: env/creds/device-data cleanup",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "priority": 0.3,
+    "decision_id": "D-env-creds-device-cleanup-2026-07-03",
+    "gate": "2026-07-17",
+    "description": "**What changed:** local secrets consolidated to one chmod-600 home (keys rotated), .bashrc AI/UU exports migrated out, env/creds debris removed, devices/ standardized to flat class+instance siblings, anthropic inference source marked zero-balance/unavailable.\n**Predicted unintended effects:** (1) removing a .bashrc export or the .env that some UNGREPPED consumer still reads could break a device/tool at startup (extensionless run-scripts slip a *.py grep — sweep ALL, per [[reference_sweep_guard_extensionless_scripts]]); (2) marking anthropic unavailable could strand a tier that has no other capable source, causing dispatch to stall (ties to the no-builders/no-source alarm work); (3) reconciling cc_0/granny_weatherwax dir names could orphan state a device reads from the OLD path, so it boots 'fresh' and loses cachedstate; (4) rotating the OR key without updating every reader leaves a stale key somewhere -> 401s; (5) removing uu.env if it was actually processor-generated-and-read breaks env resolution.\n**Signals to watch:** a device failing to find its data dir/cachedstate after the rename; inference router logging 'no capable source' for a tier; a 401 after OR-key rotation; a shell/tool erroring on a missing env var post-migration.\n**Gate condition:** Check by 2026-07-17 or when the last cleanup ticket ships.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T18:10:59.007580+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-03T18:10:59.007635+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b92c8f6d-03c3-4bca-872f-2c3343b95fa4"
+  }
+}

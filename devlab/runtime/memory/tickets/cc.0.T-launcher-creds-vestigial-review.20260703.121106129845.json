@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-launcher-creds-vestigial-review.20260703.121106129845",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-launcher-creds-vestigial-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T18:11:06.129845+00:00",
+  "links": {
+    "decisions": [
+      "D-env-creds-device-cleanup-2026-07-03"
+    ],
+    "tickets": [
+      "T-launcher-creds-vestigial-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-launcher-creds-vestigial-review",
+    "title": "[dependency] Review superclaude require_api_key()/OR-var-stripping now that there are no keys",
+    "status": "dependency",
+    "size": "S",
+    "tags": [
+      "launcher",
+      "credentials",
+      "env-hygiene"
+    ],
+    "priority": 0.4,
+    "role": "master",
+    "decision_id": "D-env-creds-device-cleanup-2026-07-03",
+    "gate": "T-consolidate-local-secrets-one-home",
+    "related_to": "T-superclaude-openrouter-leak",
+    "intention": "I intend that superclaude's credential handling reflects the no-keys/browser-auth reality — the require_api_key() cred-sourcing and the ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY stripping are simplified to only what's still needed — so the launcher doesn't carry vestigial key machinery.",
+    "description": "Follow-on to T-launcher-1m-default-fresh-session, surfaced 2026-07-03. superclaude's require_api_key() (bin/superclaude:103-124) sources igor.credentials.cfg + akien.credentials.cfg, and both exec paths strip ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY (the incident_superclaude_401 OpenRouter-leak guard). With Akien on browser-auth and no keys, some of this is likely vestigial. Review: does anything superclaude launches still need a sourced key? The OR-leak strip guards against cred files exporting OpenRouter routing vars — if creds move to the single home (T-consolidate-local-secrets-one-home) and no anthropic key exists, re-scope the strip to exactly what's still required. Do NOT blindly remove the strip — verify the 401-leak can't recur first ([[incident_superclaude_401]]).\n\n**Affected files:** bin/superclaude (require_api_key + the two env -u strip sites).\n**Design rules:** compose-credentials-at-connect-time; no-live-keys-in-source.\n**Scope boundary:** IN — review + simplify superclaude cred-sourcing/stripping to the no-keys reality, preserving the 401-leak guarantee. OUT — rescueclaude (its no-injected-creds contract already holds); the credential relocation itself (T-consolidate-local-secrets-one-home).\n**Test plan:** no automated tests (launcher). Acceptance: a launched CC session still authenticates (browser auth) with no ANTHROPIC_* routing vars leaking to it (the 401 guard holds), and any dead cred-sourcing is removed.\n**Completion criteria:** superclaude's cred handling matches the no-keys/browser-auth reality; the 401-leak guarantee is preserved and documented.\n**Rollback:** git revert restores the current cred-sourcing/stripping.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T18:10:52.711165+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T18:10:52.711217+00:00"
+  }
+}

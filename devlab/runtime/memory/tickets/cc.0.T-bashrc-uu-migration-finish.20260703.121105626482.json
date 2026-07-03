@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-bashrc-uu-migration-finish.20260703.121105626482",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bashrc-uu-migration-finish"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T18:11:05.626482+00:00",
+  "links": {
+    "decisions": [
+      "D-env-creds-device-cleanup-2026-07-03"
+    ],
+    "tickets": [
+      "T-bashrc-uu-migration-finish"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bashrc-uu-migration-finish",
+    "title": "[sprint] Finish the .bashrc -> uu_bash_profile.sh migration; strip UUMOVED debris + AI exports",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "env-hygiene",
+      "config",
+      "bootstrap"
+    ],
+    "priority": 0.55,
+    "role": "master",
+    "decision_id": "D-env-creds-device-cleanup-2026-07-03",
+    "intention": "I intend that ~/.bashrc contains no AI/Igor/Anthropic/OpenRouter/Ollama/UnseenUniversity exports or aliases — everything AI-related lives in ~/.unseen_university/uu_bash_profile.sh (or its processor) — so .bashrc is a clean personal shell config and the UU env has one home.",
+    "description": "The .bashrc->uu_bash_profile.sh migration (D-uu-config-identity-layer-2026-06-22) was started but left incomplete. Debris/leftovers in ~/.bashrc: the `#UUMOVED#` commented exports (lines ~150,151,161,164 — CC_TMUX_SESSION, IGOR_INSTANCE_ID, UU_HOME_DB_URL, CC_WORKFLOW_TOOLS), the still-live `export CLAUDE_CODE_DISABLE_1M_CONTEXT=1` (line 154), the `cd ~/dev/src/UnseenUniversity` (line 143), the Igor-DB comment block (159-160), and the uurecall/uuresearch/compact-igor aliases+functions (167,185,188). Move the still-wanted AI/UU items into uu_bash_profile.sh; DELETE the dead #UUMOVED# comment lines. .bashrc should end with only the `source uu_bash_profile.sh` line (149) + Akien's non-UU personal config.\n\nNote: the launcher now clears CLAUDE_CODE_DISABLE_1M_CONTEXT itself (T-launcher-1m-default-fresh-session), so wherever the hygiene =1 lives, the launcher wins; keep the =1 default in uu_bash_profile.sh for non-launcher shells.\n\n**Affected files:** ~/.bashrc (personal — back up first), ~/.unseen_university/uu_bash_profile.sh.\n**Design rules:** none apply (shell config; secrets handled by T-consolidate-local-secrets-one-home).\n**Scope boundary:** IN — move non-secret AI/UU exports+aliases to uu_bash_profile.sh, delete #UUMOVED# debris from .bashrc. OUT — the two exposed SECRETS (that is T-consolidate-local-secrets-one-home); deleting the .bak/.env debris files (T-remove-env-creds-debris).\n**Test plan:** no automated tests (personal dotfile). Acceptance: `grep -niE 'anthropic|openrouter|ollama|igor|unseen|CC_TMUX|CC_WORKFLOW|UU_|CLAUDE_CODE' ~/.bashrc` returns only the single source-line; a fresh interactive shell still resolves UU_ROOT/CC_WORKFLOW_TOOLS via the processor.\n**Completion criteria:** .bashrc has no UU/AI exports/aliases beyond the source line; a fresh shell still has the full UU env via uu_bash_profile.sh + processor.\n**Rollback:** .bashrc backup restores prior state (manual — outside git).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T18:10:28.131064+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T18:10:28.131119+00:00"
+  }
+}

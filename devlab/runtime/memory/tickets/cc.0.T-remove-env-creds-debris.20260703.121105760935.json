@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-remove-env-creds-debris.20260703.121105760935",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-env-creds-debris"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T18:11:05.760935+00:00",
+  "links": {
+    "decisions": [
+      "D-env-creds-device-cleanup-2026-07-03"
+    ],
+    "tickets": [
+      "T-remove-env-creds-debris"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-env-creds-debris",
+    "title": "[dependency] Remove env/creds debris: .pre-uu-rename.bak, stray .env, kate-swp; reconcile uu.env",
+    "status": "dependency",
+    "size": "S",
+    "tags": [
+      "env-hygiene",
+      "debris",
+      "cleanup"
+    ],
+    "priority": 0.45,
+    "role": "master",
+    "decision_id": "D-env-creds-device-cleanup-2026-07-03",
+    "gate": "T-consolidate-local-secrets-one-home",
+    "intention": "I intend that ~/.unseen_university carries no stray env/creds debris — no orphaned backup, no editor swap file, no env file that shouldn't exist — so the config surface is exactly the intended set and nothing stale can be mis-sourced.",
+    "description": "Debris found on disk (Sonnet left a mess). Remove after EXACT-ID PREFLIGHT ([[feedback_exact_id_preflight_before_destructive]] — verify each is truly orphaned before rm): (1) ~/.unseen_university/uu_bash_profile.sh.pre-uu-rename.bak (Jun-24 backup, superseded by uu_bash_profile.sh); (2) ~/.unseen_university/.env (Akien: 'shouldn't exist' — remove ONLY after its GOOGLE_AI_STUDIO_API_KEY is relocated by T-consolidate-local-secrets-one-home, hence the gate); (3) ~/.unseen_university/akien/.notes_as_i_go_along.txt.kate-swp (editor swap file). (4) RECONCILE ~/.unseen_university/uu.env (UU_ROOT/UU_HOME_DB_URL/IGOR_*/CC_* — determine whether it is generated live by uu_bash_profile_processor.sh or is stale debris; if generated, leave it and document; if stale, remove). Discovery step: read bin/uu_bash_profile_processor.sh to see if it writes uu.env.\n\n**Affected files:** none in-repo — deletes runtime files under ~/.unseen_university/ (personal runtime dir).\n**Design rules:** exact-id-preflight-before-destructive; check-new-paths-unseen-university (propose+confirm before touching ~/.unseen_university).\n**Scope boundary:** IN — remove the confirmed-orphaned .bak/.env/.swp; reconcile uu.env (keep-or-remove with reason). OUT — relocating secrets (T-consolidate-local-secrets-one-home); the .bashrc edits (T-bashrc-uu-migration-finish).\n**Test plan:** no tests (runtime-file removal). Acceptance: `ls ~/.unseen_university/*.bak ~/.unseen_university/.env ~/.unseen_university/akien/*.kate-swp 2>/dev/null` returns nothing; uu.env either documented-as-live or removed with a recorded reason; a fresh shell + a device start still work (nothing depended on the removed files).\n**Completion criteria:** the three debris files are gone (post-preflight); uu.env is resolved (kept+documented or removed+reasoned); env/device bring-up unaffected.\n**Rollback:** scratchpad-snapshot each file before rm so it can be restored ([[feedback_git_checkout_clobbers_uncommitted]] — these are outside git).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T18:10:33.856493+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T18:10:33.856546+00:00"
+  }
+}

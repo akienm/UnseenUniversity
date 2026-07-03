@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-mark-anthropic-defunct.20260703.121106000131",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-mark-anthropic-defunct"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T18:11:06.000131+00:00",
+  "links": {
+    "decisions": [
+      "D-env-creds-device-cleanup-2026-07-03"
+    ],
+    "tickets": [
+      "T-inference-mark-anthropic-defunct"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-mark-anthropic-defunct",
+    "title": "[sprint] Mark the anthropic inference source zero-balance/unavailable (browser-auth, no key)",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "inference",
+      "routing",
+      "cost"
+    ],
+    "priority": 0.5,
+    "role": "master",
+    "decision_id": "D-env-creds-device-cleanup-2026-07-03",
+    "related_to": "T-inference-cost-optimizing-router",
+    "intention": "I intend that the inference proxy knows paid Anthropic is OFF — zero balance, no API key (Akien moved to a 5x Max plan with browser auth) — so the cost-optimizing router never selects the anthropic source and correctly reflects that only free/owned-local tiers plus a small OpenRouter balance remain.",
+    "description": "Akien 2026-07-03: now on a 5x Max plan, logged in via browser — NO API keys. The AnthropicSource (unseen_university/devices/inference/sources.py:367, checks ANTHROPIC_API_KEY/REAL_ANTHROPIC_API_KEY then akien.credentials.cfg, else raises) would fail or bill nothing. Mark anthropic as zero-balance/unavailable in the proxy's source info so the router (rules_engine.py / models_registry.py cost+capability data) does not select it. Note OpenRouter has ~$20 — Akien will re-enable it later to burn+test, and will NOT top up; so OR stays available-but-finite, anthropic goes unavailable.\n\nDiscovery: find WHERE source availability/balance/cost lives (models_registry.py, rules_engine.py source registration, or a cost/capability data file) and set anthropic accordingly — a data change, not a new mechanism (per [[project_inference_cost_optimizing_router]] — complexity lives in the data).\n\n**Affected files:** unseen_university/devices/inference/ (sources.py registration and/or models_registry.py / rules_engine.py source-availability data — discovery in sprint).\n**Design rules:** inference-proxy-only (all inference through the proxy); tier-not-model contract.\n**Scope boundary:** IN — mark anthropic source zero-balance/unavailable in the source info so the router skips it; keep OR available-but-finite. OUT — removing the AnthropicSource class (keep it, just unavailable — browser-auth CC doesn't route through the proxy anyway); changing routing mechanism.\n**Test plan:** unit — the router/selector does NOT return anthropic for any tier while it's marked unavailable (red: anthropic selected/raises; green: skipped with a log line naming it unavailable). Integration against the real registry.\n**Completion criteria:** the router never selects anthropic while it's marked zero-balance/unavailable, and logs the skip; OR remains selectable.\n**Rollback:** flip the anthropic source-availability data back.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T18:10:46.445501+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T18:10:46.445573+00:00"
+  }
+}
