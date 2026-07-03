@@ -122,7 +122,8 @@ def _load_config() -> dict:
 
 
 def _default_config() -> dict:
-    # CC workers self-announce; only DickSimnel.0 is static (needs launch_cmd).
+    # CC workers self-announce; only DickSimnel.0 is static (routing target).
+    # DickSimnel.0's front-door (Ground-Loop-managed) wakes it on bus dispatch.
     # Routing rules mirror config/granny.yaml — no worker_id hardcoded as fallback.
     return {
         "workers": {
@@ -413,13 +414,8 @@ def _dispatch_akien(ticket: dict) -> bool:
 DISPATCH_ACK_TIMEOUT_S = int(os.environ.get("GRANNY_DISPATCH_ACK_TIMEOUT", "120"))
 # Builder cooldown after a dispatch timeout — 10 minutes by default.
 GRANNY_BUILDER_COOLDOWN_S = int(os.environ.get("GRANNY_BUILDER_COOLDOWN_S", "600"))
-# Minimum gap between consecutive builder launch attempts.
-GRANNY_BUILDER_LAUNCH_RETRY_S = int(os.environ.get("GRANNY_BUILDER_LAUNCH_RETRY_S", "60"))
 
 _GRANNY_MAILBOX_DEFAULT = "granny.0"
-
-# Tracks when each worker was last launch-attempted so we don't spam launches.
-_last_launch_attempt: dict[str, float] = {}
 
 
 def _dispatch_bus(
@@ -745,38 +741,6 @@ def _cascade_active_workers(config: dict, tickets: list[dict]) -> dict[str, list
 # ── Poll cycle ────────────────────────────────────────────────────────────────
 
 
-def _launch_builder(worker_id: str, worker_cfg: dict) -> None:
-    """Launch a builder process when launch_cmd is configured and rate limit allows.
-
-    Detaches the process (start_new_session=True) so it outlives Granny.
-    Tracks launch time in _last_launch_attempt to rate-limit retries.
-    """
-    launch_cmd = worker_cfg.get("launch_cmd")
-    if not launch_cmd:
-        log.debug("Granny: no launch_cmd for %s — cannot launch", worker_id)
-        return
-    now = time.time()
-    last = _last_launch_attempt.get(worker_id, 0.0)
-    if now - last < GRANNY_BUILDER_LAUNCH_RETRY_S:
-        log.debug(
-            "Granny: %s launch rate-limited (%.0fs since last attempt)",
-            worker_id, now - last,
-        )
-        return
-    _last_launch_attempt[worker_id] = now
-    try:
-        subprocess.Popen(
-            launch_cmd,
-            shell=True,
-            start_new_session=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        log.info("Granny: launched builder %s: %s", worker_id, launch_cmd)
-    except Exception as exc:
-        log.warning("Granny: launch_builder %s failed: %s", worker_id, exc)
-
-
 def run_once(config: dict, *, imap=None) -> None:
     """Single poll cycle. Ticket status is the authoritative state — no side files.
 
@@ -803,20 +767,8 @@ def run_once(config: dict, *, imap=None) -> None:
     _reset_stale_inprogress()
 
     # Compute candidate tickets once: ungated ready tickets + gated tickets whose
-    # gate has now cleared. The combined list drives both the launch check and dispatch.
+    # gate has now cleared. The combined list drives dispatch decisions.
     tickets = _sprint_tickets() + _cleared_gated_tickets()
-
-    # Launch any idle workers that have sprint tickets waiting but aren't running.
-    # Only fires when there's actually work to do and the worker isn't on cooldown.
-    if tickets:
-        from unseen_university.devices.granny.availability import _avail_dir as _get_avail_dir
-        avail_dir = _get_avail_dir()
-        for wid, wcfg in workers_cfg.items():
-            if not isinstance(wcfg, dict):
-                continue
-            if not is_available(wid) and not (avail_dir / f"{wid}.cooldown_until").exists():
-                # Not available and no cooldown file means worker simply isn't running.
-                _launch_builder(wid, wcfg)
 
     rules = config.get("rules", [])
     exact_match = config.get("exact_match", False)
