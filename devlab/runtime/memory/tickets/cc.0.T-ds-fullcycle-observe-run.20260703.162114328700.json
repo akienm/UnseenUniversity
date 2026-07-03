@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ds-fullcycle-observe-run.20260703.162114328700",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-fullcycle-observe-run"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T22:21:14.328700+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-builder-leveling-2026-07-03"
+    ],
+    "tickets": [
+      "T-ds-fullcycle-observe-run"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-fullcycle-observe-run",
+    "title": "[sprint] Run DS.0 FULL-CYCLE on a real ticket to OBSERVE (not predict) the build bugs",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "dicksimnel",
+      "builder",
+      "empirical"
+    ],
+    "priority": 0.6,
+    "role": "master",
+    "decision_id": "D-ds-builder-leveling-2026-07-03",
+    "related_to": "T-reorg-parents-path-sweep",
+    "intention": "I intend that DS.0's builder is leveled up from what ACTUALLY breaks on a real full-cycle build, not from what I predicted by reading the prompt — because reading predicts bugs while running finds them (the _CC_QUEUE bug wasn't predicted; the run surfaced it).",
+    "description": "Advisor 2026-07-03: level DS.0 empirically. Today's smoke build bypassed the full cycle (called _run_inference directly; the smoke ticket's 'one Write + DONE' overrode the general workflow), so the builder-prompt bugs are PREDICTED, not OBSERVED. Run DS.0 through the FULL worker cycle (dispatch -> fetch -> build -> _post_result -> close) on a REAL multi-file ticket. Best target: T-reorg-parents-path-sweep (real work, verifiable, a great first useful DS build). Do this FIRST — it informs the prompt-fix + listener-fix + review-ladder tickets. Expect the close to FAIL (see T-ds-listener-proof-on-close) — observing that failure IS a goal. Capture: what DS actually does on a real build (orientation, edits, test step, the close refusal), so the fixes target reality.\n\n**Affected files:** none (observation run); capture findings into the sibling tickets.\n**Design rules:** none apply (observation).\n**Scope boundary:** IN — drive DS.0 full-cycle on a real ticket (controlled, not a Granny queue-unleash), record every failure/behavior. OUT — fixing them (the sibling tickets).\n**Test plan:** no tests — this is an observation run; the deliverable is a findings list annotated onto the sibling tickets.\n**Completion criteria:** DS.0 was driven full-cycle on a real ticket and every observed failure/behavior is recorded on the relevant sibling ticket.\n**Rollback:** n/a (observation).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T22:20:35.574163+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T22:20:35.618553+00:00"
+  }
+}

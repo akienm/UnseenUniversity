@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ds-listener-proof-on-close.20260703.162114451455",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-listener-proof-on-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T22:21:14.451455+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-builder-leveling-2026-07-03"
+    ],
+    "tickets": [
+      "T-ds-listener-proof-on-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-listener-proof-on-close",
+    "title": "[sprint] DS.0 can't close ANY real ticket — _post_result does a bare close that proof-on-close refuses",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "dicksimnel",
+      "builder",
+      "proof-on-close"
+    ],
+    "priority": 0.65,
+    "role": "master",
+    "decision_id": "D-ds-builder-leveling-2026-07-03",
+    "intention": "I intend that DS.0's listener closes a completed ticket through the proof-on-close gate — emitting a proof or closing --shipped-unproven with a named lever — so DS.0 can actually COMPLETE a real build instead of escalating at the close step every time.",
+    "description": "Verified 2026-07-03 (reading device.py + repeated live proof-on-close refusals). unseen_university/devices/dicksimnel/device.py:285 _post_result closes via _run_queue_cmd('close', ticket_id, note) — a BARE close (no proof, no --shipped-unproven). The proof-on-close gate REFUSES a bare close (returns non-zero), so _run_queue_cmd returns None -> line 286 -> ticket still sprint -> _escalate_ticket('close command failed'). Net: DS.0 escalates the close on EVERY real ticket -> can't complete any. (Today's smoke build bypassed _post_result, so this wasn't hit.) THE fix site is the listener, NOT the builder prompt (advisor caught this — the prompt's steps 5-6 are vestigial; the listener owns the close). DS.0 needs proof-on-close awareness: for a builder run, default to close --shipped-unproven naming the missing proof-lever (a small model can't reliably author a HEAD-valid proof yet), OR wire proof_emitter when a test node is identifiable. Reconcile with the builder prompt (T-ds-builder-prompt-fixes) so the model isn't ALSO trying to close (double).\n\n**Affected files:** unseen_university/devices/dicksimnel/device.py (_post_result), possibly worker_listener.py.\n**Design rules:** proof-on-close (every close proven-or-shipped-unproven); log-every-state-change (close is a state change).\n**Scope boundary:** IN — make _post_result close through the proof-on-close gate (default shipped-unproven with a lever, or proof when wired). OUT — the review-ladder (T-ds-advisor-review-ladder); prompt fixes (T-ds-builder-prompt-fixes).\n**Test plan:** unit — _post_result on a DONE: result closes the ticket (via shipped-unproven path) instead of escalating 'close command failed' (red: bare close refused -> escalate; green: closed with a named lever). Integration: DS.0 full-cycle on a real ticket reaches closed, not escalated.\n**Completion criteria:** DS.0 closes a completed real ticket (shipped-unproven with a lever, or proven) rather than escalating at close; a test guards it.\n**Rollback:** git revert restores the bare close.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T22:20:41.744189+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T22:20:41.744244+00:00"
+  }
+}

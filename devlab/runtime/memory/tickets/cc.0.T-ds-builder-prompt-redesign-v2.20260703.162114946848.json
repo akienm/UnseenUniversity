@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ds-builder-prompt-redesign-v2.20260703.162114946848",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-builder-prompt-redesign-v2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T22:21:14.946848+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-builder-leveling-2026-07-03"
+    ],
+    "tickets": [
+      "T-ds-builder-prompt-redesign-v2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-builder-prompt-redesign-v2",
+    "title": "[dependency] Redesign DS.0 builder system prompt v2 — small-model scaffolding to CC.0's level",
+    "status": "dependency",
+    "size": "L",
+    "tags": [
+      "dicksimnel",
+      "builder",
+      "prompt",
+      "redesign"
+    ],
+    "priority": 0.45,
+    "role": "master",
+    "decision_id": "D-ds-builder-leveling-2026-07-03",
+    "gate": "T-ds-fullcycle-observe-run",
+    "intention": "I intend that DS.0's builder system prompt is redesigned to give a SMALL model the scaffolding it needs to build like CC.0 on hard tickets — resolving the no-prose-vs-reasoning tension as a bounded structured step (restate + verify Completion criteria), assume the whittling is done (ticket = provable intention), and spend the prompt on faithful execution + mandatory self-verification.",
+    "description": "The umbrella redesign (v2), gated on the empirical observation run + the fixes + the SOTA web survey. Advisor/thesis principle: a small-model builder prompt should ASSUME the whittling is done (ticket = single provable intention) and spend itself on FAITHFUL EXECUTION + MANDATORY SELF-VERIFICATION, not open-ended reasoning. Resolve the current 'never narrate/plan in prose' tension NOT as 'allow prose' but as a BOUNDED STRUCTURED step: restate the ticket's Completion criteria as a checklist, verify each before DONE (the highest-leverage add — also T-ds-advisor-review-ladder rung 2). Fold in: the verified prompt fixes (T-ds-builder-prompt-fixes), the review ladder hook (T-ds-advisor-review-ladder), what the observation run (T-ds-fullcycle-observe-run) surfaces, and the current SOTA (T-builder-prompt-sota-webrun). Do this FRESH (not at the tail of a long session — context-rot).\n\n**Affected files:** unseen_university/devices/inference/prompts/coding.md (rewrite), possibly the AgenticLoop wiring.\n**Design rules:** small-model-scaffolding; bounded-structured-reasoning (not free prose); verify-before-DONE.\n**Scope boundary:** IN — the coding.md v2 redesign incorporating fixes + verify-before-DONE + observation-run findings + SOTA. OUT — the listener close fix (separate); building the full review-ladder infra (separate).\n**Test plan:** the observation full-cycle run on a real ticket, re-run post-redesign, shows DS building + self-verifying + closing correctly (before: bugs/escalate; after: clean full cycle). Compare before/after on the same ticket.\n**Completion criteria:** coding.md v2 gives a small model a bounded reasoning + verify-before-DONE scaffold; a real full-cycle build succeeds where the old prompt failed; before/after captured.\n**Rollback:** git revert to the current coding.md.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T22:21:03.664462+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T22:21:03.664523+00:00"
+  }
+}

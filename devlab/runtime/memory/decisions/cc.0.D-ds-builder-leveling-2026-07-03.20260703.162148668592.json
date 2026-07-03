@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-ds-builder-leveling-2026-07-03.20260703.162148668592",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-ds-builder-leveling-2026-07-03"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-03T16:21:48.668592",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-ds-builder-leveling-2026-07-03",
+    "title": "Bring DS.0's builder up toward CC.0's level: prompt fixes + listener close-fix + advisor review ladder",
+    "status": "open",
+    "date": "2026-07-03",
+    "spawned_tickets": [
+      "T-ds-fullcycle-observe-run",
+      "T-ds-listener-proof-on-close",
+      "T-ds-builder-prompt-fixes",
+      "T-ds-advisor-review-ladder",
+      "T-builder-prompt-sota-webrun",
+      "T-ds-builder-prompt-redesign-v2",
+      "T-consequence-D-ds-builder-leveling"
+    ],
+    "text": "# D-ds-builder-leveling-2026-07-03\n**title:** Bring DS.0's builder up toward CC.0's level\n**date:** 2026-07-03\n**status:** open\n**spawned_tickets:** T-ds-fullcycle-observe-run, T-ds-listener-proof-on-close, T-ds-builder-prompt-fixes, T-ds-advisor-review-ladder, T-builder-prompt-sota-webrun, T-ds-builder-prompt-redesign-v2, T-consequence-D-ds-builder-leveling\n\n## Decision narrative\nAfter the first proven live DS.0 build on Hex (2026-07-03), the next step is to grow the confidence envelope — level DS.0's builder toward CC.0's. Analysis of DS.0's builder system prompt (coding.md) + the listener surfaced: (a) stale/buggy prompt lines (L20 dead psql memory_get; L63 full-suite pytest that's red now; L64 unguarded push; steps 5-6 vestigial vs the listener); (b) a HARD BLOCKER in the listener — device.py:285 _post_result does a BARE cc_queue close that proof-on-close refuses, so DS.0 escalates the close on every real ticket and can't complete one (fix in the listener, not the prompt — advisor caught the wrong-site error). Design direction (advisor, which re-derived our own thesis — Aider architect/editor split = 'CC.0 whittles, DS.0 builds'): a small-model builder prompt should ASSUME the whittling is done and spend itself on faithful execution + MANDATORY self-verification. Akien's contribution: give DS an ADVISOR-style review ladder distinct from ESCALATION — Critic (has) -> cheap fresh-perspective review (2nd Hex instance, adversarial reviewer prompt, verify vs the ticket's Completion criteria before DONE) -> stronger-model advisor (escalate the REVIEW) -> escalate the ticket. Most of advisor's edge is PERSPECTIVE, not model size, so the cheap rung is nearly free on Hex. Method (advisor): level empirically — run DS full-cycle on a real ticket (the path-sweep) to OBSERVE the real bugs, then fix; treat the prompt REDESIGN as v2, done fresh (context-rot). A web-research pass surveys current builder-prompt SOTA (labelled current-vs-known; advisor is ~cutoff and only re-derives our thesis).\n\n## Hypothesis\nAfter these ship, DS.0 completes a real full-cycle build on Hex — fetch -> build -> self-verify against the ticket's Completion criteria -> close (proven or shipped-unproven) — instead of dying on stale prompt commands or escalating at the close step; and a confident-wrong-DONE is caught by a cheap fresh-perspective review before it lands.\n\n## Measurement Signal\nA DS.0 full-cycle run on a real ticket reaches status=closed (not escalated 'close command failed'); coding.md has no psql memory_palace / no bare `pytest tests/` / a guarded push; the pre-DONE review step logs a verify-vs-Completion-criteria pass; a seeded wrong-artifact build is caught by the review instead of emitting DONE.\n\n## Intention\nI intend that DS.0's builder is leveled toward CC.0's — a correct, small-model-scaffolded prompt, a listener that closes through the proof-on-close gate, and a cheap-first review ladder that verifies the artifact before DONE — so DS.0 reliably completes real builds on Hex and the pipeline (CC.0+Akien whittle -> DS.0 builds) actually turns."
+  }
+}

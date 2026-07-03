@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ds-advisor-review-ladder.20260703.162114706861",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-advisor-review-ladder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T22:21:14.706861+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-builder-leveling-2026-07-03"
+    ],
+    "tickets": [
+      "T-ds-advisor-review-ladder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-advisor-review-ladder",
+    "title": "[sprint] Give DS.0 an advisor-style review ladder (verify-before-DONE), distinct from escalation",
+    "status": "sprint",
+    "size": "L",
+    "tags": [
+      "dicksimnel",
+      "builder",
+      "review",
+      "self-verification"
+    ],
+    "priority": 0.5,
+    "role": "master",
+    "decision_id": "D-ds-builder-leveling-2026-07-03",
+    "intention": "I intend that DS.0 can get its work REVIEWED without giving up the ticket — a review ladder (cheap fresh-perspective check -> stronger advisor -> escalate) that verifies the artifact against the ticket's Completion criteria before DONE — so the small-model failure mode ('emitted DONE, artifact is wrong') is caught cheaply, mostly for free on Hex.",
+    "description": "Akien 2026-07-03: DS has ESCALATION (give up, hand to CC) but should ALSO have ADVISOR (check my work, keep the ticket). Advisor's edge is largely the PERSPECTIVE SHIFT (a fresh reviewer instance with no sunk cost in the current approach) plus possibly a stronger model — the perspective part is replicable CHEAPLY. Build DS a review LADDER, not just the escalate cliff:\n  1. Critic — already present (local, per-turn; 'learned 406 rules' today).\n  2. Fresh-perspective review — a SECOND cheap Hex instance with an adversarial reviewer prompt, run BEFORE DONE:, checking the artifact against the ticket's `Completion criteria:` (which tickets already carry). Nearly free ($0 on Hex). Catches confident-wrong-DONE — advisor's named highest-leverage add.\n  3. Stronger-model advisor — escalate the REVIEW (not the whole ticket) to a bigger model only when the cheap review is uncertain.\n  4. Escalate — hand to CC only when even that stalls.\nThesis tie-in: most of the review is PERSPECTIVE, not model size — structure/perspective absorbing the capability gap; pay up only when the cheap review is unsure. Design surface: where the ladder hooks (AgenticLoop pre-DONE gate / CodingDomain), the reviewer prompt, the cost-gate (skip trivial tickets), and how a review 'fail' feeds back (retry vs escalate).\n\n**Affected files:** unseen_university/devices/inference/ (AgenticLoop / CodingDomain — pre-DONE review hook), a reviewer prompt (prompts/), the review-tier routing (rules_engine — a cheap Hex 'reviewer' call + optional stronger-advisor escalation).\n**Design rules:** inference-proxy-only (reviews route through the proxy); tier-not-model; cost-gated (skip trivial).\n**Scope boundary:** IN — a verify-vs-Completion-criteria review step before DONE, cheap-first (fresh Hex perspective) with escalate-the-review to a stronger model, distinct from ticket escalation. OUT — replacing the Critic; the prompt bug fixes; the full prompt redesign.\n**Test plan:** unit — a build whose artifact does NOT meet the Completion criteria is caught by the review step (retry/escalate) instead of emitting DONE (red: wrong artifact -> DONE; green: review catches it). Integration on a seeded wrong-build.\n**Completion criteria:** before DONE, DS verifies the artifact against the ticket's Completion criteria via a cheap fresh-perspective review; a confident-wrong-DONE is caught; review escalates to a stronger model before escalating the ticket.\n**Rollback:** git revert; DS falls back to Critic + escalate only.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T22:20:52.757868+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T22:20:52.757922+00:00"
+  }
+}

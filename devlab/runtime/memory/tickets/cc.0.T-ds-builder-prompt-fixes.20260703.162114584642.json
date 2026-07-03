@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ds-builder-prompt-fixes.20260703.162114584642",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-builder-prompt-fixes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T22:21:14.584642+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-builder-leveling-2026-07-03"
+    ],
+    "tickets": [
+      "T-ds-builder-prompt-fixes"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-builder-prompt-fixes",
+    "title": "[sprint] Fix stale/buggy lines in DS.0 builder system prompt (coding.md)",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "dicksimnel",
+      "builder",
+      "prompt",
+      "reorg-fallout"
+    ],
+    "priority": 0.55,
+    "role": "master",
+    "decision_id": "D-ds-builder-leveling-2026-07-03",
+    "intention": "I intend that DS.0's builder system prompt (coding.md) matches current reality — filesystem memory (not the retired psql palace), targeted tests (not the red full suite), and the correct commit/push/close ownership — so the prompt doesn't steer a build into dead commands and false failures.",
+    "description": "Verified bugs in unseen_university/devices/inference/prompts/coding.md (the builder system prompt that ran today): (1) L20 `memory_get -> psql ... memory_palace` — the palace is RETIRED; memory is the filesystem store (devlab/runtime/memory/, grep-able) — the model would run a dead query. (2) L63 step-4 runs the WHOLE suite `pytest tests/` which is RED right now (granny_bus_dispatch fails + igor collection errors), so the 'green run required' gate trips on failures DS didn't cause -> false escalate; use TARGETED tests for the changed files. (3) L64 `git push origin main` has NO askpass guard (DISPLAY= SSH_ASKPASS_REQUIRE=never GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/true) -> hangs on a GUI/2FA dialog (feedback_push_every_ticket). (4) Steps 5-6 (model git-push + cc_queue close) are VESTIGIAL/DOUBLE — the listener _post_result owns the close (see T-ds-listener-proof-on-close); reconcile who commits/pushes/closes (model vs listener) so it's not done twice. Confirm each against the observation run (T-ds-fullcycle-observe-run).\n\n**Affected files:** unseen_university/devices/inference/prompts/coding.md.\n**Design rules:** filesystem-memory-canonical; targeted-tests-not-full-suite; push-askpass-guard.\n**Scope boundary:** IN — fix L20 (filesystem grep), L63 (targeted tests), L64 (askpass guard IF the model pushes), reconcile steps 5-6 with the listener. OUT — the prompt REDESIGN / scaffolding change (T-ds-builder-prompt-redesign-v2); the listener close fix (T-ds-listener-proof-on-close).\n**Test plan:** no automated tests (prompt is markdown). Acceptance: grep coding.md shows no psql/memory_palace, no bare `pytest tests/`, a guarded push (or push removed if the listener pushes); an observation full-cycle run no longer dies on those steps.\n**Completion criteria:** coding.md has no dead psql memory_get, uses targeted tests, guards the push, and commit/push/close ownership is unambiguous vs the listener.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T22:20:46.475550+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T22:20:46.475598+00:00"
+  }
+}
