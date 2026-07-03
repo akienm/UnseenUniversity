@@ -1,32 +1,33 @@
 {
-  "id": "cc.0.D-env-creds-device-cleanup-2026-07-03.20260703.121148315643",
-  "emitter": "cc.0",
-  "namespace": [
-    "D-env-creds-device-cleanup-2026-07-03"
+ "id": "cc.0.D-env-creds-device-cleanup-2026-07-03.20260703.121148315643",
+ "emitter": "cc.0",
+ "namespace": [
+  "D-env-creds-device-cleanup-2026-07-03"
+ ],
+ "category": "decisions",
+ "kind": "decision",
+ "emitted_at": "2026-07-03T12:11:48.315643",
+ "links": {
+  "decisions": [],
+  "tickets": [],
+  "commits": [],
+  "whys": []
+ },
+ "body": {
+  "decision_id": "D-env-creds-device-cleanup-2026-07-03",
+  "title": "Clean env/creds/device-data substrate: one secret home, .bashrc migration, debris removal, flat device layout, anthropic defunct",
+  "status": "open",
+  "date": "2026-07-03",
+  "spawned_tickets": [
+   "T-consolidate-local-secrets-one-home",
+   "T-bashrc-uu-migration-finish",
+   "T-remove-env-creds-debris",
+   "T-device-data-flat-layout-standardize",
+   "T-inference-mark-anthropic-defunct",
+   "T-launcher-creds-vestigial-review",
+   "T-consequence-D-env-creds-device-cleanup",
+   "T-uu-bashrc-openrouter-key"
   ],
-  "category": "decisions",
-  "kind": "decision",
-  "emitted_at": "2026-07-03T12:11:48.315643",
-  "links": {
-    "decisions": [],
-    "tickets": [],
-    "commits": [],
-    "whys": []
-  },
-  "body": {
-    "decision_id": "D-env-creds-device-cleanup-2026-07-03",
-    "title": "Clean env/creds/device-data substrate: one secret home, .bashrc migration, debris removal, flat device layout, anthropic defunct",
-    "status": "open",
-    "date": "2026-07-03",
-    "spawned_tickets": [
-      "T-consolidate-local-secrets-one-home",
-      "T-bashrc-uu-migration-finish",
-      "T-remove-env-creds-debris",
-      "T-device-data-flat-layout-standardize",
-      "T-inference-mark-anthropic-defunct",
-      "T-launcher-creds-vestigial-review",
-      "T-consequence-D-env-creds-device-cleanup"
-    ],
-    "text": "# D-env-creds-device-cleanup-2026-07-03\n**title:** Clean env/creds/device-data substrate before DS.0\n**date:** 2026-07-03\n**status:** open\n**spawned_tickets:** T-consolidate-local-secrets-one-home, T-bashrc-uu-migration-finish, T-remove-env-creds-debris, T-device-data-flat-layout-standardize, T-inference-mark-anthropic-defunct, T-launcher-creds-vestigial-review, T-consequence-D-env-creds-device-cleanup\n\n## Decision narrative\nAkien 2026-07-03, part of the DS.0 course ('get DS working, deep-repair everything in the way'). The local env/creds/device-data substrate is a mess ('sonnet left a mess') and is in the way of DS.0 coming up on solid ground. On-disk findings (verified): (1) two live plaintext secrets outside the intended single home — OPENROUTER_API_KEY at ~/.bashrc:144 and GOOGLE_AI_STUDIO_API_KEY in ~/.unseen_university/.env — while uu_bash_profile.sh claims to be 'the ONLY plaintext secret on disk' (false); (2) an incomplete .bashrc->uu_bash_profile.sh migration (D-uu-config-identity-layer-2026-06-22) leaving #UUMOVED# debris + live AI exports; (3) debris files: uu_bash_profile.sh.pre-uu-rename.bak, a stray .env, a .kate-swp, and an unreconciled uu.env; (4) device-data dirs under ~/.unseen_university/devices/ partly flat (DickSimnel + DS.0 siblings) but inconsistent (cc_0, granny_weatherwax) — Akien wants FLAT class+instance siblings with a consistent convention (NOT nested devices/igor/IgorWild1); (5) the anthropic inference source still expects an API key but Akien is now on a 5x Max plan via browser auth (no keys, zero balance) — OpenRouter has ~$20 for later burn-testing, no top-ups.\n\nThe cleanup: consolidate ALL local secrets into one chmod-600 home (rotate the exposed OR key — Akien action), finish the .bashrc migration, remove the debris (exact-id preflight), standardize the flat device-data layout, and mark the anthropic source zero-balance/unavailable in the inference proxy. A launcher follow-on reviews superclaude's now-likely-vestigial key machinery.\n\n## Hypothesis\nAfter these ship: exactly ONE plaintext-secret file on disk (uu_bash_profile.sh, chmod 600) with the exposed OR key rotated; ~/.bashrc carries no AI/UU secrets or exports beyond the source line; no stray .env/.bak/.swp debris under ~/.unseen_university; devices/ uses flat class+instance sibling dirs with one consistent naming convention; and the inference router treats the anthropic source as zero-balance/unavailable (never selects it) while OpenRouter stays available-but-finite.\n\n## Measurement Signal\n`grep -rE 'sk-or-|_API_KEY=' ~/.bashrc ~/.unseen_university/.env` returns nothing; `ls ~/.unseen_university/*.bak ~/.unseen_university/.env` -> not found; `ls ~/.unseen_university/devices/` shows flat class+instance siblings in one convention; the inference router logs skip anthropic as unavailable and still resolves a capable source for each tier; a fresh interactive shell + a device start still work post-migration.\n\n## Intention\nI intend that the local environment, credentials, and device-data layout are clean and single-homed — one plaintext-secret file, no scattered keys or debris, flat traversable device dirs, and an inference layer that correctly reflects paid Anthropic is off — so DS.0 comes up on a solid, comprehensible substrate. Serves the overarching DS.0 course: deep-repair everything in the way, do it right."
-  }
+  "text": "# D-env-creds-device-cleanup-2026-07-03\n**title:** Clean env/creds/device-data substrate before DS.0\n**date:** 2026-07-03\n**status:** open\n**spawned_tickets:** T-consolidate-local-secrets-one-home, T-bashrc-uu-migration-finish, T-remove-env-creds-debris, T-device-data-flat-layout-standardize, T-inference-mark-anthropic-defunct, T-launcher-creds-vestigial-review, T-consequence-D-env-creds-device-cleanup\n\n## Decision narrative\nAkien 2026-07-03, part of the DS.0 course ('get DS working, deep-repair everything in the way'). The local env/creds/device-data substrate is a mess ('sonnet left a mess') and is in the way of DS.0 coming up on solid ground. On-disk findings (verified): (1) two live plaintext secrets outside the intended single home \u2014 OPENROUTER_API_KEY at ~/.bashrc:144 and GOOGLE_AI_STUDIO_API_KEY in ~/.unseen_university/.env \u2014 while uu_bash_profile.sh claims to be 'the ONLY plaintext secret on disk' (false); (2) an incomplete .bashrc->uu_bash_profile.sh migration (D-uu-config-identity-layer-2026-06-22) leaving #UUMOVED# debris + live AI exports; (3) debris files: uu_bash_profile.sh.pre-uu-rename.bak, a stray .env, a .kate-swp, and an unreconciled uu.env; (4) device-data dirs under ~/.unseen_university/devices/ partly flat (DickSimnel + DS.0 siblings) but inconsistent (cc_0, granny_weatherwax) \u2014 Akien wants FLAT class+instance siblings with a consistent convention (NOT nested devices/igor/IgorWild1); (5) the anthropic inference source still expects an API key but Akien is now on a 5x Max plan via browser auth (no keys, zero balance) \u2014 OpenRouter has ~$20 for later burn-testing, no top-ups.\n\nThe cleanup: make the EXISTING vault device (unseen_university/devices/vault/ \u2014 Fernet-encrypted, Postgres-backed, device-scoped, connect-time client) the single credential home and migrate the scattered secrets INTO it (Akien 2026-07-03: 'it is supposed to become that'); uu_bash_profile.sh reduces to only the pre-Postgres DB boot secret; rotate the exposed OR key (Akien; coordinates with the existing T-uu-bashrc-openrouter-key), finish the .bashrc migration, remove the debris (exact-id preflight), standardize the flat device-data layout, and mark the anthropic source zero-balance/unavailable in the inference proxy. A launcher follow-on reviews superclaude's now-likely-vestigial key machinery.\n\n## Hypothesis\nAfter these ship: exactly ONE plaintext-secret file on disk (uu_bash_profile.sh, chmod 600) with the exposed OR key rotated; ~/.bashrc carries no AI/UU secrets or exports beyond the source line; no stray .env/.bak/.swp debris under ~/.unseen_university; devices/ uses flat class+instance sibling dirs with one consistent naming convention; and the inference router treats the anthropic source as zero-balance/unavailable (never selects it) while OpenRouter stays available-but-finite.\n\n## Measurement Signal\n`grep -rE 'sk-or-|_API_KEY=' ~/.bashrc ~/.unseen_university/.env` returns nothing; `ls ~/.unseen_university/*.bak ~/.unseen_university/.env` -> not found; `ls ~/.unseen_university/devices/` shows flat class+instance siblings in one convention; the inference router logs skip anthropic as unavailable and still resolves a capable source for each tier; a fresh interactive shell + a device start still work post-migration.\n\n## Intention\nI intend that the local environment, credentials, and device-data layout are clean and single-homed \u2014 one plaintext-secret file, no scattered keys or debris, flat traversable device dirs, and an inference layer that correctly reflects paid Anthropic is off \u2014 so DS.0 comes up on a solid, comprehensible substrate. Serves the overarching DS.0 course: deep-repair everything in the way, do it right."
+ }
 }
