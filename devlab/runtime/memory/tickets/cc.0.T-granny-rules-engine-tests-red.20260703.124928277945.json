@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-granny-rules-engine-tests-red.20260703.124928277945",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-rules-engine-tests-red"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T18:49:28.277945+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-rules-engine-tests-red"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-rules-engine-tests-red",
+    "title": "[sprint] 20 pre-existing failures in test_granny_rules_engine (match_rule returns None vs CC.0)",
+    "status": "sprint",
+    "size": "M",
+    "tags": [
+      "granny",
+      "worker-dispatch",
+      "test-failure"
+    ],
+    "priority": 0.4,
+    "role": "master",
+    "related_to": "D-granny-pull-dispatch-model-2026-07-03",
+    "description": "Discovered 2026-07-03 during T-inference-mark-anthropic-defunct (unrelated targeted sprint). tests/test_granny_rules_engine.py has 20 failures — e.g. match_rule({'role':'builder','tags':[]}, []) returns None but the test asserts 'CC.0' (the no-rule fallback). Both TestMatchRule and TestRunOnce (bus-dispatch, gate-clearing, one-at-a-time, guru-routing) fail. Almost certainly fallout from the 2026-07-02 worker-dispatch restructure (D-worker-pool-*, D-worker-instance-identity, shim-frontdoor/leasing/granny-wake) — either match_rule's fallback/signature changed and the tests weren't updated (test drift) OR the dispatch fallback is genuinely broken. ON THE DS.0 DISPATCH PATH: Granny must dispatch to DS.0, so this matters for the DS.0 course. NOT caused by the inference change (isolated to inference/sources.py).\n\n**Affected files:** unseen_university/devices/granny/ (match_rule + run_once), tests/test_granny_rules_engine.py.\n**Design rules:** none apply (test/behavior reconciliation).\n**Scope boundary:** IN — determine drift-vs-break, fix so the 20 tests pass (update tests if behavior intentionally changed, or fix match_rule if broken). OUT — the pull-dispatch redesign (D-granny-pull-dispatch-model).\n**Test plan:** the 20 failing tests in tests/test_granny_rules_engine.py go green; if behavior changed intentionally, the tests are updated to the new contract with a comment naming the decision that changed it.\n**Completion criteria:** `pytest tests/test_granny_rules_engine.py` is green; each changed assertion (if any) cites the decision that changed the contract.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T18:49:20.463349+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T18:49:20.507180+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "057c94d3-676d-4714-83a6-25784f5e7c4a"
+  }
+}

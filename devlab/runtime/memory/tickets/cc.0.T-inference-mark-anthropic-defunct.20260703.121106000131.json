@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-inference-mark-anthropic-defunct",
-    "title": "[sprint] Mark the anthropic inference source zero-balance/unavailable (browser-auth, no key)",
-    "status": "sprint",
+    "title": "[in_progress] Mark the anthropic inference source zero-balance/unavailable (browser-auth, no key)",
+    "status": "in_progress",
     "size": "M",
     "tags": [
       "inference",
