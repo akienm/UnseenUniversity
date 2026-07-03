@@ -44,5 +44,6 @@
     "gate": null,
     "target_difficulty": 1,
     "scraps_validated": "2026-07-03T22:20:41.744244+00:00"
-  }
+  },
+  "description": "\n\n**Akien decision (2026-07-03): FULL proof-on-close path.** DS routes its close through the SAME proof-vs-shipped-unproven decision CC uses (choose per ticket) — NOT a blanket shipped-unproven default. The listener attempts a real proof where the ticket admits one (DS builds test cases, so red->green is natural for that domain) and falls back to `close --shipped-unproven <lever>` only when no HEAD-valid proof can be authored. Most-correct long-term shape; scope now INCLUDES wiring proof-emission into the _post_result listener path, not just swapping the bare close for shipped-unproven."
 }

@@ -45,5 +45,6 @@
     "gate": null,
     "target_difficulty": 1,
     "scraps_validated": "2026-07-03T22:20:52.757922+00:00"
-  }
+  },
+  "description": "\n\n**Akien decision (2026-07-03): advisor is an ANY-TIME capability for either builder.** Give DS (and CC.1) the same advisor call CC has — invokable whenever the builder wants a second opinion, mid-ticket included — NOT a rigid rung gated behind 'only when uncertain'. Keep the ladder (Critic -> fresh-perspective review before DONE -> escalate) as the DEFAULT flow, but advisor sits alongside it as an always-available call, exactly as it is for CC."
 }
