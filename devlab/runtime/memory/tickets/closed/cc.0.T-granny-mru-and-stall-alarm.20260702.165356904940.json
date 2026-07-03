@@ -19,8 +19,8 @@
   },
   "body": {
     "id": "T-granny-mru-and-stall-alarm",
-    "title": "[sprint] Granny keeps an MRU of wakeable workers; no-wakeable + none-available -> system_alarm + stalled state + resume",
-    "status": "sprint",
+    "title": "Granny keeps an MRU of wakeable workers; no-wakeable + none-available -> system_alarm + stalled state + resume",
+    "status": "closed",
     "size": "M",
     "tags": [
       "architecture",
@@ -36,12 +36,19 @@
     "created_at": "2026-07-02T22:53:50.726178+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Granny stall-alarm + park/resume shipped (closes the orphaned-front-door detection deferred through the front-door/wake chain). run_once early-returns when is_stalled() (anti-spin PARK); on pending work with nothing dispatched AND no worker available/wakeable it raises ONE granny-stalled system alarm (reuses the shipped raise_alarm primitive — Vetinari escalates it), sets STALLED, and parks; resume() clears it. New stall_state.py holds the flat-file state under ~/.granny/. MRU: record_dispatch() tracks worker recency on every dispatch; mru_order() sorts candidates most-recent-first. Proven x2: anti-spin (975089fc — 2nd run_once while stalled does NOT re-raise, red without the park) + mru recency (9ff0a3cc). NAMED GAP (not silent): mru_order is built+proven but NOT yet consumed by dispatch selection (single-builder = no-op today; consuming it touches the live rules/candidate-selection path and is coupled to multi-worker routing) — filed T-granny-consume-mru-in-dispatch (hold, gated on the convergence). Pre-existing granny CC.0-config test fails unrelated + already ticketed.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-03T03:54:28.293651+00:00",
     "required_files": [],
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-02T22:53:50.771361+00:00"
+    "scraps_validated": "2026-07-02T22:53:50.771361+00:00",
+    "proven": true,
+    "proof_id": "cc.0.a-stalled-granny-parks-and-does-not-re-r.T-granny-mru-and-stall-alarm.20260702.215337250271",
+    "proof_commit": "975089fc23a757501a194196a920c620571e1db1",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

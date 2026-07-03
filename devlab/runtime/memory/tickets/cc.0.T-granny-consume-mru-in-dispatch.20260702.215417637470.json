@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-granny-consume-mru-in-dispatch.20260702.215417637470",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-consume-mru-in-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-03T03:54:17.637470+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-consume-mru-in-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-consume-mru-in-dispatch",
+    "title": "[hold] Wire mru_order into Granny's dispatch selection (consume the MRU, not just record it)",
+    "status": "hold",
+    "size": "M",
+    "tags": [
+      "granny",
+      "dispatch",
+      "routing"
+    ],
+    "priority": 0.3,
+    "role": "master",
+    "intention": "I intend that when 2+ wakeable workers can serve the same role, Granny tries them in MRU (most-recently-dispatched-first) order — so the recency data it already records actually steers dispatch.",
+    "description": "**Blocked on: T-converge-worker-dispatch-onto-rules-engine** (multi-worker/per-instance routing lands there) — and low-value until 2+ workers serve one role (today DS is the only builder, so MRU order is a no-op).\n\n**Gap this closes (named at T-granny-mru-and-stall-alarm close 2026-07-02):** that ticket built + PROVED the MRU primitives — `record_dispatch()` (recency tracking, called on every successful dispatch) and `mru_order(candidates)` (recency-first sort, proven 9ff0a3cc) — but deliberately did NOT wire `mru_order` into `run_once`'s dispatch selection, because the rules engine returns a single target per ticket and consuming the MRU means changing the candidate-selection path (touching live dispatch/rules logic), which was scoped out to protect the live Granny and because it is coupled to multi-worker routing that doesn't exist yet.\n\n**What to build:** where `run_once` resolves a ticket's target, when the role admits MULTIPLE wakeable workers, order them via `mru_order()` and try in that order (first available wins). Single-candidate roles are unaffected (mru_order of one = identity).\n\n**Completion criteria:** with two wakeable workers W1, W2 both serving role R and W2 more-recently-dispatched, a new role-R ticket is offered to W2 before W1. With one candidate, behavior is unchanged.\n\n**Test plan (real red->green):** unit — two wakeable candidates for a role, record_dispatch(W2) last; assert dispatch tries W2 first. Red before mru_order is consumed in selection; green after.\n\n**Scope boundary:** consume the existing mru_order primitive in dispatch selection only; do NOT rebuild the rules engine (that is the convergence ticket).\n\n**Affected files:** unseen_university/devices/granny/daemon.py (dispatch target selection), unseen_university/devices/granny/stall_state.py (mru_order already exists).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-03T03:54:11.049273+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-03T03:54:11.093517+00:00"
+  }
+}
