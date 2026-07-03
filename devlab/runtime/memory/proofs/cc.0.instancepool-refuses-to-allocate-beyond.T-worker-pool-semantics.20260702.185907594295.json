@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.instancepool-refuses-to-allocate-beyond.T-worker-pool-semantics.20260702.185907594295",
+  "emitter": "cc.0",
+  "namespace": [
+    "instancepool-refuses-to-allocate-beyond",
+    "T-worker-pool-semantics"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-02T18:59:07.594295",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-worker-pool-semantics"
+    ],
+    "commits": [
+      "578275cddb2a7d431772c7a1ed0d6becaff1c40e"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "InstancePool refuses to allocate beyond max_instances (singleton = 1)",
+    "intention": "with max_instances=1, the first allocate returns 0 and the second returns None (refused) — an uncapped build returns 1",
+    "test": "tests/test_pool_semantics.py::test_allocate_refused_beyond_max_instances",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_pool_semantics.py::test_allocate_refused_beyond_max_instances",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        pool = InstancePool(\n            \"T\",\n            max_instances=1,\n            liveness=lambda *a: True,\n            home=str(tmp_path),\n        )\n    \n        # First allocate should succeed at slot 0\n        result_0 = pool.allocate(pid=1)\n        assert result_0 == 0\n    \n        # Second allocate should be refused (return None)\n        result_1 = pool.allocate(pid=2)\n>       assert result_1 is None\nE       assert 1 is None\n\ntests/test_pool_semantics.py:46: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_pool_semantics.py::test_allocate_refused_beyond_max_instances\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "578275cddb2a7d431772c7a1ed0d6becaff1c40e",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260702.slate.txt",
+      "unseen_university/devices/pool.py"
+    ],
+    "ticket": "T-worker-pool-semantics",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
