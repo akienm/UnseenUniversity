@@ -19,9 +19,9 @@
   },
   "body": {
     "id": "T-ollama-source-set-num-ctx",
-    "title": "[in_progress] ollama source must set num_ctx explicitly (unblocker — model works blind without it)",
+    "title": "ollama source must set num_ctx explicitly (unblocker — model works blind without it)",
     "size": "S",
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.7,
     "target_difficulty": 2,
     "tags": [
@@ -35,13 +35,20 @@
     "created_at": "2026-07-04T13:48:43.060792+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Proven (33d4c4c6, proof red=AssertionError green=passed): OllamaSource now sets explicit options.num_ctx (DEFAULT_NUM_CTX=32768 + per-source knob / INFERENCE_NUM_CTX). Fixes the silent-truncation that made DS.0 work blind. 3 hermetic tests green; 40 sibling ollama/source tests still green.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-04T16:45:13.267901+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "role": "apprentice",
-    "scraps_validated": "2026-07-04T13:48:43.112309+00:00"
+    "scraps_validated": "2026-07-04T13:48:43.112309+00:00",
+    "proven": true,
+    "proof_id": "cc.0.t-ollama-source-set-num-ctx.T-ollama-source-set-num-ctx.20260704.104457033926",
+    "proof_commit": "33d4c4c6a4523bc3ae7656eca3757fd86638f75a",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

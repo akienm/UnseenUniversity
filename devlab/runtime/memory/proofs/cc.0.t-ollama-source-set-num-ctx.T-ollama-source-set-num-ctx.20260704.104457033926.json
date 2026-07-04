@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.t-ollama-source-set-num-ctx.T-ollama-source-set-num-ctx.20260704.104457033926",
+  "emitter": "cc.0",
+  "namespace": [
+    "t-ollama-source-set-num-ctx",
+    "T-ollama-source-set-num-ctx"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T10:44:57.033926",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ollama-source-set-num-ctx"
+    ],
+    "commits": [
+      "33d4c4c6a4523bc3ae7656eca3757fd86638f75a"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "T-ollama-source-set-num-ctx",
+    "intention": "Every ollama request carries an explicit options.num_ctx so the model sees the whole ticket, not a silently-truncated tail",
+    "test": "tests/inference/test_ollama_num_ctx.py::test_ollama_payload_sets_num_ctx_default",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_ollama_num_ctx.py::test_ollama_payload_sets_num_ctx_default",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________________ test_ollama_payload_sets_num_ctx_default ___________________\n\n    def test_ollama_payload_sets_num_ctx_default():\n        \"\"\"An unconfigured OllamaSource must still send an explicit options.num_ctx default.\"\"\"\n        src = OllamaSource(base_url=\"http://hex:11434\")\n        req = InferenceRequest(messages=[{\"role\": \"user\", \"content\": \"hi\"}], model=\"devstral-small-2:24b\")\n        body = _capture_body(src, req)\n>       assert \"num_ctx\" in body[\"options\"], \"ollama request must carry options.num_ctx (else silent truncation)\"\nE       AssertionError: ollama request must carry options.num_ctx (else silent truncation)\nE       assert 'num_ctx' in {'num_predict': 4096, 'temperature': 0.0}\n\ntests/inference/test_ollama_num_ctx.py:44: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_ollama_num_ctx.py::test_ollama_payload_sets_num_ctx_default\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "33d4c4c6a4523bc3ae7656eca3757fd86638f75a",
+    "impl_paths": [
+      "unseen_university/devices/inference/sources.py"
+    ],
+    "ticket": "T-ollama-source-set-num-ctx",
+    "narrative": "Red: with sources.py reverted, options has only temperature+num_predict -> AssertionError on 'num_ctx in options'. Green: options carries num_ctx=DEFAULT_NUM_CTX(32768).",
+    "why": "Unset num_ctx makes ollama default to ~2048 and truncate the prompt; the DS.0 observe-run made 114 tool calls / 0 edits working blind",
+    "bootstrap": false
+  }
+}
