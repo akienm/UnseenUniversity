@@ -34,6 +34,14 @@ MAX_TURNS = 50
 MAX_TURNS_FLAT_RATE = 80  # flat-rate sources don't pay per turn; give more budget
 COST_CAP_USD = 3.00  # only enforced for usage_based sources
 
+# Context discipline (T-agentic-loop-context-discipline): the loop re-sends the WHOLE
+# message history every turn, so unbounded accumulation of 3000-char tool dumps makes the
+# prompt grow linearly in turns until it overflows num_ctx and the small model drowns
+# (2026-07-03 DS.0 observe-run: 2908 → ~32000 input_tokens over 38 turns → timeout cliff).
+# We bound it by keeping only the task message + the last N complete turn-groups; older
+# groups are dropped wholesale at assistant boundaries so growth is O(1) in turns.
+HISTORY_WINDOW_TURNS = 10  # recent turn-groups kept in full; 0 disables compaction
+
 # LoopResult.outcome values — the typed boundary the domain's escalation policy reads.
 LOOP_DONE = "done"                # model claimed completion (done envelope)
 LOOP_ESCALATE = "escalate"        # finished-but-not-done (escalate envelope or prose finish)
@@ -467,6 +475,7 @@ class AgenticLoop:
         cost_cap_usd: float | None = COST_CAP_USD,
         critic_enabled: bool = False,
         inference_device=None,
+        history_window_turns: int = HISTORY_WINDOW_TURNS,
     ) -> None:
         self._codec = codec or NativeToolCodec()
         self._max_turns = max_turns
@@ -474,7 +483,38 @@ class AgenticLoop:
         self._cost_cap_usd = cost_cap_usd
         self._critic_enabled = critic_enabled
         self._inference_device = inference_device
+        # Bound the re-sent history to the task + this many recent turn-groups (0 = off).
+        # Tunable per model/num_ctx without a code change (same pattern as max_turns).
+        self._history_window_turns = history_window_turns
         self._turn_log: list[dict] = []
+
+    def _compact_history(self, messages: list[dict]) -> list[dict]:
+        """Bound the re-sent history to the task message + the last N complete turn-groups.
+
+        A *group* = one assistant message plus every following non-assistant message (its
+        tool results, or a correction) up to the next assistant. Because every turn starts
+        by appending an assistant message, assistant messages are the only group boundaries
+        and ``messages[0]`` (the task) is the sole non-group message. We drop whole groups
+        only from the front and only at those boundaries, so the retained sequence is always
+        ``messages[0]`` + zero-or-more COMPLETE groups. That preserves the two invariants a
+        real endpoint 400s on: no orphaned tool result as the first post-task message, and no
+        dangling assistant ``tool_calls`` whose results were dropped. Keyed on the assistant
+        role — NOT on tool-result shape — so it is codec-agnostic (native emits ``role:tool``
+        results, the text codec emits ``role:user``; both are handled identically here).
+
+        The most-recent group is never dropped (it is what the model must act on next).
+        """
+        window = self._history_window_turns
+        if window <= 0 or len(messages) <= 1:
+            return messages
+        starts = [i for i, m in enumerate(messages) if m.get("role") == "assistant"]
+        if len(starts) <= window:
+            return messages
+        cutoff = starts[len(starts) - window]  # start index of the oldest KEPT group
+        log.info("AgenticLoop: context-discipline — dropped %d old turn-group(s), keeping "
+                 "task + last %d (history %d→%d msgs)",
+                 len(starts) - window, window, len(messages), 1 + len(messages) - cutoff)
+        return [messages[0]] + messages[cutoff:]
 
     def run(
         self,
@@ -519,6 +559,9 @@ class AgenticLoop:
         turn = 0
 
         while turn < effective_max_turns:
+            # Context discipline: bound the history we re-send so token growth is O(1) in
+            # turns, not linear — the whole message list rides in every request.
+            messages = self._compact_history(messages)
             log.info("AgenticLoop turn %d/%d $%.4f — ticket %s (%s)",
                      turn + 1, effective_max_turns, running_cost, ticket_id, codec.name)
             req = InferenceRequest(
