@@ -208,6 +208,33 @@ class BaseDomain:
                 return None
 
             if cls == "availability":
+                # A MID-RUN availability wall is not a transient start-up blip. When the loop
+                # did productive turns and THEN a source timeout/down killed it (2026-07-03
+                # observe-run: a 120s dispatch timeout ~mid-loop at hop 0), re-running the
+                # whole loop from turn 0 re-does all that work and hits the same wall — the
+                # doomed identical retry the ticket targets (burned 3× before halting on a
+                # LYING 'availability-exhausted'). Halt honestly, naming the true cause. A
+                # tier-bump is NOT the honest escalation here: 'code'→'design' has no live
+                # local source, so it would degrade straight back into no-source (CP3). Only
+                # turns==0 (the loop never completed a turn = source never came up) is a real
+                # transient blip that a cheap bounded retry may clear — that path is kept.
+                if result.turns > 0:
+                    system_alarms.raise_alarm(
+                        signature=f"inference-availability-midrun-wall:{ticket_id}",
+                        caller=self.name or "domain",
+                        message=(
+                            f"ticket {ticket_id} hit an availability/timeout wall after "
+                            f"{result.turns} productive turn(s) at difficulty '{required}' — "
+                            f"re-running the full loop would re-do that work and hit the same "
+                            f"wall; halting honestly instead of blind-retrying an identical "
+                            f"path (no more-capable local source to bump to)"
+                        ),
+                        fatal=False,
+                    )
+                    log.error("domain=%s crossing|step=select|ticket=%s|turns=%d|"
+                              "result=availability-midrun-wall-halt",
+                              self.name, ticket_id, result.turns)
+                    return None
                 availability_retries += 1
                 if availability_retries > self.max_availability_retries:
                     system_alarms.raise_alarm(
