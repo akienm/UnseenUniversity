@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.architect-editor-split-in-the-coding-dom.T-coding-architect-editor-split.20260704.142204732639",
+  "emitter": "cc.0",
+  "namespace": [
+    "architect-editor-split-in-the-coding-dom",
+    "T-coding-architect-editor-split"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T14:22:04.732639",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-coding-architect-editor-split"
+    ],
+    "commits": [
+      "1595709c37f177b5896479b48bcddd498c994b49"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "architect/editor split in the coding domain",
+    "intention": "the architect's plan flows to the editor and the planned edit is actually applied (a single-model attempt never reaches an edit)",
+    "test": "tests/inference/test_architect_editor_split.py::test_architect_plan_flows_to_editor_and_edit_is_applied",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_architect_editor_split.py::test_architect_plan_flows_to_editor_and_edit_is_applied",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "2026-07-04 14:22:04.499 | INFO     | logging:callHandlers:1762 - AgenticLoop turn 2/50 $0.0000 — ticket T-split-proof (native)\n2026-07-04 14:22:04.500 | INFO     | logging:callHandlers:1762 - AgenticLoop: prose finish for T-split-proof turn 2 — escalate\n2026-07-04 14:22:04.500 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=classify|ticket=T-split-proof|hop=0|outcome=escalate|class=capability\n2026-07-04 14:22:04.500 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=escalate|ticket=T-split-proof|hop→1|reason=capability\n2026-07-04 14:22:04.500 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=loop|ticket=T-split-proof|hop=1|difficulty=design\n2026-07-04 14:22:04.574 | INFO     | logging:callHandlers:1762 - ORIENTATION|query|keywords=4|rows=19\n2026-07-04 14:22:04.574 | INFO     | logging:callHandlers:1762 - ORIENTATION|ticket=T-split-proof|keywords=4|matches=10|shape=general\n2026-07-04 14:22:04.575 | INFO     | logging:callHandlers:1762 - CodingDomain builder_report: 10 relevant files for T-split-proof\n2026-07-04 14:22:04.576 | INFO     | logging:callHandlers:1762 - Critic: loaded 416 rules (0 skipped)\n2026-07-04 14:22:04.576 | INFO     | logging:callHandlers:1762 - AgenticLoop: Critic initialized for T-split-proof (416 prior rules)\n2026-07-04 14:22:04.576 | INFO     | logging:callHandlers:1762 - AgenticLoop turn 1/50 $0.0000 — ticket T-split-proof (native)\n2026-07-04 14:22:04.576 | WARNING  | logging:callHandlers:1762 - AgenticLoop: turn 1 no tool/terminal for T-split-proof — correcting\n2026-07-04 14:22:04.576 | INFO     | logging:callHandlers:1762 - AgenticLoop turn 2/50 $0.0000 — ticket T-split-proof (native)\n2026-07-04 14:22:04.577 | INFO     | logging:callHandlers:1762 - AgenticLoop: prose finish for T-split-proof turn 2 — escalate\n2026-07-04 14:22:04.577 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=classify|ticket=T-split-proof|hop=1|outcome=escalate|class=capability\n2026-07-04 14:22:04.577 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=escalate|ticket=T-split-proof|hop→2|reason=capability\n2026-07-04 14:22:04.577 | ERROR    | logging:callHandlers:1762 - domain=coding crossing|step=escalate|ticket=T-split-proof|hop=2|result=capability-ceiling-halt\n=========================== short test summary info ============================\nFAILED tests/inference/test_architect_editor_split.py::test_architect_plan_flows_to_editor_and_edit_is_applied\n1 failed in 0.32s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.22s"
+          }
+        }
+      }
+    ],
+    "commit": "1595709c37f177b5896479b48bcddd498c994b49",
+    "impl_paths": [
+      "tests/inference/test_domain_loop_wiring.py",
+      "unseen_university/devices/inference/agentic_loop.py",
+      "unseen_university/devices/inference/architect_editor.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/domains/coding.py"
+    ],
+    "ticket": "T-coding-architect-editor-split",
+    "narrative": "Red = revert parent..HEAD except the test → CodingDomain inherits the single-loop walk → Edit offered from turn 0 but no architect plan in the transcript → editor never edits → file unchanged → AssertionError. Green = split active → architect plans → editor applies → file contains NEW_MARKER.",
+    "why": "DS.0 made 0 edit ATTEMPTS across 149 tool calls; splitting plan from edit-serialization is the lead lever (D-coding-loop-redesign-aider-survey-2026-07-04)",
+    "bootstrap": false
+  }
+}

@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-coding-architect-editor-split",
-    "title": "[sprint] Architect/editor split in the coding domain: strong planner + devstral-as-editor",
+    "title": "Architect/editor split in the coding domain: strong planner + devstral-as-editor",
     "size": "L",
     "tags": [
       "Inference",
@@ -29,20 +29,27 @@
     "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
     "priority": 0.7,
     "gate": null,
-    "status": "sprint",
+    "status": "closed",
     "intention": "I intend that DS.0's builder is leveled to complete real tickets unaided by fixing the coding loop's interface, because the interface — not the 24B model — is what blocks it from editing.",
     "description": "**Problem:** one 24B local model (devstral@Hex) is asked to orient + plan + serialize edits in a single ReAct stream. Two live DS.0 observe-runs (2026-07-04) made 0 Write/Edit *attempts* across 149 tool calls (47 Read/8 Bash, then 102 Read/12 Bash) — it never reaches an edit; it dies in orientation/planning. aider's architect mode splits the jobs: a strong 'architect' model resolves the task and emits plain-text instructions about which files to change and how; a cheap 'editor' model turns those instructions into a syntactically-correct diff/whole-file edit (aider 'editor-diff'/'editor-whole' formats).\n**Proposed shape:** add an architect/editor mode to the coding domain (CodingDomain / BaseDomain.run). A capable planner (routed via the existing cost-router at the appropriate tier) produces a STRUCTURED edit-plan (prose: target files, the change per file, the why). That plan is handed to devstral as the EDITOR with a narrow 'produce the edit for THIS instruction' contract; editor output applies through the existing edit tools. The escalation walk + cost-router + bus/shim substrate are untouched — this changes only what the inner loop asks each model to do. Log the planner->editor handoff (it's an interface crossing).\n**Affected files:** unseen_university/devices/inference/domains/base.py, domains/coding*.py, unseen_university/devices/inference/agentic_loop.py (needs an editor-only loop mode). MEDIUM+ inertia: agentic_loop.py + domains/base.py are the coding design-center — flag for pre-approval.\n**Design rules:** device.py/shim design-center (the domain object owns the split, no standalone functions); log every interface crossing (planner->editor handoff); proof-on-close.\n**Scope boundary:** IN — the architect/editor two-role flow, the planner->editor handoff, the editor edit-contract. OUT — the repo-map orientation surface (T-coding-repo-map-orientation) and the ACI viewer (T-coding-minion-aci-edit-centric).\n**Test plan:** unit test — given a planner emitting a fixed edit-plan (target file + concrete change) and a stub editor, assert the editor is invoked with the plan's target+intent AND the APPLIED edit reflects that intent (pin the edit CONTENT against the plan, not merely that a mock ran — a mocked-invocation-only assertion passes on a hollow build; memory verify-divergence-before-collapsing). Behavioral red: the single-model (no-split) path never produces an edit-tool call for the same ticket. Empirical confirm-by lives in T-coding-redesign-observe-edits-then-close.\n**Completion criteria:** the coding domain runs a two-role architect(planner)/editor(devstral) flow AND a test proves the editor produces an applied edit whose content matches the planner's intent, and that the split is what produces the edit call (single-model path does not).\n**Rollback:** the split is behind a mode/flag on the coding domain; disabling it restores the single-model loop.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-07-04T19:52:21.234191+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "PROVEN (1595709c). Architect/editor split shipped: plan-only architect (Read/Bash, no Edit/Write — structural) emits a file-change plan; editor applies it. Seam = BaseDomain._run_attempt extracted (escalation walk untouched); CodingDomain overrides it behind architect_editor_enabled. AgenticLoop gained tool_names. Proof: test_architect_editor_split red=AssertionError (single-loop path never edits) green=passed (split applies planned edit; content pinned to plan). Regression: full inference suite clean bar 3 pre-existing routing failures (verified identical at clean HEAD via worktree). test_domain_loop_wiring updated to test walk-wiring with split off.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-04T20:22:24.487059+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-04T19:52:21.284982+00:00"
+    "scraps_validated": "2026-07-04T19:52:21.284982+00:00",
+    "proven": true,
+    "proof_id": "cc.0.architect-editor-split-in-the-coding-dom.T-coding-architect-editor-split.20260704.142204732639",
+    "proof_commit": "1595709c37f177b5896479b48bcddd498c994b49",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
