@@ -125,6 +125,31 @@ TOOL_DEFINITIONS = [
     },
 ]
 
+# ACI variant (T-coding-minion-aci-edit-centric): the minion/weak tier gets a PAGED,
+# line-numbered Read (100-line windows + an offset to scroll) instead of a blind whole-file
+# truncation, and edit-centric guidance — SWE-agent's finding that a tuned interface beats a
+# naive tool loop for the SAME model. Default callers keep TOOL_DEFINITIONS (whole-file, rich).
+_ACI_READ_WINDOW = 100
+_ACI_READ_DEF = {
+    "type": "function",
+    "function": {
+        "name": "Read",
+        "description": (
+            "Read a 100-line window of a file (line-numbered). Pass `offset` to scroll to a "
+            "later line. Read only enough to locate the change, then make it with Edit/Write."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Path to file"},
+                "offset": {"type": "integer", "description": "0-based line to start the window at"},
+            },
+            "required": ["path"],
+        },
+    },
+}
+ACI_TOOL_DEFINITIONS = [_ACI_READ_DEF] + [t for t in TOOL_DEFINITIONS if t["function"]["name"] != "Read"]
+
 # Native-protocol exit rules (appended to the domain's system prompt for native callers).
 SYSTEM_RULES = """\
 ## Exit protocol
@@ -177,17 +202,18 @@ def parse_terminal_envelope(text: str) -> dict | None:
 # ── Tool dispatch (shared) ────────────────────────────────────────────────────
 
 
-def execute_tool(name: str, args: dict, cwd: Path) -> str:
+def execute_tool(name: str, args: dict, cwd: Path, aci_mode: bool = False) -> str:
     """Route a tool call to its handler; return a string result for the model.
 
     Relative paths resolve against `cwd` (native callers pass absolute paths, so the join
     is a no-op for them; the text/minion protocol relies on it). One shared implementation.
+    `aci_mode` switches Read to the paged, line-numbered window (minion tier); default off.
     """
     try:
         if name == "Bash":
             return _tool_bash(args.get("command", ""), cwd)
         if name == "Read":
-            return _tool_read(args.get("path", ""), cwd)
+            return _tool_read(args.get("path", ""), cwd, aci_mode=aci_mode, offset=args.get("offset", 0))
         if name == "Edit":
             return _tool_edit(args, cwd)
         if name == "Write":
@@ -218,17 +244,33 @@ def _tool_bash(command: str, cwd: Path) -> str:
         return "ERROR: command timed out (120s)"
 
 
-def _tool_read(path: str, cwd: Path) -> str:
-    """Read and return a file's content (truncated to 3000 chars to stay inside model context)."""
+def _tool_read(path: str, cwd: Path, aci_mode: bool = False, offset: int = 0) -> str:
+    """Read a file for the model.
+
+    Default (rich tier): whole-file content truncated to 3000 chars. ACI/minion mode: a paged,
+    line-numbered 100-line window starting at `offset`, with a header naming the range and how
+    to scroll — so a weak model reads coherent slices it controls instead of a blind truncation
+    (T-coding-minion-aci-edit-centric).
+    """
     p = _resolve(path, cwd)
     if not p.exists():
         return f"ERROR: file not found: {p}"
     try:
         content = p.read_text(errors="replace")
-        return content[:3000] + ("...(truncated)" if len(content) > 3000 else "")
     except Exception as exc:
         log.warning("agentic_loop Read failed for %s: %s", p, exc)
         return f"ERROR: {exc}"
+    if not aci_mode:
+        return content[:3000] + ("...(truncated)" if len(content) > 3000 else "")
+    lines = content.splitlines()
+    total = len(lines)
+    start = max(0, int(offset or 0))
+    window = lines[start:start + _ACI_READ_WINDOW]
+    end = start + len(window)
+    numbered = "\n".join(f"{start + i + 1:>5}| {ln}" for i, ln in enumerate(window))
+    more = (f" — call Read offset={end} for the next {_ACI_READ_WINDOW} lines"
+            if end < total else " — end of file")
+    return f"[{p.name} lines {start + 1}-{end} of {total}{more}]\n{numbered}"
 
 
 def _tool_edit(args: dict, cwd: Path) -> str:
@@ -477,6 +519,7 @@ class AgenticLoop:
         inference_device=None,
         history_window_turns: int = HISTORY_WINDOW_TURNS,
         tool_names: list[str] | None = None,
+        aci_mode: bool = False,
     ) -> None:
         self._codec = codec or NativeToolCodec()
         self._max_turns = max_turns
@@ -490,6 +533,9 @@ class AgenticLoop:
         # to emit a plan. Filtering the offer (not just the prompt) makes the constraint
         # structural, not advisory.
         self._tool_names = tool_names
+        # Minion-tier ACI (T-coding-minion-aci-edit-centric): paged windowed Read + edit-centric
+        # tool guidance. Off = the rich whole-file tools (strong tier keeps them unchanged).
+        self._aci_mode = aci_mode
         # Bound the re-sent history to the task + this many recent turn-groups (0 = off).
         # Tunable per model/num_ctx without a code change (same pattern as max_turns).
         self._history_window_turns = history_window_turns
@@ -555,9 +601,10 @@ class AgenticLoop:
 
         messages = [{"role": "user", "content": initial_message}]
         full_system = system_prompt + ("\n\n" + SYSTEM_RULES if codec.offers_tools else "")
-        tool_defs = TOOL_DEFINITIONS
+        base_defs = ACI_TOOL_DEFINITIONS if self._aci_mode else TOOL_DEFINITIONS
+        tool_defs = base_defs
         if self._tool_names is not None:
-            tool_defs = [t for t in TOOL_DEFINITIONS if t["function"]["name"] in self._tool_names]
+            tool_defs = [t for t in base_defs if t["function"]["name"] in self._tool_names]
         tools = tool_defs if codec.offers_tools else None
 
         running_cost = 0.0
@@ -673,7 +720,7 @@ class AgenticLoop:
             codec.append_assistant(messages, parsed)
             for call in parsed.tool_calls:
                 self._critic_advise(critic, call, turn, ticket_id)
-                result = execute_tool(call["name"], call["args"], cwd)
+                result = execute_tool(call["name"], call["args"], cwd, aci_mode=self._aci_mode)
                 tools_called.append(call["name"])
                 # Soft escalation nudge: after 3 consecutive failed Bash calls, hint the model
                 # to escalate rather than grind (preserved from minion's loop; harmless + useful

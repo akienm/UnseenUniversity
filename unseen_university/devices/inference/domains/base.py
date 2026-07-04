@@ -68,6 +68,9 @@ class BaseDomain:
     #: hard: an infra blip re-selects next-cheapest, a persistent outage must not loop (and
     #: must never walk onto paid tiers unbounded).
     max_availability_retries: int = 2
+    #: minion-tier ACI (windowed Read + edit-centric tools) for this domain's attempts. The
+    #: generalist base is a strong-tier passthrough → off; CodingDomain (weak local tier) → on.
+    aci_mode: bool = False
 
     def __init__(self, name: str | None = None) -> None:
         if name is not None:
@@ -274,7 +277,7 @@ class BaseDomain:
         stays the single money-safety owner (availability re-selects, capability bumps).
         """
         return AgenticLoop(
-            codec=NativeToolCodec(), critic_enabled=self.critic_enabled,
+            codec=NativeToolCodec(), critic_enabled=self.critic_enabled, aci_mode=self.aci_mode,
         ).run(
             system_prompt=system_prompt,
             initial_message=self._initial_message(ticket),

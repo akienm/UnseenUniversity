@@ -41,6 +41,9 @@ class CodingDomain(BaseDomain):
 
     name = "coding"
     critic_enabled = True
+    #: coding is the weak/local (minion) tier → windowed Read + edit-centric tools
+    #: (T-coding-minion-aci-edit-centric). Generalist BaseDomain stays off (strong-tier passthrough).
+    aci_mode = True
     #: run each attempt as the architect/editor split (D-coding-loop-redesign-aider-survey).
     #: A flag so the single-loop attempt can be restored without a code change (ticket rollback).
     architect_editor_enabled = True
@@ -71,7 +74,7 @@ class CodingDomain(BaseDomain):
             )
         from unseen_university.devices.inference.architect_editor import ArchitectEditorFlow
 
-        return ArchitectEditorFlow(critic_enabled=self.critic_enabled).run(
+        return ArchitectEditorFlow(critic_enabled=self.critic_enabled, aci_mode=self.aci_mode).run(
             system_prompt=system_prompt,
             initial_message=self._initial_message(ticket),
             task_class=self.task_class,

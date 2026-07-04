@@ -79,10 +79,14 @@ class ArchitectEditorFlow:
         critic_enabled: bool = False,
         inference_device=None,
         history_window_turns: int = HISTORY_WINDOW_TURNS,
+        aci_mode: bool = False,
     ) -> None:
         self._critic_enabled = critic_enabled
         self._inference_device = inference_device
         self._history_window_turns = history_window_turns
+        # Minion-tier ACI (windowed Read + edit-centric tools) applies to BOTH roles — the
+        # architect reads to plan and the editor reads to apply, both on the weak local tier.
+        self._aci_mode = aci_mode
 
     def run(
         self,
@@ -106,6 +110,7 @@ class ArchitectEditorFlow:
             inference_device=self._inference_device,
             history_window_turns=self._history_window_turns,
             tool_names=ARCHITECT_TOOLS,
+            aci_mode=self._aci_mode,
         )
         plan_result = architect.run(
             system_prompt=ARCHITECT_PROMPT + "\n\n" + system_prompt,
@@ -137,6 +142,7 @@ class ArchitectEditorFlow:
             critic_enabled=self._critic_enabled,
             inference_device=self._inference_device,
             history_window_turns=self._history_window_turns,
+            aci_mode=self._aci_mode,
         )
         editor_message = (
             "## EDIT PLAN (produced by the architect — apply it exactly)\n"
