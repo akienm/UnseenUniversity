@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-coding-minion-aci-edit-centric.20260704.135250074484",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coding-minion-aci-edit-centric"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T19:52:50.074484+00:00",
+  "links": {
+    "decisions": [
+      "D-coding-loop-redesign-aider-survey-2026-07-04"
+    ],
+    "tickets": [
+      "T-coding-minion-aci-edit-centric"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coding-minion-aci-edit-centric",
+    "title": "[sprint] ACI for the minion tier: windowed viewer + concise feedback + edit-centric turns",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "CodingLoop",
+      "ACI"
+    ],
+    "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
+    "priority": 0.55,
+    "gate": null,
+    "status": "sprint",
+    "intention": "I intend that the weak/local tier gets an interface tuned for it, because SWE-agent showed a good Agent-Computer Interface outweighs a naive tool-call loop for the SAME model.",
+    "description": "**Problem:** SWE-agent's core result — a tuned ACI (windowed file viewer, concise feedback, edit-centric commands + a syntax gate) makes a given model much better than the same model behind generic tools; a baseline agent with naive tool-calls does much worse. Our minion tier gets exactly that naive surface: generic Read (whole-file <=3000-char dumps), verbose results, an exploration-centric loop where editing is just one rarely-chosen tool.\n**Proposed shape:** for the minion (weak/local) tier ONLY, give the coding loop an ACI: (1) a windowed file viewer (~100-line windows with scroll/search) replacing whole-file Read; (2) concise tool feedback (a no-output tool returns 'ran, no output'; search LISTS matching files, not every match's context); (3) an edit-centric turn contract orienting the model toward producing an edit each turn. Keep the rich generic tools for the strong tier — parameterize by codec/tier so the strong path is unchanged. (The edit-format syntax-gate + whole-format fallback is DEFERRED — speculative until orientation is fixed and devstral actually attempts diffs; tracked in the decision, not this ticket.)\n**Affected files:** agentic_loop.py (tool surface per codec/tier), the Read/viewer tool impls, feedback formatting. MEDIUM inertia: agentic_loop.py — flag for pre-approval.\n**Design rules:** codec/tier parameterization (never degrade the strong tier); log crossings; proof-on-close.\n**Scope boundary:** IN — minion-tier windowed viewer + concise feedback + edit-centric contract. OUT — architect/editor split; repo map; the edit-format syntax-gate (deferred).\n**Test plan:** unit test — a minion-tier loop reading a large file gets a bounded window (not a 3000-char dump); a no-output tool returns the concise sentinel; the strong tier still gets the full dump. Behavioral red: minion path emits a whole-file dump.\n**Completion criteria:** the minion-tier coding loop uses a windowed viewer + concise feedback while the strong tier keeps rich tools, proven by a test that pins both paths.\n**Rollback:** tier-gated; the minion tier can fall back to the generic tool surface.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-04T19:52:34.279714+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T19:52:34.279769+00:00"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-coding-loop-redesign-aider-survey-2026-07-04.20260704.135330089482",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-coding-loop-redesign-aider-survey-2026-07-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-04T13:53:30.089482",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
+    "title": "Coding loop redesign from the aider/SWE-agent survey — architect/editor split, repo map, minion ACI",
+    "status": "open",
+    "date": "2026-07-04",
+    "spawned_tickets": [
+      "T-coding-architect-editor-split",
+      "T-coding-repo-map-orientation",
+      "T-coding-minion-aci-edit-centric",
+      "T-coding-redesign-observe-edits-then-close",
+      "T-consequence-coding-loop-redesign"
+    ],
+    "text": "# D-coding-loop-redesign-aider-survey-2026-07-04\n**title:** Coding loop redesign from the aider/SWE-agent survey\n**date:** 2026-07-04\n**status:** open\n**spawned_tickets:** T-coding-architect-editor-split, T-coding-repo-map-orientation, T-coding-minion-aci-edit-centric, T-coding-redesign-observe-edits-then-close, T-consequence-coding-loop-redesign\n\n## Decision narrative\nThree sessions were spent tuning the coding loop from the INSIDE (num_ctx -> context-discipline eviction -> honest-halt) to get devstral-small-2:24b@Hex to stop read-wandering and edit. Two live DS.0 observe-runs (2026-07-04) made 0 Write/Edit ATTEMPTS across 149 tool calls (47 Read/8 Bash, then 102 Read/12 Bash) — the model died in orientation/planning, never reaching an edit. A survey of aider + SWE-agent (note: coding-agent-survey-aider-swe-agent) showed the bottleneck is the INTERFACE, not the model (SWE-agent's ACI thesis: a tuned interface outweighs a naive tool-call loop for the SAME model). Three evidence-ranked levers: (1) architect/editor split — a strong planner emits edit-intent, devstral serves only as the cheap diff-editor (most robust; helps whether devstral won't-plan OR can't-serialize); (2) repo-map orientation — a graph-ranked ~1k-token signature map replaces read-to-discover; (3) a minion-tier ACI — windowed viewer + concise feedback + edit-centric turns. The edit-format syntax-gate is DEFERRED as speculative (0 edit-attempts means we can't yet confirm our edit path fails). Akien chose (2026-07-04): file the FULL redesign now (no spike gate), measured against a full-cycle close.\n\n## Relationship to D-ds-inference-context-management-2026-07-04\nThis decision RE-FRAMES the prior one, it does not compete with it. D-ds-inference-context-management shipped num_ctx + context-discipline eviction + honest-halt — real fixes to real bugs, but PLUMBING around a loop whose SHAPE is the actual blocker. T-coding-repo-map-orientation supersedes the read-to-discover pattern that made the context-discipline eviction necessary in the first place (the map means we never dump full files to discover structure, so the bloat the eviction fixes never accrues). Future CC: these two decisions are one arc — context-management was the symptom layer, this is the cause layer.\n\n## One coherent design, built sequentially\nAll three build tickets touch agentic_loop.py + the coding domain and interact; they are ONE coherent redesign built in sequence (CC is one-at-a-time regardless), not three parallel bolt-ons. Priority order: architect/editor (0.7) -> repo-map (0.6) -> ACI (0.55). The bus/shim/device rack, escalation walk, and cost-router are orthogonal and KEPT.\n\n## Hypothesis\nAfter the redesign, devstral (DS.0) completes a real multi-file ticket FULL-CYCLE — edit -> test -> close — from a devstral-only run (vs 0 edit-attempts today). MEASUREMENT SPLIT (advisor): the redesign-ATTRIBUTABLE signal (>=1 edit attempt + a test step reached) is observable now via the controlled observe harness; the full-cycle CLOSE additionally requires the listener fixes (T-ds-listener-proof-on-close, T-ds-builder-target-branch-not-main) and is measured by the existing T-ds-fullcycle-observe-run — so a close-failure does not falsify THIS redesign for unrelated reasons.\n\n## Measurement Signal\nControlled DS.0 observe re-run (dual push-guards, Hex, num_ctx=32768) on a real multi-file ticket: the AgenticLoop tool tally shows >=1 Write/Edit call (baseline 0) and the run reaches a test/verify step (T-coding-redesign-observe-edits-then-close). Full-cycle close cross-referenced to T-ds-fullcycle-observe-run. Consequence signals (T-consequence-coding-loop-redesign): cost-router per-run dollars (architect+editor = 2 calls/edit), edits targeting renamed/moved symbols (repo-map staleness), edit-apply failures from ACI windowing hiding needed context.\n\n## Intention\nI intend that DS.0's builder is leveled to complete real tickets unaided by fixing the coding loop's INTERFACE (orientation + edit surface), because the interface — not the 24B model — is what blocks it from editing. (Serves the DS.0-leveling north star: when DS.0 is as good as CC.0, whole projects get built in a night.)"
+  }
+}

@@ -26,3 +26,4 @@ Done: Done: Closed 2 tickets PROVEN from D-ds-inference-context-management — T
 Next: Next: DS.0 observe re-run (live Hex, needs dual push-guard) — empirical confirm-by for whether context discipline + honest escalation converts DS.0 read-wandering -> edits. Wants a fresh explicit go (live autonomous run). Friday extras (eval-run/weekly-retro/audit-expert) are Akien's tonight.
 
 ## In-flight: Session clean: 2 inference-context tickets shipped+proven+pushed (context-discipline 7e9706f9, honest-halt 196ba7d9), sibling routing-gap ticket filed; in-flight = NONE. Next action is the live DS.0 observe re-run, gated on a fresh explicit go.
+- D-coding-loop-redesign-aider-survey-2026-07-04: coding loop redesign (interface > model) — T-coding-architect-editor-split, T-coding-repo-map-orientation, T-coding-minion-aci-edit-centric, T-coding-redesign-observe-edits-then-close, T-consequence-coding-loop-redesign

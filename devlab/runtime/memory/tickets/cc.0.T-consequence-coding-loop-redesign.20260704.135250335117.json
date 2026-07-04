@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-coding-loop-redesign.20260704.135250335117",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-coding-loop-redesign"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T19:52:50.335117+00:00",
+  "links": {
+    "decisions": [
+      "D-coding-loop-redesign-aider-survey-2026-07-04"
+    ],
+    "tickets": [
+      "T-consequence-coding-loop-redesign"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-coding-loop-redesign",
+    "title": "[sprint] Consequence check: coding loop redesign (architect/editor, repo-map, ACI)",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
+    "priority": 0.3,
+    "gate": "2026-07-18",
+    "status": "sprint",
+    "description": "**What changed:** the coding inner loop is redesigned around an architect/editor split, a repo-map orientation surface, and a minion-tier ACI — shifting the coding model's interface (orientation + edit surface) rather than tuning its context window.\n**Predicted unintended effects:** (1) the architect/editor split makes >=2 inference calls per edit (planner + editor) — cost/latency inflation on PAID tiers, and could trip per-run cost caps that assume one call; (2) repo-map staleness — a cached signature map drifts from the tree, so the model plans against renamed/moved symbols and edits the wrong place; (3) ACI windowing (~100-line windows) can hide a definition the task needs 200 lines away, so the model edits with partial understanding; (4) tier-parameterized tool surface risks strong-tier vs minion-tier divergence — a bug that only manifests on one path and is masked on the other; (5) architect/editor handoff adds a new failure mode: a good plan + a bad editor still fails, and mis-attribution could re-trigger the escalation walk wrongly.\n**Signals to watch:** cost-router per-run dollars on coding tickets; edits targeting non-existent/renamed symbols (apply failures); edit-failure/lint-reject rate once edits start; observe-run tool tally (Write/Edit >0); escalation-walk class logs (capability vs availability) firing on editor-serialization failures.\n**Gate condition:** Check by 2026-07-18 or when all three redesign builds have shipped and T-coding-redesign-observe-edits-then-close has run.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-04T19:52:43.883645+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T19:52:43.883714+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4ac4a6f9-45d4-4532-adcc-08e8a55da2e4"
+  }
+}
