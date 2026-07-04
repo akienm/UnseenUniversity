@@ -1,73 +1,120 @@
-- T-slate-writer-dirty-tree: Background slate writer dirties tree during proof emission; defer writes or gate
+# Slate 2026-07-03 (CLOSED)
 
-## In-flight: T-slate-writer-dirty-tree filed (S, devex friction); clean end of 6-ticket proven chain.
+## Done today
+
+🎉 **MILESTONE — FIRST PROVEN LIVE DS.0 BUILD ON HEX.** T-ds-smoke-hello: DS.0 fetched the
+ticket, routed worker→devstral-small-2:24b@Hex, agentic ToolLoop called Write →
+/tmp/ds_smoke/SMOKE_OK.txt ('dicksimnel smoke ok'), result 'DONE', cost $0.00, 3 turns/~15s.
+The DS.0 Phase-1 build path is proven end-to-end.
+
+Tickets closed:
+- T-ds-smoke-hello — MILESTONE, first proven live DS.0 build (devstral@Hex, $0). [proven]
+- T-dicksimnel-cc-queue-path-fix — f0640371: DS.0 resolves cc_queue via uu_root() (parents[2]
+  reorg fallout → couldn't fetch any ticket). Enabled the live build. [proven]
+- T-granny-rules-engine-tests-red — 085f4280 (shipped-unproven): REAL BUG — package-collapse
+  refactor wrote non-running CC.1 into dispatch → Granny self-parked → no master dispatch.
+  Fixed CC.1→CC.0 in _default_config + granny.yaml; 27/27 green. ⚠ live Granny still parked
+  from this bug at close — needs restart to un-park (surfaced to Akien).
+- T-inference-mark-anthropic-defunct — 1c35ff0c (shipped-unproven): first-class Source.defunct
+  flag (policy beats connectivity); anthropic defunct-by-policy (browser-auth/zero-balance);
+  4 tests pass. Lever: stub-first split not done.
+- T-cc-tmux-session-dot-naming-broken — 2014e68f + proof 0880d438 [PROVEN]: dot-free tmux
+  session names (hostname_cc_N); tmux mangles dots. red=AssertionError green=passed. comms://
+  bus addresses stay dotted.
+- T-launcher-1m-default-fresh-session — 569bf200 (shipped-unproven): 1M context now DEFAULT in
+  superclaude/rescueclaude; always-fresh conversation; --new removed. --200k/--no-1m = inverse
+  A/B lever. Akien on 5x Max plan, browser auth, no API keys.
+- T-launcher-help-and-1m-flags — shipped-unproven (no launcher-proof harness; --1m validated
+  in prod).
+
+Decisions filed (4):
+- D-granny-pull-dispatch-model-2026-07-03 — faae8f34: Granny PULL-dispatch + shim-owns-startup
+  + class-semaphore + self-clearing no-builders alarm.
+- D-env-creds-device-cleanup-2026-07-03 — 5e7eab38 / retargeted accecdb5: clean env/creds/
+  device-data before DS.0; single credential home = the VAULT device (not uu_bash_profile.sh).
+- D-ds-builder-leveling-2026-07-03 — 9035e8a8: level DS.0 builder to CC.0 (listener close bug,
+  prompt fixes, advisor review ladder, v2 redesign).
+- D-swarm-location-independent-devices-2026-07-03 — f4e33b52: location-independent devices,
+  master-only DB, capability inventory, placement=shared rules-engine, cooperative shim-to-shim.
+
+## Notes
+- ⚠ OPERATIONAL: the LIVE Granny is parked (is_stalled) from the CC.1→CC.0 bug — needs a
+  resume + config reload (restart) to un-park and route master work to CC.0.
+- ⚠ AKIEN: OpenRouter key was rotated (done); vault migration for secrets can proceed.
+- TOPOLOGY CONFIRMED: CC.0 (this session, discuss+work) + DS.0 (builder on Hex). No local CC.1
+  builder (crashes this 4-core/16GB box; multi-CC-over-MCP failed — CC doesn't use MCP unprompted).
 
 ## Session close 2026-07-03
-Done: Day-close for 2026-07-02 complete: 10 tickets proven (full front-door/worker-pool chain), slate terminated + CLOSED, roll-up note + GitHub Discussion #21 posted.
-Next: T-converge-worker-dispatch (L, deferred per decision) is the only remaining chain ticket — ask Akien whether to un-defer or pick new work. Friday extras (eval-run/weekly-retro/audit-expert) NOT auto-run — surface to Akien.
-- T-compact-at-150k-context: native /compact at ~150K context tokens; remove dead /autocompact cadence
-- T-fold-weekly-into-daily: retire weekly/monthly audit cadence, fold into daily day-close (Q1: fold shape)
-- T-self-diagnostic-trouble-tickets: alarm emitters attach failure-time diagnostics (No.5 Crossbar); ANCHOR -> decompose via /sorted
+Done: FIRST PROVEN LIVE DS.0 BUILD ON HEX (devstral-small-2:24b, $0, SMOKE_OK.txt end-to-end).
+Closed 7 tickets incl. real fixes: granny CC.1→CC.0 dispatch bug (27 green; Granny had
+self-parked), anthropic-defunct flag, DS.0 cc_queue path (reorg fallout), launcher
+1M-default+fresh, dot-free tmux naming (proven). Filed 4 decisions (granny-pull-dispatch,
+env-creds-cleanup→vault, ds-builder-leveling, swarm-location-independent). Analyzed DS.0
+builder prompt; verified close-bug is in listener _post_result (bare close refused by
+proof-on-close → escalates every real ticket).
+Next (rolled into 07-04): the DS.0 observe-run + /sorted landed early 07-04 → D-ds-inference-
+context-management: DS.0's FIRST leveling blocker is inference context management (sources.py:352
+never sets num_ctx → ollama silently truncates → model works BLIND), NOT the listener close bug.
+Critical path: T-ollama-source-set-num-ctx (S, unblocker) → T-ds-observe-rerun-after-ctx-fix.
+Pending: restart parked Granny; controlled Granny→DS.0 dispatch E2E; T-granny-bus-dispatch-tests-red.
 
-## In-flight: POST-DAY-CLOSE (07-02 closed, 10 tickets proven). 3 tickets filed this tail, all pushed: (1) T-compact-at-150k-context [SPRINT] — native /compact at ~150K ctx replacing dead /autocompact hook (settings.json hook already removed, backup .bak-20260703); (2) T-fold-weekly-into-daily [OPEN_QUESTIONS Q1: fold shape a/b/c] — retire weekly audit cadence into daily; (3) T-self-diagnostic-trouble-tickets [OPEN_QUESTIONS, ANCHOR] — alarms carry failure-time diagnostics (No.5 Crossbar), decompose via /sorted, Q1 schema + Q2 probe-timing pending. Reboot imminent — clean restart + reload.
+## In-flight (trail — running ledger, chronological)
 
-## In-flight: /ticket batch (Akien 2026-07-03 post-reload). Answered 3 open items + filed 3 new + closed 1:
-- CLOSED T-launcher-help-and-1m-flags (shipped-unproven: no launcher-proof harness; --1m validated in prod).
-- NEW T-launcher-1m-default-fresh-session [SPRINT]: --1m becomes DEFAULT + always-fresh conversation + REMOVE --new; PRESERVE CC_TMUX_SESSION naming (load-bearing: identity/Granny-routing/notif in 6+ readers).
-- NEW T-levers-doc-compact-threshold [DEPENDENCY on T-compact-at-150k]: document the compact-threshold lever in docs/the_ownership_gap/2.Levers.md; doc must match shipped mechanism, not plan.
-- 'move pre-build into Python' = ALREADY TICKETED (T-uu-build-packet-compiler [sprint], deterministic build_packet.json; source reading 202603031000_CopilotPrompt...). Discarded my duplicate T-consolidate-copilot-prebuild-into-python; self-diagnostic design-note repointed to that lineage.
-- T-fold-weekly-into-daily -> SPRINT: Q1 answered (a) progressive-across-week.
-- T-self-diagnostic-trouble-tickets: Q1 answered (JSON, causal-chain (b) rec); Q2 still open; ANCHOR -> /sorted. Design note added: diagnostics = a build-input data pack 'one layer before what's-needed-to-build' (feeds a debug->repair->build LLM handoff).
-- T-converge-worker-dispatch-onto-rules-engine -> SPRINT (UNDEFERRED: 3 blockers closed 07-02; Akien: 'we don't defer').
-Next: T-launcher-1m-default-fresh-session and T-fold-weekly-into-daily are sprint-ready; T-compact-at-150k unblocks the levers-doc ticket. Friday extras (eval-run/weekly-retro/audit-expert) still NOT run.
-- D-granny-pull-dispatch-model-2026-07-03: Granny PULL-dispatch + shim-owns-startup + class-semaphore + self-clearing no-builders alarm — T-frontdoor-bringup-hardening (Phase1/sprint), T-availability-semaphore-build-class, T-cc-shim-reachability-gate-backoff, T-no-builders-alarm-done-right (Phase2/dependency), T-consequence-D-granny-pull-dispatch-model. Links: T-converge-worker-dispatch, T-self-diagnostic-trouble-tickets, T-ds-smoke-hello, T-consequence-D-ds-first-live-build-on-hex.
-- T-launcher-1m-default-fresh-session: launcher 1M-default + always-fresh + drop --new (in_progress)
+- T-slate-writer-dirty-tree filed (S, devex friction); clean end of 6-ticket proven chain.
 
-## In-flight: T-launcher-1m-default-fresh-session CLOSED (shipped-unproven; commit 569bf200). 1M-context now DEFAULT in bin/superclaude + bin/rescueclaude via clearing CLAUDE_CODE_DISABLE_1M_CONTEXT (.bashrc sets =1); --200k/--no-1m = inverse A/B lever. Dropped fragile ANTHROPIC_MODEL=opus[1m]; rescueclaude always-fresh (RESUME_ARGS=()), --new removed. Akien on 5x Max plan, browser auth, NO API keys anymore. Launcher Phase-0 DONE.
+- POST-DAY-CLOSE (07-02 closed, 10 tickets proven). 3 tickets filed this tail, all pushed:
+  T-compact-at-150k-context [SPRINT] (native /compact at ~150K ctx replacing dead /autocompact
+  hook; settings.json hook removed, backup .bak-20260703); T-fold-weekly-into-daily
+  [OPEN_QUESTIONS→SPRINT, Q1 answered (a) progressive-across-week]; T-self-diagnostic-trouble-
+  tickets [OPEN_QUESTIONS, ANCHOR] (alarms carry failure-time diagnostics, No.5 Crossbar).
 
-## NEXT (Akien-flagged 'clean up next', part of DS.0 course — deep-repair everything in the way): .bashrc / env / creds / device-data-layout cleanup. Sonnet left a mess:
-  - Migrate ALL AI/Igor/Anthropic/OpenRouter/Ollama/UU vars OUT of ~/.bashrc into ~/.unseen_university/uu_bash_profile.sh (migration was started, left incomplete).
-  - Debris to remove: ~/.unseen_university/uu_bash_profile.sh.pre-uu-rename.bak; ~/.unseen_university/.env (should NOT exist); reconcile ~/.unseen_university/uu.env.
-  - Creds: akien creds at ~/.unseen_university/akien/akien.credentials.cfg; Igor creds -> instance dir.
-  - Inference proxy: mark the Anthropic key as zero-balance/defunct (browser auth now; testing it returns zero). OpenRouter ~$20 — Akien re-enables later to burn+test, won't top up.
-  - DEVICE-DATA LAYOUT (Akien 2026-07-03): in ~/.unseen_university/devices/, class and INSTANCE dirs are FLAT SIBLINGS, not nested. e.g. devices/DickSimnel + devices/DS.0; devices/igor + devices/IgorWild1 (NOT devices/igor/IgorWild1). Easier to see/traverse. Reverses the earlier nested example.
-  - Launcher follow-on: with no keys, superclaude require_api_key()/OR-var-stripping may be vestigial — review during this cleanup (NOT in the launcher ticket).
-  Capture via /sorted after verifying actual on-disk file state (exact-id preflight before any rm).
-- D-env-creds-device-cleanup-2026-07-03: clean env/creds/device-data substrate before DS.0 — T-consolidate-local-secrets-one-home, T-bashrc-uu-migration-finish, T-remove-env-creds-debris, T-device-data-flat-layout-standardize, T-inference-mark-anthropic-defunct, T-launcher-creds-vestigial-review, T-consequence-D-env-creds-device-cleanup. ⚠ AKIEN: rotate exposed OpenRouter key (~/.bashrc:144).
-- CORRECTION (Akien): the single credential home is the existing VAULT DEVICE (unseen_university/devices/vault/ — Fernet+Postgres, device-scoped, connect-time client), NOT uu_bash_profile.sh. Retargeted T-consolidate-local-secrets-one-home -> vault; linked existing T-uu-bashrc-openrouter-key (OR-key instance). uu_bash_profile.sh keeps only the pre-Postgres DB boot secret.
-- T-inference-mark-anthropic-defunct: mark anthropic source zero-balance/unavailable (in_progress)
+- /ticket batch (Akien 2026-07-03 post-reload): closed T-launcher-help-and-1m-flags; filed
+  T-launcher-1m-default-fresh-session, T-levers-doc-compact-threshold; discarded duplicate
+  prebuild ticket (already T-uu-build-packet-compiler); undeferred T-converge-worker-dispatch
+  ('we don't defer'). D-granny-pull-dispatch-model filed.
 
-## In-flight: T-inference-mark-anthropic-defunct CLOSED (shipped-unproven; commit 1c35ff0c, pushed 78cb56b8). Added first-class Source.defunct flag (available=False forced; check_and_update/ping never revive → policy beats connectivity); AnthropicSource defunct-by-policy (browser-auth/zero-balance); default_registry registers it explicitly-defunct (visible, not commented-out). Removes only designer rule 7; no tier stranded. 4 new tests pass. shipped-unproven lever = stub-first split not done (atomic impl+test). DISCOVERED + filed T-granny-rules-engine-tests-red [sprint, pri 0.4]: 20 pre-existing failures in test_granny_rules_engine (match_rule returns None vs CC.0) — likely 07-02 worker-dispatch-restructure fallout; ON THE DS.0 DISPATCH PATH. First non-blocked cleanup ticket done; T-bashrc-uu-migration-finish + T-device-data-flat-layout-standardize remain (personal-config — want Akien nod).
+- T-launcher-1m-default-fresh-session CLOSED (569bf200). 1M default via clearing
+  CLAUDE_CODE_DISABLE_1M_CONTEXT; rescueclaude always-fresh; --new removed. Launcher Phase-0 DONE.
 
-## In-flight: T-granny-rules-engine-tests-red CLOSED (shipped-unproven; commit 085f4280). ROOT was a REAL BUG: package-collapse refactor (a5f4dab0) wrote CC.1 into dispatch config for a builder never run on this 4-core/16GB box → master/catch-all → non-running CC.1 → no dispatch → stall alarm → Granny PARKED. Fixed: CC.1→CC.0 in _default_config + granny.yaml; restored high-inertia rule to _default_config; reconciled 20 tests (empty→None, CC.0-announce+not-stalled fixture, fake_bus worker_name, DB→ticket_store). 27/27 green. Filed T-granny-bus-dispatch-tests-red [sprint] for 10 same-root sibling failures. ⚠ OPERATIONAL: the LIVE Granny is still parked (is_stalled) from this bug — needs a resume + config reload (restart) to un-park and route master work to CC.0. Did NOT auto-restart mid-steer — surface to Akien. TOPOLOGY CONFIRMED: CC.0 (this session, discuss+work) + DS.0 (builder on Hex); no local CC.1 builder (crashes this box; multi-CC-over-MCP failed because CC doesn't use MCP unprompted).
-- T-inference-status-report [sprint, Akien-approved]: at-a-glance router report (providers+status, models+cost/last-used/account-type, Hex health, in-flight jobs) — generalizes the manual DS.0/Hex readiness check. DS.0/HEX SUBSTRATE VERIFIED READY: Hex up (10.0.0.100:11434, 200/7ms), devstral-small-2:24b + qwen2.5-coder:14b pulled, worker→devstral@Hex routing present, DS.0 device healthy, anthropic defunct, granny dispatch fixed. T-ds-smoke-hello runnable E2E — awaiting Akien go to restart Granny + fire first live DS.0 build.
+- CLEANUP NEXT (Akien-flagged, part of DS.0 course): .bashrc/env/creds/device-data cleanup —
+  D-env-creds-device-cleanup filed. CORRECTION: single credential home = the VAULT device
+  (unseen_university/devices/vault/, Fernet+Postgres, connect-time client), NOT uu_bash_profile.sh.
+  DEVICE-DATA LAYOUT: class + INSTANCE dirs are FLAT SIBLINGS (devices/DickSimnel + devices/DS.0),
+  not nested.
 
-## 🎉 MILESTONE: FIRST PROVEN LIVE DS.0 BUILD ON HEX (2026-07-03). DS.0 fetched T-ds-smoke-hello, routed worker→devstral-small-2:24b@Hex, agentic ToolLoop called Write → /tmp/ds_smoke/SMOKE_OK.txt created (content 'dicksimnel smoke ok'), result 'DONE: wrote smoke file', cost $0.00, 3 turns/~15s. The DS.0 course Phase-1 build path is PROVEN. Surfaced+fixed a real bug: DS.0 _CC_QUEUE used parents[2] (reorg fallout → package dir not repo root) so DS.0 couldn't fetch ANY ticket → fixed to uu_root() (T-dicksimnel-cc-queue-path-fix, commit f0640371). Systemic: same parents[N] reorg-fallout in vetinari/device.py:103, web_server:1319, installer:30 → T-reorg-parents-path-sweep [sprint/builder]. Ran the build CORE directly (not via Granny — avoided churning the 87-ticket queue: 82 master+5 builder+131 apprentice sprint tickets); Granny→DS.0 dispatch is separately test-green. NEXT: controlled Granny→DS.0 dispatch E2E (full autonomous loop) when wanted; T-reorg-parents-path-sweep is a great real second build for DS.0.
+- T-inference-mark-anthropic-defunct CLOSED (1c35ff0c/78cb56b8). Source.defunct flag; anthropic
+  defunct-by-policy; 4 tests pass. DISCOVERED+filed T-granny-rules-engine-tests-red (20 pre-existing
+  failures on the DS.0 dispatch path).
 
-## Session close 2026-07-03
-Done: FIRST PROVEN LIVE DS.0 BUILD ON HEX (devstral-small-2:24b, $0, SMOKE_OK.txt end-to-end). Closed 6 tickets incl. real fixes: granny CC.1->CC.0 dispatch bug (27 tests green; Granny had self-parked), anthropic-defunct flag, DS.0 _CC_QUEUE path (reorg fallout), launcher 1M-default+fresh. Filed D-granny-pull-dispatch-model + D-env-creds-device-cleanup (secrets->VAULT device) + tickets (T-reorg-parents-path-sweep, T-inference-status-report). Analyzed DS.0 builder system prompt: verified bugs (stale psql memory_get L20, red-suite test L63) + close-bug is in LISTENER _post_result (bare close refused by proof-on-close -> escalates every real ticket).
-Next: Capture DS.0-builder-prompt findings + advisor-review-ladder design (Critic->fresh-perspective-review->stronger-advisor->escalate; verify-vs-Completion-criteria before DONE) as tickets/decision; run DS.0 full-cycle on T-reorg-parents-path-sweep to OBSERVE real bugs; builder-prompt REDESIGN = v2 (fresh session). Pending: OR-key rotation (Akien) unblocks vault migration; controlled Granny->DS.0 dispatch E2E; T-granny-bus-dispatch-tests-red; optional web-research on current builder-prompt SOTA.
+- T-granny-rules-engine-tests-red CLOSED (085f4280). ROOT was a REAL BUG: CC.1 in dispatch config
+  for a builder never run on this box → Granny PARKED. Fixed CC.1→CC.0; 27/27 green. Filed
+  T-granny-bus-dispatch-tests-red (10 sibling failures).
 
-## In-flight: IN-FLIGHT: DS.0 builder-prompt leveling — analyzed coding.md + verified the full-cycle close-bug is in listener _post_result (bare cc_queue close refused by proof-on-close). Findings + advisor-review-ladder design NOT yet captured as tickets. Milestone locked: first live DS.0 build on Hex proven. Next session: file the capture, run DS full-cycle on the path-sweep to observe real bugs, treat prompt redesign as v2.
-- D-ds-builder-leveling-2026-07-03: level DS.0 builder to CC.0 — T-ds-fullcycle-observe-run (do first), T-ds-listener-proof-on-close (hard blocker: bare close refused), T-ds-builder-prompt-fixes (L20 psql/L63 red-suite/push-guard/vestigial 5-6), T-ds-advisor-review-ladder (Critic->fresh-perspective->advisor->escalate; verify-vs-Completion before DONE), T-builder-prompt-sota-webrun (later), T-ds-builder-prompt-redesign-v2 (fresh session), T-consequence. Everything captured; ready for compact.
-- T-cc-tmux-session-dot-naming-broken: superclaude .cc.N tmux naming broken (dots->underscores) — surfaced testing CC.1 numbering
+- T-inference-status-report [sprint, Akien-approved]. DS.0/HEX SUBSTRATE VERIFIED READY (Hex up
+  10.0.0.100:11434, devstral+qwen pulled, routing present, anthropic defunct, granny fixed).
 
-## In-flight: Dot-free tmux session naming FIXED+PROVEN (commit 2014e68f): CC.1 numbering test surfaced tmux dot->underscore bug (dead scan + kill-server footgun); fixed hostname_cc_N across superclaude/rescueclaude/constants.py/cc_worker_listener.py/stop_cc_minions.py; proof_emitter red=AssertionError green=passed; comms:// bus addresses stay dotted. Filed T-cc-session-naming-reload-harness-fragility (pre-existing non-hermetic test). Folded Akien's DS answers: listener->full proof-on-close path; advisor->any-time capability for either builder.
-- T-superclaude-cold-start-kill-server-footgun: cold-start kill-server nukes unrelated sessions (split from dot-naming close)
-- D-swarm-location-independent-devices-2026-07-03: location-independent devices, master-only DB (per-box backups, Hex none), capability inventory, placement=shared rules-engine, COOPERATIVE shim-to-shim (no box-agent), master-down->trouble-ticket, Hex inference-only — T-swarm-inventory-capability-schema, T-swarm-box-rebuild, T-placement-rules-engine, T-swarm-db-backup-model, T-hex-promote-inference-only, T-master-db-down-trouble-ticket, T-consequence
+- 🎉 MILESTONE: first proven live DS.0 build on Hex (see Done today). Surfaced+fixed
+  T-dicksimnel-cc-queue-path-fix (parents[2] reorg fallout). Systemic: same parents[N] fallout in
+  vetinari/web_server/installer → T-reorg-parents-path-sweep [sprint/builder].
 
-## In-flight: CAPTURED + STOPPING (Akien flagged CC starting to make mistakes = context fatigue). Filed D-swarm-location-independent-devices (7 tickets, pushed f4e33b52): location-independent devices, master-only DB (per-box backups/Hex none/revisit-if-slow), capability inventory, placement=shared rules-engine, COOPERATIVE shim-to-shim placement (NO box-agent — shims+ground-loop are the resident layer; target self-gates 'sure!/Nope over budget'; #N negotiated in-exchange), master-down->trouble-ticket, Hex inference-only. Two CC errors this stretch: (1) box-agent hierarchy reflex, (2) wrong 'Granny needs restart' — Granny auto-comes-up on tickets; e2e proof DONE+in memory. Memory updated: feedback_cooperative_not_hierarchical (shim-to-shim sharpening), feedback_cc_concurrency_hard_limit (~4/box monitored, Igor off). Earlier: dot-free tmux naming FIXED+PROVEN (2014e68f). RECOMMEND fresh start; standing next build = T-ds-listener-proof-on-close.
+- DS.0 builder-prompt leveling: analyzed coding.md; close-bug is in listener _post_result (bare
+  cc_queue close refused by proof-on-close). D-ds-builder-leveling filed (9035e8a8): T-ds-fullcycle-
+  observe-run (do first), T-ds-listener-proof-on-close, T-ds-builder-prompt-fixes, T-ds-advisor-
+  review-ladder, T-builder-prompt-sota-webrun, T-ds-builder-prompt-redesign-v2, T-consequence.
 
-## In-flight: DS.0 OBSERVE-RUN on T-reorg-parents-path-sweep (controlled direct, devstral-small-2:24b@Hex, $0). RESULT = None/HALT after ~34min. FINDINGS reorder D-ds-builder-leveling:
-  (1) CAPABILITY WALL: 114 tool calls (102 Read + 12 Bash), **ZERO Edit/Write** — devstral-small never converged from explore→edit on a real multi-site-judgment ticket (contrast: trivial smoke ticket succeeded in 3 turns). The listener proof-on-close bug (T-ds-listener-proof-on-close) is NOT the first blocker — a real ticket never even REACHES close/push with this model.
-  (2) LOOP DEATH-MODE: input_tokens climb each turn (2908→4917→…); at ~turn 39 the devstral@Hex call exceeds the 120s timeout (call_outcome=error, input_tokens=0) → attempt dies → retried IDENTICALLY 2x (same doomed growing-context path) → HALT 'inference-availability-exhausted' after 3×~11min. Retrying the identical loop is pure waste; needs turn/wall-clock budget + honest escalate, not blind retry.
-  (3) NOT REACHED: proof-on-close close behavior + auto-push-to-main never exercised (run died in explore). coding.md auto-push-to-main confirmed by READ (step5 `git push origin main`, denylist only blocks --force) — leveling finding regardless: builders should target branch/PR not main.
-  REPRIORITIZE: before listener/prompt fixes → (a) escalate off devstral-small for real tickets (qwen2.5-coder:14b pulled; Qwen coding slate 30B→480B per project_hex_ollama_model_slate); (b) loop turn/time budget + no-identical-retry + honest ESCALATE. Guards used+restored (dual push-block, reset e5dd863f, tree clean, origin restored). Raw log: scratchpad/ds0_observe_run.log (2014 lines, session-temp).
+- Dot-free tmux session naming FIXED+PROVEN (2014e68f, proof 0880d438). Filed T-superclaude-cold-
+  start-kill-server-footgun (split), T-cc-session-naming-reload-harness-fragility.
+  D-swarm-location-independent-devices filed (f4e33b52, 7 tickets).
 
-## In-flight: CORRECTION to DS.0 observe-run root-cause (advisor-checked against the log — my first two mechanisms were wrong). CONFIRMED evidence:
-  - Cadence FLAT ~16-17s/turn through turn 38, then turn 39 ALONE hangs 120s = threshold CLIFF, not gradual latency. input_tokens climbed 2908(t1)→29501(t35)→31955(t38)→ERROR(t39).
-  - ROOT: `sources.py:352` ollama request sets ONLY {temperature, num_predict} — **num_ctx is NEVER set**. Model supports 384K (mistral3.context_length=393216) but ollama defaults to a small num_ctx when unset → **silently truncates the prompt**. By ~turn 5 the prompt was already 29K+ tokens of stuffed 3000-char file-dumps, so devstral was largely **working BLIND** (sliding recent-window, not the ticket) — which better explains 102 aimless Reads / 0 edits than 'model too weak'. Turn-39 = oversized-prompt handling wall.
-  - UNIFIED single root cause (not two): the agentic loop re-stuffs full file-dumps into an ever-growing prompt AND the source never controls num_ctx. ONE high-leverage cheap fix: set num_ctx explicitly in the ollama source + context discipline in the loop (don't re-dump whole files every turn). NOT 'escalate to 480B' and NOT just 'add a turn budget'.
-  - RETRACTIONS: (1) capability is NOT fairly tested yet — re-run with num_ctx set BEFORE judging devstral-small. (2) qwen2.5-coder:14b is a DOWNGRADE from 24B — wrong escalation target; if capability route needed later, 30B+ per project_hex_ollama_model_slate.
-  - CONFIRM-BY: cheapest next step = re-run the SAME observe with num_ctx set (e.g. 32768) in the ollama source; expect the model to see the ticket and actually Edit. Listener proof-on-close / auto-push-to-main still NOT reached (moot until a run gets past explore).
-- D-ds-inference-context-management-2026-07-04: DS.0 first blocker = inference context mgmt (num_ctx unset -> blind model), not the listener close bug — T-ollama-source-set-num-ctx, T-agentic-loop-context-discipline, T-ds-observe-rerun-after-ctx-fix, T-ds-loop-no-identical-retry-honest-escalate, T-consequence-D-ds-inference-context-management (+ T-ds-builder-target-branch-not-main under D-ds-builder-leveling)
+- DS.0 OBSERVE-RUN on T-reorg-parents-path-sweep (controlled direct, devstral@Hex, $0) → None/HALT
+  after ~34min. 114 tool calls (102 Read + 12 Bash), ZERO Edit/Write. CORRECTED root-cause
+  (advisor-checked): sources.py:352 never sets num_ctx → ollama silently truncates → model works
+  BLIND. Turn-39 = oversized-prompt wall (flat ~16s/turn through t38, then 120s cliff x3 → HALT).
+  Retracted 2 wrong mechanisms; capability NOT fairly tested until model sees ticket. → captured
+  in D-ds-inference-context-management-2026-07-04 (filed early 07-04, 6 tickets). Guards used +
+  restored (dual push-block, reset e5dd863f, tree clean, origin restored).
+
+## Ad hoc
+- OR key rotated out of ~/.bashrc → commented/defunct in ~/.unseen_university/akien/akien.credentials.cfg.
+
+✅ CLOSED

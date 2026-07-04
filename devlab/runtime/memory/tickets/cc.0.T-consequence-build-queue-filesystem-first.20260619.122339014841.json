@@ -36,7 +36,7 @@
     "result": null,
     "role": "master",
     "priority": 0.3,
-    "gate": "2026-07-03",
+    "gate": null,
     "related_to": null,
     "github_issue": null,
     "dispatched_at": null,

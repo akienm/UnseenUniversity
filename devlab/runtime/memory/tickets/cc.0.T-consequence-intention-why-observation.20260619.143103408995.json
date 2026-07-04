@@ -30,7 +30,7 @@
     ],
     "description": "**What changed:** Adopted intention+why+observation as the atomic unit (closed loop), the reliability ladder (harness holds control flow), Why as a generative-rule multiplier, and the always-on-observer-as-standing-half — spawning a skills-why convention + auditor, the observer-pattern distillation, and offload harness-gates.\n**Predicted unintended effects:** (1) The `Why:` convention could ossify into box-ticking — whys written to pass the auditor, not to capture real mechanism (the wrong-why-worse-than-none failure). (2) The skills-why auditor's 'incoherent why' escalation could quietly start calling inference on near-clean skills, breaking the cheap-filter cost guarantee. (3) Harness-driven step injection could over-constrain CC, making it brittle on legitimately novel steps the checklist didn't anticipate. (4) De-dup pressure could collide with T-why-sorter (constraints/patterns) as both grow toward the same observer contract.\n**Signals to watch:** auditor inference-call count creeping above ~0 on clean runs; skills with `Why:` lines that are tautological/empty; CC retry-loops triggered by gates on valid steps; duplicated observer logic across T-why-sorter and T-always-on-observer-pattern.\n**Gate condition:** Check by 2026-07-03 or when T-skill-why-auditor + T-offload-harness-gates ship.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
     "decision_id": "D-intention-why-observation-2026-06-19",
-    "gate": "2026-07-03",
+    "gate": null,
     "priority": 0.3,
     "role": "master",
     "created_by": "cc.0",
@@ -38,6 +38,11 @@
     "updated_at": "2026-06-19T20:31:02.898487+00:00",
     "completed_at": null,
     "result": null,
-    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1
   }
 }

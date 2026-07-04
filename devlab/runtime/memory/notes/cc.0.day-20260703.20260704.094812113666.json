@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.day-20260703.20260704.094812113666",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260703"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-04T09:48:12.113666",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Day 2026-07-03",
+    "text": "## Done\n- T-ds-smoke-hello — MILESTONE, first proven live DS.0 build (devstral@Hex, $0). [proven]\n- T-dicksimnel-cc-queue-path-fix — f0640371: DS.0 resolves cc_queue via uu_root() (parents[2]\n- T-granny-rules-engine-tests-red — 085f4280 (shipped-unproven): REAL BUG — package-collapse\n- T-inference-mark-anthropic-defunct — 1c35ff0c (shipped-unproven): first-class Source.defunct\n- T-cc-tmux-session-dot-naming-broken — 2014e68f + proof 0880d438 [PROVEN]: dot-free tmux\n- T-launcher-1m-default-fresh-session — 569bf200 (shipped-unproven): 1M context now DEFAULT in\n- T-launcher-help-and-1m-flags — shipped-unproven (no launcher-proof harness; --1m validated\n- D-granny-pull-dispatch-model-2026-07-03 — faae8f34: Granny PULL-dispatch + shim-owns-startup\n- D-env-creds-device-cleanup-2026-07-03 — 5e7eab38 / retargeted accecdb5: clean env/creds/\n- D-ds-builder-leveling-2026-07-03 — 9035e8a8: level DS.0 builder to CC.0 (listener close bug,\n- D-swarm-location-independent-devices-2026-07-03 — f4e33b52: location-independent devices,\n"
+  }
+}

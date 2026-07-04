@@ -157,12 +157,13 @@ DONE_SECTION=$(sed -n '/^## Done today/,/^## /p' "$SLATE" | grep "^- " | head -2
 
 DONE_SECTION="$DONE_SECTION" CLOSING_DATE="$CLOSING_DATE" python3 - <<'EOF'
 import os, json, subprocess, sys
+from pathlib import Path
 from unseen_university._uu_root import uu_root
 closing = os.environ.get("CLOSING_DATE", "")
 done = os.environ.get("DONE_SECTION", "(see slate)")
 body = {"title": f"Day {closing}", "text": f"## Done\n{done}\n"}
 open("/tmp/day_rollup.json", "w").write(json.dumps(body))
-TOOLS = str(uu_root() / "devlab" / "claudecode")
+TOOLS = str(Path(uu_root()) / "devlab" / "claudecode")  # uu_root() returns str, not Path
 subprocess.run([sys.executable, f"{TOOLS}/memory_emit.py", "--category", "notes",
     "--emitter", "cc.0", "--kind", "note", "--namespace",
     f"day-{closing.replace('-', '')}", "--body-file", "/tmp/day_rollup.json"], check=True)

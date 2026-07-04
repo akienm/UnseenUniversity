@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-preexisting-test-debt-2026-07-04-daycloseaudit.20260704.094618969844",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-preexisting-test-debt-2026-07-04-daycloseaudit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T15:46:18.969844+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-preexisting-test-debt-2026-07-04-daycloseaudit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-preexisting-test-debt-2026-07-04-daycloseaudit",
+    "title": "[sprint] Pre-existing test debt surfaced by 07-04 day-close-audit (26 failures, 3 clusters)",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.2,
+    "tags": [
+      "TestDebt",
+      "Hygiene"
+    ],
+    "intention": "I intend that the full test suite runs green so day-close-audit's STOP gate signals real regressions, not standing debt.",
+    "description": "**Problem:** the 2026-07-04 day-close-audit full-suite run surfaced pre-existing failures. All were verified NOT to originate from 07-03's commits (failing files/subject code untouched 07-03; the granny cluster additionally confirmed failing at 4859e086, the parent of yesterday's granny fix 085f4280, via a baseline worktree run). Three clusters:\n\n**Cluster A — 9 igor layer3/4 collection errors (ModuleNotFoundError).** tests/igor/test_layer3_{observe,parse_goal,replan,scope_check,situate,constrain} + test_layer4_nodes.py + siblings all do `import claudecode.seed_layer*` — a dead import root (`claudecode` is not a package; single import root is `unseen_university/`) referencing seed modules that exist NOWHERE. Casualty of the 2026-06-28 single-package collapse (a5f4dab0) + lab/ retirement. These 9 are COLLECTION errors — with `-x` they abort the whole suite before it runs (this is why the audit reported an early STOP). Related family: T-test-skill-filter-dead-seed-path (a different dead-seed test).\n\n**Cluster B — granny dispatch failures in tests/granny/ (9: test_e2e_dispatch_smoke x6, test_exact_match x2, test_cascade x1).** Signature = 'expected an action, got nothing' (0 envelopes, empty worker field, no dispatch log) — NOT the `_bus_config() KeyError` root of T-granny-bus-dispatch-tests-red. Same 06-28/07-02 worker-dispatch-restructure ERA, different files than that ticket (which covers tests/test_granny_bus_dispatch.py). Confirmed pre-existing (failed at 4859e086, before 085f4280).\n\n**Cluster C — 4 inference routing/live failures.** test_mini_rack.py (source-name drift: rules look for source 'ollama'/'ollama_cloud' but registry has 'local_ollama' -> last-resort openrouter; rooted in the 07-01 ollama-ladder commit ad61300f); test_dicksimnel.py OR cost gate (google_free-preferred); test_dicksimnel_live_smoke.py::test_dicksimnel_builds_on_hex (LIVE, needs Hex reachable + inference -- likely should be marked live/skip-by-default).\n\n**Proposed shape:** fix or correctly retire each cluster. A: repoint or delete the dead-seed layer3/4 igor tests (mirror whatever T-test-skill-filter-dead-seed-path decides). B: apply the T-granny-bus-dispatch-tests-red fix pattern to the tests/granny/ files (CC.0-not-static-worker reconciliation). C: reconcile rules-engine source names with the registry ('ollama' vs 'local_ollama') and mark the live-Hex smoke as live/skip-by-default.\n\n**Affected files:** tests/igor/test_layer3_*.py, tests/igor/test_layer4_nodes.py; tests/granny/test_e2e_dispatch_smoke.py, test_exact_match.py, test_cascade.py; tests/inference/test_mini_rack.py, test_dicksimnel.py, test_dicksimnel_live_smoke.py; possibly unseen_university/devices/inference/rules_engine.py (source-name reconciliation).\n\n**Design rules:** proof-on-close (each cluster's fix is proven by the corresponding tests going green or being correctly skipped, not by deletion-to-green).\n\n**Scope boundary:** IN — get these 26 pre-existing failures/errors green or correctly skipped, split into per-cluster child tickets if useful. OUT — any NEW test written for 07-03 features; the already-ticketed T-granny-bus-dispatch-tests-red and T-test-skill-filter-dead-seed-path (cross-ref, don't duplicate).\n\n**Test plan:** `python -m pytest tests/ -q` collects with 0 errors and the enumerated failures pass or are explicitly skipped with a reason; live-Hex smoke is marked so it doesn't fail offline.\n\n**Completion criteria:** full-suite collection is clean (0 collection errors) and the 3 clusters are green-or-skipped; day-close-audit Step 1 no longer STOPs on these.\n\n**Rollback:** n/a (test hygiene).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": null,
+    "created_at": "2026-07-04T15:46:11.344555+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T15:46:11.387903+00:00"
+  }
+}
