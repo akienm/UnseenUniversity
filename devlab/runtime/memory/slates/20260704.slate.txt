@@ -30,3 +30,4 @@ Next: Next: DS.0 observe re-run (live Hex, needs dual push-guard) — empirical 
 - DONE T-coding-architect-editor-split (1595709c, proven red=AssertionError/green=passed): architect/editor split — plan-only architect + editor applies; lead lever of D-coding-loop-redesign
 - DONE T-coding-repo-map-orientation (dd0b4250, proven): signature-map orientation (structure w/o bodies) replaces read-to-discover; relevance-ranked, graph-rank deferred to T-coding-repo-map-graph-rank
 - DONE T-coding-minion-aci-edit-centric (cb29ff53, proven): minion-tier ACI — paged windowed Read + edit-centric tools; 3/3 redesign build levers shipped+proven
+- OBSERVE T-coding-redesign-observe-edits-then-close (shipped-unproven): 3 levers engaged LIVE + honest-halt validated in prod; edits INCONCLUSIVE — Hex dispatch timeout (121s) killed architect before editor. Wall moved loop-shape->inference-latency. NEXT: T-ds-hex-dispatch-timeout-midloop

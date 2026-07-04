@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-coding-redesign-observe-edits-then-close",
-    "title": "[sprint] Confirm-by: DS.0 devstral edits+test post-redesign (full close via existing full-cycle ticket)",
+    "title": "Confirm-by: DS.0 devstral edits+test post-redesign (full close via existing full-cycle ticket)",
     "size": "S",
     "tags": [
       "DS.0",
@@ -29,20 +29,26 @@
     "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
     "priority": 0.5,
     "gate": null,
-    "status": "sprint",
+    "status": "closed",
     "intention": "I intend that we EMPIRICALLY confirm the redesign leveled DS.0 — measured by the part attributable to the redesign (edits + test reached) — not just assert it from unit tests.",
     "description": "**Problem:** this is the intended-effect confirm-by for D-coding-loop-redesign. Baseline (2026-07-04, both observe-runs): 0 edit-ATTEMPTS across 149 tool calls; devstral read-wandered. MEASUREMENT SPLIT (advisor 2026-07-04): Akien's ultimate bar is a full-cycle CLOSE, but the controlled harness reused here (fire_ds0_observe.py = _fetch_ticket + _run_inference) returns the DONE/ESCALATE string and does NOT call _post_result/close — so 'close' is NOT observable with it, and full close is separately BLOCKED by T-ds-listener-proof-on-close + T-ds-builder-target-branch-not-main (unrelated to this redesign). So this ticket measures the redesign-ATTRIBUTABLE signal; full close is delegated (see below).\n**Proposed shape:** after the three redesign builds ship, re-run the controlled DS.0 observe (dual git push-guards, INFERENCE_ENDPOINT=Hex, INFERENCE_NUM_CTX=32768) on a real multi-file ticket (e.g. T-reorg-parents-path-sweep). Capture from the AgenticLoop tool tally + DONE string: (a) does devstral make >=1 Write/Edit ATTEMPT (vs 0 baseline), (b) does it reach a test/verify step. Compare against the 0-edit baseline.\n**Full-cycle close is delegated, NOT duplicated:** the end-to-end close (dispatch->fetch->build->post->close) is exactly what the EXISTING open ticket T-ds-fullcycle-observe-run covers, and it needs the listener fixes first. Link there; do not file a twin harness.\n**Affected files:** none (observation; reuses fire_ds0_observe.py + the dual push-guard protocol).\n**Design rules:** proof-on-close — this run is evidence, not a close-by-assertion (same class as refactor/observe: no red->green form).\n**Scope boundary:** IN — the re-run + capture edits-attempted + test-reached + annotate confirmed/falsified vs baseline. OUT — the full-cycle close (T-ds-fullcycle-observe-run) and fixing whatever new failure surfaces.\n**Test plan:** no code test — the observe log IS the evidence. PASS signal = devstral makes >=1 edit ATTEMPT and reaches a test step (redesign-attributable), or the honest partial recorded against baseline.\n**Completion criteria:** a post-redesign observe log is captured; edits-attempted + test-reached are annotated confirmed / partial / falsified vs the 0-edit baseline; the full-close status is cross-referenced to T-ds-fullcycle-observe-run.\n**Rollback:** n/a (observation).\n**Note on gate:** gate = T-coding-minion-aci-edit-centric, the last of the three redesign builds by priority (single-value gate proxy for 'all three shipped'); if build order changes, re-point this gate.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-07-04T19:52:38.534547+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "OBSERVE COMPLETE (2026-07-04, devstral@Hex, num_ctx=32768, $0, guards restored, tree clean f586f422). Redesign machinery works end-to-end LIVE; edit-conversion INCONCLUSIVE — Hex inference timeout killed the run before the editor. (1) ALL 3 LEVERS ENGAGED: signature map (8 files/2653 chars), architect/editor split (architect plan-only phase), windowed 100-line reads (result sizes 4068-4530 = windows, not the 3014 plain cap). (2) HONEST-HALT VALIDATED LIVE: architect did 11 productive turns (8 windowed Read + 3 Bash), turn-12 dispatch TIMED OUT (121s), walk logged availability-midrun-wall-halt + system_alarm, NO blind retry (T-ds-loop-no-identical-retry proven in prod). (3) EDITS=0 for INFRASTRUCTURE reason: architect (no edit tools) never reached DONE -> editor never ran. Wall MOVED loop-shape -> inference latency/timeout. NEXT: T-ds-hex-dispatch-timeout-midloop. Secondary: architect read 8 files despite the map. vs BASELINE (0 edits/turn-39 aimless cliff): purposeful mapped reading + honest halt = better failure, same edit count.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-04T23:43:48.924379+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-04T19:52:38.534631+00:00"
+    "scraps_validated": "2026-07-04T19:52:38.534631+00:00",
+    "proven": false,
+    "unproven_reason": "Edit-conversion (>=1 edit attempt) can't be observed until the architect finishes a plan on Hex — a mid-loop inference timeout (T-ds-hex-dispatch-timeout-midloop) halts it first. Observation ticket, no red->green form (same class as refactor/observe).",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
