@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.minion-tier-aci-windowed-read-on-the-cod.T-coding-minion-aci-edit-centric.20260704.145307828300",
+  "emitter": "cc.0",
+  "namespace": [
+    "minion-tier-aci-windowed-read-on-the-cod",
+    "T-coding-minion-aci-edit-centric"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T14:53:07.828300",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-coding-minion-aci-edit-centric"
+    ],
+    "commits": [
+      "cb29ff53e1216c2cd5e8e32c1c3206d05dab1d99"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "minion-tier ACI windowed Read on the coding path",
+    "intention": "on the production coding split path, the model's Read is a paged 100-line window (with a range header) instead of a blind whole-file dump",
+    "test": "tests/inference/test_minion_aci_windowed_read.py::test_aci_windows_reads_on_the_coding_split_path",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_minion_aci_windowed_read.py::test_aci_windows_reads_on_the_coding_split_path",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": ">       assert _WINDOW_HEADER_RE.search(captured[\"read\"]), (\n            \"the coding architect's Read must be a windowed view with a 'lines X-Y of 500' header — \"\n            f\"got a plain dump (no window). First 200 chars: {captured['read'][:200]!r}\"\n        )\nE       AssertionError: the coding architect's Read must be a windowed view with a 'lines X-Y of 500' header — got a plain dump (no window). First 200 chars: 'codeline_0000_payload_xxxxxx = 0\\ncodeline_0001_payload_xxxxxx = 1\\ncodeline_0002_payload_xxxxxx = 2\\ncodeline_0003_payload_xxxxxx = 3\\ncodeline_0004_payload_xxxxxx = 4\\ncodeline_0005_payload_xxxxxx = 5\\nco'\nE       assert None\nE        +  where None = <built-in method search of re.Pattern object at 0x7b26e8548940>('codeline_0000_payload_xxxxxx = 0\\ncodeline_0001_payload_xxxxxx = 1\\ncodeline_0002_payload_xxxxxx = 2\\ncodeline_0003_p...ad_xxxxxx = 85\\ncodeline_0086_payload_xxxxxx = 86\\ncodeline_0087_payload_xxxxxx = 87\\ncodeline_0088_payl...(truncated)')\nE        +    where <built-in method search of re.Pattern object at 0x7b26e8548940> = re.compile('lines \\\\d+-\\\\d+ of 500').search\n\ntests/inference/test_minion_aci_windowed_read.py:105: AssertionError\n----------------------------- Captured stderr call -----------------------------\n2026-07-04 14:53:07.670 | INFO     | logging:callHandlers:1762 - Critic: loaded 421 rules (0 skipped)\n2026-07-04 14:53:07.670 | INFO     | logging:callHandlers:1762 - AgenticLoop: Critic initialized for T-aci (421 prior rules)\n2026-07-04 14:53:07.670 | INFO     | logging:callHandlers:1762 - AgenticLoop turn 1/50 $0.0000 — ticket T-aci (native)\n2026-07-04 14:53:07.671 | INFO     | logging:callHandlers:1762 - AgenticLoop: terminal for T-aci turn 1 status=done\n2026-07-04 14:53:07.671 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=classify|ticket=T-aci|hop=0|outcome=done|class=done\n2026-07-04 14:53:07.671 | INFO     | logging:callHandlers:1762 - domain=coding: DONE for T-aci at hop=0 difficulty=code\n=========================== short test summary info ============================\nFAILED tests/inference/test_minion_aci_windowed_read.py::test_aci_windows_reads_on_the_coding_split_path\n1 failed in 0.21s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.18s"
+          }
+        }
+      }
+    ],
+    "commit": "cb29ff53e1216c2cd5e8e32c1c3206d05dab1d99",
+    "impl_paths": [
+      "unseen_university/devices/inference/agentic_loop.py",
+      "unseen_university/devices/inference/architect_editor.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/domains/coding.py"
+    ],
+    "ticket": "T-coding-minion-aci-edit-centric",
+    "narrative": "Red = revert parent..HEAD except the test → aci_mode is unwired, so the coding architect's Read is a plain 3000-char dump with no window header → the 'lines X-Y of 500' regex misses → AssertionError. Green = aci_mode threads CodingDomain → ArchitectEditorFlow → architect loop → windowed Read. Proven on the split-ON production path (not a split-off shortcut), so the flow wiring must be correct for green.",
+    "why": "SWE-agent: a tuned ACI beats a naive tool loop for the same model; a windowed viewer is the core (D-coding-loop-redesign)",
+    "bootstrap": false
+  }
+}
