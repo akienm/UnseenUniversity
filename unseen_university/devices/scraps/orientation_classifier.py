@@ -40,6 +40,13 @@ _MAX_KEYWORDS = 20
 _MAX_DB_ROWS = 200
 _MAX_RELEVANT_FILES = 10
 
+# Signature-map budget (T-coding-repo-map-orientation): the model plans from STRUCTURE
+# (signatures) instead of reading bodies, so the map lists several key symbols per file
+# within a bounded size (aider's repo-map default is ~1k tokens; chars ≈ 3.5× that).
+_MAX_MAP_FILES = 8
+_MAX_SYMBOLS_PER_FILE = 6
+_MAP_CHAR_BUDGET = 3500
+
 
 # ── Data types ─────────────────────────────────────────────────────────────────
 
@@ -203,6 +210,122 @@ def query_relevant_files(keywords: list[str], db_url: str) -> list[FileMatch]:
             by_path[m.path] = m
 
     return sorted(by_path.values(), key=lambda x: (-x.score, x.path))[:_MAX_RELEVANT_FILES]
+
+
+# ── Signature map (structure without bodies) ─────────────────────────────────────
+
+
+def _signature_of(summary: str, symbol: str, kind: str) -> str:
+    """Extract the signature line from a code_index summary.
+
+    Summaries are stored as '<signature> — <description>' (e.g.
+    'def parse_widget(data: dict) — parse the widget'); the signature is the part before
+    the em-dash. Fall back to a synthesized 'class/def <symbol>' when no signature is stored.
+    """
+    head = (summary or "").split(" — ", 1)[0].strip()
+    if head:
+        return head
+    kw = "class" if kind == "class" else "def"
+    return f"{kw} {symbol}".strip()
+
+
+def query_file_symbols(keywords: list[str], db_url: str) -> dict[str, list[FileMatch]]:
+    """Query clan.code_index and group matches BY FILE, keeping multiple symbols per file.
+
+    Unlike query_relevant_files (which dedups to one FileMatch per path), this preserves
+    every matching symbol so the caller can render a per-file signature list. Symbols within
+    a file are sorted by score (desc); the dict is unordered (the caller ranks files).
+    """
+    if not keywords:
+        return {}
+
+    import psycopg2
+
+    conditions = []
+    params: list[str] = []
+    for kw in keywords:
+        pattern = f"%{kw}%"
+        conditions.append("(path ILIKE %s OR symbol ILIKE %s OR summary ILIKE %s)")
+        params.extend([pattern, pattern, pattern])
+    where = " OR ".join(conditions)
+
+    conn = psycopg2.connect(db_url)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT path, symbol, kind, summary FROM clan.code_index WHERE {where} LIMIT %s",
+                params + [_MAX_DB_ROWS],
+            )
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    kw_lower = [k.lower() for k in keywords]
+    by_path: dict[str, list[FileMatch]] = {}
+    for path, symbol, kind, summary in rows:
+        combined = f"{path or ''} {symbol or ''} {summary or ''}".lower()
+        score = sum(
+            (2 if kw in (symbol or "").lower() else 1)
+            for kw in kw_lower
+            if kw in combined
+        )
+        if score <= 0:
+            continue
+        by_path.setdefault(path or "", []).append(FileMatch(
+            path=path or "", symbol=symbol or "", kind=kind or "",
+            summary=(summary or "")[:200], score=float(score),
+        ))
+    for syms in by_path.values():
+        syms.sort(key=lambda m: (-m.score, m.symbol))
+    log.info("SIGNATURE_MAP|query|keywords=%d|files=%d", len(keywords), len(by_path))
+    return by_path
+
+
+def build_signature_map(ticket: dict, db_url: str | None = None) -> str:
+    """Build a token-budgeted signature map of the ticket-relevant repo structure.
+
+    D-coding-loop-redesign-aider-survey. The model plans from STRUCTURE — the key classes/
+    functions and their signatures across the relevant files — instead of opening files to
+    discover it (the read-wander a weak model falls into; 2026-07-04 DS.0 observe: 47-102
+    Reads, 0 edits). Files are RELEVANCE-ranked (aggregate keyword score); true
+    dependency-graph rank is a follow-up (code_index carries no edge data). Bounded by
+    _MAP_CHAR_BUDGET. Fail-open: any DB error → '' and the loop continues without it.
+    """
+    if db_url is None:
+        db_url = home_db_url()
+    keywords = extract_keywords(ticket)
+    try:
+        grouped = query_file_symbols(keywords, db_url)
+    except Exception as exc:
+        log.warning("SIGNATURE_MAP|ticket=%s|db_error=%s — empty map", ticket.get("id", "?"), exc)
+        return ""
+    if not grouped:
+        return ""
+
+    # Rank files by aggregate relevance (sum of their symbols' scores), tie-break by path.
+    ranked = sorted(grouped.items(), key=lambda kv: (-sum(m.score for m in kv[1]), kv[0]))
+
+    header = (
+        "## Repo signature map (plan from this structure; read a file only if the map is "
+        "insufficient)"
+    )
+    lines = [header]
+    used = len(header)
+    files_shown = 0
+    for path, syms in ranked[:_MAX_MAP_FILES]:
+        block_lines = [path]
+        for m in syms[:_MAX_SYMBOLS_PER_FILE]:
+            block_lines.append(f"  {_signature_of(m.summary, m.symbol, m.kind)}")
+        block = "\n".join(block_lines)
+        # Budget: always show at least one file; stop before exceeding the cap afterwards.
+        if files_shown > 0 and used + len(block) + 1 > _MAP_CHAR_BUDGET:
+            break
+        lines.append(block)
+        used += len(block) + 1
+        files_shown += 1
+
+    log.info("SIGNATURE_MAP|ticket=%s|files=%d|chars=%d", ticket.get("id", "?"), files_shown, used)
+    return "\n".join(lines) + "\n\n"
 
 
 # ── Main entry point ───────────────────────────────────────────────────────────

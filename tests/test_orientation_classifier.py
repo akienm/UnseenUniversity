@@ -226,15 +226,16 @@ def test_orientation_prefix_no_files_returns_empty():
 
 
 def test_orientation_prefix_with_files():
+    # D-coding-loop-redesign: _orientation_prefix now delegates to the signature MAP
+    # (structure without bodies) instead of the bare builder-report list. This checks the
+    # wiring: the prefix returns the signature-map block, terminated with a blank line.
     ticket = {"id": "T-foo", "title": "Extend ToolLoop", "tags": [], "description": "", "size": "M"}
-    mock_report = BuilderReport(
-        keywords=["ToolLoop"],
-        relevant_files=[{"path": "devices/inference/agentic_loop.py", "symbol": "AgenticLoop",
-                         "kind": "class", "summary": "ReAct loop", "score": 3.0}],
-        task_shape="new-feature",
-        estimated_complexity="M",
+    fake_map = (
+        "## Repo signature map (plan from this structure; read a file only if the map is "
+        "insufficient)\ndevices/inference/agentic_loop.py\n  class AgenticLoop\n\n"
     )
-    with patch("unseen_university.devices.scraps.orientation_classifier.classify", return_value=mock_report):
+    with patch("unseen_university.devices.scraps.orientation_classifier.build_signature_map",
+               return_value=fake_map):
         result = _orientation_prefix(ticket)
-    assert "Builder Report" in result
+    assert "signature map" in result
     assert result.endswith("\n\n")

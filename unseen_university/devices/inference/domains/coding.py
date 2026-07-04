@@ -20,20 +20,19 @@ log = logging.getLogger(__name__)
 
 
 def _orientation_prefix(ticket: dict) -> str:
-    """Return the orientation classifier's builder-report block for a code ticket, or ''.
+    """Return the repo signature-map orientation block for a code ticket, or ''.
 
-    Fail-open: any exception → empty string, the loop continues without it. Interface
-    crossing: INFO log with match count.
+    D-coding-loop-redesign-aider-survey: replaces the bare relevant-FILES list (one symbol
+    per file) with a signature MAP — several key symbol signatures per relevant file — so the
+    model (and, post-split, the architect) can plan from structure without opening files to
+    discover it. Fail-open: any exception → '' and the loop continues without it. The
+    interface crossing (map size) is logged inside build_signature_map.
     """
     try:
-        from unseen_university.devices.scraps.orientation_classifier import classify
-        report = classify(ticket)
-        if report.relevant_files:
-            log.info("CodingDomain builder_report: %d relevant files for %s",
-                     len(report.relevant_files), ticket.get("id", "?"))
-            return report.to_text() + "\n\n"
+        from unseen_university.devices.scraps.orientation_classifier import build_signature_map
+        return build_signature_map(ticket)
     except Exception as exc:
-        log.warning("CodingDomain builder_report failed for %s: %s", ticket.get("id", "?"), exc)
+        log.warning("CodingDomain signature-map failed for %s: %s", ticket.get("id", "?"), exc)
     return ""
 
 
