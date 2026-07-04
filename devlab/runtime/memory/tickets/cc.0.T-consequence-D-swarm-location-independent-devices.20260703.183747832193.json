@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-D-swarm-location-independent-devices.20260703.183747832193",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-swarm-location-independent-devices"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T00:37:47.832193+00:00",
+  "links": {
+    "decisions": [
+      "D-swarm-location-independent-devices-2026-07-03"
+    ],
+    "tickets": [
+      "T-consequence-D-swarm-location-independent-devices"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-swarm-location-independent-devices",
+    "title": "[sprint] Consequence check: swarm location-independent devices",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** devices become location-independent across a capability-tagged swarm — master-only DB (per-box DBs backups; Hex none), placement via the shared rules-engine, cooperative self-gating boxes, master-down=stall+trouble-ticket, Hex inference-only.\n**Predicted unintended effects:** (1) master DB becomes a hard single point of failure — one outage stalls the WHOLE swarm (accepted, but watch that the trouble ticket actually fires and the stall isn't silent); (2) cross-box latency to master could slow devices that were fast against a local replica — watch for the revisit-if-slow trigger; (3) the master DB now takes connections from every box — connection-count/limit pressure and network exposure of the DB credential (must be vault-sourced, not baked); (4) a mis-tagged or stale inventory record could place a build on the wrong platform or a dead box; (5) two independent self-gating boxes could still collectively overload shared resources (master DB, network) even though each is individually in-budget; (6) the cooperative model has no central 'stop everything' — verify a swarm-wide halt path still exists.\n**Signals to watch:** trouble tickets on master-DB-unreachable; device DB latency vs the old local-read baseline; master DB connection counts; any placement onto a wrong-platform/dead box; aggregate master-DB/network load under 2CC+6DS.\n**Gate condition:** Check by 2026-07-17 or when the first multi-box placement runs.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-swarm-location-independent-devices-2026-07-03",
+    "gate": "2026-07-17",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-07-04T00:37:42.834731+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T00:37:42.834826+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e8f44c69-240b-477f-b405-70d29861a1a5"
+  }
+}

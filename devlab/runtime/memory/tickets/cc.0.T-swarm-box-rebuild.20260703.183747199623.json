@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-swarm-box-rebuild.20260703.183747199623",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-box-rebuild"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T00:37:47.199623+00:00",
+  "links": {
+    "decisions": [
+      "D-swarm-location-independent-devices-2026-07-03"
+    ],
+    "tickets": [
+      "T-swarm-box-rebuild"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-box-rebuild",
+    "title": "[sprint] Per-box rebuild: clear legacy Igor setup, install location-independent runtime; shim self-gates + hosts via shim-to-shim (NO box-agent)",
+    "size": "L",
+    "tags": [
+      "Swarm",
+      "Infra",
+      "Devices"
+    ],
+    "description": "The swarm boxes run a very old Igor setup (per-box synching DB replica + SWARM_{instance} sync via env_sync.py/memory_sync.py, IGOR_SWARM_DB). Retired: we're moving to LOCATION-INDEPENDENT devices — any device runs on any capable box with master-DB + bus (IMAP comms://) access. This is the per-box, idempotent rebuild procedure, reference-able on each box.\n\n**COOPERATIVE — NO new supervising component (Akien 2026-07-03).** 'A box is up' == its SHIMS are up + the GROUND LOOP is up, full stop. There is no box-agent/monitor/coordinator to add. Hosting is a SHIM-TO-SHIM conversation over the bus: a peer shim asks the target box's shim 'can you launch a <builder/device> there? if so it can be #N', the target shim SELF-GATES on this box's live load and replies 'sure!' (launches locally via shim.start) or 'Nope, CPU too busy' (refuses) — the instance number is negotiated in that exchange. The self-resource-gate is the SHIM's own start decision (it already owns start/stop/restart). Availability is PUBLISHED by the shim (as the CC worker availability flag already is).\n\n**Proposed shape (per box, idempotent):**\n1. Inventory + REMOVE legacy per-box Igor sync (IGOR_SWARM_DB replica-as-operational, SWARM_ node sync), verifying against master before deleting (migrate->verify->delete; no shadow copies).\n2. Install the location-independent device runtime: unseen_university package with connect-time master-DB access (credential from the VAULT, not baked) + IMAP bus; boot-time flat-file state stays LOCAL per box (skeleton still boots before the DB); the box's shims + ground loop come up.\n3. Give the SHIM layer (BaseShim) two things: a self-resource-gate (live CPU/RAM/running-device budget checked in the start decision) and a shim-to-shim host-request handler ('can you launch <device> #N?' -> self-gate -> 'sure!'+shim.start / 'Nope, over budget'). No standalone agent. OPEN DESIGN POINT for the sprint: how a not-yet-running device's shim is instantiated on the target box stays shim-to-shim/bus-driven (reuse existing launch primitives), never a supervisor.\n**Affected files:** those boxes (remote, per-box run); unseen_university/devices/igor/env_sync.py + memory_sync.py (legacy sync to retire); shim.py / BaseShim (self-resource-gate + host-request handler — MEDIUM inertia, design center); vault client for the master-DB credential.\n**Design rules:** no-sqlite, external-state, cooperative-not-hierarchical (NO new agent; shims+ground-loop only), vault-is-the-credential-home.\n**Scope boundary:** IN — per-box clear-legacy + install-runtime + the SHIM self-gate & shim-to-shim host handler & availability publish. OUT — placement selection policy (T-placement-rules-engine), DB backup topology (T-swarm-db-backup-model), Hex promotion, provisioning a new toolchain onto a box, ANY new supervising component.\n**Test plan:** on a target box — legacy Igor sync artifacts gone (verified vs master); shims+ground-loop up; a shim-to-shim 'can you launch a builder #N?' returns 'sure!'+local start under normal load and 'Nope, over budget' under SYNTHETIC over-budget load. Proof-lever: same host-request yields launch under normal load, refusal under synthetic over-budget load — the self-gate decides.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-swarm-location-independent-devices-2026-07-03",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-07-04T00:37:23.710230+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T00:37:23.710355+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8c8f308c-20b4-4177-9c31-4173e461c35d"
+  }
+}

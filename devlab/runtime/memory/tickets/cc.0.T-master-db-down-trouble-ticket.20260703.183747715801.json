@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-master-db-down-trouble-ticket.20260703.183747715801",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-master-db-down-trouble-ticket"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T00:37:47.715801+00:00",
+  "links": {
+    "decisions": [
+      "D-swarm-location-independent-devices-2026-07-03"
+    ],
+    "tickets": [
+      "T-master-db-down-trouble-ticket"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-master-db-down-trouble-ticket",
+    "title": "[sprint] Master-DB-down -> swarm stall self-diagnoses as a trouble ticket (not silent)",
+    "size": "M",
+    "tags": [
+      "Swarm",
+      "Diagnostics"
+    ],
+    "description": "Swarm-wide stall on master-DB-unreachable is ACCEPTED — but it must be LOUD, not silent. When a device (or box-agent) cannot reach the master DB, it raises a TROUBLE TICKET (the canonical term — Akien 2026-07-03, switching back from 'system alarm') carrying failure-time diagnostics, rather than hanging quietly. Ties into the self-diagnostic trouble-ticket work.\n\n**Affected files:** the master-DB connect path (detect unreachable -> emit trouble ticket); the trouble-ticket / self-diagnostic emitter.\n**Design rules:** cooperative-not-hierarchical (each device self-reports its own stall), external-state.\n**Scope boundary:** IN — detect master-DB-unreachable at the device/box-agent connect path and raise a trouble ticket with failure-time diagnostics. OUT — auto-recovery/failover, the local-read fallback (deferred), the general self-diagnostic framework (this consumes it).\n**Test plan:** with the master DB unreachable, a device connect attempt raises a trouble ticket containing the failure context (which box, which device, timestamp, error) instead of a silent hang. Proof-lever: master-down produces exactly one trouble ticket per stalled device with diagnostics; reachable master produces none.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-swarm-location-independent-devices-2026-07-03",
+    "gate": null,
+    "priority": 0.4,
+    "status": "sprint",
+    "related_to": [
+      "T-self-diagnostic-trouble-tickets"
+    ],
+    "created_at": "2026-07-04T00:37:39.227136+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T00:37:39.227187+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ecd0b0dd-c390-46dd-8204-e3e30ad53d74"
+  }
+}

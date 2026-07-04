@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-swarm-location-independent-devices-2026-07-03.20260703.183818616167",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-swarm-location-independent-devices-2026-07-03"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-03T18:38:18.616167",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-swarm-location-independent-devices-2026-07-03",
+    "title": "Swarm: location-independent devices over a master DB, cooperative shim-to-shim placement",
+    "status": "open",
+    "date": "2026-07-03",
+    "spawned_tickets": [
+      "T-swarm-inventory-capability-schema",
+      "T-swarm-box-rebuild",
+      "T-placement-rules-engine",
+      "T-swarm-db-backup-model",
+      "T-hex-promote-inference-only",
+      "T-master-db-down-trouble-ticket",
+      "T-consequence-D-swarm-location-independent-devices"
+    ],
+    "text": "# D-swarm-location-independent-devices-2026-07-03\n**title:** Swarm: location-independent devices over a master DB, cooperative shim-to-shim placement\n**date:** 2026-07-03\n**status:** open\n**spawned_tickets:** T-swarm-inventory-capability-schema, T-swarm-box-rebuild, T-placement-rules-engine, T-swarm-db-backup-model, T-hex-promote-inference-only, T-master-db-down-trouble-ticket, T-consequence-D-swarm-location-independent-devices\n\n## Decision narrative\nDevices become LOCATION-INDEPENDENT: any device runs on any capable box that has master-DB + bus (IMAP comms://) access. The legacy per-box Igor sync model (IGOR_SWARM_DB replicas read operationally; SWARM_ROOT/SWARM_{instance} palace nodes) is retired.\n\n- **DB topology:** every device talks ONLY to the master DB (credential from the vault at connect-time). Per-box DBs are kept but demoted to BACKUP copies only (never read by a running device). Hex holds NO DB. Master-DB-down = swarm-wide stall is ACCEPTED, but must self-diagnose LOUDLY as a trouble ticket (canonical term, switched back from 'system alarm').\n- **REVISIT-IF-SLOW (Akien):** if shared-master latency bites, reconsider; any future local-read-first optimization happens ONLY after a backup sync has fully completed (we never had full sync before, so nothing is lost). Deferred on purpose (wait-for-the-better-lever) — do not build local-read-first now.\n- **Inventory:** a capability-tagged box registry (platform + build-target, toolchains e.g. .NET, NIC class cabled-vs-wifi, CPU/RAM, Akien's time-of-day availability, liveness heartbeat). Each box PUBLISHES its own record. Capabilities are provisionable ('add .NET to the Windows box for project XYZ').\n- **Placement = the SHARED rules-engine pattern** (same selection problem as inference-model routing and Granny dispatch: argmin(cost+time | capabilities+features)). Reuse it as a CONSULTED LIBRARY, not a scheduler daemon. Selection honors build-platform match (never build a linux deliverable on a windows-as-windows box), NIC speed, availability, load, liveness. Hex is inference-only (excluded from general-device placement).\n- **COOPERATIVE, not hierarchical (load-bearing):** there is NO new supervising/agent/coordinator component. 'A box is up' == its SHIMS are up + the GROUND LOOP is up. Hosting is a SHIM-TO-SHIM conversation over the bus: a peer shim asks the target box's shim 'can you launch a builder there? if so it can be #N', the target shim SELF-GATES on its own live load and replies 'sure!' (launches locally via shim.start) or 'Nope, CPU too busy' (the selector then proposes the next candidate). The self-resource-gate is the shim's own start decision; the instance number is negotiated in the exchange. (CC caught re-committing the hierarchy reflex mid-design — the 'box-agent' — and corrected to shims+ground-loop; see feedback_cooperative_not_hierarchical.)\n- **Hex promotion:** into the inventory, tagged inference-only, plus a Hex 'rack device' (the one legitimately host-specific device).\n\n## Hypothesis\nAfter these ship, we can run 2 CCs and 6 DSs across the swarm concurrently without wiping out any box or evicting Akien's own usage — placement selects capable, live, in-budget boxes and each box self-gates its own spin-ups.\n\n## Measurement Signal\nThe placement rules engine logs a box choice with its capability/load reasons and a device starts there; a box under synthetic over-budget load logs a self-gate refusal (and the selector falls to the next candidate); a master-DB outage raises a trouble ticket instead of failing silently. Bonus win: 6 DSs each running on low-level (small/local) models = the compiled-inference payoff.\n\n## Intention\nI intend that we make optimal use of everything we touch, and always leave shared things better than we found them."
+  }
+}
