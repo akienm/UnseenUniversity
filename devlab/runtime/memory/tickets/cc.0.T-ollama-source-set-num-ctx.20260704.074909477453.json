@@ -19,9 +19,9 @@
   },
   "body": {
     "id": "T-ollama-source-set-num-ctx",
-    "title": "[sprint] ollama source must set num_ctx explicitly (unblocker — model works blind without it)",
+    "title": "[in_progress] ollama source must set num_ctx explicitly (unblocker — model works blind without it)",
     "size": "S",
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.7,
     "target_difficulty": 2,
     "tags": [
