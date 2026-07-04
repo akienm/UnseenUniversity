@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-route-nosource-signal-ceiling-vs-outage.20260704.131037888653",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-route-nosource-signal-ceiling-vs-outage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T19:10:37.888653+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-inference-context-management-2026-07-04"
+    ],
+    "tickets": [
+      "T-route-nosource-signal-ceiling-vs-outage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-route-nosource-signal-ceiling-vs-outage",
+    "title": "[sprint] route() returns bare None — walk can't tell capability ceiling from source outage",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.35,
+    "tags": [
+      "Inference",
+      "AgenticLoop"
+    ],
+    "decision_id": "D-ds-inference-context-management-2026-07-04",
+    "intention": "I intend that when the walk finds no usable source it can tell WHY — no more-capable model exists (ceiling) vs a source that should serve is down (outage) — so it halts and escalates with the true cause and can retry only when retrying could differ.",
+    "description": "**Problem:** RulesEngine.route() returns a bare `None` for ALL no-source cases (rules_engine.py:318-319) — it cannot distinguish (a) 'no model handles the required difficulty' (capability ceiling) from (b) 'a source that should serve this is down' (real availability outage). The domain walk therefore also can't tell them apart: it only sees LOOP_AVAILABILITY. This surfaced during T-ds-loop-no-identical-retry-honest-escalate (halt-on-mid-run-wall shipped 196ba7d9) — the LATENT gap: a capability bump 'code'->'design' that finds no local design source degrades into the availability-retry path and would halt on a mislabeled 'availability-exhausted' when the true cause is a capability ceiling (no more-capable model available). Did NOT appear in the observe-run evidence (which was a hop=0 mid-run timeout) so it was correctly left out of that ticket's scope; filing the sibling now.\n**Proposed shape:** give route() a typed no-source signal (e.g. return a small result object / raise a typed no-source reason, or an out-param) that distinguishes 'capability-ceiling' (nothing at/above required difficulty) from 'outage' (candidates exist for this difficulty but none currently available). Thread it up so the walk (domains/base.py) reports the true halt cause and can implement exclusion-aware / changed-strategy retry (retry only when re-selection would differ). Verify exact call sites: rules_engine.route() and BaseDomain.select/run.\n**Affected files:** unseen_university/devices/inference/rules_engine.py (route no-source return), unseen_university/devices/inference/domains/base.py (walk consumes the signal). Confirm exact sites before editing.\n**Design rules:** CP1 (honest true-cause over a lying label), CP3 (there's always a why), inference-cost-optimizing-router.\n**Scope boundary:** IN — a typed ceiling-vs-outage no-source signal from route() consumed by the walk for an honest halt reason and change-aware retry. OUT — the mid-run-wall halt (already shipped), num_ctx, context eviction.\n**Test plan:** unit — a registry with only a 'code'-capable source, required_difficulty='design' -> route() signals CEILING (not outage); a 'design'-capable-but-unavailable source -> route() signals OUTAGE. Walk test: a capability bump onto an absent tier halts with a capability/ceiling reason, not 'availability-exhausted'.\n**Completion criteria:** route() emits a machine-distinguishable ceiling-vs-outage no-source reason; the walk's halt names the true cause; a test pins both cases.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": null,
+    "created_at": "2026-07-04T19:10:29.810312+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T19:10:29.855334+00:00"
+  }
+}

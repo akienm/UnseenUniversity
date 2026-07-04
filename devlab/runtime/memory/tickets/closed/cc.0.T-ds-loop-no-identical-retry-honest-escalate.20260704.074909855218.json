@@ -19,9 +19,9 @@
   },
   "body": {
     "id": "T-ds-loop-no-identical-retry-honest-escalate",
-    "title": "[sprint] Inference loop: replace blind identical-retry on availability-exhaust with honest ESCALATE",
+    "title": "Inference loop: replace blind identical-retry on availability-exhaust with honest ESCALATE",
     "size": "M",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.5,
     "target_difficulty": 3,
     "tags": [
@@ -37,11 +37,14 @@
     "created_by": null,
     "result": null,
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-04T19:10:06.348157+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "role": "apprentice",
-    "scraps_validated": "2026-07-04T13:48:58.424908+00:00"
+    "scraps_validated": "2026-07-04T13:48:58.424908+00:00",
+    "proven": true,
+    "proof_id": "cc.0.t-ds-loop-no-identical-retry-honest-esca.T-ds-loop-no-identical-retry-honest-escalate.20260704.131002310935",
+    "proof_commit": "196ba7d93215d79983c78a05b89fe2cfc548fc52"
   }
 }

@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.t-ds-loop-no-identical-retry-honest-esca.T-ds-loop-no-identical-retry-honest-escalate.20260704.131002310935",
+  "emitter": "cc.0",
+  "namespace": [
+    "t-ds-loop-no-identical-retry-honest-esca",
+    "T-ds-loop-no-identical-retry-honest-escalate"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T13:10:02.310935",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-loop-no-identical-retry-honest-escalate"
+    ],
+    "commits": [
+      "196ba7d93215d79983c78a05b89fe2cfc548fc52"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "T-ds-loop-no-identical-retry-honest-escalate",
+    "intention": "When a build hits a mid-run availability/timeout wall after productive work, the walk halts honestly (naming the true cause) instead of blind-retrying the identical doomed full loop.",
+    "test": "tests/inference/test_domain_availability_honesty.py::test_midrun_availability_wall_halts_without_full_loop_reretry",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_domain_availability_honesty.py::test_midrun_availability_wall_halts_without_full_loop_reretry",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n>       assert dispatch_mock.call_count == 2, (\n            f\"a mid-run availability wall must halt after ONE loop run (2 dispatches), not \"\n            f\"re-run the identical full loop — got {dispatch_mock.call_count} dispatches\"\n        )\nE       AssertionError: a mid-run availability wall must halt after ONE loop run (2 dispatches), not re-run the identical full loop — got 6 dispatches\nE       assert 6 == 2\nE        +  where 6 = <MagicMock id='139848904405936'>.call_count\n\ntests/inference/test_domain_availability_honesty.py:95: AssertionError\n------------------------------ Captured log call -------------------------------\nWARNING  unseen_university.devices.inference.agentic_loop:agentic_loop.py:596 AgenticLoop turn 2: no live source (finish=error kind=none) for T-test — availability\nWARNING  unseen_university.devices.inference.domains.base:base.py:225 domain=coding crossing|step=select|ticket=T-test|retry=1/2|difficulty=code|reason=availability\nWARNING  unseen_university.devices.inference.agentic_loop:agentic_loop.py:596 AgenticLoop turn 2: no live source (finish=error kind=none) for T-test — availability\nWARNING  unseen_university.devices.inference.domains.base:base.py:225 domain=coding crossing|step=select|ticket=T-test|retry=2/2|difficulty=code|reason=availability\nWARNING  unseen_university.devices.inference.agentic_loop:agentic_loop.py:596 AgenticLoop turn 2: no live source (finish=error kind=none) for T-test — availability\nERROR    unseen_university.devices.inference.domains.base:base.py:222 domain=coding crossing|step=select|ticket=T-test|result=availability-exhausted-halt\n=========================== short test summary info ============================\nFAILED tests/inference/test_domain_availability_honesty.py::test_midrun_availability_wall_halts_without_full_loop_reretry\n1 failed in 0.16s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "196ba7d93215d79983c78a05b89fe2cfc548fc52",
+    "impl_paths": [
+      "unseen_university/devices/inference/domains/base.py"
+    ],
+    "ticket": "T-ds-loop-no-identical-retry-honest-escalate",
+    "narrative": "",
+    "why": "The 2026-07-03 observe-run re-ran the same doomed loop up to 3x before a lying availability-exhausted halt; honest escalation over false persistence is CP1.",
+    "bootstrap": false
+  }
+}
