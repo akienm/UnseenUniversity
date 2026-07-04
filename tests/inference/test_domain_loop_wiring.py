@@ -28,7 +28,13 @@ def _run_with_mocked_loop(run_side_effect, *, prompt="CODING-SYS-PROMPT"):
     loop_mock = MagicMock()
     loop_mock.run.side_effect = fake_run
 
+    # These tests verify the ESCALATION-WALK wiring (domain prompt → one attempt, step-tagged
+    # crossing logs) — BaseDomain.run behaviour that CodingDomain inherits unchanged. The
+    # architect/editor split (D-coding-loop-redesign) is a _run_attempt-level change with its
+    # own end-to-end proof (test_architect_editor_split); disable it here so the attempt is the
+    # single shared loop patched at base.AgenticLoop, and the walk wiring is what's under test.
     with patch("unseen_university.devices.inference.domains.base.AgenticLoop") as MockLoop, \
+         patch.object(CodingDomain, "architect_editor_enabled", False), \
          patch("unseen_university.system_alarms.raise_alarm"), \
          patch("unseen_university.devices.inference.domains.coding._orientation_prefix", return_value=""), \
          patch("unseen_university.devices.inference.domains.base.domain_prompt", return_value=prompt):

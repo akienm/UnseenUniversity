@@ -165,13 +165,9 @@ class BaseDomain:
             log.info("domain=%s crossing|step=loop|ticket=%s|hop=%d|difficulty=%s",
                      self.name, ticket_id, escalation_hop, required)
             try:
-                result = AgenticLoop(
-                    codec=NativeToolCodec(), critic_enabled=self.critic_enabled,
-                ).run(
+                result = self._run_attempt(
                     system_prompt=system_prompt,
-                    initial_message=self._initial_message(ticket),
-                    task_class=self.task_class,
-                    domain=self.name,
+                    ticket=ticket,
                     ticket_id=ticket_id,
                     agent_id=agent_id,
                     escalation_hop=escalation_hop,
@@ -258,6 +254,37 @@ class BaseDomain:
             escalation_hop += 1
             log.info("domain=%s crossing|step=escalate|ticket=%s|hop→%d|reason=capability",
                      self.name, ticket_id, escalation_hop)
+
+    def _run_attempt(
+        self,
+        *,
+        system_prompt: str,
+        ticket: dict,
+        ticket_id: str,
+        agent_id: str,
+        escalation_hop: int,
+        prior_attempt: str,
+    ) -> LoopResult:
+        """Run ONE attempt for the current hop and return its typed LoopResult.
+
+        The base attempt is a single shared AgenticLoop — behavior-preserving, exactly what
+        BaseDomain.run ran inline before (D-coding-loop-redesign extracted it). A domain
+        overrides this to change WHAT one attempt is (CodingDomain runs the architect/editor
+        split) WITHOUT touching the escalation walk that classifies the result — the walk
+        stays the single money-safety owner (availability re-selects, capability bumps).
+        """
+        return AgenticLoop(
+            codec=NativeToolCodec(), critic_enabled=self.critic_enabled,
+        ).run(
+            system_prompt=system_prompt,
+            initial_message=self._initial_message(ticket),
+            task_class=self.task_class,
+            domain=self.name,
+            ticket_id=ticket_id,
+            agent_id=agent_id,
+            escalation_hop=escalation_hop,
+            prior_attempt=prior_attempt,
+        )
 
     def _classify(self, result: LoopResult) -> str:
         """Map a typed LoopResult to the escalation policy's class.

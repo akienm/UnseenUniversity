@@ -476,6 +476,7 @@ class AgenticLoop:
         critic_enabled: bool = False,
         inference_device=None,
         history_window_turns: int = HISTORY_WINDOW_TURNS,
+        tool_names: list[str] | None = None,
     ) -> None:
         self._codec = codec or NativeToolCodec()
         self._max_turns = max_turns
@@ -483,6 +484,12 @@ class AgenticLoop:
         self._cost_cap_usd = cost_cap_usd
         self._critic_enabled = critic_enabled
         self._inference_device = inference_device
+        # Restrict the offered tool set to these names (None = all TOOL_DEFINITIONS). The
+        # architect/editor split (D-coding-loop-redesign) uses this to give the planner
+        # Read/Bash but NOT Edit/Write, so it cannot wander into editing — its one job is
+        # to emit a plan. Filtering the offer (not just the prompt) makes the constraint
+        # structural, not advisory.
+        self._tool_names = tool_names
         # Bound the re-sent history to the task + this many recent turn-groups (0 = off).
         # Tunable per model/num_ctx without a code change (same pattern as max_turns).
         self._history_window_turns = history_window_turns
@@ -548,7 +555,10 @@ class AgenticLoop:
 
         messages = [{"role": "user", "content": initial_message}]
         full_system = system_prompt + ("\n\n" + SYSTEM_RULES if codec.offers_tools else "")
-        tools = TOOL_DEFINITIONS if codec.offers_tools else None
+        tool_defs = TOOL_DEFINITIONS
+        if self._tool_names is not None:
+            tool_defs = [t for t in TOOL_DEFINITIONS if t["function"]["name"] in self._tool_names]
+        tools = tool_defs if codec.offers_tools else None
 
         running_cost = 0.0
         in_tok = out_tok = 0
