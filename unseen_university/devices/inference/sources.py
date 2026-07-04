@@ -285,11 +285,24 @@ class OllamaSource(Source):
 
     is_local: ClassVar[bool] = True  # on-box; the only true-local source
 
-    def __init__(self, base_url: str = "http://127.0.0.1:11434") -> None:
+    # Explicit default context window. Ollama defaults to a SMALL num_ctx (2048) when
+    # unset and SILENTLY TRUNCATES the prompt — the DS.0 observe-run (2026-07-03) made
+    # 114 tool calls / 0 edits because devstral was working blind on a truncated tail
+    # (T-ollama-source-set-num-ctx). 32768 holds a real ticket + a bounded tool-context
+    # window; NOT the model's full 384K — KV-cache RAM on the 32GB M1 Max (Hex) is the
+    # real constraint, so the ceiling is a deliberate, tunable knob (see __init__).
+    DEFAULT_NUM_CTX: ClassVar[int] = 32768
+
+    def __init__(
+        self, base_url: str = "http://127.0.0.1:11434", num_ctx: int | None = None
+    ) -> None:
         # owned_local: on-box hardware we own (Hex/igor cluster) — the cheapest rung,
         # cheaper than the ollama_cloud subscription despite both billing $0/token.
         super().__init__(name="ollama", cost_class="owned_local")
         self.base_url = base_url.rstrip("/")
+        # Per-source knob so ops can tune the window to the model + box RAM without a
+        # code change; falls back to the RAM-safe class default.
+        self.num_ctx = num_ctx if num_ctx is not None else self.DEFAULT_NUM_CTX
 
     def ping(self) -> bool:
         """Honest liveness = dispatch-ability, not a bare socket.
@@ -349,7 +362,13 @@ class OllamaSource(Source):
             "model": req.model,
             "messages": messages,
             "stream": False,
-            "options": {"temperature": req.temperature, "num_predict": req.max_tokens},
+            # num_ctx is REQUIRED, not optional: unset → ollama truncates the prompt to
+            # its ~2048 default and the model works blind (T-ollama-source-set-num-ctx).
+            "options": {
+                "temperature": req.temperature,
+                "num_predict": req.max_tokens,
+                "num_ctx": self.num_ctx,
+            },
         }
         # Forward tool definitions so the model emits native tool_calls (Ollama /api/chat
         # supports `tools`). Without this, a tool-capable model (devstral) improvises the
@@ -1044,7 +1063,10 @@ def default_registry() -> SourceRegistry:
     reg = SourceRegistry()
     reg.register(OllamaCloudSource())
     reg.register(OllamaSource(
-        base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
+        base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434"),
+        # Ops knob (mirrors INFERENCE_ENDPOINT): raise on a bigger box, lower if KV-cache
+        # RAM is tight. Unset → OllamaSource.DEFAULT_NUM_CTX.
+        num_ctx=int(os.environ["INFERENCE_NUM_CTX"]) if os.environ.get("INFERENCE_NUM_CTX") else None,
     ))
     reg.register(GoogleSource(free_tier=True))   # google_free
     # Anthropic is registered DEFUNCT (not commented out): Akien is on a 5x Max plan via
