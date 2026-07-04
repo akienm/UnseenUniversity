@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ds-builder-target-branch-not-main.20260704.074909985001",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-builder-target-branch-not-main"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T13:49:09.985001+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-builder-leveling-2026-07-03"
+    ],
+    "tickets": [
+      "T-ds-builder-target-branch-not-main"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-builder-target-branch-not-main",
+    "title": "[sprint] Unproven builders push to a branch/PR, never directly to main",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.5,
+    "target_difficulty": 2,
+    "tags": [
+      "DS.0",
+      "Safety"
+    ],
+    "decision_id": "D-ds-builder-leveling-2026-07-03",
+    "intention": "I intend that an unproven autonomous builder cannot land unreviewed work on main, so proof-on-close and the advisor-review-ladder actually gate what ships.",
+    "description": "**Problem** (policy, surfaced by the DS.0 observe-run analysis 2026-07-03): coding.md step 5 (L64) instructs the builder to `git push origin main`, and the AgenticLoop Bash denylist (agentic_loop.py:48) only blocks `git push --force` — so an UNPROVEN builder can push unreviewed work straight to main. That is exactly the class proof-on-close and the advisor-review-ladder (T-ds-advisor-review-ladder) exist to gate. (Not exercised in the 2026-07-03 run — it died in explore before pushing — but confirmed by reading coding.md.)\n**Proposed shape:** builders push to a per-ticket branch (e.g. ds/<ticket-id>) and open a PR / hand off for review, never main; and/or the denylist refuses `git push origin main` for builder domains. Decide the mechanism (branch+PR preferred so the review/proof gate applies before landing).\n**Cross-ref** (avoid overlap): the push MECHANICS — askpass guard on the push, and reconciling the double model-push-vs-listener-close ownership — already live in T-ds-builder-prompt-fixes. This ticket is POLICY-ONLY: WHERE unproven work is allowed to land (branch/PR, not main).\n**Affected files:** unseen_university/devices/inference/prompts/coding.md (step 5 target); possibly unseen_university/devices/inference/agentic_loop.py (denylist).\n**Design rules:** proof-on-close; CP6 (build-and-care-for-safety-as-we-go).\n**Scope boundary:** IN — the builder git target becomes a branch/PR and direct pushes to main are prevented for builder domains. OUT — the human/CC review-ladder itself (T-ds-advisor-review-ladder); the push askpass/double-close mechanics (T-ds-builder-prompt-fixes).\n**Test plan:** the coding prompt no longer contains `git push origin main`; a guard/test asserts a builder push to main is refused (or routed to a branch).\n**Completion criteria:** builders cannot land on main directly; a test or denylist rule enforces branch/PR targeting.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": null,
+    "created_at": "2026-07-04T13:49:04.552541+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T13:49:04.552617+00:00"
+  }
+}

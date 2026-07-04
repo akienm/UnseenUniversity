@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ds-loop-no-identical-retry-honest-escalate.20260704.074909855218",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-loop-no-identical-retry-honest-escalate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T13:49:09.855218+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-inference-context-management-2026-07-04"
+    ],
+    "tickets": [
+      "T-ds-loop-no-identical-retry-honest-escalate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-loop-no-identical-retry-honest-escalate",
+    "title": "[sprint] Inference loop: replace blind identical-retry on availability-exhaust with honest ESCALATE",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.5,
+    "target_difficulty": 3,
+    "tags": [
+      "Inference",
+      "AgenticLoop"
+    ],
+    "decision_id": "D-ds-inference-context-management-2026-07-04",
+    "intention": "I intend that when a build hits an availability or timeout wall the system escalates honestly instead of silently re-running the identical doomed path and burning wall-clock.",
+    "description": "**Problem:** on an inference availability/timeout error at difficulty 'code', the domain select loop retries the IDENTICAL growing-context path (retry 1/2, then 2/2). In the 2026-07-03 observe-run this re-ran the same doomed 39-turn loop THREE times (~11 min each, ~34 min total) before HALT 'inference-availability-exhausted' — pure wasted wall-clock, because nothing about the request changed between attempts.\n**Proposed shape:** on availability-exhaust, do NOT blind-retry the identical request. Either ESCALATE honestly (surface the reason, hand off) OR retry only with a CHANGED strategy (e.g. after context eviction from T-agentic-loop-context-discipline, or a different model/tier). Verify the exact retry site (likely unseen_university/devices/inference/domains/base.py select/retry loop).\n**Affected files:** unseen_university/devices/inference/domains/base.py (the availability retry/select loop — confirm exact site).\n**Design rules:** CP1 (I-don't-know / honest escalate over false persistence); inference-cost-optimizing-router.\n**Scope boundary:** IN — replace blind identical-retry with honest ESCALATE or a changed-strategy retry on availability-exhaust. OUT — the num_ctx setting and context eviction themselves (their own tickets).\n**Test plan:** unit — simulate repeated availability errors; assert the loop escalates (or changes strategy) rather than re-issuing the identical request N times.\n**Completion criteria:** no identical-retry path remains; an availability-exhausted build escalates with a named reason (or retries only with a changed request).\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": null,
+    "created_at": "2026-07-04T13:48:58.424845+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T13:48:58.424908+00:00"
+  }
+}

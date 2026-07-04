@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ds-observe-rerun-after-ctx-fix.20260704.074909736619",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-observe-rerun-after-ctx-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T13:49:09.736619+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-inference-context-management-2026-07-04"
+    ],
+    "tickets": [
+      "T-ds-observe-rerun-after-ctx-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-observe-rerun-after-ctx-fix",
+    "title": "[sprint] Re-run the DS.0 observe on T-reorg-parents-path-sweep after num_ctx fix (confirm-by)",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.6,
+    "target_difficulty": 1,
+    "tags": [
+      "DS.0",
+      "Observe"
+    ],
+    "decision_id": "D-ds-inference-context-management-2026-07-04",
+    "intention": "I intend that we empirically confirm the num_ctx/context fix unblocks DS.0 before judging its coding capability or moving to the listener/prompt work.",
+    "description": "**Problem:** this is the confirm-by for D-ds-inference-context-management. The 2026-07-03 baseline observe (controlled direct fire: INFERENCE_ENDPOINT=http://10.0.0.100:11434, dev._fetch_ticket + dev._run_inference, dual git push-guards, reset to PRE) produced 0 Edit/Write across 114 tool calls and died at a ~32K turn-39 timeout — the model worked blind.\n**Proposed shape:** after T-ollama-source-set-num-ctx ships, re-run the SAME controlled observe on T-reorg-parents-path-sweep and capture whether devstral now sees the ticket, emits Edit/Write, and reaches test/close. Compare against the baseline.\n**Affected files:** none (observation; reuses the scratchpad fire script + git push-guards).\n**Design rules:** proof-on-close (this run is evidence, not a close-by-assertion).\n**Scope boundary:** IN — re-run + capture findings, diff against the 2026-07-03 baseline (0 edits, turn-39 timeout). OUT — fixing whatever new failure the re-run surfaces (file follow-ups then).\n**Test plan:** no code tests — the observe log IS the evidence. PASS signal = >=1 AgenticLoop Edit/Write call AND no silent truncation (prompt within num_ctx) AND the run advances past explore.\n**Completion criteria:** a re-run log is captured and the num_ctx hypothesis is annotated confirmed or falsified against the baseline.\n**Rollback:** n/a (observation only).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": "T-ollama-source-set-num-ctx",
+    "created_at": "2026-07-04T13:48:52.866732+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T13:48:52.866776+00:00"
+  }
+}

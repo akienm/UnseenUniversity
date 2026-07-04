@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-ds-inference-context-management-2026-07-04.20260704.074954221487",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-ds-inference-context-management-2026-07-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-04T07:49:54.221487",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-ds-inference-context-management-2026-07-04",
+    "title": "DS.0 leveling's first blocker is inference context management, not the listener close bug",
+    "status": "open",
+    "date": "2026-07-04",
+    "spawned_tickets": [
+      "T-ollama-source-set-num-ctx",
+      "T-agentic-loop-context-discipline",
+      "T-ds-observe-rerun-after-ctx-fix",
+      "T-ds-loop-no-identical-retry-honest-escalate",
+      "T-consequence-D-ds-inference-context-management"
+    ],
+    "text": "# D-ds-inference-context-management-2026-07-04\n**title:** DS.0 leveling's first blocker is inference context management, not the listener close bug\n**date:** 2026-07-04\n**status:** open\n**spawned_tickets:** T-ollama-source-set-num-ctx, T-agentic-loop-context-discipline, T-ds-observe-rerun-after-ctx-fix, T-ds-loop-no-identical-retry-honest-escalate, T-consequence-D-ds-inference-context-management\n\n## Decision narrative\nThe first controlled observe-run of DS.0 on a REAL ticket (T-reorg-parents-path-sweep, 2026-07-03, devstral-small-2:24b@Hex, $0, controlled direct fire with dual git push-guards) reordered the whole leveling course. Result: 114 tool calls (102 Read, 12 Bash), ZERO Edit/Write, no file changes, then a 120s inference timeout at turn 39 that repeated identically 3x before HALT 'inference-availability-exhausted' (~34 min).\n\nRoot cause (advisor-checked against the log; my first two guesses were WRONG and retracted): the ollama request builder (sources.py ~L352) sends only {temperature, num_predict} and NEVER sets num_ctx, so ollama defaults to a small window and SILENTLY TRUNCATES the prompt. The AgenticLoop compounds this by re-dumping full ~3000-char file reads into an ever-growing prompt (2908 -> ~32000 input_tokens over 38 turns). So devstral was largely WORKING BLIND (a sliding recent-window, not the ticket) — which explains the 102 aimless Reads / 0 edits far better than 'model too weak'. The turn-39 death is the oversized-prompt handling hitting the wall (flat ~16s/turn cadence through turn 38, then a cliff). The model actually supports 384K context (mistral3.context_length=393216) — the capacity was there and unused.\n\nOne unified, cheap, high-leverage fix, not two big ones: set num_ctx explicitly in the ollama source + add context discipline in the loop. NOT 'escalate to a 480B model' (capability isn't fairly tested until the model can see the ticket; and qwen2.5-coder:14b would be a DOWNGRADE from the 24B that just ran).\n\nAlternatives considered + rejected: (a) 'devstral-small too weak -> bigger model' — rejected, blindness not capability is the demonstrated cause; re-test after the fix. (b) 'add a turn/wall-clock budget' — insufficient alone; addresses the symptom (long run) not the cause (truncation + unbounded context). (c) network-layer isolation of the observe — rejected, Hex needs the LAN.\n\nReprioritizes D-ds-builder-leveling-2026-07-03: its listener/prompt tickets (T-ds-listener-proof-on-close, T-ds-builder-prompt-fixes) move BEHIND this context fix — a real ticket never even reaches close/push until the model can see it. NOT re-filed; linked.\n\nSpin-off (parented to D-ds-builder-leveling, not this decision): T-ds-builder-target-branch-not-main — coding.md:64 pushes unproven builder work straight to main (denylist only blocks --force); confirmed by reading, not reached in the run. A builder-safety policy, so it lives under the leveling decision, cross-referencing T-ds-builder-prompt-fixes (which owns the push MECHANICS: askpass guard + double model-push-vs-listener-close).\n\nEvidence is summarized in these ticket descriptions (not a separate raw-log copy — the 2014-line run log was ~95% routing/health noise and the run is $0-repeatable on Hex; Akien and I agreed to distill, not archive).\n\n## Hypothesis\nAfter num_ctx is set + the loop stops re-dumping whole files, a re-run of the same observe on T-reorg-parents-path-sweep produces actual Edit/Write tool calls (the model sees the ticket and attempts the fix) instead of 0 edits across 114 read-only calls, and reaches test/close instead of dying at a ~32K turn-39 timeout.\n\n## Measurement Signal\nThe observe-run log shows >=1 AgenticLoop Edit/Write call; the ollama request payload includes options.num_ctx; and prompt-token growth is bounded across turns (no silent truncation). Confirm-by ticket: T-ds-observe-rerun-after-ctx-fix.\n\n## Intention\nI intend that DS.0 builds real tickets end-to-end as well as CC.0, so entire projects complete overnight."
+  }
+}

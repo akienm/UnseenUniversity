@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ollama-source-set-num-ctx.20260704.074909477453",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ollama-source-set-num-ctx"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T13:49:09.477453+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-inference-context-management-2026-07-04"
+    ],
+    "tickets": [
+      "T-ollama-source-set-num-ctx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ollama-source-set-num-ctx",
+    "title": "[sprint] ollama source must set num_ctx explicitly (unblocker — model works blind without it)",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.7,
+    "target_difficulty": 2,
+    "tags": [
+      "Inference",
+      "DS.0"
+    ],
+    "decision_id": "D-ds-inference-context-management-2026-07-04",
+    "intention": "I intend that the ollama inference request carries an explicit context window so the model always sees the whole ticket, not a silently-truncated tail.",
+    "description": "**Problem:** the ollama request builder (unseen_university/devices/inference/sources.py ~L352) sets ONLY {temperature, num_predict} — num_ctx is NEVER sent. With num_ctx unset, ollama falls back to a small default context window and SILENTLY TRUNCATES the prompt. Evidence (DS.0 observe-run on T-reorg-parents-path-sweep, 2026-07-03, devstral-small-2:24b@Hex, $0): the prompt grew 2908->29501(turn35)->31955(turn38) input_tokens; the model made 114 tool calls (102 Read, 12 Bash) and ZERO Edit/Write — it worked blind (seeing a recent-window, not the ticket). devstral-small-2:24b actually supports 384K context (mistral3.context_length=393216), so the capacity is there and unused.\n**Proposed shape:** set options.num_ctx explicitly in the ollama chat request, configurable per source/model with a sane default (e.g. 32768). Do NOT blindly send 384K — KV-cache RAM on the 32GB M1 Max (Hex) is the real constraint; pick a default that fits and expose the knob.\n**Affected files:** unseen_university/devices/inference/sources.py (ollama request options, ~L352).\n**Design rules:** inference-proxy-only; tier-not-model (the knob is per-source config, not a caller concern).\n**Scope boundary:** IN — set options.num_ctx in the ollama request + make the value configurable with a documented default. OUT — the agentic loop's file-dump growth (separate: T-agentic-loop-context-discipline); the retry behavior (T-ds-loop-no-identical-retry-honest-escalate).\n**Test plan:** unit — assert the constructed ollama request payload includes options.num_ctx at the configured value; assert the default is applied when unconfigured.\n**Completion criteria:** every ollama request carries options.num_ctx; the default is documented; a test guards the payload contains it.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": null,
+    "created_at": "2026-07-04T13:48:43.060792+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T13:48:43.112309+00:00"
+  }
+}

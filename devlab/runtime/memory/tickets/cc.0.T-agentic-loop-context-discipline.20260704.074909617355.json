@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-agentic-loop-context-discipline.20260704.074909617355",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agentic-loop-context-discipline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T13:49:09.617355+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-inference-context-management-2026-07-04"
+    ],
+    "tickets": [
+      "T-agentic-loop-context-discipline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agentic-loop-context-discipline",
+    "title": "[sprint] AgenticLoop: bound accumulated context — stop re-dumping whole files every turn",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.55,
+    "target_difficulty": 3,
+    "tags": [
+      "Inference",
+      "AgenticLoop"
+    ],
+    "decision_id": "D-ds-inference-context-management-2026-07-04",
+    "intention": "I intend that a long agentic build keeps its prompt within the model's context window so token growth is sub-linear in turns and the model never drowns in re-included file dumps.",
+    "description": "**Problem:** the AgenticLoop (unseen_university/devices/inference/agentic_loop.py run()) re-includes full prior tool outputs (Read returns capped at ~3000 chars) into the prompt every turn. In the 2026-07-03 DS.0 observe-run the prompt grew 2908 -> ~32000 input_tokens over 38 turns (102 Read calls) — LINEAR growth. Combined with the unset num_ctx (T-ollama-source-set-num-ctx) this overflowed/truncated the window and drove a 120s inference timeout at turn 39 (flat ~16s/turn cadence through turn 38, then a cliff). Even once num_ctx is set, unbounded re-dumping wastes context and degrades small models.\n**Proposed shape:** bound accumulated tool-output context — evict or summarize old tool results, or keep a rolling window / reference (path + line-range) instead of re-embedding full dumps — so prompt-token growth stays sub-linear and within num_ctx.\n**Affected files:** unseen_university/devices/inference/agentic_loop.py (message/context accumulation in run()).\n**Design rules:** inference-proxy-only.\n**Scope boundary:** IN — cap/evict/summarize accumulated tool-output context in the loop so token growth is bounded. OUT — the num_ctx request setting (T-ollama-source-set-num-ctx); model/tier selection.\n**Test plan:** unit — simulate N turns each returning a large tool output; assert accumulated prompt tokens stay under a fixed bound (NOT linear in N).\n**Completion criteria:** prompt-token growth across turns is provably bounded; a test asserts the bound holds over many turns.\n**Rollback:** git revert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": null,
+    "created_at": "2026-07-04T13:48:47.196840+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T13:48:47.196923+00:00"
+  }
+}
