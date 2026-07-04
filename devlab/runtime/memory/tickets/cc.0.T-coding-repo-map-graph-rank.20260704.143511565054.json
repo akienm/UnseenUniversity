@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-coding-repo-map-graph-rank.20260704.143511565054",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coding-repo-map-graph-rank"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-04T20:35:11.565054+00:00",
+  "links": {
+    "decisions": [
+      "D-coding-loop-redesign-aider-survey-2026-07-04"
+    ],
+    "tickets": [
+      "T-coding-repo-map-graph-rank"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coding-repo-map-graph-rank",
+    "title": "[sprint] Repo-map dependency-graph (PageRank) ranking — needs an import graph first",
+    "size": "L",
+    "tags": [
+      "Inference",
+      "CodingLoop",
+      "Orientation"
+    ],
+    "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
+    "priority": 0.35,
+    "gate": null,
+    "status": "sprint",
+    "intention": "I intend that the signature map ranks files the way aider does — by dependency centrality — so the most-depended-on structure surfaces first, because keyword relevance alone misses files that matter structurally but don't match the ticket's words.",
+    "description": "**Problem:** T-coding-repo-map-orientation shipped a RELEVANCE-ranked signature map (files ranked by aggregate keyword score). aider ranks by a graph algorithm over a dependency graph (files=nodes, import/reference edges), so a heavily-depended-on module surfaces even when its name doesn't match the ticket. Our clan.code_index has NO edge data (columns: path, symbol, kind, summary, embedding), so graph-rank could not ship in that ticket.\n**Proposed shape:** build an import/reference graph for the repo (parse imports + symbol references — tree-sitter or the existing indexer), persist edges (new table or extend code_index), and rank the signature map's files by a centrality score (PageRank-style) blended with keyword/embedding relevance. Feed the re-ranked map into build_signature_map's file ordering.\n**Affected files:** unseen_university/devices/scraps/orientation_classifier.py (build_signature_map ranking), a new graph/edge builder + store, the indexer that populates code_index.\n**Design rules:** prefer extending the existing indexer/symbols table over a parallel one (homogeneity); NO SQLITE (Postgres edges); log the crossing; proof-on-close.\n**Scope boundary:** IN — the edge graph + centrality rank + blending into build_signature_map. OUT — the signature-map rendering itself (shipped) and embedding-similarity ranking (separate option).\n**Test plan:** unit test — a file with LOW keyword match but HIGH in-degree (many importers) ranks above a high-keyword low-centrality file once graph-rank is blended in. Behavioral red: relevance-only ranking puts the high-keyword file first.\n**Completion criteria:** build_signature_map file ordering incorporates a dependency-centrality score AND a test proves a high-centrality low-keyword file outranks a low-centrality high-keyword file.\n**Rollback:** the centrality blend is a flag; disabling restores pure relevance ranking.\n\n**Why deferred here:** the edge data must be built first; splitting it keeps T-coding-repo-map-orientation shippable and provable now (advisor 2026-07-04).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-04T20:34:10.950941+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-04T20:34:10.994413+00:00"
+  }
+}

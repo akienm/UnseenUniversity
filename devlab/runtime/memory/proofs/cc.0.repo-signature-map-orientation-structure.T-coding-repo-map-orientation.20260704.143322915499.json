@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.repo-signature-map-orientation-structure.T-coding-repo-map-orientation.20260704.143322915499",
+  "emitter": "cc.0",
+  "namespace": [
+    "repo-signature-map-orientation-structure",
+    "T-coding-repo-map-orientation"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T14:33:22.915499",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-coding-repo-map-orientation"
+    ],
+    "commits": [
+      "dd0b4250d080bb502c4682106f90f09dbe45afd8"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "repo signature-map orientation (structure without bodies)",
+    "intention": "the coding orientation surfaces multiple key symbol signatures per relevant file, so a file's second matching symbol appears (the bare one-symbol-per-file list cannot)",
+    "test": "tests/inference/test_repo_map_orientation.py::test_signature_map_surfaces_multiple_symbols_per_file",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_repo_map_orientation.py::test_signature_map_surfaces_multiple_symbols_per_file",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "E         Keywords matched: process, widget, parser, here, flow\nE         \nE         Relevant files — start here before grepping:\nE           1. pkg/foo.py [parse_widget / function]\nE              def parse_widget(data: dict) — parse the widget\nE           2. pkg/bar.py [other_thing / function]\nE              def other_thing() — widget adjacent utility\nE         \nE         Ticket ID: T-map-proof\nE         Title: process the widget parser here\nE         Tags: widget\nE         \nE         Description:\nE         work on the widget parser flow\nE       assert 'def helper_fn(x)' in '## Builder Report (orientation classifier)\\nTask shape: general  Complexity: M\\nKeywords matched: process, widget, pa...t ID: T-map-proof\\nTitle: process the widget parser here\\nTags: widget\\n\\nDescription:\\nwork on the widget parser flow'\n\ntests/inference/test_repo_map_orientation.py:91: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_repo_map_orientation.py::test_signature_map_surfaces_multiple_symbols_per_file\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "dd0b4250d080bb502c4682106f90f09dbe45afd8",
+    "impl_paths": [
+      "tests/test_orientation_classifier.py",
+      "unseen_university/devices/inference/domains/coding.py",
+      "unseen_university/devices/scraps/orientation_classifier.py"
+    ],
+    "ticket": "T-coding-repo-map-orientation",
+    "narrative": "Red = revert parent..HEAD except the test → _orientation_prefix renders the old bare list (classifier dedups to one symbol per path) → the file's second symbol 'def helper_fn(x)' is absent → AssertionError. Green = build_signature_map lists multiple symbols per file → helper_fn present. Revert-safe: drives CodingDomain._initial_message with psycopg2.connect faked; names no impl-only symbol.",
+    "why": "read-to-discover made devstral read-wander (47-102 Reads, 0 edits); a signature map lets it plan from structure (D-coding-loop-redesign)",
+    "bootstrap": false
+  }
+}
