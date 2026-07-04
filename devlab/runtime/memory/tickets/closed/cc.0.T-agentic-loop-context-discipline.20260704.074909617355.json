@@ -19,9 +19,9 @@
   },
   "body": {
     "id": "T-agentic-loop-context-discipline",
-    "title": "[sprint] AgenticLoop: bound accumulated context — stop re-dumping whole files every turn",
+    "title": "AgenticLoop: bound accumulated context — stop re-dumping whole files every turn",
     "size": "M",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.55,
     "target_difficulty": 3,
     "tags": [
@@ -37,11 +37,14 @@
     "created_by": null,
     "result": null,
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-04T18:44:37.590256+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "role": "apprentice",
-    "scraps_validated": "2026-07-04T13:48:47.196923+00:00"
+    "scraps_validated": "2026-07-04T13:48:47.196923+00:00",
+    "proven": true,
+    "proof_id": "cc.0.t-agentic-loop-context-discipline.T-agentic-loop-context-discipline.20260704.124432116704",
+    "proof_commit": "7e9706f9032741295b904a422401a092fd504365"
   }
 }

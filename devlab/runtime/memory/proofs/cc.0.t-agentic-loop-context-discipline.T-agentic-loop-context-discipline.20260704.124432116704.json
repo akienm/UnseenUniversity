@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.t-agentic-loop-context-discipline.T-agentic-loop-context-discipline.20260704.124432116704",
+  "emitter": "cc.0",
+  "namespace": [
+    "t-agentic-loop-context-discipline",
+    "T-agentic-loop-context-discipline"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T12:44:32.116704",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-agentic-loop-context-discipline"
+    ],
+    "commits": [
+      "7e9706f9032741295b904a422401a092fd504365"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "T-agentic-loop-context-discipline",
+    "intention": "A long agentic build keeps its re-sent prompt within a fixed char bound so token growth is O(1) in turns, not linear — the loop stops re-dumping the whole history every turn.",
+    "test": "tests/inference/test_agentic_loop_context.py::test_history_stays_bounded_over_many_turns",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_agentic_loop_context.py::test_history_stays_bounded_over_many_turns",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        3000+ chars), blowing the bound → authentic AssertionError.\n        \"\"\"\n        BOUND = 60_000  # chars; a bounded window of ~10 dumps sits far below this\n        sent_sizes, _ = _run_capturing(tmp_path, turns=200, history_window_turns=None)\n    \n        assert len(sent_sizes) == 200, \"loop should have run the full 200 turns\"\n>       assert max(sent_sizes) < BOUND, (\n            f\"re-sent history must stay under {BOUND} chars — peaked at {max(sent_sizes)} \"\n            f\"(linear accumulation = the num_ctx-overflow bug)\"\n        )\nE       AssertionError: re-sent history must stay under 60000 chars — peaked at 657524 (linear accumulation = the num_ctx-overflow bug)\nE       assert 657524 < 60000\nE        +  where 657524 = max([45, 3346, 6647, 9948, 13249, 16550, ...])\n\ntests/inference/test_agentic_loop_context.py:91: AssertionError\n------------------------------ Captured log call -------------------------------\nWARNING  unseen_university.devices.inference.agentic_loop:agentic_loop.py:640 AgenticLoop: hit max turns (200) for ?\n=========================== short test summary info ============================\nFAILED tests/inference/test_agentic_loop_context.py::test_history_stays_bounded_over_many_turns\n1 failed in 0.42s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.22s"
+          }
+        }
+      }
+    ],
+    "commit": "7e9706f9032741295b904a422401a092fd504365",
+    "impl_paths": [
+      "unseen_university/devices/inference/agentic_loop.py"
+    ],
+    "ticket": "T-agentic-loop-context-discipline",
+    "narrative": "",
+    "why": "Unbounded history re-send overflowed num_ctx and drove the 2026-07-03 DS.0 timeout cliff at turn 39; bounding it is the leveling-critical fix so DS.0 can complete long builds.",
+    "bootstrap": false
+  }
+}
