@@ -34,6 +34,14 @@ MAX_TURNS = 50
 MAX_TURNS_FLAT_RATE = 80  # flat-rate sources don't pay per turn; give more budget
 COST_CAP_USD = 3.00  # only enforced for usage_based sources
 
+# Per-request inference wall-clock. The base is a usage-based safety cliff; flat-rate/local
+# sources (Hex/ollama, $0) don't pay per second, so a longer wall is FREE — a slow local 24b
+# generating a full plan needs more than 120s (2026-07-04 confirm-by: architect timed out at
+# 121s on turn 12, before producing a plan). Raised for flat-rate exactly as MAX_TURNS is
+# (T-ds-hex-dispatch-timeout-midloop); same turn-0 billing-lock pattern.
+INFERENCE_TIMEOUT = 120
+INFERENCE_TIMEOUT_FLAT_RATE = 600
+
 # Context discipline (T-agentic-loop-context-discipline): the loop re-sends the WHOLE
 # message history every turn, so unbounded accumulation of 3000-char tool dumps makes the
 # prompt grow linearly in turns until it overflows num_ctx and the small model drowns
@@ -514,6 +522,8 @@ class AgenticLoop:
         codec: ToolCallCodec | None = None,
         max_turns: int = MAX_TURNS,
         flat_rate_max_turns: int = MAX_TURNS_FLAT_RATE,
+        inference_timeout: int = INFERENCE_TIMEOUT,
+        flat_rate_timeout: int = INFERENCE_TIMEOUT_FLAT_RATE,
         cost_cap_usd: float | None = COST_CAP_USD,
         critic_enabled: bool = False,
         inference_device=None,
@@ -524,6 +534,8 @@ class AgenticLoop:
         self._codec = codec or NativeToolCodec()
         self._max_turns = max_turns
         self._flat_rate_max_turns = flat_rate_max_turns
+        self._inference_timeout = inference_timeout
+        self._flat_rate_timeout = flat_rate_timeout
         self._cost_cap_usd = cost_cap_usd
         self._critic_enabled = critic_enabled
         self._inference_device = inference_device
@@ -613,6 +625,7 @@ class AgenticLoop:
         consecutive_bash_failures = 0
         source_billing_type = "usage_based"
         effective_max_turns = self._max_turns
+        effective_timeout = self._inference_timeout
         turn = 0
 
         while turn < effective_max_turns:
@@ -631,7 +644,7 @@ class AgenticLoop:
                 agent_id=agent_id,
                 session_id=session_id,
                 max_tokens=4096,
-                timeout=120,
+                timeout=effective_timeout,
                 temperature=0.0,
                 foreground=foreground,
                 extra=codec.request_extra(turn),
@@ -657,12 +670,16 @@ class AgenticLoop:
                                   tools_called=tools_called, input_tokens=in_tok,
                                   output_tokens=out_tok, cost_usd=running_cost)
 
-            # Lock billing type + raise the turn cap for flat-rate sources on the first response.
+            # Lock billing type + raise the turn cap AND the per-request timeout for flat-rate
+            # sources on the first response. A flat-rate/local box (Hex, $0) doesn't pay per
+            # second, so a longer wall is free — this is what lets a slow local 24b finish a
+            # plan instead of dying at the 120s usage-based cliff (T-ds-hex-dispatch-timeout-midloop).
             if turn == 0 and response.source_billing_type == "flat_rate":
                 source_billing_type = "flat_rate"
                 effective_max_turns = max(effective_max_turns, self._flat_rate_max_turns)
-                log.info("AgenticLoop: flat_rate source — turn cap → %d for %s",
-                         effective_max_turns, ticket_id)
+                effective_timeout = max(effective_timeout, self._flat_rate_timeout)
+                log.info("AgenticLoop: flat_rate source — turn cap → %d, timeout → %ds for %s",
+                         effective_max_turns, effective_timeout, ticket_id)
 
             in_tok += response.input_tokens
             out_tok += response.output_tokens
