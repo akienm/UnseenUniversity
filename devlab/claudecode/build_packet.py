@@ -200,13 +200,19 @@ def _baseline_text(shortlist: list[dict], file_bodies: dict[str, str]) -> str:
 
 
 def _render_helper_first(shortlist: list[dict], file_bodies: dict[str, str]) -> str:
-    """Helper-first orientation surface handed to the builder.
+    """Helper-first orientation surface handed to the builder: SIGNATURES, not bodies.
 
-    v0 (this commit): naive — ship the full file bodies, same as a blind read. This proves
-    the packet path runs end-to-end and the measurement is wired; the signature-only
-    reduction that makes helper-first < baseline lands in the next commit.
+    The reduction lever. The builder plans from structure — path + each key symbol's
+    signature — and never pays for the full bodies the baseline reads. Because signatures
+    are a strict subset of the bodies they summarize, helper-first < baseline whenever a
+    body carries more than its signatures (the normal case), so reduction is genuinely > 0.
     """
-    return "\n".join(file_bodies.get(e["path"], "") for e in shortlist)
+    lines: list[str] = []
+    for e in shortlist:
+        lines.append(e["path"])
+        for s in e.get("symbols", []):
+            lines.append("  " + s.get("signature", ""))
+    return "\n".join(lines)
 
 
 def _token_measurement(shortlist: list[dict], file_bodies: dict[str, str]) -> dict:
