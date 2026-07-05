@@ -47,3 +47,17 @@ Next: Step 3 = T-uu-build-packet-compiler (L, gate CLEARED) — extend pre_infer
 ## In-flight: NONE — clean session close. Both cheap signal steps of the Fable plan are done, committed, and pushed (HEAD 37c44b9c); push-guard torn down + origin reachable; tree clean. Nothing in flight. Next session opens Step 3 (T-uu-build-packet-compiler, L) fresh.
 
 ## In-flight: Build-packet compiler SHIPPED + PROVEN (T-uu-build-packet-compiler, Fable step 3). build_packet.py=build.packet.v1: intent/constraints/success/scored-shortlist/sufficiency_gate/token_measurement/fingerprint. Proof commit 4e7308cd red=AssertionError green=passed; real-ticket 98.64% token reduction. Pushed 05fbcf2d. Follow-on filed: T-coding-domain-absorb-build-packet-orientation (HIGH-inertia, needs Akien pre-approval). Next: Fable steps 4-6 (shrink architect / per-role tiering / funnel real S tickets end-to-end).
+
+## Done today (2026-07-04 — consolidated close)
+- num_ctx fix SHIPPED+PROVEN (f638471e): OllamaSource sets explicit options.num_ctx (default 32768 + per-source/INFERENCE_NUM_CTX knob), fixing silent truncation that made DS.0 work blind. Confirm-by observe: NECESSARY-BUT-NOT-SUFFICIENT (turn-39 crash eliminated; 0 edits still).
+- T-agentic-loop-context-discipline CLOSED PROVEN (7e9706f9 impl, 2024ce3b proof): AgenticLoop bounds re-sent history to task + last N turn-groups (codec-agnostic, pairing-safe).
+- T-ds-loop-no-identical-retry-honest-escalate CLOSED PROVEN (196ba7d9 impl, 5d4d3b55 proof): domain walk halts honestly on a mid-run availability wall instead of re-running the doomed loop.
+- D-coding-loop-redesign-aider-survey: 3 build levers SHIPPED+PROVEN — architect/editor split (1595709c), repo signature-map orientation (dd0b4250), minion-tier ACI windowed-read (cb29ff53). Live confirm-by (c13fb4e0, shipped-unproven): all 3 engaged + honest-halt validated in prod; edits 0 for an INFRA reason (Hex 121s dispatch timeout before editor).
+- Fable consult (claude-fable-5, Plan) → resequenced plan. Step 1 T-ds-hex-dispatch-timeout-midloop PROVEN (3fd47954, proof 24374d39): flat-rate/local 600s per-request wall at turn-0 billing lock. Step 2 T-ds-editor-isolation-smoke-test shipped-unproven (0f02d2eb): editor VIABLE — devstral@Hex applied a hand-written 3-edit plan 3/3 in one turn => 0-edits failures are UPSTREAM (plan quality), not edit serialization. Step 3 T-uu-build-packet-compiler PROVEN (4e7308cd, pushed 05fbcf2d): build.packet.v1 compiler.
+- Earlier: day-close 07-03 (Discussion #22, roll-up, gate-sweep 4 gates, 26 pre-existing test failures ticketed non-blocking T-preexisting-test-debt-2026-07-04-daycloseaudit, day-close SKILL.md Path(uu_root()) bug fixed).
+- Filed: D-ds-inference-context-management (6 tickets), T-route-nosource-signal-ceiling-vs-outage, T-coding-domain-absorb-build-packet-orientation, T-coding-repo-map-graph-rank (parked).
+
+## Notes
+- Friday (07-03) weekly extras (eval-run/weekly-retro/audit-expert) were NOT run — being caught up on 07-05 as part of this close.
+
+✅ CLOSED

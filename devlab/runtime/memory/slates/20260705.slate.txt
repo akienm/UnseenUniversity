@@ -5,3 +5,5 @@ Next: Fix the architect harness: un-window the read-only architect's Read (free 
 
 ## In-flight: NONE in-flight — session at a clean pushpoint (HEAD 3a6ee93e, tree clean, push-guard torn down, origin reachable). Everything proven this session is committed and pushed. Next is a fresh build: the architect windowed-Read harness fix (root cause found via the new inference corpus).
 - D-compiled-inference-proof-program-2026-07-05: make the starve-curve testable (Fable: nexus write-side absent) — T-self-model-existence-checker, T-corpus-visibility-gaps, T-nexus-write-path-ds-architect-loop, T-nexus-replay-experiment, T-consequence-compiled-inference-proof-program (+ T-editor-loop-convergence under D-coding-loop-redesign)
+
+## In-flight: Day-close for 2026-07-04 in progress (late, on 07-05). Today's work clean+pushed at 450372c1; closing 07-04 slate then running the deferred Friday weekly trio.
