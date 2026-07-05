@@ -670,15 +670,22 @@ class AgenticLoop:
                                   tools_called=tools_called, input_tokens=in_tok,
                                   output_tokens=out_tok, cost_usd=running_cost)
 
-            # Lock billing type + raise the turn cap AND the per-request timeout for flat-rate
-            # sources on the first response. A flat-rate/local box (Hex, $0) doesn't pay per
-            # second, so a longer wall is free — this is what lets a slow local 24b finish a
-            # plan instead of dying at the 120s usage-based cliff (T-ds-hex-dispatch-timeout-midloop).
-            if turn == 0 and response.source_billing_type == "flat_rate":
+            # Lock billing type + raise the turn cap AND the per-request timeout for any
+            # FREE-WALL source on the first response: a flat-rate subscription OR an on-box
+            # LOCAL box (Hex, $0) — neither pays per second, so a longer wall is free. This is
+            # what lets a slow local 24b finish a plan instead of dying at the 120s usage-based
+            # cliff (T-ds-hex-dispatch-timeout-midloop). NB the on-box Ollama/Hex source reports
+            # source_kind='local' with billing_type='usage_based' (cost_class='owned_local'),
+            # NOT flat_rate — so keying on flat_rate alone silently missed the very source the
+            # raise exists for (the 2026-07-04 funnel: every architect timed out at 120s on the
+            # plan turn). source_kind=='local' is the reliable free-wall signal.
+            if turn == 0 and (response.source_billing_type == "flat_rate"
+                              or response.source_kind == "local"):
                 source_billing_type = "flat_rate"
                 effective_max_turns = max(effective_max_turns, self._flat_rate_max_turns)
                 effective_timeout = max(effective_timeout, self._flat_rate_timeout)
-                log.info("AgenticLoop: flat_rate source — turn cap → %d, timeout → %ds for %s",
+                log.info("AgenticLoop: free-wall source (billing=%s kind=%s) — turn cap → %d, timeout → %ds for %s",
+                         response.source_billing_type, response.source_kind,
                          effective_max_turns, effective_timeout, ticket_id)
 
             in_tok += response.input_tokens
