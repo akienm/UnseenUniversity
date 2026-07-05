@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.the-inference-boundary-persists-every-by.T-inference-io-corpus-every-byte.20260704.221127174437",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-inference-boundary-persists-every-by",
+    "T-inference-io-corpus-every-byte"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T22:11:27.174437",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-io-corpus-every-byte"
+    ],
+    "commits": [
+      "e9b1e1e6762bd4a26d86b2dbdc6625f24acfaa9d"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "the inference boundary persists EVERY byte (full request + raw response) to the training corpus on every dispatch",
+    "intention": "Every dispatch must write a corpus record carrying BOTH the upstream request-message bytes AND the downstream raw-response bytes; metadata-only logging loses the training signal",
+    "test": "tests/inference/test_io_corpus.py::test_dispatch_captures_every_byte",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_io_corpus.py::test_dispatch_captures_every_byte",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "                                ^\n\n2026-07-04 22:11:26.973 | INFO     | logging:callHandlers:1762 - dispatch: explicit model=local-test → local-test (source=ollama)\n2026-07-04 22:11:26.990 | INFO     | logging:callHandlers:1762 - inference: cost_record {'ticket_id': 'T-corpus-proof', 'domain': '', 'tier': 'worker', 'source': 'ollama', 'model': 'local-test', 'input_tokens': 5, 'output_tokens': 4, 'dollars': 0.0, 'call_outcome': 'ok'}\n------------------------------ Captured log call -------------------------------\nINFO     unseen_university.devices.inference.sources:sources.py:1037 SourceRegistry: registered source 'ollama'\nINFO     unseen_university.devices.inference.device:device.py:298 dispatch: task_class=worker foreground=False escalation_hop=0\nDEBUG    unseen_university.devices.inference.pattern_intercept:pattern_intercept.py:111 pattern_intercept: DB unavailable — relation \"archivist.knowledge_patterns\" does not exist\nLINE 2:                    FROM archivist.knowledge_patterns\n                                ^\n\nINFO     unseen_university.devices.inference.device:device.py:409 dispatch: explicit model=local-test → local-test (source=ollama)\nINFO     unseen_university.devices.inference.device:device.py:266 inference: cost_record {'ticket_id': 'T-corpus-proof', 'domain': '', 'tier': 'worker', 'source': 'ollama', 'model': 'local-test', 'input_tokens': 5, 'output_tokens': 4, 'dollars': 0.0, 'call_outcome': 'ok'}\n--------------------------- Captured stderr teardown ---------------------------\n2026-07-04 22:11:27.008 | INFO     | logging:callHandlers:1762 - HealthMonitor: stopped\n---------------------------- Captured log teardown -----------------------------\nINFO     unseen_university.devices.inference.health_monitor:health_monitor.py:49 HealthMonitor: stopped\n=========================== short test summary info ============================\nFAILED tests/inference/test_io_corpus.py::test_dispatch_captures_every_byte\n1 failed in 0.20s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.17s"
+          }
+        }
+      }
+    ],
+    "commit": "e9b1e1e6762bd4a26d86b2dbdc6625f24acfaa9d",
+    "impl_paths": [
+      "unseen_university/devices/inference/device.py",
+      "unseen_university/devices/inference/io_corpus.py"
+    ],
+    "ticket": "T-inference-io-corpus-every-byte",
+    "narrative": "",
+    "why": "training needs the complete I/O, not cost metadata; a dispatch that captures no bytes is the silent gap this rule closes",
+    "bootstrap": false
+  }
+}
