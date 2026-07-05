@@ -93,7 +93,7 @@ from unseen_university._uu_root import uu_root
 stamp = datetime.date.today().strftime("%Y%m%d")
 body = {"title": f"weekly-retro {datetime.date.today()}", "text": os.environ["RETRO"]}
 open("/tmp/retro_body.json", "w").write(json.dumps(body))
-TOOLS = str(uu_root() / "devlab" / "claudecode")
+TOOLS = os.path.join(uu_root(), "devlab", "claudecode")  # uu_root() returns a str
 subprocess.run([sys.executable, f"{TOOLS}/memory_emit.py", "--category", "notes",
     "--emitter", "cc.0", "--kind", "note", "--namespace", f"weekly-retro-{stamp}",
     "--body-file", "/tmp/retro_body.json"], check=True)

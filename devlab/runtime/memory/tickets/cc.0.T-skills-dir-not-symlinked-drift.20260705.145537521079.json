@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-skills-dir-not-symlinked-drift.20260705.145537521079",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-dir-not-symlinked-drift"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T20:55:37.521079+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-skills-dir-not-symlinked-drift"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-dir-not-symlinked-drift",
+    "title": "[triage] ~/.claude/skills is a plain dir, not a symlink to repo skills/ — copies drift",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Hygiene"
+    ],
+    "description": "**Problem (day-close-audit 2026-07-05):** the 'NO skills SYNC — symlink only' rule (single-source = a directory SYMLINK from ~/.claude/skills to repo skills/) is violated — ~/.claude/skills is a PLAIN directory. Proof of the drift it causes: weekly-retro's SKILL.md had a uu_root()-str-vs-Path bug in BOTH copies this session; had they been one symlinked source, one fix would cover both. The copy-sync IS the drift disease ([[feedback_no_skills_sync_symlink]]).\n\n**Proposed shape:** replace ~/.claude/skills (plain dir) with a symlink to <repo>/skills after verifying the repo copy is the superset/canonical (diff the two trees first; reconcile any ~/.claude-only skills into the repo before symlinking). CAUTION: this is a substrate change to how skills load — verify context-load/day-close still resolve skills after the swap.\n\n**Affected files:** ~/.claude/skills (filesystem, not repo); repo skills/ (reconcile any missing).\n\n**Design rules:** single-source via symlink, never copy-sync.\n\n**Scope boundary:** diff + reconcile + symlink ONLY. Not a skills rewrite.\n\n**Completion criteria:** ~/.claude/skills is a symlink to repo skills/; a skill invoked after the swap resolves correctly (context-load runs clean).\n\n**Test plan:** after symlinking, run a cheap skill (e.g. /savestate midstream) and confirm it executes from the repo copy; diff shows zero drift.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.35,
+    "status": "triage",
+    "created_at": "2026-07-05T20:54:36.927927+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T20:54:36.971649+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ca221ab8-9560-4282-aa23-c7788cce3654"
+  }
+}

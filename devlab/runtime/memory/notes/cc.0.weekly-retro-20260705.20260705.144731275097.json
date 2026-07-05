@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.weekly-retro-20260705.20260705.144731275097",
+  "emitter": "cc.0",
+  "namespace": [
+    "weekly-retro-20260705"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-05T14:47:31.275097",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "weekly-retro 2026-07-05",
+    "text": "## Week ending 2026-07-05 (Friday extras run late on Sunday)\n\n### Hypothesis confirmation rate\nZERO outcomes recorded this week despite very heavy shipping (~15 decisions 06-30..07-05, most with all tickets closed). This is the flag the retro exists to catch: the /outcome loop is NOT closing. We ship + file follow-ups but never record whether the hypothesis was confirmed — so the confirmation rate is unmeasurable, which is the same disease Fable's 2026-07-05 pressure-test found at the code level (metrics with no capturing query). The dev process is not yet dogfooding its own measurement discipline.\n\n### Priority changes for next week\n1. Close the outcome loop on the decisions where we already HAVE data: D-coding-loop-redesign-aider-survey (the funnel gave us live confirm-by: architect fix works, editor is the new bottleneck) and D-ds-inference-context-management (num_ctx necessary-not-sufficient). Run /outcome on both.\n2. The new D-compiled-inference-proof-program is the structural fix — it institutionalizes measurement (self-model checker + metric-to-capture tracing = Fable Q5). Treat \"every decision names a capturing query\" as the standing lesson.\n\n### Needs /outcome (shipped, no outcome recorded)\nD-coding-loop-redesign-aider-survey-2026-07-04 (have data), D-ds-inference-context-management-2026-07-04 (have data), plus the 06-30..07-03 batch (worker-pool, granny-pull-dispatch, swarm-location-independent, env-creds-cleanup, ds-builder-leveling, inference-domain-routing, teach-on-miss). Several 06-25..06-28 decisions are >7d overdue."
+  }
+}
