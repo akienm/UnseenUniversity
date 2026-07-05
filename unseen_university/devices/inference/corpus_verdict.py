@@ -107,8 +107,10 @@ def classify(ev: VerdictEvidence) -> VerdictStrength:
     """
     if ev.akien_signal:
         return VerdictStrength.AKIEN_NOTICED
-    if ev.executed_live or ev.consequence_signal:
+    if ev.consequence_signal:
         return VerdictStrength.CONSEQUENCE_BEARING
+    if ev.executed_live:
+        return VerdictStrength.EXECUTED_LIVE
     if ev.has_green_proof:
         return VerdictStrength.TEST_GREEN
     return VerdictStrength.LLM_SAID_IT
