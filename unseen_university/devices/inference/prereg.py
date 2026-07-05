@@ -184,17 +184,13 @@ class PredictionGrader:
         return min(records, key=lambda r: r.get("ts", ""))
 
     def grade(self, ticket_id: str) -> PredictionGrade:
-        from unseen_university import proof_store
-        from unseen_university._uu_root import uu_root
-
         record = self._earliest_prediction(ticket_id)
         verdict = classify(self._source.evidence_for(ticket_id))
-        proof, _ = proof_store.best_valid_proof(ticket_id, uu_root())
         return PredictionGrade(
             ticket_id=ticket_id,
             prediction_found=record is not None,
             predicted_warm=(record or {}).get("warm"),
             predicted_files=(record or {}).get("files", []),
             verdict_strength=verdict.name,
-            grounded=proof is not None,
+            grounded=verdict >= FIREWALL_FLOOR,
         )
