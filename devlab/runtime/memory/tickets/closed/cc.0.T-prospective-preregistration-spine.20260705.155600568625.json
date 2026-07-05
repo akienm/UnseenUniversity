@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-prospective-preregistration-spine",
-    "title": "[in_progress] Prospective pre-registration on live sprints — the durable ground-truth spine",
+    "title": "Prospective pre-registration on live sprints — the durable ground-truth spine",
     "size": "M",
     "tags": [
       "CompiledInference",
@@ -30,13 +30,13 @@
     "decision_id": "D-proof-program-grounding-spine-2026-07-05",
     "gate": null,
     "priority": 0.5,
-    "status": "in_progress",
+    "status": "closed",
     "worker": "cc.0",
     "created_at": "2026-07-05T21:55:52.360695+00:00",
     "created_by": null,
-    "result": null,
+    "result": "prereg.py: prospective pre-registration spine. record_prediction_from_packet pre-writes the compiled path's prediction (files/plan/fingerprint, warm=None named-lever) to devlab/runtime/memory/inference_prereg/ via a fail-soft hook at build_packet.main BEFORE work; PredictionGrader.grade() grounds ONLY on corpus_verdict.verdict_strength >= CONSEQUENCE_BEARING (uncoupled from proof-on-close), reading the EARLIEST pre-registration (firewall guard vs post-hoc re-runs). domain field generalizes beyond coding. Proven red→green: bogus proof-on-close PASS ignored.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-05T23:41:32.649453+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-05T21:55:52.360736+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "8a3e6d4a-023b-4d3a-9bf4-fbd6e4d9fc6d"
+    "inferred_intention_id": "8a3e6d4a-023b-4d3a-9bf4-fbd6e4d9fc6d",
+    "proven": true,
+    "proof_id": "cc.0.prereg-grades-predictions-by-the-uncoupl.T-prospective-preregistration-spine.20260705.174109935688",
+    "proof_commit": "4888ddc6ae930f7d5bd4bb864e633ec985e01720",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
