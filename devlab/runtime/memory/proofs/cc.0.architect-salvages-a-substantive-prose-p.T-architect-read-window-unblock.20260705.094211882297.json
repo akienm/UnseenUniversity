@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.architect-salvages-a-substantive-prose-p.T-architect-read-window-unblock.20260705.094211882297",
+  "emitter": "cc.0",
+  "namespace": [
+    "architect-salvages-a-substantive-prose-p",
+    "T-architect-read-window-unblock"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T09:42:11.882297",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-architect-read-window-unblock"
+    ],
+    "commits": [
+      "f501422d90718d462f3c4cbf866997a646afc355"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Architect salvages a substantive prose plan and runs the editor",
+    "intention": "A read-only architect that produces a real plan without a clean DONE envelope still hands it to the editor (not thrown away)",
+    "test": "tests/inference/test_architect_read_window.py::test_substantive_prose_plan_reaches_the_editor",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_architect_read_window.py::test_substantive_prose_plan_reaches_the_editor",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        _StubLoop.editor_ran = False\n        with patch(\"unseen_university.devices.inference.architect_editor.AgenticLoop\", _StubLoop):\n            result = ArchitectEditorFlow(aci_mode=True).run(\n                system_prompt=\"sys\",\n                initial_message=\"do the thing\",\n                ticket_id=\"T-proof\",\n            )\n>       assert _StubLoop.editor_ran, (\n            \"a substantive prose/escalate plan must be salvaged and handed to the editor; the flow \"\n            \"threw the real plan away because it was not a clean DONE envelope — the exact \"\n            f\"prose-drift failure the corpus observed. Flow returned outcome={result.outcome!r}\"\n        )\nE       AssertionError: a substantive prose/escalate plan must be salvaged and handed to the editor; the flow threw the real plan away because it was not a clean DONE envelope — the exact prose-drift failure the corpus observed. Flow returned outcome='escalate'\nE       assert False\nE        +  where False = _StubLoop.editor_ran\n\ntests/inference/test_architect_read_window.py:85: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_architect_read_window.py::test_substantive_prose_plan_reaches_the_editor\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "f501422d90718d462f3c4cbf866997a646afc355",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-architect-read-window-unblock.20260705.093628055058.json",
+      "unseen_university/devices/inference/agentic_loop.py",
+      "unseen_university/devices/inference/architect_editor.py"
+    ],
+    "ticket": "T-architect-read-window-unblock",
+    "narrative": "",
+    "why": "Corpus 2026-07-05 showed the architect prose-drifts; the windowed-Read + escaped-JSON dependency threw real plans away",
+    "bootstrap": false
+  }
+}

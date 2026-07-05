@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-architect-read-window-unblock",
-    "title": "[in_progress] Un-window the read-only architect's Read + salvage prose plans (coding-loop harness fix)",
+    "title": "Un-window the read-only architect's Read + salvage prose plans (coding-loop harness fix)",
     "size": "M",
     "tags": [
       "Inference",
@@ -29,13 +29,13 @@
     "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
     "gate": null,
     "priority": 0.7,
-    "status": "in_progress",
+    "status": "closed",
     "worker": "cc.0",
     "created_at": "2026-07-05T15:36:19.659600+00:00",
     "created_by": null,
     "result": null,
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-05T15:42:18.713233+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,9 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-05T15:36:19.705809+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "6af5ced7-8a06-4ade-b152-01b82f79e6f1"
+    "inferred_intention_id": "6af5ced7-8a06-4ade-b152-01b82f79e6f1",
+    "proven": true,
+    "proof_id": "cc.0.architect-salvages-a-substantive-prose-p.T-architect-read-window-unblock.20260705.094211882297",
+    "proof_commit": "f501422d90718d462f3c4cbf866997a646afc355"
   }
 }
