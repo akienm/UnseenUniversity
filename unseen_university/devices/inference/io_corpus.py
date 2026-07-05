@@ -15,6 +15,12 @@ Location: `UU_INFERENCE_CORPUS` (override, e.g. hermetic tests) else `uu_home()/
 
 Fail-soft by contract: capturing the corpus must NEVER break inference. A write error is
 logged and swallowed — a lost training record is bad, a crashed dispatch is worse.
+
+The captured ``outcome`` is TRANSPORT only (ok/timeout/error), never correctness. To read
+these records with a reality-graded verdict attached, use the SEPARATE enrichment reader
+``corpus_verdict.CorpusVerdictReader`` — it joins each entry to the proof/ticket stores by
+``ticket_id`` and stamps a ``verdict_strength``. Capture stays write-only and hot-path-free;
+grading is a read-side concern that never touches dispatch.
 """
 
 from __future__ import annotations

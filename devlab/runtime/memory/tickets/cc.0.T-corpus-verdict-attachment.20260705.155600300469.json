@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-corpus-verdict-attachment",
-    "title": "[sprint] Attach reality-graded verdict_strength to corpus entries (the ground-truth join)",
+    "title": "[in_progress] Attach reality-graded verdict_strength to corpus entries (the ground-truth join)",
     "size": "M",
     "tags": [
       "CompiledInference",
@@ -30,7 +30,7 @@
     "decision_id": "D-proof-program-grounding-spine-2026-07-05",
     "gate": null,
     "priority": 0.85,
-    "status": "sprint",
+    "status": "in_progress",
     "worker": "cc.0",
     "created_at": "2026-07-05T21:55:41.453616+00:00",
     "created_by": null,
