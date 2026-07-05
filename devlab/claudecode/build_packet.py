@@ -32,10 +32,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import math
 import re
 import sys
 from pathlib import Path
+
+log = logging.getLogger(__name__)
 
 try:  # importable both as a script (CLI, sibling on path) and as devlab.claudecode.build_packet (pytest)
     from devlab.claudecode.pre_inference_assemble import _extract_affected_files, _load_ticket, _UU_ROOT
@@ -350,6 +353,19 @@ def main() -> None:
 
     packet = build_packet(_load_ticket(args.ticket_id))
     print(json.dumps(packet, indent=2, sort_keys=True) if args.json else _format_summary(packet))
+
+    # LOAD-BEARING FAIL-SOFT HOOK (T-prospective-preregistration-spine): pre-register the
+    # compiled path's prediction BEFORE the sprint works the ticket, so it can later be graded
+    # by the uncoupled reality verdict rather than proof-on-close. This side effect lives at the
+    # CLI boundary only — the pure build_packet() stays hermetic. A prereg failure (including a
+    # broken inference import) must never break a sprint; it is swallowed with a warning.
+    # Rollback: delete this block — prereg is additive and side-effect-only.
+    try:
+        from unseen_university.devices.inference import prereg
+
+        prereg.record_prediction_from_packet(packet)
+    except Exception as exc:  # noqa: BLE001 — pre-write must never break a sprint
+        log.warning("build_packet: prereg pre-write failed (non-fatal): %s", exc)
 
 
 if __name__ == "__main__":

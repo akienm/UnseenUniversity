@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-prospective-preregistration-spine",
-    "title": "[sprint] Prospective pre-registration on live sprints — the durable ground-truth spine",
+    "title": "[in_progress] Prospective pre-registration on live sprints — the durable ground-truth spine",
     "size": "M",
     "tags": [
       "CompiledInference",
@@ -30,7 +30,7 @@
     "decision_id": "D-proof-program-grounding-spine-2026-07-05",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "in_progress",
     "worker": "cc.0",
     "created_at": "2026-07-05T21:55:52.360695+00:00",
     "created_by": null,
