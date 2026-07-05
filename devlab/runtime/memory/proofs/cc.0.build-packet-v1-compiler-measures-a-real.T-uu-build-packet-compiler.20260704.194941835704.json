@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.build-packet-v1-compiler-measures-a-real.T-uu-build-packet-compiler.20260704.194941835704",
+  "emitter": "cc.0",
+  "namespace": [
+    "build-packet-v1-compiler-measures-a-real",
+    "T-uu-build-packet-compiler"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T19:49:41.835704",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-uu-build-packet-compiler"
+    ],
+    "commits": [
+      "4e7308cdbd7fff86dc7434453244b3a69e4be1ee"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "build.packet.v1 compiler measures a real baseline-vs-helper-first token reduction",
+    "intention": "A build packet MEASURES a positive orientation-token reduction (signatures cost fewer tokens than reading full bodies) — a hollow packet that ships bodies measures zero and fails",
+    "test": "tests/test_build_packet.py::test_token_measurement_reports_reduction",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_build_packet.py::test_token_measurement_reports_reduction",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \"\"\"Helper-first (signatures) costs fewer tokens than baseline (full bodies): reduction > 0.\n    \n        RED (helper-first reverted to shipping full bodies): helper-first == baseline, reduction\n        is 0, status is \"no-improvement\" -> this assertion fails with an authentic AssertionError.\n        \"\"\"\n        tm = _packet()[\"proof_plan\"][\"token_measurement\"]\n        assert tm[\"baseline_tokens\"] > 0, \"fixture must have real bodies to read as the baseline\"\n>       assert tm[\"reduction_tokens\"] > 0, (\n            \"the packet must MEASURE a token reduction: shipping signatures instead of full bodies \"\n            f\"should cost fewer tokens, but baseline={tm['baseline_tokens']} \"\n            f\"helper_first={tm['helper_first_tokens']} reduction={tm['reduction_tokens']} — the \"\n            \"helper-first surface is not smaller than the baseline\"\n        )\nE       AssertionError: the packet must MEASURE a token reduction: shipping signatures instead of full bodies should cost fewer tokens, but baseline=70 helper_first=70 reduction=0 — the helper-first surface is not smaller than the baseline\nE       assert 0 > 0\n\ntests/test_build_packet.py:119: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_build_packet.py::test_token_measurement_reports_reduction\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "4e7308cdbd7fff86dc7434453244b3a69e4be1ee",
+    "impl_paths": [
+      "devlab/claudecode/build_packet.py",
+      "devlab/runtime/memory/tickets/cc.0.T-coding-domain-absorb-build-packet-orientation.20260704.194715888817.json",
+      "skills/sprint-ticket/SKILL.md"
+    ],
+    "ticket": "T-uu-build-packet-compiler",
+    "narrative": "",
+    "why": "the token_measurement is the ticket's named proof-on-close lever; a packet claiming reduction it can't measure is the hollow build the gate exists to catch (CP1)",
+    "bootstrap": false
+  }
+}
