@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.flat-rate-inference-timeout-raise-agenti.T-ds-hex-dispatch-timeout-midloop.20260704.182437206604",
+  "emitter": "cc.0",
+  "namespace": [
+    "flat-rate-inference-timeout-raise-agenti",
+    "T-ds-hex-dispatch-timeout-midloop"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T18:24:37.206604",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-hex-dispatch-timeout-midloop"
+    ],
+    "commits": [
+      "24374d390bc3daafd2425ad6d09c024f8440313f"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "flat-rate inference timeout raise (agentic_loop)",
+    "intention": "A flat-rate source raises the per-request inference timeout above the 120s usage-based cliff after the turn-0 billing lock",
+    "test": "tests/inference/test_flat_rate_timeout_raise.py::test_flat_rate_source_raises_the_per_request_timeout",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_flat_rate_timeout_raise.py::test_flat_rate_source_raises_the_per_request_timeout",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        )\n    \n        assert len(device.timeouts) >= 2, (\n            f\"proof needs at least two dispatches to observe the raise; saw {device.timeouts!r}\"\n        )\n        assert device.timeouts[0] == 120, (\n            f\"turn-0 request should use the base usage-based wall (120s); got {device.timeouts[0]}\"\n        )\n>       assert device.timeouts[1] > device.timeouts[0], (\n            \"a flat-rate source must raise the per-request timeout above the 120s usage-based \"\n            f\"cliff after the turn-0 billing lock; turn-1 timeout stayed {device.timeouts[1]}s \"\n            f\"(== turn-0 {device.timeouts[0]}s) — the hardcoded 120 was never raised\"\n        )\nE       AssertionError: a flat-rate source must raise the per-request timeout above the 120s usage-based cliff after the turn-0 billing lock; turn-1 timeout stayed 120s (== turn-0 120s) — the hardcoded 120 was never raised\nE       assert 120 > 120\n\ntests/inference/test_flat_rate_timeout_raise.py:96: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_flat_rate_timeout_raise.py::test_flat_rate_source_raises_the_per_request_timeout\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.11s"
+          }
+        }
+      }
+    ],
+    "commit": "24374d390bc3daafd2425ad6d09c024f8440313f",
+    "impl_paths": [
+      "unseen_university/devices/inference/agentic_loop.py"
+    ],
+    "ticket": "T-ds-hex-dispatch-timeout-midloop",
+    "narrative": "",
+    "why": "The hardcoded 120s wall killed the architect mid-plan on devstral@Hex (confirm-by turn 12, 121s); a local $0 box waiting is free, so flat-rate gets 600s",
+    "bootstrap": false
+  }
+}
