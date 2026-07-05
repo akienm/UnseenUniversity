@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-compiled-inference-proof-program-2026-07-05.20260705.142117814803",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-compiled-inference-proof-program-2026-07-05"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-05T14:21:17.814803",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-compiled-inference-proof-program-2026-07-05",
+    "title": "Make the compiled-inference starve-curve testable on the code-with-trees rung",
+    "status": "open",
+    "date": "2026-07-05",
+    "spawned_tickets": [
+      "T-self-model-existence-checker",
+      "T-corpus-visibility-gaps",
+      "T-nexus-write-path-ds-architect-loop",
+      "T-nexus-replay-experiment",
+      "T-consequence-compiled-inference-proof-program"
+    ],
+    "text": "# D-compiled-inference-proof-program-2026-07-05\n**title:** Make the compiled-inference starve-curve testable on the code-with-trees rung\n**date:** 2026-07-05\n**status:** open\n**spawned_tickets:** T-self-model-existence-checker, T-corpus-visibility-gaps, T-nexus-write-path-ds-architect-loop, T-nexus-replay-experiment, T-consequence-compiled-inference-proof-program\n\n## Decision narrative\nFable's 2026-07-05 pressure-test (Plan/fable), CC-verified [V], found the write-side of the nexus is STRUCTURALLY ABSENT in the running system: build_packet wired to the CC skill only (not the DS loop), teach-on-miss unimplemented, learning_pipeline a stub, archivist.knowledge_patterns table absent. So the starve-curve numerator (questions answered warm, out of the LLM) is not unmeasured — it is zero; no question has ever moved out of the LLM in the coding loop. This decision builds the minimum machinery to make the thesis testable for the FIRST time on the near-term rung (code-with-trees, per the telos: the destination is self-aware graph trees; this is road). Blocker-first per Fable's ranking: a self-model existence-checker (Q5 — the warden pointed at our own claims, which would have caught all four findings), the corpus visibility gaps that make warm answers + role/turn visible, a minimum nexus write-path in the DS architect loop, and the replay experiment that produces the first (cold-path, quality) curve. Advisor (Opus 2026-07-05) split the nexus ticket (provable build vs research measurement), corrected the quality line to a git-ground-truth correctness proxy (not plan-shape), and named the three predicate kinds for the checker (existence/usage/stub-heuristic). The editor-loop bottleneck the same funnel surfaced is filed separately under D-coding-loop-redesign-aider-survey-2026-07-04.\n\n## Hypothesis\nAfter these ship, a warm (nexus) answer is captured in the corpus with role/turn provenance, and a nightly zero-inference checker flags any architecture node whose claimed module/table/wiring doesn't actually exist — so 'X exists' claims can no longer silently be false, and the starve-curve becomes measurable.\n\n## Measurement Signal\nThe I/O corpus contains records with outcome='warm' + role labels (today: zero possible); the self-model checker emits a live/stub/dead report over architecture nodes and would have flagged all four of Fable's findings (build_packet-not-wired, teach-on-miss-unimplemented, learning_pipeline-stub, knowledge_patterns-absent) that are undetected today; the replay harness emits a per-ticket (cold-path dispatch, correctness) curve across the ticket index.\n\n## Intention\nI intend that the build process can measure how much of its own work it has moved out of the LLM (the starve-curve), so the compiled-inference thesis becomes falsifiable on the code-with-trees rung. (serves I-compiled-inference-residue + I-self-improving-process; road toward the telos of self-aware graph trees.)"
+  }
+}

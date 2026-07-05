@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-nexus-replay-experiment.20260705.142039164243",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nexus-replay-experiment"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T20:20:39.164243+00:00",
+  "links": {
+    "decisions": [
+      "D-compiled-inference-proof-program-2026-07-05"
+    ],
+    "tickets": [
+      "T-nexus-replay-experiment"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nexus-replay-experiment",
+    "title": "[sprint] Replay harness + 3-arm experiment: the first starve-curve datapoint on the code-with-trees rung",
+    "size": "L",
+    "tags": [
+      "CompiledInference",
+      "Research"
+    ],
+    "description": "**Problem:** we have never measured whether a question moves out of the LLM in the coding loop. This is the experiment that produces the FIRST datapoint — a research measurement whose deliverable is a CURVE, not a passing test (it may close shipped-unproven, naming the curve as the artifact).\n\n**Proposed shape:** replay 20-30 CLOSED coding tickets on a FROZEN repo snapshot, ARCHITECT-only, escalation pinned to ONE tier, in 3 arms: (1) orientation prefix OFF; (2) prefix static (today); (3) prefix + accumulating nexus (T-nexus-write-path). Metric: cold-path dispatch count + tokens-to-substantive-plan per ticket vs ticket index, ALWAYS joined with a CORRECTNESS quality line. Arm-3 below arm-2 as index grows = the first datapoint of a question going warm; arm-3 ≈ arm-2 flat = the turn-is-not-the-question falsification.\n\n**Quality line (advisor 2026-07-05 — this is load-bearing, not plan-shape):** the replayed tickets are CLOSED, so ground truth is in git. Quality = does arm-3's plan point at the FILES THE ACTUAL COMMIT TOUCHED (plan-vs-known-good-diff), plus editor-apply + test-pass on a subsample. This is what distinguishes 'compiled' from 'confidently rotting' — a stale nexus answer yields a still-'substantive' but WRONG plan, which shape-only metrics miss.\n\n**Affected files:** a replay harness under devlab/ or tests/ (frozen snapshot + closed-ticket feeder + tier pin); reads the io corpus (needs warm-hit capture + role labels from T-corpus-visibility-gaps).\n\n**Design rules:** cost-safe (Hex/local only, $0 — reuse the funnel's 3-layer guard); frozen snapshot so falsifiers don't fire; one tier so the curve isn't confounded.\n\n**Scope boundary:** the harness + the 3-arm run + the (curve, quality) artifact. NOT: building the nexus (gated on T-nexus-write-path), NOT the editor loop, NOT live-stream measurement.\n\n**Completion criteria:** the harness runs all 3 arms cost-safe and emits a per-ticket (cold-path dispatch, tokens-to-plan, correctness) artifact across the ticket index. The FINDING (curve bends / flat / regresses) is the deliverable; close reporting which of Fable's Q4 outcomes it shows.\n\n**Test plan:** hermetic — the harness runs the 3 arms on a tiny fixture batch and emits the joined artifact; arm-3 reads a nexus answer written by arm-3's own accumulation. The curve itself is research data (may close shipped-unproven, naming the artifact as the lever).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-compiled-inference-proof-program-2026-07-05",
+    "gate": "T-nexus-write-path-ds-architect-loop",
+    "priority": 0.6,
+    "status": "sprint",
+    "created_at": "2026-07-05T20:20:30.703086+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T20:20:30.703166+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8e0b735a-446a-486f-b667-2fd9e794e226"
+  }
+}

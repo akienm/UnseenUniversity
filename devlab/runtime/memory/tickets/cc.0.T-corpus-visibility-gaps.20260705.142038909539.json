@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-corpus-visibility-gaps.20260705.142038909539",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-corpus-visibility-gaps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T20:20:38.909539+00:00",
+  "links": {
+    "decisions": [
+      "D-compiled-inference-proof-program-2026-07-05"
+    ],
+    "tickets": [
+      "T-corpus-visibility-gaps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-corpus-visibility-gaps",
+    "title": "[sprint] Corpus visibility: capture warm/intercept hits + add role/turn labels to dispatch records",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Observability"
+    ],
+    "description": "**Problem:** the every-byte I/O corpus cannot show the starve-curve. (a) Warm hits BYPASS capture: `try_intercept` returns in device.py (~432-437) BEFORE `_capture_io` fires, so a cache/intercept hit produces NO corpus record — the curve's numerator is invisible. (b) Dispatch records carry no role/turn label; architect vs editor is only recoverable by grepping system-prompt text, so the curve can't be segmented by layer.\n\n**Proposed shape:** (1) emit a corpus record on the warm/intercept path — `outcome='warm'`, the served answer, provenance. (2) Add `role` (architect/editor/critic) + `turn` (+ optional `parent_id`) to InferenceRequest and the corpus record; populate from the coding loop.\n\n**Affected files:** unseen_university/devices/inference/device.py (call _capture_io on the intercept path), io_corpus.py (record fields), shim.py / InferenceRequest (role/turn/parent fields), architect_editor.py + agentic_loop.py (populate role/turn).\n\n**⚠️ HIGH-inertia pre-approval (Akien, 2026-07-05):** additive instrumentation to the inference design center (device.py, agentic_loop.py) is APPROVED. This is warm-hit capture + role/turn fields, not a rewrite.\n\n**Design rules:** fail-soft capture (a corpus write must NEVER break dispatch); log the crossing; one homogeneous capture point.\n\n**Scope boundary:** warm-hit capture + role/turn labels ONLY. NOT the question-equivalence decision log, NOT nexus demography.\n\n**Completion criteria:** a dispatch on the intercept/warm path writes a corpus record with outcome='warm' (today: zero); every dispatch record carries role + turn.\n\n**Test plan:** hermetic tests/inference/... — a dispatch forced down the intercept path produces a corpus record with outcome='warm'; a coding-loop dispatch carries role='architect', turn=N. PROOF NODE: the warm-path dispatch produces a corpus record where today's code writes nothing. red→green via proof_emitter.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-compiled-inference-proof-program-2026-07-05",
+    "gate": null,
+    "priority": 0.75,
+    "status": "sprint",
+    "created_at": "2026-07-05T20:20:22.988647+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T20:20:22.988745+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "04194c96-994a-46e1-88af-8fec0303ded7"
+  }
+}
