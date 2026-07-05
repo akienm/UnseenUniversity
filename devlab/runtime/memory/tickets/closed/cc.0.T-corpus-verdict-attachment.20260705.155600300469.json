@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-corpus-verdict-attachment",
-    "title": "[in_progress] Attach reality-graded verdict_strength to corpus entries (the ground-truth join)",
+    "title": "Attach reality-graded verdict_strength to corpus entries (the ground-truth join)",
     "size": "M",
     "tags": [
       "CompiledInference",
@@ -30,13 +30,13 @@
     "decision_id": "D-proof-program-grounding-spine-2026-07-05",
     "gate": null,
     "priority": 0.85,
-    "status": "in_progress",
+    "status": "closed",
     "worker": "cc.0",
     "created_at": "2026-07-05T21:55:41.453616+00:00",
     "created_by": null,
-    "result": null,
+    "result": "corpus_verdict.py: reality-graded verdict_strength join (llm_said_it<test_green<executed_live<consequence_bearing<akien_noticed); GitEvidenceSource witnesses test_green + consequence_bearing (later-commit-on-same-impl-paths = temporal firewall); executed_live/akien_noticed left honestly dark with named levers; reality_tested_view excludes llm_said_it. Proven red→green: liveness ≠ consequence.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-05T23:12:45.385011+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-05T21:55:41.501088+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "95f6fc15-d3b3-4d4f-aec2-723b86e36948"
+    "inferred_intention_id": "95f6fc15-d3b3-4d4f-aec2-723b86e36948",
+    "proven": true,
+    "proof_id": "cc.0.corpus-verdict-distinguishes-liveness-fr.T-corpus-verdict-attachment.20260705.171224206444",
+    "proof_commit": "61ad6d516626c0d8538cdeee1398d9fba8998c48",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
