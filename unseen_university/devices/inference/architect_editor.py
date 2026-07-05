@@ -31,6 +31,7 @@ wiring per-role tier selection is follow-up routing work, not this attempt's mec
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 
 from unseen_university.devices.inference.agentic_loop import (
@@ -48,15 +49,19 @@ ARCHITECT_TOOLS = ["Read", "Bash"]
 
 ARCHITECT_PROMPT = """\
 You are the ARCHITECT. Resolve the coding task into a concrete PLAN of file changes — do
-NOT make the changes yourself (you have no edit tools; a separate editor will apply your
-plan). Use Read/Bash only to inspect the repository enough to write a precise plan.
+NOT make the changes yourself (you have NO edit tools; a separate editor applies your plan).
+Use Read to read the whole files you need (one Read returns the entire file), and Bash only for
+grep/ls. Do NOT run the test suite — reading the code is enough to plan; the editor runs tests.
 
-Signal completion with a done envelope whose `result` field IS the plan — a numbered list of
-edits, each naming the absolute file path and the exact change (what to find, what to replace
-it with, or the full content for a new file):
+When you have read enough, STOP reading and write the PLAN: a numbered list of edits, each
+naming the absolute file path and the exact change (what to find, what to replace it with, or the
+full content for a new file). Keep it specific enough that an editor can apply it without
+re-deciding anything.
+
+Emit the plan as a done envelope whose `result` field IS the plan, and nothing else:
 {"status": "done", "result": "<numbered file-change plan>", "error_class": null, "error_number": null}
-
-Keep the plan specific enough that an editor can apply it without re-deciding anything."""
+If you write the plan as plain text instead, that is still accepted — but do not keep reading or
+say you will implement it yourself. Your whole job is to hand over the numbered plan."""
 
 EDITOR_PROMPT = """\
 You are the EDITOR. An EDIT PLAN produced by the architect is given in the first message.
@@ -64,6 +69,24 @@ Your only job is to APPLY it: for each planned change, call Edit (exact-string r
 or Write (whole file), using absolute paths. Do not re-plan or re-explore beyond what you
 need to apply a change. After applying the plan, run the tests named in the plan (or the
 ticket) and then signal done."""
+
+
+# A finish counts as a plan the editor can act on if it names a file path (…/x.py) or is a
+# numbered/bulleted list of steps. This is the min-substance guard that keeps the salvage from
+# handing empty prose or a bare "I can't do this" to the editor — those still escalate.
+_PLAN_FILE_RE = re.compile(r"[\w./-]+\.\w+")          # a path-ish token with an extension
+_PLAN_STEP_RE = re.compile(r"(?m)^\s*(?:\d+[.)]|[-*])\s+\S")  # "1. ", "2) ", "- ", "* "
+
+
+def _is_substantive_plan(text: str) -> bool:
+    """True if `text` looks like a real edit plan (names a file OR has numbered/bulleted steps).
+
+    Deliberately permissive on shape (a weak model's plan is rarely clean JSON) but requires SOME
+    structure, so empty/garbage/refusal text is not handed to the editor as if it were a plan.
+    """
+    if not text or len(text.strip()) < 40:
+        return False
+    return bool(_PLAN_FILE_RE.search(text) or _PLAN_STEP_RE.search(text))
 
 
 class ArchitectEditorFlow:
@@ -111,6 +134,9 @@ class ArchitectEditorFlow:
             history_window_turns=self._history_window_turns,
             tool_names=ARCHITECT_TOOLS,
             aci_mode=self._aci_mode,
+            # Read-only planner: whole-file Read + broad-pytest deflection, so it reads whole
+            # files and reaches a plan instead of paging forever (T-architect-read-window-unblock).
+            plan_mode=True,
         )
         plan_result = architect.run(
             system_prompt=ARCHITECT_PROMPT + "\n\n" + system_prompt,
@@ -124,14 +150,23 @@ class ArchitectEditorFlow:
             foreground=foreground,
             cwd=cwd,
         )
-        if plan_result.outcome != LOOP_DONE:
-            # No plan produced (availability/cost/max-turns/escalate) → hand back to the walk
-            # unchanged; don't burn an editor run on a plan that never existed.
-            log.info("architect_editor: architect did not reach DONE (%s) for %s — returning to walk",
-                     plan_result.outcome, ticket_id)
-            return plan_result
-
         plan = self._extract_plan(plan_result)
+        if plan_result.outcome != LOOP_DONE:
+            # The architect did not emit a clean done-envelope. But a weak local model routinely
+            # produces a REAL plan and then drifts into prose ("Now I'll implement…") or fails to
+            # escape its JSON — so json.loads fails, the loop classifies it escalate/max-turns, and
+            # the plan is thrown away (observed in the corpus, 2026-07-05). Don't depend on a 24B
+            # model emitting escaped JSON: if the finish text is a SUBSTANTIVE plan (names a file
+            # path or has numbered steps), accept it and run the editor. Otherwise hand back to the
+            # walk unchanged — a garbage/empty finish still escalates, so the walk's re-select and
+            # money-safety are untouched.
+            if _is_substantive_plan(plan):
+                log.info("architect_editor: salvaged a substantive plan from a non-DONE finish "
+                         "(%s) for %s — proceeding to editor", plan_result.outcome, ticket_id)
+            else:
+                log.info("architect_editor: architect did not reach DONE (%s) and produced no "
+                         "substantive plan for %s — returning to walk", plan_result.outcome, ticket_id)
+                return plan_result
         # Interface crossing (architect → editor handoff): log it.
         log.info("architect_editor: crossing|step=handoff|ticket=%s|plan_chars=%d — handing plan to editor",
                  ticket_id, len(plan))

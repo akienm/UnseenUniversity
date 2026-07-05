@@ -158,6 +158,52 @@ _ACI_READ_DEF = {
 }
 ACI_TOOL_DEFINITIONS = [_ACI_READ_DEF] + [t for t in TOOL_DEFINITIONS if t["function"]["name"] != "Read"]
 
+# Architect (plan_mode) Read: the read-only PLANNER must read whole files to write a precise
+# plan. The windowed ACI Read (designed for the EDITOR applying narrow edits) cripples it — it
+# pages through every file 100 lines at a time and burns its whole turn budget before reaching a
+# plan (observed in the inference I/O corpus, 2026-07-05). On Hex a large read is free, so the
+# architect gets the WHOLE file, line-numbered, up to a generous cap. No `offset` — one call reads
+# the file.
+_FULL_READ_MAX_LINES = 1500
+_FULL_READ_DEF = {
+    "type": "function",
+    "function": {
+        "name": "Read",
+        "description": (
+            "Read an entire file (line-numbered). Read the files you need to understand the "
+            "change, then write the plan. Do not run the test suite — just read and plan."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"path": {"type": "string", "description": "Path to file"}},
+            "required": ["path"],
+        },
+    },
+}
+
+
+def _select_tool_defs(aci_mode: bool, plan_mode: bool, tool_names: list[str] | None) -> list[dict]:
+    """Choose the offered tool definitions for one loop.
+
+    Pure (no self) so it is unit-testable without a mock dispatch. `aci_mode` picks the windowed
+    minion Read; `plan_mode` (the read-only architect) overrides Read with the full-file def so
+    the planner reads whole files; `tool_names`, when set, filters the offer to those names
+    (the architect is filtered to Read/Bash — the edit ban is structural, not advisory).
+    """
+    base = ACI_TOOL_DEFINITIONS if aci_mode else TOOL_DEFINITIONS
+    if plan_mode:
+        base = [_FULL_READ_DEF] + [t for t in base if t["function"]["name"] != "Read"]
+    if tool_names is not None:
+        base = [t for t in base if t["function"]["name"] in tool_names]
+    return base
+
+
+# The read-only architect must not spend its turn/timeout budget running the whole test suite
+# mid-plan (observed in the corpus). Deflect a broad pytest run — `pytest` NOT followed by a
+# `.py` file/node on the same line, i.e. a whole-directory or bare-suite run — while allowing a
+# targeted single-file run through. The editor runs the tests the plan names.
+_BROAD_PYTEST_RE = re.compile(r"\bpytest\b(?![^\n]*\.py)", re.IGNORECASE)
+
 # Native-protocol exit rules (appended to the domain's system prompt for native callers).
 SYSTEM_RULES = """\
 ## Exit protocol
@@ -210,18 +256,20 @@ def parse_terminal_envelope(text: str) -> dict | None:
 # ── Tool dispatch (shared) ────────────────────────────────────────────────────
 
 
-def execute_tool(name: str, args: dict, cwd: Path, aci_mode: bool = False) -> str:
+def execute_tool(name: str, args: dict, cwd: Path, aci_mode: bool = False, plan_mode: bool = False) -> str:
     """Route a tool call to its handler; return a string result for the model.
 
     Relative paths resolve against `cwd` (native callers pass absolute paths, so the join
     is a no-op for them; the text/minion protocol relies on it). One shared implementation.
     `aci_mode` switches Read to the paged, line-numbered window (minion tier); default off.
+    `plan_mode` (the read-only architect) reads whole files and deflects broad test-suite runs.
     """
     try:
         if name == "Bash":
-            return _tool_bash(args.get("command", ""), cwd)
+            return _tool_bash(args.get("command", ""), cwd, plan_mode=plan_mode)
         if name == "Read":
-            return _tool_read(args.get("path", ""), cwd, aci_mode=aci_mode, offset=args.get("offset", 0))
+            return _tool_read(args.get("path", ""), cwd, aci_mode=aci_mode,
+                              offset=args.get("offset", 0), full_read=plan_mode)
         if name == "Edit":
             return _tool_edit(args, cwd)
         if name == "Write":
@@ -237,8 +285,16 @@ def _resolve(path: str, cwd: Path) -> Path:
     return p if p.is_absolute() else cwd / p
 
 
-def _tool_bash(command: str, cwd: Path) -> str:
-    """Run a shell command; denylist blocks destructive patterns before subprocess is called."""
+def _tool_bash(command: str, cwd: Path, plan_mode: bool = False) -> str:
+    """Run a shell command; denylist blocks destructive patterns before subprocess is called.
+
+    `plan_mode` (architect): deflect a broad test-suite run — the planner reads code and writes a
+    plan; the editor runs the tests the plan names. A targeted single-file run is still allowed.
+    """
+    if plan_mode and _BROAD_PYTEST_RE.search(command):
+        log.info("agentic_loop Bash: deflected broad pytest in plan_mode: %r", command[:80])
+        return ("[planning] Skip running the test suite while planning — read the code and write "
+                "the plan. The editor will run the tests you name in the plan.")
     if _BASH_DENYLIST.search(command):
         log.warning("agentic_loop Bash denylist blocked: %r", command[:80])
         return "ERROR: command blocked by safety denylist"
@@ -252,13 +308,16 @@ def _tool_bash(command: str, cwd: Path) -> str:
         return "ERROR: command timed out (120s)"
 
 
-def _tool_read(path: str, cwd: Path, aci_mode: bool = False, offset: int = 0) -> str:
+def _tool_read(path: str, cwd: Path, aci_mode: bool = False, offset: int = 0, full_read: bool = False) -> str:
     """Read a file for the model.
 
-    Default (rich tier): whole-file content truncated to 3000 chars. ACI/minion mode: a paged,
-    line-numbered 100-line window starting at `offset`, with a header naming the range and how
-    to scroll — so a weak model reads coherent slices it controls instead of a blind truncation
-    (T-coding-minion-aci-edit-centric).
+    `full_read` (architect/plan_mode): the WHOLE file, line-numbered, up to `_FULL_READ_MAX_LINES`
+    — the read-only planner must see whole files to plan, and a large read is free on Hex. Checked
+    FIRST, because the architect runs with aci_mode AND full_read both true and must NOT fall
+    through to the windowed branch. Default (rich tier): whole-file content truncated to 3000
+    chars. ACI/minion mode: a paged, line-numbered 100-line window starting at `offset`, with a
+    header naming the range and how to scroll — so a weak model reads coherent slices it controls
+    instead of a blind truncation (T-coding-minion-aci-edit-centric).
     """
     p = _resolve(path, cwd)
     if not p.exists():
@@ -268,6 +327,16 @@ def _tool_read(path: str, cwd: Path, aci_mode: bool = False, offset: int = 0) ->
     except Exception as exc:
         log.warning("agentic_loop Read failed for %s: %s", p, exc)
         return f"ERROR: {exc}"
+    if full_read:
+        lines = content.splitlines()
+        total = len(lines)
+        shown = lines[:_FULL_READ_MAX_LINES]
+        numbered = "\n".join(f"{i + 1:>5}| {ln}" for i, ln in enumerate(shown))
+        if total > _FULL_READ_MAX_LINES:
+            tail = (f"\n[file truncated at {_FULL_READ_MAX_LINES} of {total} lines — "
+                    f"Bash `sed -n '{_FULL_READ_MAX_LINES + 1},$p' {p}` for the rest]")
+            return f"[{p.name} lines 1-{_FULL_READ_MAX_LINES} of {total}]\n{numbered}{tail}"
+        return f"[{p.name} lines 1-{total} of {total}]\n{numbered}"
     if not aci_mode:
         return content[:3000] + ("...(truncated)" if len(content) > 3000 else "")
     lines = content.splitlines()
@@ -530,6 +599,7 @@ class AgenticLoop:
         history_window_turns: int = HISTORY_WINDOW_TURNS,
         tool_names: list[str] | None = None,
         aci_mode: bool = False,
+        plan_mode: bool = False,
     ) -> None:
         self._codec = codec or NativeToolCodec()
         self._max_turns = max_turns
@@ -548,6 +618,10 @@ class AgenticLoop:
         # Minion-tier ACI (T-coding-minion-aci-edit-centric): paged windowed Read + edit-centric
         # tool guidance. Off = the rich whole-file tools (strong tier keeps them unchanged).
         self._aci_mode = aci_mode
+        # Architect/planner mode (T-architect-read-window-unblock): whole-file Read + broad-pytest
+        # deflection, so the read-only planner reads whole files and doesn't burn its budget on the
+        # windowed pager or the full suite. Off = the editor/normal path (windowed reads unchanged).
+        self._plan_mode = plan_mode
         # Bound the re-sent history to the task + this many recent turn-groups (0 = off).
         # Tunable per model/num_ctx without a code change (same pattern as max_turns).
         self._history_window_turns = history_window_turns
@@ -613,10 +687,7 @@ class AgenticLoop:
 
         messages = [{"role": "user", "content": initial_message}]
         full_system = system_prompt + ("\n\n" + SYSTEM_RULES if codec.offers_tools else "")
-        base_defs = ACI_TOOL_DEFINITIONS if self._aci_mode else TOOL_DEFINITIONS
-        tool_defs = base_defs
-        if self._tool_names is not None:
-            tool_defs = [t for t in base_defs if t["function"]["name"] in self._tool_names]
+        tool_defs = _select_tool_defs(self._aci_mode, self._plan_mode, self._tool_names)
         tools = tool_defs if codec.offers_tools else None
 
         running_cost = 0.0
@@ -744,7 +815,8 @@ class AgenticLoop:
             codec.append_assistant(messages, parsed)
             for call in parsed.tool_calls:
                 self._critic_advise(critic, call, turn, ticket_id)
-                result = execute_tool(call["name"], call["args"], cwd, aci_mode=self._aci_mode)
+                result = execute_tool(call["name"], call["args"], cwd,
+                                      aci_mode=self._aci_mode, plan_mode=self._plan_mode)
                 tools_called.append(call["name"])
                 # Soft escalation nudge: after 3 consecutive failed Bash calls, hint the model
                 # to escalate rather than grind (preserved from minion's loop; harmless + useful

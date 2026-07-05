@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-architect-read-window-unblock.20260705.093628055058",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-architect-read-window-unblock"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T15:36:28.055058+00:00",
+  "links": {
+    "decisions": [
+      "D-coding-loop-redesign-aider-survey-2026-07-04"
+    ],
+    "tickets": [
+      "T-architect-read-window-unblock"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-architect-read-window-unblock",
+    "title": "[in_progress] Un-window the read-only architect's Read + salvage prose plans (coding-loop harness fix)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "CodingLoop"
+    ],
+    "description": "**Problem (from the byte-capture corpus, the funnel's payoff):** the architect on devstral@Hex never reaches a plan. Two distinct harness failures: (1) aci_mode's windowed Read returns 100 lines/call, so the read-only planner pages through files forever and burns its whole turn budget (it also runs full `pytest tests/` mid-plan); (2) even when it plans, it emits prose 'Now I'll implement...' rather than escaped-JSON, so parse_terminal_envelope fails -> LOOP_ESCALATE -> editor never runs. Windowed Read was designed for the EDITOR; it cripples the read-only ARCHITECT.\n\n**Proposed shape:**\n- agentic_loop.py: add a `plan_mode` (architect) flag orthogonal to aci_mode. In plan_mode: Read returns the WHOLE file line-numbered (generous cap, free on Hex) via a `_FULL_READ_DEF`; Bash deflects broad `pytest` runs (regex: pytest not followed by .py on the line) with a firm 'read and plan; the editor runs tests' message. Extract tool-def selection into a pure `_select_tool_defs(aci_mode, plan_mode, tool_names)` helper. Order `if full_read:` BEFORE `if not aci_mode:` in _tool_read (architect has both flags true).\n- architect_editor.py: pass plan_mode=True to the ARCHITECT loop only (editor keeps windowed aci). Sharpen ARCHITECT_PROMPT. ALSO (advisor): when the architect finishes non-DONE but produced a SUBSTANTIVE plan (has an absolute file path or numbered steps), accept that text AS the plan and proceed to the editor — remove the fragile 'weak model must emit escaped JSON' dependency; keep the min-substance guard so garbage still escalates.\n\n**Affected files:** unseen_university/devices/inference/agentic_loop.py (HIGH-inertia design center — Akien pre-approved via direct instruction 2026-07-05 'fix the architect read window'), unseen_university/devices/inference/architect_editor.py, tests/inference/test_architect_read_window.py (new)\n\n**Design rules:** device.py/shim design center; log interface crossings (architect->editor handoff already logged); homogeneity — one plan_mode flag parameterizes the architect role, not N booleans.\n\n**Scope boundary:** the architect read/bash/plan-salvage path ONLY. Editor windowed reads unchanged (plan_mode defaults False). No routing/tier changes (qwen A/B is a separate, later, funnel-gated follow-up).\n\n**Test plan:** hermetic tests/inference/test_architect_read_window.py — (proof node) full_read Read returns all 250 lines of a 250-line file where windowed returns 100; plan_mode Bash deflects `pytest tests/ -q`; _select_tool_defs(plan_mode=True) offers the full-read Read def; ArchitectEditorFlow hands a substantive prose/escalate finish to the editor. Then re-run the funnel and cross-check plan_handed_off + architect final corpus text.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-coding-loop-redesign-aider-survey-2026-07-04",
+    "gate": null,
+    "priority": 0.7,
+    "status": "in_progress",
+    "worker": "cc.0",
+    "created_at": "2026-07-05T15:36:19.659600+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T15:36:19.705809+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6af5ced7-8a06-4ade-b152-01b82f79e6f1"
+  }
+}
