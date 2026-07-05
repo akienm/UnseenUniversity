@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.prereg-grades-predictions-by-the-uncoupl.T-prospective-preregistration-spine.20260705.174109935688",
+  "emitter": "cc.0",
+  "namespace": [
+    "prereg-grades-predictions-by-the-uncoupl",
+    "T-prospective-preregistration-spine"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T17:41:09.935688",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-prospective-preregistration-spine"
+    ],
+    "commits": [
+      "4888ddc6ae930f7d5bd4bb864e633ec985e01720"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "prereg grades predictions by the uncoupled reality verdict, not proof-on-close",
+    "intention": "A pre-registered prediction is graded grounded ONLY when the reality verdict reaches the firewall floor — a bogus proof-on-close PASS cannot ground it",
+    "test": "tests/inference/test_prereg.py::test_grade_ignores_bogus_proof_on_close_uses_reality_verdict",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_prereg.py::test_grade_ignores_bogus_proof_on_close_uses_reality_verdict",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        root = tmp_path / \"prereg\"\n        prereg.record_prediction(\"T-x\", warm=None, files=[\"a.py\"], plan=\"do a\", root=root)\n    \n        class StubSource:\n            # reality: a green proof exists but nothing bore consequence → TEST_GREEN (below firewall).\n            def evidence_for(self, tid):\n                return VerdictEvidence(has_green_proof=True)\n    \n        grade = prereg.PredictionGrader(evidence_source=StubSource(), root=root).grade(\"T-x\")\n    \n        assert grade.verdict_strength == \"TEST_GREEN\"\n>       assert grade.grounded is False  # bogus PASS ignored; firewall floor (CONSEQUENCE_BEARING) not met\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       AssertionError: assert True is False\nE        +  where True = PredictionGrade(ticket_id='T-x', prediction_found=True, predicted_warm=None, predicted_files=['a.py'], verdict_strength='TEST_GREEN', grounded=True).grounded\n\ntests/inference/test_prereg.py:48: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_prereg.py::test_grade_ignores_bogus_proof_on_close_uses_reality_verdict\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "4888ddc6ae930f7d5bd4bb864e633ec985e01720",
+    "impl_paths": [
+      "unseen_university/devices/inference/prereg.py"
+    ],
+    "ticket": "T-prospective-preregistration-spine",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
