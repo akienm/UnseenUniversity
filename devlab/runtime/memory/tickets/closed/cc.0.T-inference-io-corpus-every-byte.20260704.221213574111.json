@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-inference-io-corpus-every-byte.20260704.221213574111",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-io-corpus-every-byte"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T04:12:13.574111+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-io-corpus-every-byte"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-io-corpus-every-byte",
+    "title": "Inference I/O corpus — capture every byte upstream↔downstream for training",
+    "size": "M",
+    "tags": [
+      "CompiledInference",
+      "Observability",
+      "Inference"
+    ],
+    "description": "**Hard rule (Akien, 2026-07-04):** every single byte crossing the inference boundary — the complete request handed downstream to the model (system + messages + tools + params) and the complete raw response handed back — is persisted, for training. Metadata-only cost_record was never enough; the actual bytes were lost, which is a data-gathering gap that has been costing us (surfaced by the 2026-07-04 coding funnel: we could not see the architect's actual words).\n\n**Built:** unseen_university/devices/inference/io_corpus.py (schema inference.io.v1, append-only dated JSONL under UU_INFERENCE_CORPUS override else uu_home()/inference_corpus) + InferenceDevice._capture_io wired into dispatch on ALL three exit paths (success with raw+resp; no-source chokepoint and raised-call capture the request with outcome=error), mirroring _emit_cost_record so no call escapes capture. Fail-soft: a corpus write can never break a dispatch.\n\n**Affected files:** unseen_university/devices/inference/io_corpus.py (new), unseen_university/devices/inference/device.py (_capture_io + 3 call sites), tests/inference/test_io_corpus.py (new).\n**Design rules:** homogeneity (ONE capture point every call crosses), log-every-interface-crossing, fail-soft, no-sqlite (flat JSONL), proof-on-close.\n**Completion criteria:** every dispatch writes a corpus record carrying both the upstream request bytes and the downstream raw response bytes; metadata-only is insufficient.\n**Scope boundary:** IN — full request+raw-response capture at InferenceDevice.dispatch, all exit paths, fail-soft, dated JSONL corpus, tests. OUT — literal per-source wire-envelope bytes (the structured request is the faithful, complete model input); corpus rotation/retention/compaction; the training pipeline that consumes the corpus.\n**Test plan:** tests/inference/test_io_corpus.py — a real dispatch through a mock source writes a corpus record containing the distinctive request-message token AND the distinctive raw-response token (proof node); a no-source dispatch still captures the request with outcome=error; io_corpus.capture round-trips a schema-stamped record. Proof: red where dispatch captures nothing (empty corpus → AssertionError), green where the full bytes land.\n**intention:** I intend that every byte of inference I/O is durably captured so the compiled-inference/DS.0-leveling effort has a complete training corpus.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.5,
+    "status": "closed",
+    "created_at": "2026-07-05T04:12:07.256147+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "PROVEN. Every byte upstream↔downstream captured at InferenceDevice.dispatch → io_corpus.py (inference.io.v1 JSONL). Proof commit=e9b1e1e6 red=AssertionError green=passed. Wired on all 3 exit paths, fail-soft. Corpus: UU_INFERENCE_CORPUS override else uu_home()/inference_corpus/<date>.io.jsonl.",
+    "dispatched_at": null,
+    "completed_at": "2026-07-05T04:12:13.838684+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T04:12:07.301530+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b1d46a89-00f9-4fcd-8cad-bd7fa92fbaa2",
+    "proven": true,
+    "proof_id": "cc.0.the-inference-boundary-persists-every-by.T-inference-io-corpus-every-byte.20260704.221127174437",
+    "proof_commit": "e9b1e1e6762bd4a26d86b2dbdc6625f24acfaa9d",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}
