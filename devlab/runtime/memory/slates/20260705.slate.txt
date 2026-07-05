@@ -22,3 +22,5 @@ Done: Done: Convened a three-way panel (CC + advisor/Opus + Plan/Fable) on Akien
 Next: Next: sprint T-corpus-verdict-attachment (0.85, ungated) FRESH — the ground-truth join (stamp verdict_strength on corpus entries); it is a design-shaped build (what counts as consequence_bearing?) that deserves fresh context, not a compacted tail.
 
 ## In-flight: NONE in-flight — clean pushpoint (HEAD 40c485b5, tree clean, push-guard down, origin reachable). Grounding-spine re-scope filed, committed, and pushed; DS stuck-ladder captured to notes.log. Next is a fresh build: T-corpus-verdict-attachment, head of queue at 0.85, ungated.
+
+## In-flight: T-corpus-verdict-attachment CLOSED PROVEN (red→green: liveness ≠ consequence). Built corpus_verdict.py — reality-graded verdict_strength join, GitEvidenceSource witnesses test_green + consequence_bearing (later-commit-on-same-impl-paths = temporal firewall); executed_live/akien_noticed left honestly dark w/ named levers per advisor (git-ancestry would be fabrication, not a runtime witness). Pushed fcf77bba. Ungated 2 spine dependents (replay-eval-slice-seal 0.55, prospective-preregistration 0.5). NONE in-flight.
