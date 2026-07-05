@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-corpus-verdict-attachment.20260705.155600300469",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-corpus-verdict-attachment"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T21:56:00.300469+00:00",
+  "links": {
+    "decisions": [
+      "D-proof-program-grounding-spine-2026-07-05"
+    ],
+    "tickets": [
+      "T-corpus-verdict-attachment"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-corpus-verdict-attachment",
+    "title": "[sprint] Attach reality-graded verdict_strength to corpus entries (the ground-truth join)",
+    "size": "M",
+    "tags": [
+      "CompiledInference",
+      "Inference",
+      "Grounding"
+    ],
+    "description": "**Problem:** io_corpus records carry the join key (ticket_id) but only a transport outcome (ok/timeout/error) — never a correctness verdict. So replay can prove fidelity (reproduce what the LLM said) but not correctness (produce a working output). Any starve-curve scored today would be self-consistent, not ground-truth-closed. This is the real first ticket of the grounding-spine re-scope; it replaces T-self-model-existence-checker as the program's start.\n\n**Proposed shape:** A SEPARATE reader/enrichment module (NOT an edit to the hot dispatch path) that joins each corpus entry to the ticket store by ticket_id and stamps a verdict_strength on the gradient: llm_said_it < test_green < executed_live < consequence_bearing < akien_noticed. Reality-tested filter defines the two top code rungs precisely (advisor 2026-07-05): executed_live = code demonstrably ran since close (imported by the rack / present in logs) — this certifies LIVENESS ONLY (didn't crash), NOT correctness; consequence_bearing = ran in a path where wrongness WOULD HAVE SURFACED (a downstream error, a corrective commit touching the same lines, or noticed friction). Emit an enriched, greppable verdict-indexed view that replay and pre-registration consume.\n\n**CP1 residue (keep explicit in the module docstring):** executed_live grounds 'didn't break in use', NOT 'was correct'; full correctness terminates only at test_green-with-teeth or akien_noticed.\n\n**Affected files:** NEW unseen_university/devices/inference/corpus_verdict.py (reader/enrichment; reads io_corpus JSONL + ticket store); io_corpus.py docstring note pointing to the enrichment reader (docs-live-in-code). Does NOT edit device.py dispatch.\n\n**Design rules:** flat-file only (no SQLite); OOP for the stateful reader; docs-live-in-code on io_corpus.py.\n\n**Scope boundary:** verdict_strength attachment + reality-tested filter definition + enriched view only. Does NOT run replay, does NOT modify dispatch capture.\n\n**Test plan:** red→green. Fixture corpus JSONL + fixture ticket store with known verdicts. Assert each entry gets the correct verdict_strength. KEY proof: a wrong-but-non-crashing (liveness-only) entry must score executed_live and NOT consequence_bearing — goes RED on a naive presence-in-logs filter, GREEN on the consequence-bearing filter. Assert llm_said_it entries are excluded from the reality-tested view.\n\n**Observable via:** log.info('corpus_verdict: joined N entries, stamped by strength {llm_said_it:a, test_green:b, executed_live:c, consequence_bearing:d, akien_noticed:e}, excluded M unlinkable') at the end of the enrichment pass — points at the join if the reality-tested view comes back empty.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:** corpus_verdict.py emits a verdict-indexed view where each entry has a verdict_strength on the gradient llm_said_it<test_green<executed_live<consequence_bearing<akien_noticed; the wrong-but-non-crashing fixture scores executed_live (not consequence_bearing) in a red->green test; llm_said_it entries are excluded from the reality-tested view.",
+    "decision_id": "D-proof-program-grounding-spine-2026-07-05",
+    "gate": null,
+    "priority": 0.85,
+    "status": "sprint",
+    "worker": "cc.0",
+    "created_at": "2026-07-05T21:55:41.453616+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every corpus entry carries a verdict a self-built system could not author, so the starve-curve is scored against reality not self-agreement.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T21:55:41.501088+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "95f6fc15-d3b3-4d4f-aec2-723b86e36948"
+  }
+}

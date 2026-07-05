@@ -13,3 +13,4 @@ Done: Shipped+proved architect read-window fix (funnel-confirmed: architect plan
 Next: Restart, then build the proof-program starting with T-self-model-existence-checker (cheapest, ungated, serves the telos).
 
 ## In-flight: Day-close complete for 07-04 + weekly trio caught up. Clean pushpoint; ready for restart + proof-program build.
+- D-proof-program-grounding-spine-2026-07-05: ground truth = temporal firewall not corpus (3-way panel: CC+advisor+Fable) — NEW T-corpus-verdict-attachment(0.85, real first ticket), T-replay-eval-slice-seal, T-prospective-preregistration-spine; AMEND T-nexus-replay-experiment(snapshot-bug fix), T-corpus-visibility-gaps(aperture precondition, 0.8); T-self-model-existence-checker demoted 0.65

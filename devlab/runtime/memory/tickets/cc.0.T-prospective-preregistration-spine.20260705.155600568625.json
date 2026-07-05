@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-prospective-preregistration-spine.20260705.155600568625",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-prospective-preregistration-spine"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T21:56:00.568625+00:00",
+  "links": {
+    "decisions": [
+      "D-proof-program-grounding-spine-2026-07-05"
+    ],
+    "tickets": [
+      "T-prospective-preregistration-spine"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-prospective-preregistration-spine",
+    "title": "[sprint] Prospective pre-registration on live sprints — the durable ground-truth spine",
+    "size": "M",
+    "tags": [
+      "CompiledInference",
+      "Inference",
+      "Grounding"
+    ],
+    "description": "**Problem:** Retrospective replay grounds the past; the thesis is about the future. The durable steady-state ground-truth spine is pre-registration on live tickets — but only if the GRADER is uncoupled too, else it silently falls back to proof-on-close and re-imports the coupling the whole program removes (advisor 2026-07-05).\n\n**Proposed shape:** Before each live sprint runs, the compiled path writes its prediction — warm/cold, which files, what plan — to an append-only pre-registration file, timestamped, BEFORE the ticket is worked. After the ticket ships, grade the prediction using the SAME verdict_strength machinery from T-corpus-verdict-attachment (uncoupled grader), NOT proof-on-close. Each future ticket becomes a fresh, unspent, un-tunable held-out test at zero marginal cost.\n\n**Affected files:** NEW unseen_university/devices/inference/prereg.py (append-only prediction writer + grader that calls corpus_verdict); a hook point in the sprint path (sprint-ticket) that fires the pre-write before work begins — fail-soft, must never break a sprint. The sprint-path hook is the load-bearing touch — name its docstring.\n\n**Design rules:** flat-file append-only; grader REUSES corpus_verdict (no duplicate verdict logic); fail-soft hook; docs-live-in-code on the sprint hook.\n\n**Scope boundary:** pre-write + reality-graded scoring of predictions only. Does NOT change how sprints select/route work; does NOT block a sprint on prediction outcome.\n\n**Test plan:** red→green. Simulate a sprint: assert the prediction is written to the append-only file BEFORE the work-simulating step. KEY proof: mock proof-on-close to return a bogus PASS and assert the grade IGNORES it and uses the reality verdict from verdict_strength — RED on a naive grader that trusts proof-on-close, GREEN on the uncoupled grader.\n\n**Logging:** the fail-soft sprint hook must log.warning('prereg: pre-write failed (non-fatal): %s', exc) on any exception so a swallowed pre-write is visible. **Observable via:** log.info('prereg: prediction written ticket=%s warm=%s files=%d') before work begins; grep the prereg file to confirm one record per live sprint. **Rollback:** remove the single hook call in the sprint path — prereg is additive and fail-soft, so removal restores prior sprint behavior exactly.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:** prereg.py writes one prediction record (warm/cold, files, plan) to the append-only file BEFORE work begins on a sprint, and grades it via corpus_verdict.verdict_strength; a bogus proof-on-close PASS is ignored by the grader in a red->green test; the sprint hook is fail-soft.",
+    "decision_id": "D-proof-program-grounding-spine-2026-07-05",
+    "gate": "T-corpus-verdict-attachment",
+    "priority": 0.5,
+    "status": "sprint",
+    "worker": "cc.0",
+    "created_at": "2026-07-05T21:55:52.360695+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every future live ticket becomes a fresh held-out test the system cannot tune, graded by an uncoupled verdict rather than by proof-on-close.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T21:55:52.360736+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8a3e6d4a-023b-4d3a-9bf4-fbd6e4d9fc6d"
+  }
+}

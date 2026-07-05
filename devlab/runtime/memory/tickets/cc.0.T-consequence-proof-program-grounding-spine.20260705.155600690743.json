@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-proof-program-grounding-spine.20260705.155600690743",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-proof-program-grounding-spine"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T21:56:00.690743+00:00",
+  "links": {
+    "decisions": [
+      "D-proof-program-grounding-spine-2026-07-05"
+    ],
+    "tickets": [
+      "T-consequence-proof-program-grounding-spine"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-proof-program-grounding-spine",
+    "title": "[sprint] Consequence check: proof-program ground-truth spine (temporal firewall)",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** The proof-program's ground-truth anchor moves from the corpus to the temporal firewall it makes possible; verdicts get strength-graded and reality-filtered, replay's snapshot-contamination bug is fixed, and prospective pre-registration becomes the durable spine.\n\n**Predicted unintended effects:** (1) The reality-tested filter may exclude MOST closed tickets — if little closed code has demonstrably executed, the answer key shrinks to near-empty; that shrinkage is itself a damning measurement of proof-on-close, but it could also stall the replay experiment for lack of gradable tickets. (2) verdict_strength could be misapplied — an entry labeled consequence_bearing when it is only executed_live silently re-imports the self-consistency trap. (3) The per-ticket parent-commit checkout in replay could be slow/expensive across many tickets or hit dirty-tree / missing-parent / merge-commit edge cases. (4) The pre-registration hook adds a failure surface to every live sprint — must be fail-soft or it becomes a sprint-blocker.\n\n**Signals to watch:** PRIMARY metric — count of scored replays where verdict_strength >= consequence_bearing (zero today; must become >0 for the thesis to touch ground even once). Exclusion-count log from the replay harness (tickets dropped as not reality-tested). Read-log growth on the sealed eval slice (asymmetry spend rate). Sprint-path latency / error rate after the prereg hook lands.\n\n**Gate condition:** Check by 2026-07-19 or when T-nexus-replay-experiment produces its first scored run.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:** by 2026-07-19 (or first scored replay run), the primary metric (count of scored replays with verdict_strength>=consequence_bearing) and the exclusion-count / eval-slice read-log / sprint-latency signals are annotated as occurred / clear / partial, and the ticket closed.",
+    "decision_id": "D-proof-program-grounding-spine-2026-07-05",
+    "gate": "2026-07-19",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-07-05T21:55:56.195009+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the predicted unintended effects of the grounding-spine re-scope are observed against real signals before the decision is treated as settled.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T21:55:56.195091+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "60dc17a9-0409-4275-8b95-7dd9f7811c42"
+  }
+}

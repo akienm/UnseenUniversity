@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.D-proof-program-grounding-spine-2026-07-05.20260705.155744302232",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-proof-program-grounding-spine-2026-07-05"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-05T15:57:44.302232",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-proof-program-grounding-spine-2026-07-05",
+    "title": "Ground-truth spine for the compiled-inference proof-program: the temporal firewall, not the corpus",
+    "status": "open",
+    "date": "2026-07-05",
+    "amends": "D-compiled-inference-proof-program-2026-07-05",
+    "spawned_tickets": [
+      "T-corpus-verdict-attachment",
+      "T-replay-eval-slice-seal",
+      "T-prospective-preregistration-spine",
+      "T-consequence-proof-program-grounding-spine"
+    ],
+    "amended_tickets": [
+      "T-nexus-replay-experiment",
+      "T-corpus-visibility-gaps",
+      "T-self-model-existence-checker"
+    ],
+    "text": "# D-proof-program-grounding-spine-2026-07-05\n**title:** Ground-truth spine for the compiled-inference proof-program: the temporal firewall, not the corpus\n**date:** 2026-07-05\n**status:** open\n**amends:** D-compiled-inference-proof-program-2026-07-05\n**spawned_tickets:** T-corpus-verdict-attachment, T-replay-eval-slice-seal, T-prospective-preregistration-spine, T-consequence-proof-program-grounding-spine\n**amended_tickets:** T-nexus-replay-experiment, T-corpus-visibility-gaps, T-self-model-existence-checker\n\n## Decision narrative\nAkien's thorn: the proof-program's measurement loops are self-consistent but not ground-truth-closed, and he wished for a way to ground the truth. He convened three independent frames — CC, the advisor (Opus), and Plan/Fable — on whether replay-against-the-frozen-corpus should become the spine of the program. They converged on one crux: **a measurement is grounded iff its verdict-generator is causally uncoupled from the answer-generator AND the verdict is fixed before the answer exists.** Clause 1 is not fully achievable inside a self-built system (every instrument was built by the process whose validity is in question); clause 2 — temporal asymmetry — is cheap and real (you cannot retroactively tune a verdict written to disk before the hypothesis existed). Time is the one external resource a self-built system genuinely owns.\n\nTherefore the spine is NOT the corpus but the **temporal firewall** the corpus makes possible; the corpus is the honest ledger, time does the grounding. A code check confirmed the advisor's prediction: io_corpus records carry the join key (ticket_id) but only a transport outcome (ok/timeout/error), never a correctness verdict — so replay-as-fidelity works today, replay-as-correctness does not until verdicts are attached (a join, not a re-instrumentation).\n\nChanges: (NEW) T-corpus-verdict-attachment joins corpus entries to ticket-store verdicts by ticket_id and stamps verdict_strength on the gradient llm_said_it<test_green<executed_live<consequence_bearing<akien_noticed — the real first ticket, replacing T-self-model-existence-checker as the start. The advisor split the top code rungs: executed_live certifies liveness only (didn't crash), consequence_bearing certifies it ran where wrongness would have surfaced. (NEW) T-replay-eval-slice-seal seals a held-out slice (manifest+read-log+use-budget) so asymmetry isn't spent by debugging; the corpus is renewable since capture stays ahead of hypotheses. (NEW) T-prospective-preregistration-spine writes the compiled path's prediction to an append-only file before each live sprint and grades it with the SAME uncoupled verdict machinery (not proof-on-close) — the durable steady-state spine; replay retires to a bootstrap. Gated on T-corpus-verdict-attachment so the grader stays uncoupled. (AMEND) T-nexus-replay-experiment: fix the snapshot-contamination bug (per-ticket parent-commit checkout + strict prefix-ordered nexus, else arm-3 bending is memorization), reframe as a Phase-1 existence proof scored only against reality-tested diffs. (AMEND) T-corpus-visibility-gaps: elevated to an aperture precondition — a warm hit never crosses the inference boundary, so warm-hit capture must land and be verified end-to-end before any replay counts as data. T-self-model-existence-checker demoted (0.7->0.65), slot kept.\n\n## Hypothesis\nAfter these ship, a replay/pre-registration result is counted only when the verdict beside it is one the answer-generator could not tune — a diff whose code has demonstrably executed in a consequence-bearing path, or a prediction written to disk before the ticket was worked. Fidelity-only (llm-said-it) results are visibly excluded, not silently counted; and the primary metric — count of scored replays with verdict_strength>=consequence_bearing — moves off zero for the first time.\n\n## Measurement Signal\n(a) Each corpus entry carries a verdict_strength field on llm_said_it<test_green<executed_live<consequence_bearing<akien_noticed, joined from the ticket store by ticket_id; (b) the replay harness refuses to score any ticket whose diff isn't reality-tested and logs the exclusion count; (c) a prospective pre-registration file accumulates one pre-committed prediction per live sprint, graded by the uncoupled verdict machinery. Outcome check at the 14-day gate (2026-07-19) or first scored replay run, whichever first.\n\n## Intention\nI intend that every grounding chain in the build process terminates at a verdict the system did not author — running code, or Akien noticing — so the starve-curve is measured against reality, not against the system's own agreement with itself. (serves I-compiled-inference-residue + I-self-improving-process; sharpens D-compiled-inference-proof-program-2026-07-05; road toward the telos of self-aware graph trees.)\n\n## CP1 residue (kept explicit, per CP1)\nThe temporal firewall grounds 'the compiled path handles recurring work'; it CANNOT ground 'the recurring fraction is large enough to matter' — that number comes from the future distribution of questions, which no frozen record certifies. The starve-curve's slope is measurable; its asymptote is a bet. Second residue (advisor): executed_live grounds 'didn't break in use', NOT 'was correct'; full correctness terminates only at test_green-with-teeth or akien_noticed."
+  }
+}
