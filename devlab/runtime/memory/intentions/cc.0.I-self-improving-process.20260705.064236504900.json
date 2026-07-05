@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.I-self-improving-process.20260705.064236504900",
+  "emitter": "cc.0",
+  "namespace": [
+    "I-self-improving-process"
+  ],
+  "category": "intentions",
+  "kind": "intention",
+  "emitted_at": "2026-07-05T06:42:36.504900",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "intention_id": "I-self-improving-process",
+    "title": "The process improves itself — self-improvement is the founding property, not a feature",
+    "statement": "I intend that the build process improves itself: the system observes its own operation, learns from what it sees, and upgrades its own workflow, tools, gates, and prompts — finding and removing its own blockers and optimizations — with steadily less need for a human or an expensive external model in that loop. Self-improvement is not one feature among many; it is the founding property the whole project inherits (the reason the work began with Igor — the race of Igors are all self-improving). It is the engine that drives compiled-inference [[I-compiled-inference-residue]]: the system compiling out its own answerable steps is self-improvement in action. The endpoint is a process that gets better at getting better, so humans and the scarce resolver are needed only for the genuinely novel.",
+    "status": "active",
+    "date": "2026-07-04",
+    "origin": "Akien restated a long-held, oft-discussed intention not yet recorded canonically (2026-07-04/05). Founding rationale traces to why the work began with Igor: the Igor lineage is self-improving by design.",
+    "related": {
+      "intentions": [
+        "I-compiled-inference-residue"
+      ],
+      "memories": [
+        "project_self_improving_goal",
+        "project_intention_compiler_reflexive",
+        "project_compiled_inference_vision",
+        "project_factory_vision"
+      ],
+      "note": "The Fable-access question is downstream of this: the highest-leverage use of a scarce/expiring external model is to help specify the self-improvement loop that replaces it (bootstrap its own successor)."
+    },
+    "note": "Self-improvement was previously framed as a retired 'goal' (project_self_improving_goal, 2026-05-11). Under Intention-Based Development it is promoted to a first-class INTENTION here. Prior loop-closing tickets (T-learning-loop-generalized, T-learning-pipeline-schedule, T-igor-failure-accumulator, T-escalation-compile-down, T-goal-factory-factory-edit) are all in service of this intention.",
+    "text": "# I-self-improving-process\n\n**The founding property.** UnseenUniversity does not merely get built — it is meant to get better at building itself. Observe -> learn -> improve, applied reflexively to the dev process's own workflow, tools, and gates. This is why the work started with Igor (a self-improving graph-tree reasoner): self-improvement was the seed property, and the substrate (UU) inherits it.\n\n**Relationship to compiled inference.** [[I-compiled-inference-residue]] is the WHAT (compile out every answerable step, hand the irreducible back to the human clean); self-improvement is the HOW — the system observing itself and moving its own work up-front into structure is the act of compiling. The gates (CP1-CP6, proof-on-close) are scaffolding a self-improving process eventually removes as its proof corpus earns their retirement.\n\n**How to apply.** Prioritize and frame work that closes the loop — the system observing its own operation and upgrading its own behavior. When choosing where to spend a scarce, expiring capability (e.g. an external planner model before it goes away), prefer having it strengthen the self-improvement loop itself over one-off findings: the loop compounds, findings decay."
+  }
+}
