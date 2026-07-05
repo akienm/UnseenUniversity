@@ -18,7 +18,7 @@
   },
   "body": {
     "id": "T-uu-build-packet-compiler",
-    "title": "[sprint] Build-packet pre-inference compiler — measured, gated, fingerprinted (port Delta's 51% result to UU)",
+    "title": "Build-packet pre-inference compiler — measured, gated, fingerprinted (port Delta's 51% result to UU)",
     "size": "L",
     "tags": [
       "CompiledInference",
@@ -30,13 +30,13 @@
     "decision_id": null,
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-25T23:34:11.691560+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "PROVEN. build_packet.py (build.packet.v1): intent(+confidence), hard_constraints, success_definition, scored context_shortlist (absorbs the orientation signature map, bounded top-8), sufficiency_gate (CP1 names missing_fields, surface-not-block), proof_plan.token_measurement (bodies-vs-signatures over the SAME set), determinism.fingerprint_sha256 (no wall-clock/random, char/4). Proof commit=4e7308cd red=AssertionError green=passed. Real-ticket CLI 73564->997 tokens = 98.64% reduction, status=improved. Wired into sprint-ticket step 2.3. Follow-on filed: T-coding-domain-absorb-build-packet-orientation.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-05T01:50:12.634917+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-25T23:34:11.745456+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "dcf47dac-bc57-4532-846e-e562a69aab86"
+    "inferred_intention_id": "dcf47dac-bc57-4532-846e-e562a69aab86",
+    "proven": true,
+    "proof_id": "cc.0.build-packet-v1-compiler-measures-a-real.T-uu-build-packet-compiler.20260704.194941835704",
+    "proof_commit": "4e7308cdbd7fff86dc7434453244b3a69e4be1ee",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
