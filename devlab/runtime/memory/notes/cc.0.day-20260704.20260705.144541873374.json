@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.day-20260704.20260705.144541873374",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260704"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-05T14:45:41.873374",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Day 2026-07-04",
+    "text": "## Done\n- num_ctx fix SHIPPED+PROVEN (f638471e); confirm-by necessary-but-not-sufficient\n- context-discipline (7e9706f9) + honest-halt (196ba7d9) CLOSED PROVEN\n- D-coding-loop-redesign 3 levers proven + live confirm-by observed\n- Fable consult: flat-rate timeout PROVEN, editor VIABLE, build-packet.v1 PROVEN\n- Discussion #23. Friday 07-03 weekly extras caught up 07-05."
+  }
+}
