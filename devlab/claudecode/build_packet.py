@@ -53,6 +53,10 @@ _CHARS_PER_TOKEN = 4
 # not halt the sprint (v1 surfaces, does not block) — it is named in sufficiency_gate.
 _REQUIRED_FIELDS = ("intent", "hard_constraints", "success_definition", "context_shortlist")
 
+# A shortlist is a SHORTLIST — the top few most-relevant files, not every keyword hit. Matches
+# the orientation signature-map budget (_MAX_MAP_FILES) so the two artifacts stay comparable.
+_MAX_SHORTLIST_FILES = 8
+
 _SEVERITY_RANK = {"hard_block": 0, "error": 1, "warn": 2, "info": 3}
 
 
@@ -166,7 +170,7 @@ def _derive_shortlist(ticket: dict) -> list[dict]:
                 for m in syms
             ],
         })
-    return _normalize_shortlist(shortlist)
+    return _normalize_shortlist(shortlist)[:_MAX_SHORTLIST_FILES]
 
 
 def _normalize_shortlist(shortlist: list[dict]) -> list[dict]:
@@ -216,9 +220,16 @@ def _render_helper_first(shortlist: list[dict], file_bodies: dict[str, str]) -> 
 
 
 def _token_measurement(shortlist: list[dict], file_bodies: dict[str, str]) -> dict:
-    """Baseline (full bodies) vs helper-first (orientation surface). Reduction is the lever."""
-    baseline = _estimate_tokens(_baseline_text(shortlist, file_bodies))
-    helper_first = _estimate_tokens(_render_helper_first(shortlist, file_bodies))
+    """Baseline (full bodies) vs helper-first (signatures) over the SAME files. Reduction is the lever.
+
+    Apples-to-apples: measure only the shortlisted files whose bodies are actually readable, so
+    baseline and helper-first cover an identical set. (Comparing bodies-of-set-A against
+    signatures-of-set-B is meaningless — it was the first-cut bug the CLI surfaced.) With no
+    readable bodies the measurement is 0/0 → no-improvement, honestly reported rather than faked.
+    """
+    measured = [e for e in shortlist if e["path"] in file_bodies]
+    baseline = _estimate_tokens(_baseline_text(measured, file_bodies))
+    helper_first = _estimate_tokens(_render_helper_first(measured, file_bodies))
     reduction = baseline - helper_first
     pct = round(100.0 * reduction / baseline, 2) if baseline else 0.0
     return {
@@ -272,7 +283,9 @@ def build_packet(
     """
     affected_files = _extract_affected_files(ticket.get("description", ""))
     shortlist = _normalize_shortlist(context_shortlist) if context_shortlist is not None else _derive_shortlist(ticket)
-    bodies = file_bodies if file_bodies is not None else _read_file_bodies(affected_files)
+    # Baseline reads the SHORTLISTED files (the measured set), not the ticket's affected-files
+    # list — the measurement compares bodies vs signatures of the same orientation set.
+    bodies = file_bodies if file_bodies is not None else _read_file_bodies([e["path"] for e in shortlist])
 
     intent = _intent(ticket)
     hard_constraints = _hard_constraints(ticket)

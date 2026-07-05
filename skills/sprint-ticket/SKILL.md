@@ -53,17 +53,26 @@ to Akien. Then add the ticket ID to today's slate under `## Planned` or `## Ad h
 
 ### 2.3. Anticipatory pre-brief
 
-Run both brief scripts immediately after confirming in_progress — before reading any files:
+Run the brief scripts immediately after confirming in_progress — before reading any files:
 ```bash
 python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/sprint_preflight_brief.py <id>
 python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/pre_inference_assemble.py <id>
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/build_packet.py <id>
 ```
 
 `sprint_preflight_brief.py` surfaces: reset history, open/closed sibling tickets, file-proximity matches.
 
 `pre_inference_assemble.py` surfaces: matched design patterns (by keyword overlap against `docs/design_patterns_inventory.md`), file symbol maps for affected files, domain terms. Read the symbol map instead of opening each file manually — it replaces exploratory file-discovery tool calls.
 
-Combined token budget: ~800 tokens max. Read both before forming the plan.
+`build_packet.py` compiles the deterministic **build.packet.v1** for this ticket: intent
+(+confidence), hard_constraints, success_definition, the scored context_shortlist (the ONE
+orientation artifact — it absorbs the signature map), a **sufficiency_gate**, the
+**token_measurement** (baseline vs helper-first), and a determinism fingerprint. Read the
+summary; add `--json` when you want the full packet. **Surface, don't block** (v1): if the
+gate prints `FAIL — missing: <fields>`, note the missing fields in the plan and proceed —
+a failing gate is a CP1 "I don't know" signal about ticket specification, not a stop.
+
+Combined token budget: ~1000 tokens max. Read all three before forming the plan.
 
 ### 2.4. BuilderReport freshness check (fast path, no LLM)
 
