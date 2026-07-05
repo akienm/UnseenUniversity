@@ -278,6 +278,61 @@ class InferenceDevice(BaseDevice):
             ),
         )
 
+    def _capture_io(
+        self, request, *, raw=None, resp=None, provider="", model="",
+        source_kind="", cost=0.0, elapsed_ms=None, outcome="ok",
+    ) -> None:
+        """Persist EVERY byte crossing the inference boundary to the training corpus.
+
+        The complete request handed downstream (system + messages + tools + params) and the
+        complete raw response handed back — one record per model call. Fired on every dispatch
+        exit path (success, no-source, raised call) exactly like _emit_cost_record, so no call
+        escapes capture. Fail-soft: a corpus failure must never break the inference call.
+        """
+        try:
+            from unseen_university.devices.inference import io_corpus
+
+            response_block: dict = {"raw": raw}
+            if resp is not None:
+                response_block.update({
+                    "text": getattr(resp, "text", ""),
+                    "tool_calls": getattr(resp, "tool_calls", None),
+                    "finish_reason": getattr(resp, "finish_reason", ""),
+                    "input_tokens": getattr(resp, "input_tokens", 0),
+                    "output_tokens": getattr(resp, "output_tokens", 0),
+                })
+            io_corpus.capture({
+                "outcome": outcome,
+                "provider": provider,
+                "model": model or getattr(request, "model", ""),
+                "source_kind": source_kind,
+                "elapsed_ms": elapsed_ms,
+                "dollars": cost,
+                "ticket_id": getattr(request, "ticket_id", ""),
+                "agent_id": getattr(request, "agent_id", ""),
+                "instance_id": getattr(request, "instance_id", ""),
+                "coa_id": getattr(request, "coa_id", ""),
+                "session_id": getattr(request, "session_id", ""),
+                "domain": getattr(request, "domain", ""),
+                "task_class": getattr(request, "task_class", ""),
+                "escalation_hop": getattr(request, "escalation_hop", 0),
+                "foreground": getattr(request, "foreground", False),
+                "request": {
+                    "system": getattr(request, "system", ""),
+                    "messages": getattr(request, "messages", None),
+                    "tools": getattr(request, "tools", None),
+                    "model": getattr(request, "model", ""),
+                    "max_tokens": getattr(request, "max_tokens", None),
+                    "temperature": getattr(request, "temperature", None),
+                    "timeout": getattr(request, "timeout", None),
+                    "prior_attempt": getattr(request, "prior_attempt", ""),
+                    "extra": getattr(request, "extra", None),
+                },
+                "response": response_block,
+            })
+        except Exception as exc:  # noqa: BLE001 — capture must never break dispatch
+            log.warning("dispatch: inference I/O capture failed (non-fatal): %s", exc)
+
     def dispatch(self, request: InferenceRequest) -> InferenceResponse:
         """Route and dispatch an inference request via the mini-rack rules engine.
 
@@ -525,6 +580,10 @@ class InferenceDevice(BaseDevice):
             self._emit_cost_record(
                 request, provider_name or "none", request.model, 0, 0, 0.0, "error"
             )
+            self._capture_io(
+                request, provider=provider_name or "none", model=request.model,
+                source_kind="none", outcome="error",
+            )
             return InferenceResponse(
                 text=f"[InferenceDevice: no live inference source for task_class={tc}]",
                 finish_reason="error",
@@ -554,6 +613,10 @@ class InferenceDevice(BaseDevice):
             # cost, which is 0 since no usage was returned) before propagating.
             self._emit_cost_record(
                 request, provider_name, request.model, 0, 0, 0.0, "error"
+            )
+            self._capture_io(
+                request, provider=provider_name, model=request.model,
+                source_kind="", outcome="error",
             )
             raise
         elapsed_ms = round((time.time() - t0) * 1000)
@@ -601,6 +664,11 @@ class InferenceDevice(BaseDevice):
             resp.output_tokens,
             cost_usd if cost_usd is not None else 0.0,
             "ok",
+        )
+        self._capture_io(
+            request, raw=raw, resp=resp, provider=provider_name,
+            model=resp.model or request.model, source_kind=resp.source_kind,
+            cost=cost_usd if cost_usd is not None else 0.0, elapsed_ms=elapsed_ms, outcome="ok",
         )
         return resp
 
