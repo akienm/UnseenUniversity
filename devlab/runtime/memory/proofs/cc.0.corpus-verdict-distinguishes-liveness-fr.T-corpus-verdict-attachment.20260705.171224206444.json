@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.corpus-verdict-distinguishes-liveness-fr.T-corpus-verdict-attachment.20260705.171224206444",
+  "emitter": "cc.0",
+  "namespace": [
+    "corpus-verdict-distinguishes-liveness-fr",
+    "T-corpus-verdict-attachment"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T17:12:24.206444",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-corpus-verdict-attachment"
+    ],
+    "commits": [
+      "61ad6d516626c0d8538cdeee1398d9fba8998c48"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "corpus_verdict distinguishes liveness from consequence in verdict_strength",
+    "intention": "A wrong-but-non-crashing corpus entry scores executed_live, NOT consequence_bearing — the top code rung requires a distinct future-fact witness, not mere execution",
+    "test": "tests/inference/test_corpus_verdict.py::test_wrong_but_noncrashing_scores_executed_live_not_consequence",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_corpus_verdict.py::test_wrong_but_noncrashing_scores_executed_live_not_consequence",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "=================================== FAILURES ===================================\n_______ test_wrong_but_noncrashing_scores_executed_live_not_consequence ________\n\n    def test_wrong_but_noncrashing_scores_executed_live_not_consequence():\n        \"\"\"The KEY discrimination: liveness is NOT consequence.\n    \n        A wrong-but-non-crashing entry ran (executed_live) but nothing on its lines was ever\n        revisited (no consequence_signal). It must score EXECUTED_LIVE. A naive classifier that\n        conflates execution/presence with consequence returns CONSEQUENCE_BEARING and fails here.\n        \"\"\"\n        ev = VerdictEvidence(has_green_proof=True, executed_live=True, consequence_signal=False)\n>       assert classify(ev) == VerdictStrength.EXECUTED_LIVE\nE       assert <VerdictStrength.CONSEQUENCE_BEARING: 3> == <VerdictStrength.EXECUTED_LIVE: 2>\nE        +  where <VerdictStrength.CONSEQUENCE_BEARING: 3> = classify(VerdictEvidence(has_green_proof=True, executed_live=True, consequence_signal=False, akien_signal=False))\nE        +  and   <VerdictStrength.EXECUTED_LIVE: 2> = VerdictStrength.EXECUTED_LIVE\n\ntests/inference/test_corpus_verdict.py:39: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_corpus_verdict.py::test_wrong_but_noncrashing_scores_executed_live_not_consequence\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "61ad6d516626c0d8538cdeee1398d9fba8998c48",
+    "impl_paths": [
+      "unseen_university/devices/inference/corpus_verdict.py"
+    ],
+    "ticket": "T-corpus-verdict-attachment",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
