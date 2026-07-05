@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.flat-rate-local-timeout-raise-covers-on.T-ds-hex-dispatch-timeout-midloop.20260704.213357784700",
+  "emitter": "cc.0",
+  "namespace": [
+    "flat-rate-local-timeout-raise-covers-on",
+    "T-ds-hex-dispatch-timeout-midloop"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-04T21:33:57.784700",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-hex-dispatch-timeout-midloop"
+    ],
+    "commits": [
+      "24e6768c7e1c6bff0e02aa260723112e49f749e1"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "flat-rate/local timeout raise covers on-box LOCAL sources (Hex), not just flat_rate subscriptions",
+    "intention": "An on-box local source (source_kind=local, billing=usage_based — the real Hex shape) must get the raised 600s wall; keying the raise on flat_rate alone leaves local sources on the 120s cliff and they time out mid-plan",
+    "test": "tests/inference/test_flat_rate_timeout_raise.py::test_local_source_raises_the_per_request_timeout",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_flat_rate_timeout_raise.py::test_local_source_raises_the_per_request_timeout",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        )\n    \n        assert len(device.timeouts) >= 2, (\n            f\"proof needs at least two dispatches to observe the raise; saw {device.timeouts!r}\"\n        )\n        assert device.timeouts[0] == 120, (\n            f\"turn-0 request should use the base wall (120s); got {device.timeouts[0]}\"\n        )\n>       assert device.timeouts[1] > device.timeouts[0], (\n            \"an on-box local source must raise the per-request timeout above the 120s cliff after \"\n            f\"the turn-0 lock; turn-1 timeout stayed {device.timeouts[1]}s (== turn-0 \"\n            f\"{device.timeouts[0]}s) — a local source was treated as a usage-based paid one\"\n        )\nE       AssertionError: an on-box local source must raise the per-request timeout above the 120s cliff after the turn-0 lock; turn-1 timeout stayed 120s (== turn-0 120s) — a local source was treated as a usage-based paid one\nE       assert 120 > 120\n\ntests/inference/test_flat_rate_timeout_raise.py:154: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_flat_rate_timeout_raise.py::test_local_source_raises_the_per_request_timeout\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "24e6768c7e1c6bff0e02aa260723112e49f749e1",
+    "impl_paths": [
+      "unseen_university/devices/inference/agentic_loop.py"
+    ],
+    "ticket": "T-ds-hex-dispatch-timeout-midloop",
+    "narrative": "",
+    "why": "the funnel proved this exact gap: every architect died at 120s because local!=flat_rate; the raise must key on the free-wall property (local OR flat_rate), not the billing label",
+    "bootstrap": false
+  }
+}
