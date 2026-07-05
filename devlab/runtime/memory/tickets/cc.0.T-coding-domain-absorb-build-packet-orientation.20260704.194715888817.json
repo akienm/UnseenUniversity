@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-coding-domain-absorb-build-packet-orientation.20260704.194715888817",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coding-domain-absorb-build-packet-orientation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-05T01:47:15.888817+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-coding-domain-absorb-build-packet-orientation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coding-domain-absorb-build-packet-orientation",
+    "title": "[triage] CodingDomain orientation from build_packet.context_shortlist (one artifact, not two)",
+    "size": "M",
+    "tags": [
+      "CompiledInference",
+      "Pipeline",
+      "Workflow"
+    ],
+    "description": "Now that build_packet.py (build.packet.v1) ships a scored context_shortlist that ABSORBS the orientation signature map, the coding loop should orient from the packet — one orientation artifact, not two. Today CodingDomain._initial_message prepends _orientation_prefix() → build_signature_map(ticket) as a SEPARATE block (unseen_university/devices/inference/domains/coding.py); build_packet independently derives the same shortlist via query_file_symbols. That is the duplication the Fable consult flagged (notes/fable-consult-coding-loop-2026-07-04).\n\n**Proposed shape:** CodingDomain builds the packet once (build_packet(ticket)), renders context_shortlist into the orientation prefix (path + per-symbol signature — the same shape build_signature_map emits), and drops the direct build_signature_map call. The packet becomes the single source; the signature-map function can stay as the shared renderer the packet reuses. Fail-open preserved: empty shortlist → empty prefix, loop continues.\n\n**Affected files:** unseen_university/devices/inference/domains/coding.py (_orientation_prefix → render from build_packet), possibly unseen_university/devices/scraps/orientation_classifier.py (share the renderer), devlab/claudecode/build_packet.py (expose a render helper if needed), tests/inference/test_coding_domain_orientation.py (new).\n\n**Design rules:** OOP-first (device design center), log the interface crossing (orientation map size — already logged in build_signature_map), proof-on-close, no-sqlite, fail-open on DB down.\n\n**Scope boundary:** IN — CodingDomain orients from build_packet.context_shortlist; the two orientation code paths collapse to one; behavior-preserving on the rendered map shape. OUT — the packet's gate/measurement/fingerprint consumption inside the loop (this ticket is orientation-rendering only); auto-blocking on a failed gate; architect/editor per-role tiering (separate Fable step).\n\n**Test plan:** a red→green where CodingDomain._initial_message, given a ticket + a stubbed shortlist, renders the packet-derived signature block (green) where the pre-impl path rendered the build_signature_map block directly (assert the message contains the shortlist-derived signatures and that build_signature_map is no longer the direct source — e.g. via a spy/patch showing build_packet is the orientation source). HIGH-inertia: domains/coding.py is design-center — surface for Akien pre-approval before building.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.4,
+    "status": "triage",
+    "created_at": "2026-07-05T01:47:08.539602+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-05T01:47:08.585445+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "25dd69a9-700c-4b32-80a2-ea5eb6a15765"
+  }
+}
