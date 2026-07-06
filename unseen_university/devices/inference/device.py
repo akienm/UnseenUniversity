@@ -439,6 +439,19 @@ class InferenceDevice(BaseDevice):
             from unseen_university.devices.inference.pattern_intercept import try_intercept
             cached = try_intercept(request)
             if cached is not None:
+                # WARM HIT — served $0 from the compiled pattern cache. This is the SUCCESS
+                # event of the compiled-inference thesis (the starve-curve's numerator), and it
+                # used to return HERE, before _capture_io, so the hit was invisible to the very
+                # corpus meant to detect it (T-corpus-visibility-gaps). Capture it, tagged
+                # outcome='warm', so a warm hit is distinguishable from a cloud call in the
+                # ledger. _capture_io is itself fail-soft (never raises), so this cannot skip
+                # `return cached` and fall through to a paid dispatch.
+                self._capture_io(
+                    request, resp=cached, provider="pattern_intercept",
+                    model=getattr(cached, "model", "archivist-pattern-cache"),
+                    source_kind=getattr(cached, "source_kind", "none"),
+                    cost=0.0, outcome="warm",
+                )
                 return cached
         except Exception as exc:
             log.debug("dispatch: pattern intercept error (non-fatal): %s", exc)
