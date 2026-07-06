@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 from unseen_university.devices.inference.agentic_loop import (
     LOOP_AVAILABILITY,
@@ -124,8 +125,16 @@ class BaseDomain:
 
     # ── The escalation walk: this domain is the SINGLE escalation owner ────────
 
-    def run(self, ticket: dict, *, urgency: str = "normal", agent_id: str = "") -> str | None:
+    def run(
+        self, ticket: dict, *, urgency: str = "normal", agent_id: str = "",
+        cwd: Path | None = None,
+    ) -> str | None:
         """Work a ticket through the shared agentic loop, driving THIS domain's escalation walk.
+
+        ``cwd`` (default None → the loop's ``_REPO_ROOT`` fallback) is the working directory the
+        edit-capable tools run against; pass an isolated dir to run a build off the live repo
+        (T-ds-domain-cwd-isolation — required for a harvest run, whose model would otherwise
+        bash/edit the live tree).
 
         The domain is the one escalation owner (D-domain-object-encapsulation): it supplies
         prompts + the escalation policy to the shared AgenticLoop and reads the loop's typed
@@ -310,6 +319,7 @@ class BaseDomain:
         agent_id: str,
         escalation_hop: int,
         prior_attempt: str,
+        cwd: Path | None = None,
     ) -> LoopResult:
         """Run ONE attempt for the current hop and return its typed LoopResult.
 
@@ -330,6 +340,7 @@ class BaseDomain:
             agent_id=agent_id,
             escalation_hop=escalation_hop,
             prior_attempt=prior_attempt,
+            cwd=cwd,
         )
 
     def _classify(self, result: LoopResult) -> str:

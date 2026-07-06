@@ -41,7 +41,7 @@ class _RecordingDomain(BaseDomain):
         return DomainPrompts(system="test system")
 
     def _run_attempt(self, *, system_prompt, ticket, ticket_id, agent_id,
-                     escalation_hop, prior_attempt) -> LoopResult:
+                     escalation_hop, prior_attempt, cwd=None) -> LoopResult:
         self.hops_seen.append(escalation_hop)
         return LoopResult(LOOP_ESCALATE, text="could not finish")  # → classifies as 'capability'
 

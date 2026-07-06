@@ -33,8 +33,8 @@ def test_run_capability_delegates_to_domain_run():
     with patch("unseen_university.capabilities.base.resolve_domain", return_value=fake_domain) as resolver:
         out = host.run_capability(ticket, agent_id="dicksimnel")
 
-    # (a) delegated exactly once with the same ticket + agent_id (and urgency passed through).
-    fake_domain.run.assert_called_once_with(ticket, agent_id="dicksimnel", urgency="normal")
+    # (a) delegated exactly once with the same ticket + agent_id (urgency + cwd passed through).
+    fake_domain.run.assert_called_once_with(ticket, agent_id="dicksimnel", urgency="normal", cwd=None)
     # (b) return value passed through unchanged.
     assert out is sentinel_result
     # the domain was resolved from the capability's configured name.
@@ -48,7 +48,7 @@ def test_urgency_is_forwarded_not_dropped():
     host = _Host()
     with patch("unseen_university.capabilities.base.resolve_domain", return_value=fake_domain):
         host.run_capability({"id": "T-x"}, agent_id="a", urgency="high")
-    fake_domain.run.assert_called_once_with({"id": "T-x"}, agent_id="a", urgency="high")
+    fake_domain.run.assert_called_once_with({"id": "T-x"}, agent_id="a", urgency="high", cwd=None)
 
 
 def test_coding_capability_wraps_the_real_coding_domain():

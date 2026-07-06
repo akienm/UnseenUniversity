@@ -56,13 +56,17 @@ class CapabilityMixin:
             self.__dict__["_capability_domain_obj"] = cached
         return cached
 
-    def run_capability(self, ticket: dict, *, agent_id: str = "", urgency: str = "normal") -> str | None:
+    def run_capability(
+        self, ticket: dict, *, agent_id: str = "", urgency: str = "normal",
+        cwd: "Path | None" = None,
+    ) -> str | None:
         """Delegate a ticket to this capability's Domain and return its result unchanged.
 
-        Pass-through of the Domain.run contract: `ticket`, `agent_id`, and `urgency` are
+        Pass-through of the Domain.run contract: `ticket`, `agent_id`, `urgency`, and `cwd` are
         forwarded verbatim (a dropped/renamed kwarg would silently change escalation
-        behaviour — agent_id feeds the escalation walk / system_alarm). The mixin adds no
-        logic beyond logging the crossing; the escalation walk lives in the Domain.
+        behaviour — agent_id feeds the escalation walk / system_alarm; cwd isolates the
+        edit-capable tools off the live repo). The mixin adds no logic beyond logging the
+        crossing; the escalation walk lives in the Domain.
         """
         ticket_id = ticket.get("id", "?")
         # Interface crossing (capability → domain): one INFO line per delegation.
@@ -70,4 +74,4 @@ class CapabilityMixin:
             "capability: delegating to domain=%s | ticket=%s | agent=%s | urgency=%s",
             self.capability_domain or "(generalist)", ticket_id, agent_id or "(none)", urgency,
         )
-        return self._domain.run(ticket, agent_id=agent_id, urgency=urgency)
+        return self._domain.run(ticket, agent_id=agent_id, urgency=urgency, cwd=cwd)

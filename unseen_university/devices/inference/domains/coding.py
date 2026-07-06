@@ -12,6 +12,7 @@ map for code tickets).
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from unseen_university.devices.inference.agentic_loop import LoopResult
 from unseen_university.devices.inference.domains.base import BaseDomain
@@ -61,16 +62,20 @@ class CodingDomain(BaseDomain):
         agent_id: str,
         escalation_hop: int,
         prior_attempt: str,
+        cwd: Path | None = None,
     ) -> LoopResult:
         """One coding attempt = the architect/editor split (or the single loop if disabled).
 
         Overrides BaseDomain._run_attempt to change ONLY what one attempt is; the escalation
         walk in BaseDomain.run is untouched and classifies the returned LoopResult identically.
+        ``cwd`` (default None → the loop's _REPO_ROOT fallback) is the isolated working dir the
+        edit tools run against — threaded to both the split flow and the single-loop fallback.
         """
         if not self.architect_editor_enabled:
             return super()._run_attempt(
                 system_prompt=system_prompt, ticket=ticket, ticket_id=ticket_id,
                 agent_id=agent_id, escalation_hop=escalation_hop, prior_attempt=prior_attempt,
+                cwd=cwd,
             )
         from unseen_university.devices.inference.architect_editor import ArchitectEditorFlow
 
@@ -83,4 +88,5 @@ class CodingDomain(BaseDomain):
             agent_id=agent_id,
             escalation_hop=escalation_hop,
             prior_attempt=prior_attempt,
+            cwd=cwd,
         )
