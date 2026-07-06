@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-ds-domain-cwd-isolation",
-    "title": "[in_progress] Thread cwd through the domain layer so edit-capable runs isolate off _REPO_ROOT",
+    "title": "Thread cwd through the domain layer so edit-capable runs isolate off _REPO_ROOT",
     "size": "S",
     "tags": [
       "Inference",
@@ -29,14 +29,14 @@
     "priority": 0.65,
     "decision_id": "D-ds-harvest-mode-coding-loop-2026-07-05",
     "gate": null,
-    "status": "in_progress",
+    "status": "closed",
     "description": "**Problem (CP6 safety gap, found firing the first harvest run):** AgenticLoop.run does `cwd = cwd or _REPO_ROOT` and the edit tools (_tool_bash shell=True, _tool_edit, _tool_write) execute against that cwd. ArchitectEditorFlow.run and AgenticLoop.run both ACCEPT cwd — but the DOMAIN layer (BaseDomain.run, BaseDomain._run_attempt, CodingDomain._run_attempt) threads NO cwd, so `resolve_domain('coding').run(ticket)` always falls back to _REPO_ROOT = the live UnseenUniversity repo. An edit-capable model (devstral/qwen-coder) run this way bashes/edits the live tree. A harvest run (and any direct domain.run) MUST be isolable to a throwaway dir.\n\n**Proposed shape:** add an optional `cwd: Path | None = None` param threaded through the domain layer: BaseDomain.run(ticket, *, urgency, agent_id, cwd=None) -> BaseDomain._run_attempt(..., cwd=None) -> AgenticLoop.run(cwd=cwd); CodingDomain._run_attempt(..., cwd=None) -> ArchitectEditorFlow.run(cwd=cwd) and super()._run_attempt(cwd=cwd). Also thread CapabilityMixin.run_capability(ticket, *, agent_id, urgency, cwd=None) -> domain.run(cwd=cwd). Default None preserves today's _REPO_ROOT fallback (behavior-neutral for production DS, which relies on _REPO_ROOT being its own deployed tree).\n\n**Affected files:** unseen_university/devices/inference/domains/base.py (run + _run_attempt), unseen_university/devices/inference/domains/coding.py (_run_attempt), unseen_university/capabilities/base.py (run_capability pass-through).\n\n**Design rules:** optional param default None = current behavior (no production change); log nothing new (cwd is an arg, not a state change); OOP-first preserved; no SQLite.\n\n**Scope boundary:** thread the cwd param ONLY. NOT changing _REPO_ROOT default, NOT the harvest runner (separate), NOT any tool behavior.\n\n**Validation:** BaseDomain.run(ticket, cwd=X) reaches _run_attempt with cwd=X (and thus the loop uses X, not _REPO_ROOT); cwd omitted -> _run_attempt gets None (unchanged).\n\n**Observable via:** no new log line (arg-threading); verified by the loop's cwd resolving to the passed dir (edit tools write there). Test asserts the threaded value.\n\n**Test plan:** hermetic - a recording BaseDomain subclass whose _run_attempt captures the cwd it received; assert run(ticket, cwd=tmp) threads tmp and run(ticket) threads None. PROOF NODE: run(ticket, cwd=tmp) -> _run_attempt sees cwd==tmp - red (run ignores cwd, _run_attempt sees None) -> green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-07-06T02:56:41.499099+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Threaded optional cwd (default None = current _REPO_ROOT fallback, behavior-neutral for production) through the domain+capability layer: BaseDomain.run -> _run_attempt -> AgenticLoop.run(cwd); CodingDomain._run_attempt -> ArchitectEditorFlow.run(cwd) + super; CapabilityMixin.run_capability pass-through. Closes the CP6 gap found firing the harvest run — an edit-capable model (devstral/qwen-coder) run via domain.run() previously always bashed/edited the live _REPO_ROOT; now a harvest runner can isolate to a throwaway dir. Test doubles updated for the extended signature. NOTE (pre-existing, not fixed): base.run's try/except turns a _run_attempt TypeError into LOOP_AVAILABILITY, which would MASK an unupdated real override as an availability failure — verified no real override was missed (only base+coding have _run_attempt). Proven red=AssertionError green=passed @8b5ba41b.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-06T03:04:40.691810+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-06T02:56:41.543453+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "884616c6-9856-456e-945e-2a4bed1c161a"
+    "inferred_intention_id": "884616c6-9856-456e-945e-2a4bed1c161a",
+    "proven": true,
+    "proof_id": "cc.0.basedomain-run-threads-cwd-through-to-th.T-ds-domain-cwd-isolation.20260705.210421247453",
+    "proof_commit": "8b5ba41b05452c27089d538bfd154d0bb1f23d9e",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
