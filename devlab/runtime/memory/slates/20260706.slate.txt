@@ -51,3 +51,6 @@ Next: 2026-07-07 FIRST — fire T-fable-northstar-port-and-compile-brief (Fable 
 
 ## In-flight
 NONE — clean pushpoint (HEAD 9b62bbba, tree clean, all pushed, origin reachable). Tomorrow seeded to fire Fable first. Aider proven; device pre-approved; swarm specced.
+
+## Ad hoc (2026-07-06 PM — Akien steer: rackmount aider shim is critical path to a Windows aider-builder)
+- T-aider-rack-device-wrapper (L, HIGH-inertia PRE-APPROVED) — IN PROGRESS. Pivoted from T-agentic-loop-flags-in-corpus (unclaimed clean).

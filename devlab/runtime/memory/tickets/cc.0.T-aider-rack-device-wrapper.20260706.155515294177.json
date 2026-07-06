@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-aider-rack-device-wrapper",
-    "title": "[sprint] AiderDevice — wrap aider as a rack builder (Granny-dispatched, throwaway-clone, branch-not-main, CC-validated)",
+    "title": "[in_progress] AiderDevice — wrap aider as a rack builder (Granny-dispatched, throwaway-clone, branch-not-main, CC-validated)",
     "size": "L",
     "tags": [
       "Builder",
@@ -31,7 +31,7 @@
     "decision_id": "D-fable-builder-empirical-program-2026-07-06",
     "gate": null,
     "priority": 0.65,
-    "status": "sprint",
+    "status": "in_progress",
     "worker": "master",
     "intention": "I intend that aider — proven viable — becomes a Granny-dispatched rack builder that produces validated closes on real tickets against real repo clones, giving us a working swarm builder NOW while DS is leveled to match. Serves the aider-builder-first standing intention and the swarm spin-up.",
     "created_at": "2026-07-06T21:55:07.747435+00:00",
