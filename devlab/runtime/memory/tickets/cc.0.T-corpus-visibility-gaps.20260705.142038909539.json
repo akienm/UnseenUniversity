@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-corpus-visibility-gaps",
-    "title": "[sprint] Corpus visibility: capture warm/intercept hits + add role/turn labels to dispatch records",
+    "title": "[in_progress] Corpus visibility: capture warm/intercept hits + add role/turn labels to dispatch records",
     "size": "M",
     "tags": [
       "Inference",
@@ -29,7 +29,7 @@
     "decision_id": "D-compiled-inference-proof-program-2026-07-05",
     "gate": null,
     "priority": 0.8,
-    "status": "sprint",
+    "status": "in_progress",
     "created_at": "2026-07-05T20:20:22.988647+00:00",
     "worker": null,
     "created_by": null,
