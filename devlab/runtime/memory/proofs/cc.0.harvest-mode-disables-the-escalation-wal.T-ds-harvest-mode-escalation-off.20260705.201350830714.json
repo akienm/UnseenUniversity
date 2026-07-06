@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.harvest-mode-disables-the-escalation-wal.T-ds-harvest-mode-escalation-off.20260705.201350830714",
+  "emitter": "cc.0",
+  "namespace": [
+    "harvest-mode-disables-the-escalation-wal",
+    "T-ds-harvest-mode-escalation-off"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T20:13:50.830714",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-harvest-mode-escalation-off"
+    ],
+    "commits": [
+      "ff4e0680b4b85447076f262dee28851d36de7992"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "harvest_mode disables the escalation walk at the capability bump",
+    "intention": "with harvest_mode on, a capability failure yields exactly one attempt at hop 0 (escalation_hop never increments) and a terminal None — no pricier re-dispatch",
+    "test": "tests/inference/test_harvest_mode.py::test_harvest_mode_terminates_walk_at_first_capability_wall",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_harvest_mode.py::test_harvest_mode_terminates_walk_at_first_capability_wall",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \"\"\"\n        d = _RecordingDomain(harvest_mode=True)\n        with patch(\"unseen_university.system_alarms.raise_alarm\") as alarm:\n            result = d.run(_TICKET)\n    \n>       assert d.hops_seen == [0], (\n            f\"harvest_mode must NOT escalate: expected a single attempt at hop 0, got {d.hops_seen}\"\n        )\nE       AssertionError: harvest_mode must NOT escalate: expected a single attempt at hop 0, got [0, 1]\nE       assert [0, 1] == [0]\nE         \nE         Left contains one more item: 1\nE         Use -v to get more diff\n\ntests/inference/test_harvest_mode.py:59: AssertionError\n------------------------------ Captured log call -------------------------------\nERROR    unseen_university.devices.inference.domains.base:base.py:184 domain= crossing|step=escalate|ticket=T-harvest-proof|hop=2|result=capability-ceiling-halt\n=========================== short test summary info ============================\nFAILED tests/inference/test_harvest_mode.py::test_harvest_mode_terminates_walk_at_first_capability_wall\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "ff4e0680b4b85447076f262dee28851d36de7992",
+    "impl_paths": [
+      "unseen_university/devices/inference/domains/base.py"
+    ],
+    "ticket": "T-ds-harvest-mode-escalation-off",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
