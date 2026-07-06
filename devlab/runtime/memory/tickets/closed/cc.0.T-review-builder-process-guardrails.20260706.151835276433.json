@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-review-builder-process-guardrails",
-    "title": "[in_progress] Review design: prior-art gate in /sorted + every-flag-stamps-io_corpus invariant",
+    "title": "Review design: prior-art gate in /sorted + every-flag-stamps-io_corpus invariant",
     "size": "S",
     "tags": [
       "Process",
@@ -29,19 +29,25 @@
     "decision_id": "D-fable-builder-empirical-program-2026-07-06",
     "gate": null,
     "priority": 0.75,
-    "status": "in_progress",
+    "status": "closed",
     "worker": "master",
     "intention": "I intend that high-value process guardrails are tracked as claimable work, not left to rot as narrative prose — because a recommendation in a decision narrative is invisible to the queue and never gets worked (Akien 2026-07-06 correction). Serves CP4 (make everything suck less) applied to our own process.",
     "created_at": "2026-07-06T21:18:27.819546+00:00",
     "created_by": null,
-    "result": null,
+    "result": "Design review complete: both guardrails KEEP+MODIFY. Prior-art gate -> fold into audit-design, trigger on decision-class not ticket-size (T-sorted-prior-art-gate-in-audit-design). Flag-stamping -> confirmed io_corpus gap, structural-test invariant (T-agentic-loop-flags-in-corpus). Verdicts recorded, both impl tickets filed + wired into the decision.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-06T21:27:35.718238+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-06T21:18:27.864717+00:00"
+    "scraps_validated": "2026-07-06T21:18:27.864717+00:00",
+    "proven": false,
+    "unproven_reason": "design-review ticket has no red-form; the deliverable is the recorded verdicts + the two spawned implementation tickets (which carry their own red->green proofs) — the tickets existing in the queue IS the observable outcome",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

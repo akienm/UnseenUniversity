@@ -8,6 +8,7 @@
 - Filed **T-ds-harvest-corpus-batch** into D-ds-harvest-mode-coding-loop (57539dd8) — the discovered corpus-gen chain link (classifier had assumed tickets 1+2 generate the corpus; they were the machine). Re-gated the classifier on it; closing it auto-ungated **T-ds-defeating-question-classifier**.
 - First real batch (bf71yus48) was INVALID/contaminated (0ecbf92d) — caught by eyeballing (advisor discipline); slice `stuck-corpus-20260706` quarantined. Two wrong-layer detours (dedicated system user 1eea901f, then a sandbox-guard) retired once the root cause (prompt) was found.
 
+- T-review-builder-process-guardrails — Review design: prior-art gate in /sorted + every-flag-stamps-io_corpus invariant (Design review complete: both guardrails KEEP+MODIFY. Prior-art gate -> fold into audit-design, trigger on decision-class)
 ## Notes
 
 - Root cause of contamination was PROMPT path injection, not a cwd-seam leak — fix is at the source (relative paths), no dedicated user / sudo / guard needed.
