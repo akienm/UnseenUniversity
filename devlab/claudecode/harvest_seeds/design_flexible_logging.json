@@ -1,0 +1,9 @@
+{
+  "id": "T-harvest-design-flexible-logging",
+  "class_intent": "design_stuck",
+  "split": "dev",
+  "title": "The logging setup is too rigid — make it more flexible",
+  "tags": ["Logging"],
+  "description": "The logging setup in the device base class is too rigid and doesn't work for all the cases we care about. Make it more flexible. Add tests.",
+  "scratch_files": {}
+}

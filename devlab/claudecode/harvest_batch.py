@@ -65,8 +65,10 @@ def _load_seeds(seeds_dir: Path) -> list[dict]:
 def _make_seeded_scratch(seed: dict, keep: bool) -> Path:
     """An isolated git scratch dir seeded with the seed's toy codebase (or a bare README).
 
-    A design-stuck ask needs a real (if tiny) context to be under-specified WITHIN — otherwise
-    the builder is merely context-empty. scratch_files provides that context.
+    Used ONLY in the hermetic plumbing test / no-checkout fallback. NOT the real harvest path:
+    the first batch proved devstral ignores a tmp scratch and hard-orients on the live repo via
+    absolute paths. The real path is _reset_checkout (checkout-mode) — a full throwaway UU tree the
+    model orients on authentically, run AS dicksimnel so the live tree is permission-unreachable.
     """
     d = Path(tempfile.mkdtemp(prefix=f"uu_harvest_{seed.get('id','seed')}_"))
     subprocess.run(["git", "init", "-q"], cwd=d, check=False)
@@ -79,6 +81,20 @@ def _make_seeded_scratch(seed: dict, keep: bool) -> Path:
     subprocess.run(["git", "-c", "user.email=h@h", "-c", "user.name=h", "commit", "-qm", "seed"],
                    cwd=d, check=False)
     return d
+
+
+def _reset_checkout(checkout: Path) -> Path:
+    """Reset the dedicated throwaway checkout to a pristine tree, ready for the next seed.
+
+    The real containment (Akien's choice, provision_ds_sandbox.sh): run the batch AS dicksimnel so
+    `~/dev/src/UnseenUniversity` IS this throwaway checkout — devstral's hardcoded `cd ~/dev/...`
+    lands here (authentic full-repo orientation), and literal `/home/akien/...` is permission-denied
+    (safe). git reset --hard + clean -fdx wipes the prior seed's edits so each run starts pristine.
+    """
+    subprocess.run(["git", "-C", str(checkout), "reset", "--hard", "-q"], check=False)
+    subprocess.run(["git", "-C", str(checkout), "clean", "-fdxq"], check=False)
+    log.info("harvest_batch: reset checkout %s to pristine HEAD", checkout)
+    return checkout
 
 
 def _corpus_records_since(since_ts: str) -> list[dict]:
@@ -100,11 +116,12 @@ def _corpus_records_since(since_ts: str) -> list[dict]:
     return out
 
 
-def _run_seed(seed: dict, *, keep: bool) -> dict:
-    """Run one seed through harvest-mode in an isolated scratch. Returns a per-run summary.
+def _run_seed(seed: dict, *, keep: bool, checkout: Path | None = None) -> dict:
+    """Run one seed through harvest-mode. Returns a per-run summary.
 
-    The transcript is captured by io_corpus as a side effect (correlated by ticket_id); this
-    returns only the wall summary for the batch report.
+    checkout-mode (real path): cwd is the dedicated throwaway checkout, reset pristine before the
+    run — devstral orients on a full UU tree it can safely edit. No-checkout (test/fallback): a tmp
+    scratch. The transcript is captured by io_corpus as a side effect (correlated by ticket_id).
     """
     from unseen_university.devices.inference.domains import resolve_domain
     from unseen_university.devices.inference.stuck_ladder import read_rung_choices
@@ -113,19 +130,19 @@ def _run_seed(seed: dict, *, keep: bool) -> dict:
         "id": seed["id"], "title": seed.get("title", ""),
         "tags": seed.get("tags", []), "description": seed.get("description", ""),
     }
-    scratch = _make_seeded_scratch(seed, keep)
+    cwd = _reset_checkout(checkout) if checkout is not None else _make_seeded_scratch(seed, keep)
     started = datetime.now(timezone.utc).isoformat()
     log.info("harvest_batch: run seed=%s class_intent=%s split=%s cwd=%s",
-             seed["id"], seed.get("class_intent"), seed.get("split"), scratch)
+             seed["id"], seed.get("class_intent"), seed.get("split"), cwd)
     result = None
     try:
-        result = resolve_domain("coding").run(ticket, cwd=scratch, agent_id="harvest.batch")
+        result = resolve_domain("coding").run(ticket, cwd=cwd, agent_id="harvest.batch")
     except Exception as exc:  # noqa: BLE001 — a batch must report, never crash on one seed
         log.warning("harvest_batch: seed=%s raised (harvested as failure): %s: %s",
                     seed["id"], type(exc).__name__, exc)
     finally:
-        if not keep:
-            subprocess.run(["rm", "-rf", str(scratch)], check=False)
+        if checkout is None and not keep:  # checkout is reset (not deleted) before the next seed
+            subprocess.run(["rm", "-rf", str(cwd)], check=False)
 
     rungs = read_rung_choices(ticket_id=seed["id"])
     recs = [r for r in _corpus_records_since(started) if r.get("ticket_id") == seed["id"]]
@@ -137,7 +154,8 @@ def _run_seed(seed: dict, *, keep: bool) -> dict:
             "wall": wall, "turns": turns, "n_records": len(recs), "started": started}
 
 
-def run_batch(seeds: list[dict], *, slice_name: str, budget: int, seal_root: Path | None = None) -> dict:
+def run_batch(seeds: list[dict], *, slice_name: str, budget: int, seal_root: Path | None = None,
+              checkout: Path | None = None) -> dict:
     """Run every seed, then seal the eval-split transcripts into a held-out slice.
 
     Returns a report: per-seed summaries, the sealed manifest, and the class-intent distribution.
@@ -146,7 +164,7 @@ def run_batch(seeds: list[dict], *, slice_name: str, budget: int, seal_root: Pat
     from unseen_university.devices.inference.eval_slice import EvalSlice
 
     batch_started = datetime.now(timezone.utc).isoformat()
-    summaries = [_run_seed(s, keep=False) for s in seeds]
+    summaries = [_run_seed(s, keep=False, checkout=checkout) for s in seeds]
 
     # Seal ONLY the eval-split seeds' transcripts — the held-out reality-uncoupled slice.
     eval_ids = {s["id"] for s in seeds if s.get("split") == "eval"}
@@ -192,6 +210,10 @@ def main() -> int:
     ap.add_argument("--slice-name", default="", help="eval-slice name (default: stuck-corpus-<date>)")
     ap.add_argument("--budget", type=int, default=64, help="eval-slice read budget")
     ap.add_argument("--keep-workdir", action="store_true", help="leave scratch dirs for inspection")
+    ap.add_argument("--checkout", nargs="?", const=str(Path.home() / "dev/src/UnseenUniversity"),
+                    default="", help="run each seed against this resettable checkout (reset pristine "
+                    "per seed) instead of a tmp scratch — the real containment path. Bare flag uses "
+                    "~/dev/src/UnseenUniversity (correct when run AS dicksimnel).")
     args = ap.parse_args()
 
     os.environ["INFERENCE_ENDPOINT"] = args.endpoint
@@ -211,8 +233,18 @@ def main() -> int:
     if args.max_turns > 0:
         _pin_low_turn_cap(args.max_turns)
 
+    checkout = Path(args.checkout) if args.checkout else None
+    if checkout is not None:
+        if not (checkout / ".git").is_dir():
+            print(f"ABORT: --checkout {checkout} is not a git checkout — run provision_ds_sandbox.sh first")
+            return 4
+        print(f"checkout-mode: seeds run against {checkout} (reset pristine per seed)")
+    else:
+        print("WARNING: no --checkout — using tmp scratch, which devstral IGNORES for the live repo "
+              "(contaminated corpus). Only valid for smoke tests, not a real harvest.")
+
     slice_name = args.slice_name or f"stuck-corpus-{datetime.now(timezone.utc).strftime('%Y%m%d')}"
-    report = run_batch(seeds, slice_name=slice_name, budget=args.budget)
+    report = run_batch(seeds, slice_name=slice_name, budget=args.budget, checkout=checkout)
 
     print("\n=== BATCH REPORT ===")
     for s in report["summaries"]:

@@ -1,0 +1,9 @@
+{
+  "id": "T-harvest-design-smarter-router",
+  "class_intent": "design_stuck",
+  "split": "eval",
+  "title": "The inference cost router is too simplistic — make it smarter",
+  "tags": ["Inference", "Routing"],
+  "description": "The inference cost/routing selector in unseen_university/devices/inference isn't smart enough for what we need. Make it smarter. Add tests.",
+  "scratch_files": {}
+}
