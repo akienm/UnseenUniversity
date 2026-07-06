@@ -1,0 +1,1 @@
+{"schema": "inference.stuck_rung.v1", "ts": "2026-07-06T03:46:52.549336+00:00", "id": "dcaa359b-55bb-4998-a626-46f17659f191", "domain": "coding", "ticket_id": "T-harvest-synthetic-001", "rung": "call_cc", "tier": "code", "turn_reached": 4, "reason": "no cheaper rung viable — sync escalate to CC"}

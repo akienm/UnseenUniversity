@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-ds-first-harvest-run",
-    "title": "[in_progress] harvest_run.py operator runner + first live harvest run on Hex",
+    "title": "harvest_run.py operator runner + first live harvest run on Hex",
     "size": "S",
     "tags": [
       "Inference",
@@ -29,14 +29,14 @@
     "priority": 0.6,
     "decision_id": "D-ds-harvest-mode-coding-loop-2026-07-05",
     "gate": null,
-    "status": "in_progress",
+    "status": "closed",
     "description": "**Problem:** the harvest machine is complete + proven (escalation-off + stuck-ladder + env toggle + cwd isolation) but has never RUN. Akien 2026-07-05: wire toggle + do the first harvest run to GENERATE the corpus the classifier/resume tickets need.\n\n**Proposed shape:** a small reusable operator script devlab/claudecode/harvest_run.py that (a) creates an isolated scratch workdir (NOT the live repo — cwd threaded via T-ds-domain-cwd-isolation), (b) sets INFERENCE_ENDPOINT=hex.local + UU_HARVEST_MODE=1, (c) runs resolve_domain('coding').run(ticket, cwd=scratch) on a synthetic throwaway ticket chosen to reach a capability wall on devstral-24b, (d) reports the LoopResult + the emitted rung-choice record(s) + the io_corpus entries (asserting provider=ollama, model=devstral/qwen — NOT openrouter, else the run is a routing artifact not a capability wall). Writes to the REAL stores (that is the point — real harvest data).\n\n**Affected files:** devlab/claudecode/harvest_run.py (new).\n\n**Design rules:** cwd MUST be an isolated dir (CP6 — edit-capable model off the live tree); confirm route is Hex ollama free before trusting the wall; no SQLite; log the run.\n\n**Scope boundary:** the runner + one first run. NOT the classifier, NOT a scheduled/repeated harvest loop.\n\n**Validation (observation, not red-green — advisor):** the first run produces >=1 io_corpus record with provider=ollama (Hex, $0) AND >=1 rung-choice record in inference_starve for the run's ticket. That pair IS the proof the harvest aperture is open end-to-end.\n\n**Observable via:** harvest_run.py prints the corpus provider/model + the rung record; the inference_starve/*.rungchoice.jsonl file gains a row.\n\n**Test plan:** no red-green harness — this is a live observation run (close shipped-unproven if the run cannot complete, naming the blocker; close proven-by-observation with the corpus+rung evidence if it does). audit-emphasis: doc-only-ish (operator script).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-07-06T03:05:46.897309+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "harvest_run.py operator runner built + first LIVE harvest run on Hex opened the aperture. Real devstral-small-2:24b wall on free Hex ($0): AgenticLoop hit max_turns(4) -> class=capability -> StuckLadder rung=call_cc tier=code turn=4 -> harvest-wall, LoopResult=None (graceful terminal, no alarm). Durable: 1 rung record in devlab/runtime/memory/inference_starve + 9 ollama corpus records ($0). OBSERVATION: corpus_has_ollama=True rung_recorded=True -> aperture OPEN. Runner adds --max-turns pin (forces a fast capability wall so slow-local latency can't escape the ladder as availability) + pre-warm + pre-flight route guard + cwd isolation.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-06T03:48:16.546395+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-06T03:05:46.941400+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "55dde26f-589f-4a62-94f4-c72a9a7ec2bd"
+    "inferred_intention_id": "55dde26f-589f-4a62-94f4-c72a9a7ec2bd",
+    "proven": false,
+    "unproven_reason": "A live harvest run is a one-shot OBSERVATION, not a repeatable red->green — there is no red form of 'the aperture opened against real Hex' for proof_emitter to replay. The capability->rung MECHANISM is proven hermetically (tests/inference/test_harvest_mode.py::test_harvest_wall_emits_one_call_cc_rung_record, HEAD-valid). Missing lever: a sealed/replayable proof that a live run opens the aperture — precisely what T-replay-eval-slice-seal + T-corpus-verdict-attachment (D-proof-program-grounding-spine) are being built to provide.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
