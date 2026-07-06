@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.uu-harvest-mode-env-toggle-turns-on-harv.T-ds-harvest-mode-operator-toggle.20260705.204934891040",
+  "emitter": "cc.0",
+  "namespace": [
+    "uu-harvest-mode-env-toggle-turns-on-harv",
+    "T-ds-harvest-mode-operator-toggle"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T20:49:34.891040",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-harvest-mode-operator-toggle"
+    ],
+    "commits": [
+      "3b1e6ffe9dd17be770d72c67bba17fceca6d32d6"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "UU_HARVEST_MODE env toggle turns on harvest_mode at resolve_domain",
+    "intention": "with UU_HARVEST_MODE truthy, resolve_domain constructs domains with harvest_mode=True (the operator on-switch); unset/falsey stays OFF",
+    "test": "tests/inference/test_harvest_toggle.py::test_env_toggle_turns_on_harvest_mode",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_harvest_toggle.py::test_env_toggle_turns_on_harvest_mode",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____________________ test_env_toggle_turns_on_harvest_mode _____________________\n\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x77914307f9e0>\n\n    def test_env_toggle_turns_on_harvest_mode(monkeypatch):\n        \"\"\"PROOF: UU_HARVEST_MODE=1 makes resolve_domain construct harvest_mode=True domains.\"\"\"\n        monkeypatch.setenv(\"UU_HARVEST_MODE\", \"1\")\n>       assert resolve_domain(\"coding\").harvest_mode is True\nE       AssertionError: assert False is True\nE        +  where False = <unseen_university.devices.inference.domains.coding.CodingDomain object at 0x779142d4b710>.harvest_mode\nE        +    where <unseen_university.devices.inference.domains.coding.CodingDomain object at 0x779142d4b710> = resolve_domain('coding')\n\ntests/inference/test_harvest_toggle.py:18: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_harvest_toggle.py::test_env_toggle_turns_on_harvest_mode\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "3b1e6ffe9dd17be770d72c67bba17fceca6d32d6",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260705.slate.txt",
+      "unseen_university/devices/inference/domains/__init__.py"
+    ],
+    "ticket": "T-ds-harvest-mode-operator-toggle",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
