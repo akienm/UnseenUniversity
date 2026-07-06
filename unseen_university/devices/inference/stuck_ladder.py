@@ -213,4 +213,5 @@ class StuckLadder:
         # State change + interface crossing: one INFO line per stuck event.
         log.info("StuckLadder: ticket=%s rung=%s tier=%s turn=%d reason=%s",
                  event.ticket_id, rung, event.tier, event.turn_reached, reason)
+        self._recorder(choice, domain=event.domain, root=self._root)
         return choice
