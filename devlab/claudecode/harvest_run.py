@@ -69,6 +69,29 @@ def _warm_model(endpoint: str, model: str = "devstral-small-2:24b") -> None:
         print(f"warm-up failed (non-fatal, run may still cold-start): {exc}")
 
 
+def _pin_low_turn_cap(max_turns: int) -> None:
+    """Force the coding loop to wall at a low turn cap so a REAL capability wall lands fast.
+
+    The natural cap is 50 (usage_based) / 80 (flat-rate) — at ~4 min/turn on a fixed local tier
+    that's ~5 hours to LOOP_MAX_TURNS, and the whole crawl is exposed to the growing-context 120s
+    dispatch cliff that would escape the harvest ladder as AVAILABILITY (b62xia6sh/b7d5uqwbc did
+    exactly this). A turn-exhaustion wall routes through the identical capability→StuckLadder→rung
+    path as a real can't-finish (agentic_loop LOOP_MAX_TURNS → _classify 'capability'), so pinning
+    the cap low yields the SAME proof in ~20–40 min with a real devstral wall, real corpus records,
+    real routing. Contained to this operator harness — production caps are untouched. Both the
+    architect and editor sub-loops read the module-level AgenticLoop via architect_editor, so
+    patching that one reference (with both caps pinned, defeating the flat-rate bump) covers both.
+    """
+    import functools
+
+    from unseen_university.devices.inference import architect_editor
+
+    architect_editor.AgenticLoop = functools.partial(
+        architect_editor.AgenticLoop, max_turns=max_turns, flat_rate_max_turns=max_turns,
+    )
+    print(f"pinned coding turn cap to {max_turns} (both loops) — forcing a fast capability wall")
+
+
 def _make_scratch(keep: bool) -> Path:
     """An isolated, git-initialized scratch dir for the edit-capable model to work in."""
     d = Path(tempfile.mkdtemp(prefix="uu_harvest_"))
@@ -85,6 +108,9 @@ def main() -> int:
     ap.add_argument("--endpoint", default="http://hex.local:11434", help="ollama/Hex base URL")
     ap.add_argument("--ticket-id", default="", help="a real ticket id (default: synthetic wall-seeker)")
     ap.add_argument("--keep-workdir", action="store_true", help="leave the scratch dir for inspection")
+    ap.add_argument("--max-turns", type=int, default=4,
+                    help="pin the coding loop's turn cap low so a real capability wall lands fast "
+                         "(0 = leave the production 50/80 caps and let it run to natural exhaustion)")
     args = ap.parse_args()
 
     # Env MUST be set before the InferenceDevice registers its ollama source (endpoint) and before
@@ -113,6 +139,9 @@ def main() -> int:
         return 3
 
     _warm_model(args.endpoint)
+
+    if args.max_turns > 0:
+        _pin_low_turn_cap(args.max_turns)
 
     ticket = dict(_SYNTHETIC_TICKET)
     if args.ticket_id:
