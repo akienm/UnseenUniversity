@@ -29,11 +29,15 @@ def _passing():
                        scope_blocked=False, gate_passed=True, wall_s=20.0, workdir="/w")
 
 
-def test_passed_gate_closes(device):
+def test_passed_gate_closes_shipped_unproven(device):
+    # A branch-builder cannot emit a HEAD-valid proof — an honest close names the
+    # gate result as the missing proof-lever (merge-time proof), never fakes one.
     outcome = device._post_result("T-x", _passing())
     assert outcome == "done"
+    close_calls = [c for c in device._run_queue_cmd.call_args_list if c[0][0] == "close"]
+    assert len(close_calls) == 1
+    assert "--shipped-unproven" in close_calls[0][0]
     verbs = [c[0][0] for c in device._run_queue_cmd.call_args_list]
-    assert "close" in verbs
     assert "setstatus" not in verbs  # not escalated
 
 

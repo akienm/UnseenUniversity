@@ -318,7 +318,18 @@ class AiderDevice(IdentityMixin, BaseDevice):
         )
         if result.scope_warnings:
             note += f" | scope-warn={result.scope_warnings}"
-        close = self._run_queue_cmd("close", ticket_id, note[:2000])
+        # A branch-builder cannot emit a HEAD-valid proof_store artifact: the impl lives
+        # on an unmerged branch in a throwaway clone, not at the UU repo's HEAD. The
+        # objective gate (tests-green + diff-scope) IS the build-time proof; the real
+        # proof emits at branch-merge/validation time (the missing lever —
+        # T-builder-merge-time-proof, builder-wide: DickSimnel has the same close path).
+        # So close HONEST: shipped-unproven, with the gate result named as the lever.
+        unproven = (
+            f"aider objective gate PASSED (tests-green + diff-scope in-scope) on branch "
+            f"{result.branch}; branch-builder cannot emit a HEAD-valid proof (impl on an "
+            f"unmerged clone branch) — real proof emits at merge/validation time"
+        )
+        close = self._run_queue_cmd("close", ticket_id, note[:1500], "--shipped-unproven", unproven[:400])
         if close is None:
             show = self._run_queue_cmd("show", ticket_id)
             if show and show.get("status") in ("done", "closed"):
