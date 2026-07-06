@@ -1,0 +1,19 @@
+# Slate 2026-07-07
+
+## First thing (planned the evening of 2026-07-06)
+🔥 **FIRE THE FABLE NORTH-STAR SESSION FIRST — `T-fable-northstar-port-and-compile-brief` (sprint, 0.8).**
+Fable's LAST available day. Fire-and-walk-away. Brief asks for two ordered lists:
+(a) PORT-LIST — what to port from aider's loop (coders/, repomap.py) into ours (agentic_loop.py + architect_editor.py) to level DS to aider's competence; (b) COMPILE-vs-LOOP SPLIT — which of those compiles into the graph-tree nexus (plan-as-IR write-path) vs stays in the LLM loop. Anchored on the proven aider builder.
+**AKIEN pre-fire:** add any cortical-columns / nexus specifics you want pressure-tested (thesis notes: grep 'cortical' / 'compiled-inference-thesis').
+
+## Context carried from 2026-07-06 (the aider milestone)
+- **MILESTONE: aider PROVEN a viable swarm builder.** 4/4 GREEN on Hex ($0): single-file + multi-file (orientation, no files pre-added → found via repo map) × devstral + qwen. DS loop baseline = 0 edits. Harness gap RESOLVED (the wall was the loop, not the model); model lever PRICED (qwen3-coder:30b ~2.2× faster, both correct). Runner: `devlab/claudecode/aider_smoke.py`. Full data: note `aider-first-run-harness-gap-confirmed-2026-07-06`. Memory: `project_aider_builder_viable`.
+- **Ready-to-sprint (fresh session, after Fable):** `T-aider-rack-device-wrapper` (L, HIGH-inertia PRE-APPROVED — subprocess / 1-2 CPU-gated instances per laptop / black-box first / automated gate + spot-checks), then `T-aider-swarm-deployment` (4 boxes = up to 8 builders, gated on the device).
+- **Guardrail impl tickets (buildable):** `T-agentic-loop-flags-in-corpus` (M, stamp loop-shape flags into io_corpus + structural invariant test), `T-sorted-prior-art-gate-in-audit-design` (M, fold prior-art check into audit-design).
+- **Lower urgency now:** funnel-CI / 2×2 / qwen-probe — the aider result answered the core harness-vs-model question directly, so the empirical-program instruments are less load-bearing (keep for the DS-side arms).
+
+## In-flight
+NONE — clean pushpoint from 2026-07-06 (HEAD fd303665, tree clean, all pushed). Fresh start.
+
+## Session close → Next
+Next: FIRST — fire `T-fable-northstar-port-and-compile-brief` (Fable's last day). THEN /sorted its output, and sprint the aider device build (`T-aider-rack-device-wrapper`) fresh.
