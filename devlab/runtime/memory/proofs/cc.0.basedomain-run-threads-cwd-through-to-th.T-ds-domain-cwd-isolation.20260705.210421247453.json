@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.basedomain-run-threads-cwd-through-to-th.T-ds-domain-cwd-isolation.20260705.210421247453",
+  "emitter": "cc.0",
+  "namespace": [
+    "basedomain-run-threads-cwd-through-to-th",
+    "T-ds-domain-cwd-isolation"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T21:04:21.247453",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-domain-cwd-isolation"
+    ],
+    "commits": [
+      "8b5ba41b05452c27089d538bfd154d0bb1f23d9e"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "BaseDomain.run threads cwd through to the attempt/loop for edit-tool isolation",
+    "intention": "BaseDomain.run(ticket, cwd=X) reaches _run_attempt (and the loop's edit tools) with cwd=X, so an edit-capable build can run off an isolated dir instead of the live _REPO_ROOT",
+    "test": "tests/inference/test_domain_cwd.py::test_run_threads_cwd_to_attempt",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_domain_cwd.py::test_run_threads_cwd_to_attempt",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________________ test_run_threads_cwd_to_attempt ________________________\n\ntmp_path = PosixPath('/tmp/pytest-of-akien/pytest-437/test_run_threads_cwd_to_attemp0')\n\n    def test_run_threads_cwd_to_attempt(tmp_path):\n        \"\"\"PROOF: an explicit cwd reaches the attempt (and so the loop's edit tools use it).\"\"\"\n        d = _CwdRecordingDomain()\n        d.run(_TICKET, cwd=tmp_path)\n>       assert d.cwd_seen == tmp_path, f\"cwd must thread to _run_attempt, got {d.cwd_seen!r}\"\nE       AssertionError: cwd must thread to _run_attempt, got None\nE       assert None == PosixPath('/tmp/pytest-of-akien/pytest-437/test_run_threads_cwd_to_attemp0')\nE        +  where None = <inference.test_domain_cwd._CwdRecordingDomain object at 0x7926e3616090>.cwd_seen\n\ntests/inference/test_domain_cwd.py:39: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_domain_cwd.py::test_run_threads_cwd_to_attempt - ...\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "8b5ba41b05452c27089d538bfd154d0bb1f23d9e",
+    "impl_paths": [
+      "unseen_university/devices/inference/domains/base.py"
+    ],
+    "ticket": "T-ds-domain-cwd-isolation",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
