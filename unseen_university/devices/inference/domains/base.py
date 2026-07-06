@@ -71,10 +71,20 @@ class BaseDomain:
     #: minion-tier ACI (windowed Read + edit-centric tools) for this domain's attempts. The
     #: generalist base is a strong-tier passthrough → off; CodingDomain (weak local tier) → on.
     aci_mode: bool = False
+    #: harvest-testing mode (T-ds-harvest-mode-escalation-off). When True, a CAPABILITY wall
+    #: does NOT bump to a pricier tier — the escalation walk terminates at the fixed tier so the
+    #: wall itself is the harvested signal (the builder starve-curve wants 'the cheap tier
+    #: couldn't', unmixed with 'a stronger one could'). Default False = production escalates as
+    #: before. A FLAG, not deletion: the walk below is untouched, only gated at the bump point.
+    #: The operator on-switch (turning this on for a real harvest session) is deferred to the
+    #: stuck-ladder ticket that consumes the wall; here the flag is set explicitly (proof + the
+    #: next ticket's driver).
+    harvest_mode: bool = False
 
-    def __init__(self, name: str | None = None) -> None:
+    def __init__(self, name: str | None = None, *, harvest_mode: bool = False) -> None:
         if name is not None:
             self.name = name
+        self.harvest_mode = harvest_mode
 
     @property
     def prompts(self) -> DomainPrompts:
@@ -130,6 +140,10 @@ class BaseDomain:
           - Past the top difficulty rung: inference failure → system_alarm → HALT. Checked
             BEFORE dispatch so the walk terminates cleanly and never loops.
           - COST_EXCEEDED (a paid run hit its per-run cost cap): halt — a pricier tier costs more.
+          - HARVEST MODE (self.harvest_mode): a CAPABILITY failure does NOT bump — the walk
+            terminates at the fixed tier (escalation_hop stays 0), returning None with NO
+            system_alarm (the wall is the wanted outcome, not an incident). The worker_listener
+            declines the ticket back to sprint. Testing-phase flag; production stays escalating.
 
         Returns the DONE result text, or None to HALT (a system_alarm has fired). Every hop
         logs WHICH step failed (loop/select/escalate) at the crossing.
@@ -146,6 +160,12 @@ class BaseDomain:
         escalation_hop = 0
         prior_attempt = ""
         availability_retries = 0
+
+        if self.harvest_mode:
+            log.info(
+                "domain=%s: harvest_mode=on — escalation disabled, fixed tier ('%s') | ticket=%s",
+                self.name or "(generalist)", base_difficulty, ticket_id,
+            )
 
         while True:
             # Terminal check BEFORE dispatch: bumped past the top rung → inference failure.
