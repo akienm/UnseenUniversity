@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ds-harvest-mode-operator-toggle.20260705.204705007071",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-harvest-mode-operator-toggle"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T02:47:05.007071+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-harvest-mode-coding-loop-2026-07-05"
+    ],
+    "tickets": [
+      "T-ds-harvest-mode-operator-toggle"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-harvest-mode-operator-toggle",
+    "title": "[in_progress] harvest_mode operator on-switch: UU_HARVEST_MODE env toggle at resolve_domain",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "CodingLoop"
+    ],
+    "priority": 0.6,
+    "decision_id": "D-ds-harvest-mode-coding-loop-2026-07-05",
+    "gate": null,
+    "status": "in_progress",
+    "description": "**Problem:** harvest_mode (T-ds-harvest-mode-escalation-off) ships with NO operator on-switch — it is set only via constructor (tests). The env toggle was deliberately deferred at that ticket (advisor: no untested speculative config surface until something consumes it). It is now needed: Akien 2026-07-05 chose to wire the toggle + do a first live harvest run on Hex to GENERATE the harvested corpus the classifier + resume tickets depend on.\n\n**Proposed shape:** resolve_domain(name) reads env UU_HARVEST_MODE; when truthy ({'1','true','yes','on'}, case-insensitive) it constructs the domain with harvest_mode=True. Single construction chokepoint (unseen_university/devices/inference/domains/__init__.py) — a harvest session runs the DS process with the env set, so the whole process is in harvest mode; unset (production) = default OFF, escalation walks as before. .select() ignores harvest_mode, so setting it on domains resolved for routing is harmless.\n\n**Affected files:** unseen_university/devices/inference/domains/__init__.py (resolve_domain). No change to the walk (base.py) — the flag already gates it.\n\n**Design rules:** default OFF when env unset/empty/falsey; log.info at resolve when harvest is turned on (state change + interface crossing); inference-proxy-only unaffected; flat-file/env config, never SQLite.\n\n**Scope boundary:** the env read + threading harvest_mode into the constructed domain ONLY. NOT the walk (done), NOT the ladder (done), NOT the live run (separate step).\n\n**Validation:** with UU_HARVEST_MODE=1, resolve_domain('coding').harvest_mode is True and BaseDomain(name).harvest_mode via resolve is True; unset or 'false' -> harvest_mode False.\n\n**Observable via:** log.info('resolve_domain: harvest_mode ON (UU_HARVEST_MODE) for domain=%s') when the env toggles it on; absent otherwise.\n\n**Test plan:** hermetic - monkeypatch UU_HARVEST_MODE, assert resolve_domain('coding').harvest_mode and resolve_domain('').harvest_mode reflect the env; unset -> False. PROOF NODE: with UU_HARVEST_MODE=1 the resolved domain has harvest_mode True (red: resolve_domain ignores the env -> False) -> green. A resolver that hardcodes False fails the assert.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-06T02:46:57.669319+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T02:46:57.716378+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f05f18dd-a4e5-4d3f-bece-13564550bcca"
+  }
+}
