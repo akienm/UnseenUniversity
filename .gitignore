@@ -26,3 +26,7 @@ coverage.xml
 
 # ticket_store flock artifact (runtime, never tracked)
 devlab/runtime/memory/tickets/.queue.lock
+
+# generated labeling page (regenerable via devlab/claudecode/stuck_corpus_label_page.py;
+# the durable artifact is labels.json, which IS tracked)
+devlab/runtime/memory/eval_slices/**/label_page.html
