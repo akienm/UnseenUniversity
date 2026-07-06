@@ -9,6 +9,8 @@
 - First real batch (bf71yus48) was INVALID/contaminated (0ecbf92d) — caught by eyeballing (advisor discipline); slice `stuck-corpus-20260706` quarantined. Two wrong-layer detours (dedicated system user 1eea901f, then a sandbox-guard) retired once the root cause (prompt) was found.
 
 - T-review-builder-process-guardrails — Review design: prior-art gate in /sorted + every-flag-stamps-io_corpus invariant (Design review complete: both guardrails KEEP+MODIFY. Prior-art gate -> fold into audit-design, trigger on decision-class)
+- T-aider-builder-first-run — Aider builder — first headless run against Hex on a self-contained task (the known-quantity control arm) (aider proven viable on Hex: devstral-24b GREEN 35.6s, qwen3-coder:30b GREEN 16.6s (2.15x faster), both one-shot on the T)
+- T-aider-multifile-orientation-test — Aider builder — multi-file coordinated-change task (the orientation gate DS died on) (aider GREEN on multi-file coordinated change, BOTH models: qwen3-coder:30b 5/5 in 17.0s, devstral-24b 5/5 in 38.8s. NO f)
 ## Notes
 
 - Root cause of contamination was PROMPT path injection, not a cwd-seam leak — fix is at the source (relative paths), no dedicated user / sudo / guard needed.
@@ -39,3 +41,6 @@ NONE — clean pushpoint (HEAD b6101648, tree clean, all pushed). Classifier ung
 
 ## In-flight (Fable session, post-close addendum)
 T-review-builder-process-guardrails CLOSED shipped-unproven (design review): both guardrails KEEP+MODIFY. Prior-art gate -> fold into audit-design, trigger on decision-CLASS not ticket-size = T-sorted-prior-art-gate-in-audit-design (M,0.5). Flag-stamping -> confirmed io_corpus gap (loop-shape flags aci_mode/plan_mode/critic_enabled/history_window_turns/tool_names absent from the record), invariant = a STRUCTURAL TEST introspecting AgenticLoop.__init__ params = T-agentic-loop-flags-in-corpus (M,0.6). Both wired into D-fable-builder-empirical-program. aider source now LOCAL at /home/akien/dev/src/aider (git checkout v0.86.3.dev, NOT pip) — folded into the 2x2 ticket + it is the edit-ladder primary source. NONE in-flight; clean pushpoint HEAD 979b30d9, all pushed.
+
+## In-flight (aider builder sprint — MILESTONE)
+AIDER PROVEN VIABLE as a swarm builder. 4/4 GREEN on Hex ($0): ttl+checkout x devstral+qwen. Multi-file checkout (NO files pre-added -> aider found them via repo map + coordinated 2-file edit) = the exact orientation DS died on. qwen3-coder:30b 2.2x faster than devstral, both correct. Harness gap RESOLVED (same model, 0 edits -> GREEN by swapping the loop); model lever PRICED (qwen wins). Runner: devlab/claudecode/aider_smoke.py (--task ttl|checkout --model X, reproducible). Closed T-aider-builder-first-run + T-aider-multifile-orientation-test (both shipped-unproven, behavioral red->green via runner). Note: aider-first-run-harness-gap-confirmed-2026-07-06 (full matrix). NEXT = T-aider-rack-device-wrapper (L, triage, HIGH-inertia — new device + Granny dispatch; 4 design Qs for Akien in the ticket; best FRESH session). Clean pushpoint, all committed.

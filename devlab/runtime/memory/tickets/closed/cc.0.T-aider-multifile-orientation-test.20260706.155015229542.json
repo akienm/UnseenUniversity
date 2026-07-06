@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-aider-multifile-orientation-test.20260706.155015229542",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-multifile-orientation-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T21:50:15.229542+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-aider-multifile-orientation-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-multifile-orientation-test",
+    "title": "Aider builder — multi-file coordinated-change task (the orientation gate DS died on)",
+    "size": "S",
+    "tags": [
+      "Builder",
+      "Aider",
+      "Experiment"
+    ],
+    "description": "**Problem:** The first-run smoke (T-aider-builder-first-run) proved aider makes our models edit, but on a 2-file TOY (TTLCache). DS's actual death mode was read-wandering in a MULTI-MODULE repo (orientation, not serialization). A builder we're happy with must hold on a task requiring coordinated edits across files, oriented via aider's repo map.\n\n**Proposed shape:** Add a multi-file task pack to devlab/claudecode/aider_smoke.py: a small package where a failing test requires a COORDINATED change across >=2 files while reading a 3rd (e.g. add Order.total() in models.py AND wire pricing.apply_discount into service.checkout()). Run both devstral-24b and qwen3-coder:30b@Hex, repo map ON (the orientation surface). Record: edits-applied, files-touched, tests-green, wall-clock.\n\n**Affected files:** devlab/claudecode/aider_smoke.py (add task registry + --task flag); isolated sandbox (throwaway). No unseen_university/ changes.\n**Design rules:** no aider imports; sandbox isolated (own git, no UU remote).\n**Scope boundary:** the multi-file task + runs + recorded result. If aider holds -> file the AiderDevice wrapper ticket. If it struggles -> record where (orientation vs edit).\n**Completion criteria:**\n- aider completes the multi-file task (coordinated edits across >=2 files, failing test -> green) with at least one model, repo map on.\n- Result recorded per model: files-touched, tests-green, wall-clock.\n- Verdict on whether aider is 'a builder we're happy with' enough to wrap as a device.\n**Test plan:** the sandbox pytest is the proof — RED (stubs) before aider, GREEN after; a NO-EDIT or EDITED-BUT-RED outcome is recorded as the honest datapoint (not forced green).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "gate": null,
+    "priority": 0.7,
+    "status": "closed",
+    "worker": "master",
+    "intention": "I intend that aider is proven to hold on a realistic multi-file orientation task — the exact failure mode DS died on — before we wrap it as production infra, so 'a builder we're happy with' rests on evidence, not a 2-file toy. Serves the aider-builder-first standing intention.",
+    "created_at": "2026-07-06T21:50:08.096977+00:00",
+    "created_by": null,
+    "result": "aider GREEN on multi-file coordinated change, BOTH models: qwen3-coder:30b 5/5 in 17.0s, devstral-24b 5/5 in 38.8s. NO files pre-added — aider found shop/models.py + shop/service.py via repo map and made the coordinated 2-file edit (the exact orientation DS died on). Verdict: aider is a builder we're happy with on controlled tasks; justifies the device wrapper.",
+    "dispatched_at": null,
+    "completed_at": "2026-07-06T21:55:07.197323+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T21:50:08.147664+00:00",
+    "proven": false,
+    "unproven_reason": "behavioral red->green via aider_smoke.py --task checkout (reproducible); real-repo/real-ticket proof deferred to the AiderDevice wrapper; lever = the device running aider on an actual UU ticket against a repo clone",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}

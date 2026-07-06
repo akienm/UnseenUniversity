@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-aider-builder-first-run",
-    "title": "[in_progress] Aider builder — first headless run against Hex on a self-contained task (the known-quantity control arm)",
+    "title": "Aider builder — first headless run against Hex on a self-contained task (the known-quantity control arm)",
     "size": "M",
     "tags": [
       "Builder",
@@ -30,19 +30,25 @@
     "decision_id": "D-fable-builder-empirical-program-2026-07-06",
     "gate": null,
     "priority": 0.72,
-    "status": "in_progress",
+    "status": "closed",
     "worker": "master",
     "intention": "I intend that aider — a known-quantity builder — is proven to make our local models edit on our own inference, giving us a working builder to run on the swarm NOW and a control-arm baseline that prices the DS harness gap. Serves the aider-builder-first standing intention and DS.0 leveling.",
     "created_at": "2026-07-06T21:44:41.363459+00:00",
     "created_by": null,
-    "result": null,
+    "result": "aider proven viable on Hex: devstral-24b GREEN 35.6s, qwen3-coder:30b GREEN 16.6s (2.15x faster), both one-shot on the TTLCache implement-till-green task DS produced 0 edits on. Harness gap confirmed + model lever priced. Runner devlab/claudecode/aider_smoke.py (reproducible red->green).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-06T21:49:20.476701+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-06T21:44:41.407106+00:00"
+    "scraps_validated": "2026-07-06T21:44:41.407106+00:00",
+    "proven": false,
+    "unproven_reason": "behavioral red->green proof is the sandbox pytest via aider_smoke.py (RED before aider -> GREEN after, reproducible), not yet a tests/ node — no in-repo proof harness for external-tool subprocess runs; lever = the Stage-2 proxy-endpoint + a tests/ wrapper that asserts the smoke red->green in CI",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
