@@ -57,5 +57,5 @@ def resolve_domain(name: str) -> BaseDomain:
         log.info("resolve_domain: harvest_mode ON (UU_HARVEST_MODE) for domain=%s", name or "(generalist)")
     cls = _REGISTRY.get(name)
     if cls is not None:
-        return cls(harvest_mode=False)
-    return BaseDomain(name=name, harvest_mode=False)
+        return cls(harvest_mode=harvest)
+    return BaseDomain(name=name, harvest_mode=harvest)
