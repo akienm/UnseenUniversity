@@ -274,15 +274,26 @@ class BaseDomain:
 
             # cls == 'capability': reached a terminal but never DONE.
             if self.harvest_mode:
-                # Harvest mode: do NOT escalate. The wall IS the wanted signal — terminate at
-                # the fixed tier with escalation_hop still 0, no pricier re-dispatch and NO
-                # system_alarm (a capability wall is the expected outcome here, not an incident).
-                # None makes the worker_listener decline the ticket back to sprint — the honest
-                # 'this tier could not finish' terminal. Richer stuck-ladder / drop-ticket
-                # handling of the wall is the next ticket (T-ds-stuck-ladder-and-rung-log).
+                # Harvest mode: do NOT escalate. Hand the wall to the cost-ordered stuck-ladder,
+                # which picks the cheapest viable rung (answer / drop / halt / call-CC) and records
+                # the choice — the distribution over rungs IS the builder starve-curve. Terminal
+                # stays None: rung 1's answer is data-starved today and a bare answer string would
+                # fail the completion gate → escalate (see stuck_ladder module doc); the rung-choice
+                # RECORD is what distinguishes call-CC from halt from drop. No system_alarm — a
+                # harvested wall is the wanted outcome, not an incident.
+                from unseen_university.devices.inference.stuck_ladder import (
+                    DEFAULT_DOMAIN,
+                    StuckEvent,
+                    StuckLadder,
+                )
+
+                choice = StuckLadder().resolve(StuckEvent(
+                    ticket_id=ticket_id, tier=required, turn_reached=result.turns,
+                    domain=self.name or DEFAULT_DOMAIN,
+                ))
                 log.info("domain=%s crossing|step=escalate|ticket=%s|hop=%d|"
-                         "result=harvest-wall|reason=capability (escalation disabled)",
-                         self.name, ticket_id, escalation_hop)
+                         "result=harvest-wall|rung=%s|reason=capability (escalation disabled)",
+                         self.name, ticket_id, escalation_hop, choice.rung)
                 return None
             # otherwise bump difficulty one rung.
             prior_attempt = (result.text or "").strip()[:400]

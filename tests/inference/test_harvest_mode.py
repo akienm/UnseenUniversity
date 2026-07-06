@@ -46,12 +46,13 @@ class _RecordingDomain(BaseDomain):
         return LoopResult(LOOP_ESCALATE, text="could not finish")  # → classifies as 'capability'
 
 
-def test_harvest_mode_terminates_walk_at_first_capability_wall():
+def test_harvest_mode_terminates_walk_at_first_capability_wall(tmp_path, monkeypatch):
     """PROOF: harvest_mode disables the escalation walk — one attempt at hop 0, then terminate.
 
     Pre-fix the walk bumps 0→1→…→ceiling (hops_seen len > 1); the flag must short-circuit the
     capability branch so hops_seen == [0] and the run returns None with escalation_hop still 0.
     """
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))  # the wall now writes a rung record — redirect it
     d = _RecordingDomain(harvest_mode=True)
     with patch("unseen_university.system_alarms.raise_alarm") as alarm:
         result = d.run(_TICKET)
@@ -61,6 +62,25 @@ def test_harvest_mode_terminates_walk_at_first_capability_wall():
     )
     assert result is None
     alarm.assert_not_called()  # a harvested wall is the wanted outcome, never an incident
+
+
+def test_harvest_wall_emits_one_call_cc_rung_record(tmp_path, monkeypatch):
+    """Integration: a harvest_mode wall routes through the stuck-ladder and emits ONE record.
+
+    With no answer source and no HALT seam wired at the domain layer, the wall falls to call-CC —
+    the starved-resource metric. The record carries the fixed tier and the turns reached.
+    """
+    from unseen_university.devices.inference.stuck_ladder import RUNG_CALL_CC, read_rung_choices
+
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+    d = _RecordingDomain(harvest_mode=True)
+    with patch("unseen_university.system_alarms.raise_alarm"):
+        d.run(_TICKET)
+
+    records = read_rung_choices()
+    assert len(records) == 1, f"harvest wall must emit exactly one rung record, got {len(records)}"
+    assert records[0]["rung"] == RUNG_CALL_CC
+    assert records[0]["ticket_id"] == "T-harvest-proof"
 
 
 def test_harvest_mode_off_walks_the_escalation_ladder():
@@ -74,10 +94,11 @@ def test_harvest_mode_off_walks_the_escalation_ladder():
     assert result is None  # ceiling reached (alarm patched)
 
 
-def test_harvest_mode_logs_escalation_disabled_at_entry(caplog):
+def test_harvest_mode_logs_escalation_disabled_at_entry(caplog, tmp_path, monkeypatch):
     """The mode is observable: an INFO line at loop entry names harvest_mode + escalation disabled."""
     import logging
 
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))  # wall writes a rung record — redirect it
     d = _RecordingDomain(harvest_mode=True)
     with caplog.at_level(logging.INFO, logger="unseen_university.devices.inference.domains.base"), \
          patch("unseen_university.system_alarms.raise_alarm"):
