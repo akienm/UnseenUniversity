@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-replay-eval-slice-seal",
-    "title": "[in_progress] Seal a held-out eval slice — manifest + read-log + use-budget",
+    "title": "Seal a held-out eval slice — manifest + read-log + use-budget",
     "size": "S",
     "tags": [
       "CompiledInference",
@@ -30,13 +30,13 @@
     "decision_id": "D-proof-program-grounding-spine-2026-07-05",
     "gate": null,
     "priority": 0.55,
-    "status": "in_progress",
+    "status": "closed",
     "worker": "cc.0",
     "created_at": "2026-07-05T21:55:48.532709+00:00",
     "created_by": null,
-    "result": null,
+    "result": "eval_slice.py: EvalSlice sealer — stable tamper-evident content-hash manifest + append-only read-log + use-budget. Strict slice raises BudgetExceeded past budget (records nothing over the line); lenient warns+flags the overage. Held-out asymmetry now spent visibly. Renewable property documented (daily capture = tomorrow's slice held-out vs today). Stored at devlab/runtime/memory/eval_slices/ (consistent w/ prereg). Proven red→green: strict over-budget read blocks.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-06T00:02:10.675549+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-05T21:55:48.532778+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "e0d8a87e-bf1f-4540-ad73-7d71043e3457"
+    "inferred_intention_id": "e0d8a87e-bf1f-4540-ad73-7d71043e3457",
+    "proven": true,
+    "proof_id": "cc.0.eval-slice-blocks-reads-past-the-use-bud.T-replay-eval-slice-seal.20260705.180153496814",
+    "proof_commit": "64173598856b3e1a127d60a5b5b8bc66cf9dc160",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
