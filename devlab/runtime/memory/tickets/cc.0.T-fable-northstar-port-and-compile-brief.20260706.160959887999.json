@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-fable-northstar-port-and-compile-brief.20260706.160959887999",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fable-northstar-port-and-compile-brief"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T22:09:59.887999+00:00",
+  "links": {
+    "decisions": [
+      "D-compiled-inference-proof-program-2026-07-05"
+    ],
+    "tickets": [
+      "T-fable-northstar-port-and-compile-brief"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fable-northstar-port-and-compile-brief",
+    "title": "[sprint] Fable last-day north-star session — DS port-list + compile-vs-loop split for the nexus (anchored on the proven aider builder)",
+    "size": "S",
+    "tags": [
+      "Fable",
+      "Design",
+      "NorthStar",
+      "CompiledInference"
+    ],
+    "description": "**Fire FIRST thing 2026-07-07 — Fable's LAST available day. Fire-and-walk-away.**\n\n**Why now:** aider is our PROVEN working builder (4/4 GREEN on Hex, multi-file orientation held, qwen 2.2x — note aider-first-run-harness-gap-confirmed-2026-07-06; source local at /home/akien/dev/src/aider). It is a WORKING EXEMPLAR of 'good plan -> good edit'. Fable's altitude expires after tomorrow; spend it on the NORTH STAR (compiled-inference / graph-trees), NOT a tactical side-by-side (the data already settled 'which is better'; CC can do the loop-teardown). North-star frame: aider is the ROAD; graph-trees that COMPILE its competence are the DESTINATION (project_graph_trees_self_aware_telos). Fable found the nexus WRITE-side structurally absent on 07-05 — this session grounds the fix against a working reference.\n\n**The ask — two ORDERED lists:**\n(a) **PORT-LIST** — read aider's loop (aider/coders/: architect_coder, editblock_coder, wholefile_coder, search_replace.py, the reflection/lint-retry; aider/repomap.py) vs OUR loop (unseen_university/devices/inference/agentic_loop.py + architect_editor.py). Produce the ordered, concrete list of what to PORT to level DS's loop to aider's competence — each item with the why + rough effort + which failure mode it fixes.\n(b) **COMPILE-vs-LOOP SPLIT** — for each ported capability, decide which COMPILES into the graph-tree nexus (the plan-as-IR write-path: cache packet-fingerprint -> plan -> verdict; the cortical-columns/compiled-inference thesis) vs which stays in the LLM loop. This is the concrete instantiation of the compiled-inference north star against a working exemplar.\n\n**Inputs for Fable to read:** note aider-first-run-harness-gap-confirmed-2026-07-06; aider source /home/akien/dev/src/aider (coders/, repomap.py); our agentic_loop.py + architect_editor.py; decisions D-compiled-inference-proof-program-2026-07-05, D-proof-program-grounding-spine-2026-07-05, D-fable-builder-empirical-program-2026-07-06; ticket T-nexus-write-path-ds-architect-loop (Fable flagged it underpriced — the plan-as-IR seed); the cortical-columns / compiled-inference thesis notes (grep the store: 'cortical' / 'compiled-inference-thesis' / 'text-cortex'); the 07-05 finding that the nexus write-side is structurally absent.\n**AKIEN pre-fire:** add any cortical-columns / nexus specifics you want pressure-tested (the resolved specifics live in the thesis notes — project_cortical_columns_thesis).\n\n**Affected files:** none — this is a Fable consult (Plan/claude-fable-5 as design architect). Output is a synthesis note.\n**Design rules:** Fable altitude -> north-star self-improvement, not tuning/audits (feedback_fable_extraction_before_enterprise_only).\n**Scope boundary:** the two ordered lists as a Fable note ready to /sorted. Do NOT build here — this produces the roadmap; tickets follow via /sorted.\n**Completion criteria:**\n- PORT-LIST produced: ordered aider->DS capability ports, each with why + effort + failure-mode-fixed.\n- COMPILE-vs-LOOP SPLIT produced: per capability, nexus-compile vs LLM-loop, with rationale.\n- Filed as a Fable synthesis note, ready to /sorted into build tickets.\n**Test plan:** none — design/consult ticket; deliverable is the Fable synthesis. Close shipped-unproven, lever = the /sorted tickets it spawns are the observable outcome.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-compiled-inference-proof-program-2026-07-05",
+    "gate": null,
+    "priority": 0.8,
+    "status": "sprint",
+    "worker": "master",
+    "intention": "I intend that Fable's last-day altitude compiles the proven aider builder's competence into a concrete DS port-list AND a nexus compile-vs-loop split — turning a working exemplar into the compiled-inference roadmap, so graph-trees eventually absorb the competence and we don't need aider forever. Serves the graph-trees-self-aware telos and the self-improving founding property.",
+    "created_at": "2026-07-06T22:09:52.326528+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T22:09:52.371999+00:00"
+  }
+}
