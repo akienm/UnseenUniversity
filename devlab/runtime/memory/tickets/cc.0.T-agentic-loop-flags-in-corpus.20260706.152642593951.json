@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-agentic-loop-flags-in-corpus.20260706.152642593951",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agentic-loop-flags-in-corpus"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T21:26:42.593951+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-agentic-loop-flags-in-corpus"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agentic-loop-flags-in-corpus",
+    "title": "[sprint] Stamp every AgenticLoop loop-shape flag into the io_corpus record + structural invariant test",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Observability"
+    ],
+    "description": "**Problem:** The io_corpus record carries role/turn/parent_id/escalation_hop/foreground but NOT the AgenticLoop loop-shape flags aci_mode / plan_mode / critic_enabled / history_window_turns / tool_names (confirmed by the record key set on 20260706.io.jsonl). These flags change what a run DOES, and their interaction already produced one real bug (aci_mode windowing starved the architect — 07-05). With them unrecorded, a run is not post-hoc classifiable and a surprising result can't be attributed to its mode. This is also 2x2 experimental integrity: if DS arms differ in loop-shape flags and those aren't in the corpus, a within-DS surprise can't be debugged.\n\n**Proposed shape:** Thread the AgenticLoop config flags into the corpus record (via InferenceRequest labels or the record-assembly site — the implementer locates the capture path; io_corpus.capture(record) takes a pre-built dict, so the flags must be set upstream where role/turn already are). Add a STRUCTURAL INVARIANT TEST as the load-bearing guard: introspect AgenticLoop.__init__ signature params (minus non-flag args like codec/inference_device), assert each appears in a captured record's flag set. This auto-covers FUTURE flags (self-maintaining) and gives a real red-form — it FAILS when a new flag is added without stamping. An audit-smell early-warning check (diff adds an __init__ param => is it stamped?) is a secondary, faster signal.\n\n**Affected files:** unseen_university/devices/inference/agentic_loop.py, io_corpus.py, and the InferenceRequest label path; new test under tests/inference/. MEDIUM inertia (agentic_loop.py is load-bearing) — change is ADDITIVE (emit more fields), low regression risk.\n**Design rules:** no SQLite (flat-file JSON record); every-flag-stamps-io_corpus is the invariant being implemented; role/foreground already present must stay unbroken.\n**Scope boundary:** stamp the flags + the structural test (+ optional audit-smell check). Do NOT reduce the flag set / refactor the flags themselves (a separate 'flags-to-text' concern, out of scope).\n**Completion criteria:**\n- A captured record for a real run contains every AgenticLoop loop-shape flag {aci_mode, plan_mode, critic_enabled, history_window_turns, tool_names}.\n- A structural test introspects __init__ flag-params and asserts each is present in the record — RED before stamping, GREEN after.\n- role/turn/foreground (already present) remain unbroken.\n**Test plan:** red->green — (1) test asserts a captured record contains the five flags (red: absent; green: stamped); (2) invariant test enumerates __init__ flag-params and asserts corpus coverage (the self-maintaining guard).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "worker": "master",
+    "intention": "I intend that every builder run is post-hoc classifiable by the mode it ran in — so a surprising result (2x2 or corpus) is attributable to its loop-shape, not an unrecorded flag — and that future flag sprawl cannot re-create invisible state, because a structural test fails the moment a flag is added without being stamped. Serves the 2x2's experimental integrity and the compiled-inference corpus-is-ground-truth telos.",
+    "created_at": "2026-07-06T21:26:30.516196+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T21:26:30.561123+00:00"
+  }
+}

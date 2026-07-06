@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-sorted-prior-art-gate-in-audit-design.20260706.152642724439",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sorted-prior-art-gate-in-audit-design"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T21:26:42.724439+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-sorted-prior-art-gate-in-audit-design"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sorted-prior-art-gate-in-audit-design",
+    "title": "[sprint] Prior-art gate: audit-design check for build-a-mechanism decisions (30-min survey before tickets)",
+    "size": "M",
+    "tags": [
+      "Process",
+      "Skills"
+    ],
+    "description": "**Problem:** The aider/SWE-agent survey was the highest-ROI act in four months of builder work and came only AFTER three sessions tuning the wrong layer — the recurring 'wrong-layer diagnosis under momentum' failure mode. There is no gate that asks 'who has already solved this?' before we commit to a build approach.\n\n**Proposed shape:** Fold a prior-art check into audit-design (NOT a new standalone /sorted step — audit-design already runs at the right moment, before tickets are drafted, already returns PASS/AMEND, and already has sibling checks: 'alternatives considered' Check 3, 'what am I missing' Check 5). The prior-art check is Check 3's natural extension. TRIGGER on decision CLASS, not ticket size: fire when the decision proposes BUILDING a mechanism/capability to solve a general problem (vs a localized fix) — because the case this is FOR (D-ds-inference-context-management) was S/M bug-fix-shaped tickets, so a size gate would have missed it. On trigger: require evidence prior art was surveyed (a named tool/paper/repo + one-line finding), else AMEND with a 30-minute-survey prompt. Allow 'waive with reason' (visible, like shipped-unproven — never a silent skip). Update /sorted step 2.5 doc to name the check. Canonical demonstrable example now available: aider source is local at /home/akien/dev/src/aider — 'read the implementation, not just the docs.'\n\n**Affected files:** skills/audit-design/SKILL.md (new check + AMEND message), skills/sorted/SKILL.md (step 2.5 doc mention). LOW-MEDIUM inertia (skill text).\n**Design rules:** skills live in repo skills/ (symlink single-source, no copy-sync).\n**Scope boundary:** the audit-design check + AMEND prompt + waive-with-reason + /sorted doc line. Do NOT build an automated prior-art SEARCH — the survey is a human/agent action the gate PROMPTS, not automates.\n**Completion criteria:**\n- audit-design returns AMEND on a build-a-mechanism decision lacking prior-art evidence; PASS when evidenced OR waived-with-reason.\n- A fixture decision demonstrates the AMEND fires and flips to PASS when a prior-art line is added.\n- /sorted step 2.5 doc names the check.\n**Test plan:** red->green — a fixture 'build-a-new-mechanism' decision with no prior-art triggers AMEND; adding a prior-art evidence line flips it to PASS; a localized-fix decision does NOT trigger (no false-positive on bug-fixes).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "worker": "master",
+    "intention": "I intend that we survey who has already solved a problem BEFORE committing to a build approach — so wrong-layer diagnosis under momentum is caught at decision-time, not three wasted sessions later. Serves CP4 (make everything suck less) and the DS.0-leveling north star (the aider survey is the proof of this gate's ROI).",
+    "created_at": "2026-07-06T21:26:37.386965+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T21:26:37.387039+00:00"
+  }
+}
