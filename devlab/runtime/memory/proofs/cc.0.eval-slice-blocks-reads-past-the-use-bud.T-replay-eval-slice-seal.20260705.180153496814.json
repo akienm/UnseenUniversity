@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.eval-slice-blocks-reads-past-the-use-bud.T-replay-eval-slice-seal.20260705.180153496814",
+  "emitter": "cc.0",
+  "namespace": [
+    "eval-slice-blocks-reads-past-the-use-bud",
+    "T-replay-eval-slice-seal"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T18:01:53.496814",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-replay-eval-slice-seal"
+    ],
+    "commits": [
+      "64173598856b3e1a127d60a5b5b8bc66cf9dc160"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "eval_slice blocks reads past the use-budget on a strict held-out slice",
+    "intention": "A strict eval slice consulted beyond its use-budget raises BudgetExceeded and records nothing — held-out asymmetry cannot be spent silently",
+    "test": "tests/inference/test_eval_slice.py::test_read_past_budget_blocks_strict_slice",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_eval_slice.py::test_read_past_budget_blocks_strict_slice",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "Failed",
+            "exit_code": 1,
+            "summary": "\ntmp_path = PosixPath('/tmp/pytest-of-akien/pytest-401/test_read_past_budget_blocks_s0')\n\n    def test_read_past_budget_blocks_strict_slice(tmp_path):\n        \"\"\"THE proof node: a strict slice raises past budget and records nothing over the line.\"\"\"\n        root = tmp_path / \"eval\"\n        s = EvalSlice(\"held-out\", budget=2, strict=True, root=root)\n        s.seal(_entries())\n        s.read(by=\"cc.0\", reason=\"first\")\n        s.read(by=\"cc.0\", reason=\"second\")\n        assert s.reads_used() == 2\n>       with pytest.raises(BudgetExceeded):\nE       Failed: DID NOT RAISE <class 'unseen_university.devices.inference.eval_slice.BudgetExceeded'>\n\ntests/inference/test_eval_slice.py:62: Failed\n------------------------------ Captured log call -------------------------------\nWARNING  unseen_university.devices.inference.eval_slice:eval_slice.py:138 eval_slice: 'held-out' read OVER BUDGET (3/2, by=cc.0) — recorded, not blocked\n=========================== short test summary info ============================\nFAILED tests/inference/test_eval_slice.py::test_read_past_budget_blocks_strict_slice\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "64173598856b3e1a127d60a5b5b8bc66cf9dc160",
+    "impl_paths": [
+      "unseen_university/devices/inference/eval_slice.py"
+    ],
+    "ticket": "T-replay-eval-slice-seal",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
