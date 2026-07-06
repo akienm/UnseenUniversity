@@ -1,0 +1,30 @@
+{
+  "schema": "inference.eval_slice.manifest.v1",
+  "name": "stuck-corpus-20260706",
+  "sealed_at": "2026-07-06T11:49:39.594011+00:00",
+  "n": 20,
+  "budget": 64,
+  "content_hash": "6dcb8da830e81247f84d593676d11130899522ab648a84366ad3a1dde287daec",
+  "entry_ids": [
+    "0931a65f-490f-4996-be4f-738597c560e8",
+    "12f82c96-b509-4096-99f9-5f0b720b42c1",
+    "1fa48ea4-de41-4016-8a11-830f8f4cfb75",
+    "23de1faf-b03c-4eb5-8a1c-4deab7841429",
+    "30b32667-10db-49b2-8e5d-7e1a8325b125",
+    "4821dfcf-11f7-4233-b77b-d13d7e0f8dc9",
+    "63058fa5-69bc-4c08-bd28-4b9bf12a6eb7",
+    "6469ee48-a057-431a-86ca-37e6f05718c9",
+    "6c474946-0783-4904-9dcd-5f82c7a44a84",
+    "94ff8944-0889-4ac4-9110-9d03ab7df526",
+    "9501ae3a-7ecc-473f-bf4c-0a29fe389d3d",
+    "97437bc1-689f-4531-bc12-112023e49ce8",
+    "a540f885-4448-4c98-8d96-544ca8bb2d8a",
+    "af6a0c0c-5c21-4270-9563-d466bc2ea030",
+    "afdefc5f-d1c8-4f21-ad76-4cf323d7fb0c",
+    "bae3e156-4f81-47e1-8a1e-f0d092c811d7",
+    "da3922e6-6087-4d74-b065-950402ef4884",
+    "ebf620c4-8b91-41b4-aadd-441948acaaa0",
+    "f9bad70f-ffc1-4481-8c1f-c5e39fca0adc",
+    "fdf8796a-1ebd-465e-98be-9cc6361b6a13"
+  ]
+}
