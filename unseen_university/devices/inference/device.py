@@ -317,6 +317,11 @@ class InferenceDevice(BaseDevice):
                 "task_class": getattr(request, "task_class", ""),
                 "escalation_hop": getattr(request, "escalation_hop", 0),
                 "foreground": getattr(request, "foreground", False),
+                # Coding-loop layer labels (T-corpus-visibility-gaps) — so the starve-curve can be
+                # segmented architect/editor/critic without grepping system-prompt text.
+                "role": getattr(request, "role", ""),
+                "turn": getattr(request, "turn", 0),
+                "parent_id": getattr(request, "parent_id", ""),
                 "request": {
                     "system": getattr(request, "system", ""),
                     "messages": getattr(request, "messages", None),

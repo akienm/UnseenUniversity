@@ -149,6 +149,7 @@ class ArchitectEditorFlow:
             prior_attempt=prior_attempt,
             foreground=foreground,
             cwd=cwd,
+            role="architect",
         )
         plan = self._extract_plan(plan_result)
         if plan_result.outcome != LOOP_DONE:
@@ -196,6 +197,7 @@ class ArchitectEditorFlow:
             prior_attempt=prior_attempt,
             foreground=foreground,
             cwd=cwd,
+            role="editor",
         )
 
     @staticmethod

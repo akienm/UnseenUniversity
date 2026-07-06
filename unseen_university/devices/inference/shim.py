@@ -80,6 +80,15 @@ class InferenceRequest:
     # Foreground flag: when True, rules engine prefers cloud (usage_based) over flat_rate.
     # Used for latency-sensitive tasks like sprint-ticket work that require high capability.
     foreground: bool = False
+    # Coding-loop layer labels (T-corpus-visibility-gaps) — segment the starve-curve by layer.
+    # `role` is the loop's job on this call: "architect" | "editor" | "critic" (empty for
+    # non-loop dispatch). `turn` is the 0-indexed turn within one loop attempt. `parent_id`
+    # optionally threads a call to the one it descends from (e.g. editor→architect); left ""
+    # until a clean cross-role correlator exists (named lever, not faked). All defaulted, so
+    # every existing caller is behavior-neutral — these only ride the record for segmentation.
+    role: str = ""
+    turn: int = 0
+    parent_id: str = ""
 
 
 @dataclass

@@ -669,6 +669,7 @@ class AgenticLoop:
         prior_attempt: str = "",
         foreground: bool = False,
         cwd: Path | None = None,
+        role: str = "",
     ) -> LoopResult:
         """Run one attempt. Returns a typed LoopResult; never raises for a source-down.
 
@@ -722,6 +723,10 @@ class AgenticLoop:
                 # Escalation params thread on turn 0 only — after that the live transcript is the context.
                 escalation_hop=escalation_hop if turn == 0 else 0,
                 prior_attempt=prior_attempt if turn == 0 else "",
+                # Layer labels for corpus segmentation (T-corpus-visibility-gaps): which loop
+                # role this call plays and which turn it is within the attempt.
+                role=role,
+                turn=turn,
             )
             try:
                 response = inference_device.dispatch(req)
