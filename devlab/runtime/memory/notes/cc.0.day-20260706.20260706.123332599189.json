@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.day-20260706.20260706.123332599189",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260706"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-06T12:33:32.599189",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Day 2026-07-06",
+    "text": "## Done\n- **T-ds-harvest-corpus-batch** CLOSED shipped-unproven (8f856ca3) — clean, distinction-bearing stuck corpus generated + sealed: `stuck-corpus-v2` (31 entries, hash d3fcf05c, 2 capability + 2 design), joinable to io_corpus by ticket_id, sealed before the classifier exists (temporal firewall). Plumbing PROVEN (tests/inference/test_harvest_batch, red→green). Quality shipped-unproven pending Akien's human-label pass.\n- **fix(coding-prompt)** (124553ee) — ROOT CAUSE of the harvest contamination: coding.md hardcoded `~/dev/src/UnseenUniversity` in 6 places; devstral prepended it to relative signature-map paths → wandered the live repo. Made all prompt paths RELATIVE + explicit no-absolute/no-cd rule. Production-safe (prod cwd=_REPO_ROOT resolves identically). Akien's steer: \"stop sending those paths in.\"\n- **harvest_batch.py** built (cb2f7af4) — batch runner: curated real-area seeds (smarter-router/flexible-logging=design-stuck; ttl-lru/rd-parser=capability-stuck), `--checkout` auto-creates a throwaway clone (~/dicksimnel, plain dir, no user/sudo), reset pristine per seed. Hermetic eval-only-seal plumbing proof red→green.\n- Filed **T-ds-harvest-corpus-batch** into D-ds-harvest-mode-coding-loop (57539dd8) — the discovered corpus-gen chain link (classifier had assumed tickets 1+2 generate the corpus; they were the machine). Re-gated the classifier on it; closing it auto-ungated **T-ds-defeating-question-classifier**.\n- First real batch (bf71yus48) was INVALID/contaminated (0ecbf92d) — caught by eyeballing (advisor discipline); slice `stuck-corpus-20260706` quarantined. Two wrong-layer detours (dedicated system user 1eea901f, then a sandbox-guard) retired once the root cause (prompt) was found.\n"
+  }
+}
