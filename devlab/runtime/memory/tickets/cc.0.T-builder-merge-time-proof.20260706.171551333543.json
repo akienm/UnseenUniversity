@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-builder-merge-time-proof.20260706.171551333543",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-builder-merge-time-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T23:15:51.333543+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-builder-merge-time-proof"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-builder-merge-time-proof",
+    "title": "[sprint] Builder-wide: unify device-close + emit real proof at branch-merge/validation time",
+    "size": "M",
+    "tags": [
+      "Builder",
+      "Proof",
+      "Workflow"
+    ],
+    "status": "sprint",
+    "priority": 0.6,
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "description": "**Problem:** A branch-builder (Aider, DickSimnel) structurally cannot emit a HEAD-valid proof_store artifact at build time — the impl lives on an unmerged branch in a throwaway clone, not at UU HEAD. Today BOTH builders close via a plain `cc_queue close` that the proof-on-close gate refuses (DickSimnel device.py:285; AiderDevice now closes shipped-unproven as the honest stopgap). Consequence (from the ticket's own premise): 'unvalidated builder throughput just shifts the queue to CC' — if every builder close is shipped-unproven and CC must eyeball each branch, that's validate-every-one, not Q4 spot-check-a-sample. The builder only reduces CC load once a real proof emits when the branch merges/validates.\n\n**Proposed shape:** (1) Extract ONE shared device-close mechanism both builders call (homogeneity — one mechanism parameterized by addressee, not an aider snowflake vs a DS snowflake). (2) Emit the proof_store artifact at branch-merge/validation time (the merger/CC path): when the aider/DS branch is validated and merged to HEAD, run proof_emitter red->green against the ticket's test so the ticket flips from shipped-unproven to proven. Design the merge/validation trigger.\n\n**Affected files:** new shared builder-close helper (e.g. unseen_university/devices/_builder_close.py or a capabilities mixin); unseen_university/devices/aider/device.py; unseen_university/devices/dicksimnel/device.py; the merge/validation path (locate).\n**Design rules:** homogeneity over special-case; proof-on-close (CP1); no SQLite; log the close/merge crossings.\n**Scope boundary:** shared close + merge-time proof emission + wiring both builders. NOT: the aider real-UU-ticket proof (T-aider-real-uu-ticket-proof).\n**Test plan:** red->green on the shared close helper (gate-pass -> shipped-unproven close args; merge -> proof emitted -> ticket proven). \n**Completion criteria:** both builders use one close mechanism; a merged builder branch emits a HEAD-valid proof and flips the ticket to proven.\n**intention:** I intend that a builder's throughput reduces CC's queue instead of shifting eyeball-validation onto CC, by making the proof real at merge time.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-06T23:15:31.107361+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T23:15:31.159620+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b33de956-f1f6-478a-9a95-ae78c0daedf9"
+  }
+}

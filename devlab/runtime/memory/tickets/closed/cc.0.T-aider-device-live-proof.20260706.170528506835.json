@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-aider-device-live-proof.20260706.170528506835",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-device-live-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T23:05:28.506835+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-aider-device-live-proof"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-device-live-proof",
+    "title": "Aider device live proof — implement checkout on a throwaway clone",
+    "size": "S",
+    "tags": [
+      "Aider",
+      "Proof"
+    ],
+    "status": "closed",
+    "priority": 0.4,
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "description": "**Problem:** Prove the AiderDevice accepts a real dispatched ticket, runs aider (qwen@Hex) on a throwaway clone, gates, and closes.\n\n**Proposed shape:** Implement Order.total() and checkout() so the tests pass.\n\n**Affected files:** shop/models.py, shop/service.py\n**Design rules:** do not edit tests or shop/pricing.py\n**Scope boundary:** implement the two functions; then stop.\n**Test plan:** red->green on test_checkout.py\n**Completion criteria:** device runs aider on a clone, gate passes (tests green + in scope), ticket closes with the branch note.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n## Escalation summary (Aider)\n**What was tried:** Aider.0[qwen3-coder:30b]: gate PASS — branch=aider/T-aider-device-live-proof-1783379151 files=['shop/models.py', 'shop/service.py'] tests=green wall=13.1s workdir=/home/akien/.unseen_university/aider_work/T-aider-device-live-proof-1783379151\n**Where it broke:** gate passed but close failed\n**What now?**",
+    "created_at": "2026-07-06T23:05:20.955676+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "Aider.0[qwen3-coder:30b]: gate PASS branch=aider/T-aider-device-live-proof-1783379151 files=[shop/models.py,shop/service.py] tests=green wall=13.1s",
+    "dispatched_at": null,
+    "completed_at": "2026-07-06T23:10:19.869339+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T23:05:21.000934+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d5fc5bf-987a-45b8-8a05-c5c5df951533",
+    "proven": false,
+    "unproven_reason": "aider objective gate PASSED (tests-green + diff-scope in-scope); a branch-builder cannot emit a UU-HEAD-valid proof (impl on unmerged clone branch) — real proof emits at merge/validation time",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}

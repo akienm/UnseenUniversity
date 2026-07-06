@@ -11,6 +11,9 @@
 - T-review-builder-process-guardrails — Review design: prior-art gate in /sorted + every-flag-stamps-io_corpus invariant (Design review complete: both guardrails KEEP+MODIFY. Prior-art gate -> fold into audit-design, trigger on decision-class)
 - T-aider-builder-first-run — Aider builder — first headless run against Hex on a self-contained task (the known-quantity control arm) (aider proven viable on Hex: devstral-24b GREEN 35.6s, qwen3-coder:30b GREEN 16.6s (2.15x faster), both one-shot on the T)
 - T-aider-multifile-orientation-test — Aider builder — multi-file coordinated-change task (the orientation gate DS died on) (aider GREEN on multi-file coordinated change, BOTH models: qwen3-coder:30b 5/5 in 17.0s, devstral-24b 5/5 in 38.8s. NO f)
+- T-aider-device-live-proof — Aider device live proof — implement checkout on a throwaway clone (Aider.0[qwen3-coder:30b]: gate PASS branch=aider/T-aider-device-live-proof-1783379151 files=[shop/models.py,shop/service)
+- T-aider-device-live-proof-2 — Aider device live proof 2 — device closes end-to-end (Aider.0[qwen3-coder:30b]: gate PASS — branch=aider/T-aider-device-live-proof-2-1783379485 files=['shop/models.py', 'shop)
+- T-aider-rack-device-wrapper — AiderDevice — wrap aider as a rack builder (Granny-dispatched, throwaway-clone, branch-not-main, CC-validated) (AiderDevice shipped: devices/aider/ (runner standalone+bus-free with own __main__ = Windows-drivable; device/shim/listen)
 ## Notes
 
 - Root cause of contamination was PROMPT path injection, not a cwd-seam leak — fix is at the source (relative paths), no dedicated user / sudo / guard needed.
@@ -54,3 +57,10 @@ NONE — clean pushpoint (HEAD 9b62bbba, tree clean, all pushed, origin reachabl
 
 ## Ad hoc (2026-07-06 PM — Akien steer: rackmount aider shim is critical path to a Windows aider-builder)
 - T-aider-rack-device-wrapper (L, HIGH-inertia PRE-APPROVED) — IN PROGRESS. Pivoted from T-agentic-loop-flags-in-corpus (unclaimed clean).
+
+## MILESTONE (2026-07-06 PM) — the rackmount aider shim SHIPPED
+- **T-aider-rack-device-wrapper CLOSED (shipped-unproven).** devices/aider/ built in 4 committed stages (a026c2b3 runner+gate / e9b2e4f7 device+shim+listener / ffb0647a Granny wiring / bc8160d6 shipped-unproven close). PROVEN: 66 contract tests + runner end-to-end on Hex real clone (qwen 24.8s) + LIVE device end-to-end (real queue ticket -> AiderDevice -> aider qwen@Hex -> gate PASS 13.1s -> status=closed).
+- **runner.py is standalone + bus-free with its own __main__** — the Windows-drivable core: "python -m unseen_university.devices.aider.runner --repo R --message M --test T". This is what Akien spins up on a Windows box.
+- **Findings surfaced by the live proof (all ticketed):** (1) editable-install MetaPathFinder beats PYTHONPATH -> clone tests import the ORIGINAL tree (fake-green trap) -> T-aider-real-uu-ticket-proof needs clone-test isolation. (2) branch-builders structurally cannot emit a HEAD-valid proof (impl on unmerged clone branch) -> honest close is shipped-unproven; real proof at merge time -> T-builder-merge-time-proof (builder-wide: DickSimnel has the same plain-close gap). (3) no builder load-balancing -> T-granny-builder-load-balancing (aider is Aider-tag opt-in for now). (4) pre-existing test_core_values stale igor path -> T-fix-core-values-igor-brainstem-path.
+- **T-aider-swarm-deployment auto-ungated** (gate was this ticket).
+- Follow-ups filed under D-fable-builder-empirical-program: T-builder-merge-time-proof (0.6), T-aider-real-uu-ticket-proof (0.55), T-granny-builder-load-balancing (0.4), T-fix-core-values-igor-brainstem-path (0.2).
