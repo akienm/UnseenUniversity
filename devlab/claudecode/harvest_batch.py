@@ -84,16 +84,35 @@ def _make_seeded_scratch(seed: dict, keep: bool) -> Path:
 
 
 def _reset_checkout(checkout: Path) -> Path:
-    """Reset the dedicated throwaway checkout to a pristine tree, ready for the next seed.
+    """Reset the throwaway sandbox checkout to a pristine tree, ready for the next seed.
 
-    The real containment (Akien's choice, provision_ds_sandbox.sh): run the batch AS dicksimnel so
-    `~/dev/src/UnseenUniversity` IS this throwaway checkout — devstral's hardcoded `cd ~/dev/...`
-    lands here (authentic full-repo orientation), and literal `/home/akien/...` is permission-denied
-    (safe). git reset --hard + clean -fdx wipes the prior seed's edits so each run starts pristine.
+    The sandbox is a plain git clone under ~/dicksimnel (a DIRECTORY, not a system user — Akien's
+    call, 2026-07-06). The batch runs as akien with HOME pointed at the sandbox home, so devstral's
+    `cd ~/dev/src/UnseenUniversity` lands HERE (authentic full-repo orientation). Absolute escapes
+    to the live tree are rejected by the tool-layer guard (_install_sandbox_guard). git reset --hard
+    + clean -fdx wipes the prior seed's edits so each run starts pristine.
     """
     subprocess.run(["git", "-C", str(checkout), "reset", "--hard", "-q"], check=False)
     subprocess.run(["git", "-C", str(checkout), "clean", "-fdxq"], check=False)
     log.info("harvest_batch: reset checkout %s to pristine HEAD", checkout)
+    return checkout
+
+
+def _ensure_throwaway_clone(checkout: Path, source_repo: Path) -> Path:
+    """Ensure a throwaway UU clone exists at `checkout`; return it.
+
+    A plain local clone (as akien — no user, no sudo). Independent of the live tree: devstral's edits
+    and per-seed resets happen here only. With the coding prompt now using RELATIVE paths (no
+    hardcoded ~/dev/src/UnseenUniversity), cwd=this-clone keeps devstral inside it — the source fix,
+    not a guard. Created once; reused (reset pristine) across seeds.
+    """
+    if (checkout / ".git").is_dir():
+        return checkout
+    checkout.parent.mkdir(parents=True, exist_ok=True)
+    # -c safe.directory='*' so cloning our own repo never trips git's ownership guard.
+    subprocess.run(["git", "-c", "safe.directory=*", "clone", "-q", str(source_repo), str(checkout)],
+                   check=False)
+    log.info("harvest_batch: created throwaway clone %s (from %s)", checkout, source_repo)
     return checkout
 
 
@@ -210,10 +229,10 @@ def main() -> int:
     ap.add_argument("--slice-name", default="", help="eval-slice name (default: stuck-corpus-<date>)")
     ap.add_argument("--budget", type=int, default=64, help="eval-slice read budget")
     ap.add_argument("--keep-workdir", action="store_true", help="leave scratch dirs for inspection")
-    ap.add_argument("--checkout", nargs="?", const=str(Path.home() / "dev/src/UnseenUniversity"),
-                    default="", help="run each seed against this resettable checkout (reset pristine "
-                    "per seed) instead of a tmp scratch — the real containment path. Bare flag uses "
-                    "~/dev/src/UnseenUniversity (correct when run AS dicksimnel).")
+    ap.add_argument("--checkout", nargs="?", const=str(Path.home() / "dicksimnel"),
+                    default="", help="run each seed against a throwaway clone at this path (created if "
+                    "missing, reset pristine per seed) instead of a tmp scratch — the isolation path. "
+                    "Bare flag uses ~/dicksimnel.")
     args = ap.parse_args()
 
     os.environ["INFERENCE_ENDPOINT"] = args.endpoint
@@ -233,12 +252,11 @@ def main() -> int:
     if args.max_turns > 0:
         _pin_low_turn_cap(args.max_turns)
 
-    checkout = Path(args.checkout) if args.checkout else None
+    checkout = Path(args.checkout).expanduser() if args.checkout else None
     if checkout is not None:
-        if not (checkout / ".git").is_dir():
-            print(f"ABORT: --checkout {checkout} is not a git checkout — run provision_ds_sandbox.sh first")
-            return 4
-        print(f"checkout-mode: seeds run against {checkout} (reset pristine per seed)")
+        from unseen_university._uu_root import uu_root
+        checkout = _ensure_throwaway_clone(checkout, Path(uu_root()))
+        print(f"checkout-mode: seeds run against throwaway clone {checkout} (reset pristine per seed)")
     else:
         print("WARNING: no --checkout — using tmp scratch, which devstral IGNORES for the live repo "
               "(contaminated corpus). Only valid for smoke tests, not a real harvest.")
