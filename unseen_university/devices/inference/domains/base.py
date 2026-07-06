@@ -204,6 +204,7 @@ class BaseDomain:
                     agent_id=agent_id,
                     escalation_hop=escalation_hop,
                     prior_attempt=prior_attempt,
+                    cwd=cwd,
                 )
             except Exception as exc:
                 # Defense in depth: the loop returns AVAILABILITY rather than raising, but any
