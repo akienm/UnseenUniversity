@@ -272,7 +272,19 @@ class BaseDomain:
                             self.name, ticket_id, availability_retries, self.max_availability_retries, required)
                 continue  # same hop → selector skips the down source, picks next-cheapest
 
-            # cls == 'capability': reached a terminal but never DONE → bump difficulty one rung.
+            # cls == 'capability': reached a terminal but never DONE.
+            if self.harvest_mode:
+                # Harvest mode: do NOT escalate. The wall IS the wanted signal — terminate at
+                # the fixed tier with escalation_hop still 0, no pricier re-dispatch and NO
+                # system_alarm (a capability wall is the expected outcome here, not an incident).
+                # None makes the worker_listener decline the ticket back to sprint — the honest
+                # 'this tier could not finish' terminal. Richer stuck-ladder / drop-ticket
+                # handling of the wall is the next ticket (T-ds-stuck-ladder-and-rung-log).
+                log.info("domain=%s crossing|step=escalate|ticket=%s|hop=%d|"
+                         "result=harvest-wall|reason=capability (escalation disabled)",
+                         self.name, ticket_id, escalation_hop)
+                return None
+            # otherwise bump difficulty one rung.
             prior_attempt = (result.text or "").strip()[:400]
             escalation_hop += 1
             log.info("domain=%s crossing|step=escalate|ticket=%s|hop→%d|reason=capability",
