@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-qwen-vs-devstral-architect-probe.20260706.145346442528",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-qwen-vs-devstral-architect-probe"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T20:53:46.442528+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-qwen-vs-devstral-architect-probe"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-qwen-vs-devstral-architect-probe",
+    "title": "[sprint] qwen3-coder:30b vs devstral-24b — architect latency + does-it-plan probe",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Builder"
+    ],
+    "description": "**Problem:** Iteration velocity is the binding constraint on the whole builder program (devstral-small-2:24b runs ~4min/turn on Hex, so one live data point costs 30min-5h and one diagnosis cycle costs a day). qwen3-coder:30b (models_registry.py:296) is a 30B-A3B MoE with ~3B active params — likely materially FASTER than dense-24B on the same 32GB box, and stronger at coding. PRIOR ART (prior-art gate): T-aider-rack-device was cancelled after its root cause turned out to be tier-routing to qwen2.5:7b instead of a 32B model — with proper-tier routing, edits worked cleanly. So 'the model is below floor / wrong tier' is a REAL, untested confound for our loop, and this probe tests it for the price of two runs.\n\n**Proposed shape:** Run the existing architect path (ArchitectEditorFlow / AgenticLoop plan_mode) on ONE real multi-file ticket, once with devstral-small-2:24b@Hex and once with qwen3-coder:30b@Hex. cwd = throwaway clone with RELATIVE paths only (124553ee contamination lesson), num_ctx=32768, flat-rate 600s wall. Pre-register the decision rule via prereg.py BEFORE running. Record per arm: wall-clock, ms/turn, turns-to-plan, and whether a substantive plan was produced (_is_substantive_plan). io_corpus already captures every byte; write a short results note.\n\n**Affected files:** new probe runner under devlab/claudecode/ (reads the existing loop; no loop changes). LOW inertia.\n**Design rules:** Inference-Proxy-only (route through the inference device, no direct OR/Anthropic calls); every-flag-stamps-io_corpus (aci_mode/plan_mode/role must appear on the corpus records for post-hoc classification).\n**Scope boundary:** MEASURE only — no loop mutations. Picking the architect model default is a follow-up decision informed by this. Do NOT wire per-role tiering here.\n**Test plan:** Observation-shaped. Red-form: assert the runner records both arms' (latency, ms/turn, plan-bool) AND a prereg record exists with an earlier timestamp than the results. If no honest red form, close shipped-unproven naming the lever = observation-shaped probe (per proof_emitter-cant-prove note).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:**\n- prereg.py record written BEFORE either run (earliest-timestamp firewall holds).\n- Both arms (devstral-24b, qwen3-coder:30b) ran on the SAME real multi-file ticket + throwaway clone; live repo untouched (0 live-repo path refs in io_corpus).\n- Results note records per arm: wall-clock, ms/turn, turns-to-plan, plan-substantive bool.\n- A comparison line states whether qwen is faster AND whether it produced a substantive plan — enough to decide the architect model default in a follow-up.",
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "worker": "master",
+    "created_at": "2026-07-06T20:53:26.456262+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the builder's model lever is finally PRICED — so we stop attributing the 0-edits wall to loop shape while an untested tier confound (T-aider-rack-device: 7B-not-32B) sits underneath. Serves the DS.0-leveling north star and iteration-velocity-as-binding-constraint.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T20:53:26.505607+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e00762d2-d18e-4835-be57-5e19a117b926"
+  }
+}

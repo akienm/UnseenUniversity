@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-fable-builder-empirical-program.20260706.145346829387",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-fable-builder-empirical-program"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T20:53:46.829387+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-consequence-fable-builder-empirical-program"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-fable-builder-empirical-program",
+    "title": "[sprint] Consequence check: Fable builder empirical program (2x2 + funnel-CI)",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** Adopted Fable's empirical program — a qwen-vs-devstral probe, a funnel-as-CI harness, and a {DS,aider}x{devstral,qwen} 2x2 to resolve the harness-gap-vs-model-floor confound.\n**Predicted unintended effects:** (1) qwen3-coder:30b may be FASTER but WORSE at planning — picking it for speed alone would regress plan quality (watch plan-substantive RATE per arm, not just latency). (2) aider headless against a throwaway clone could still touch the LIVE repo if a path leaks (the 124553ee contamination class) — the aider arms are the highest-risk here. (3) funnel-as-CI's sealed set could ossify — the harness overfits the sealed tickets while real tickets drift (watch external-slice vs internal-slice score divergence). (4) An Ollama Cloud arm could burn free-tier budget (DS cost-constraint). (5) The pre-registered decision rule is only grounding if the rule is written BEFORE results exist — a read-then-write leak silently un-grounds the whole experiment.\n**Signals to watch:** per-arm scoreboard rows (plan-substantive rate distinct from latency); io_corpus path-ref scan on the aider arms for any live-repo path; internal-vs-external funnel score gap; per-arm dollars; prereg earliest-record timestamps vs results timestamps.\n**Gate condition:** Check by 2026-07-20 or when the 2x2 scoreboard is first filled.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:**\n- By 2026-07-20 (or first filled 2x2 scoreboard): each predicted effect annotated occurred / clear / partial.\n- Specifically checked: plan-substantive rate distinct from latency; io_corpus scanned for live-repo path refs in aider arms; internal-vs-external funnel score gap noted; per-arm dollars; prereg timestamps precede results.",
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "gate": "2026-07-20",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-07-06T20:53:42.243272+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the empirical program's own side-effects (speed-vs-quality tradeoff, contamination risk, eval ossification, budget burn, firewall integrity) are observed rather than assumed. Serves CP3 (there is always a why) applied to our own instrument.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T20:53:42.243353+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f38122b9-e50d-483f-adc5-c128d332d2cf"
+  }
+}

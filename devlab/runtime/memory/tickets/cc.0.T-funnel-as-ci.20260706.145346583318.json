@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-funnel-as-ci.20260706.145346583318",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-funnel-as-ci"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T20:53:46.583318+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-funnel-as-ci"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-funnel-as-ci",
+    "title": "[sprint] Funnel-as-CI — one-command versioned builder eval over a sealed ticket set",
+    "size": "M",
+    "tags": [
+      "Builder",
+      "Eval"
+    ],
+    "description": "**Problem:** The end-to-end builder 'funnel' is currently a per-session ritual reconstructed by hand (see 07-05 slate). Every coding-loop change should get a funnel run the way every ticket gets proof-on-close — a standing, versioned metric, not a one-off.\n\n**Proposed shape:** One command that runs a FIXED sealed ticket set (sealed via eval_slice.py) through the coding loop and appends a scoreboard row per run, recording per-ticket: gate-pass? plan produced? edits attempted? edits applied? tests green? DONE? + wall-clock/turn + model/arm label. Scoreboard is an append-only flat-file artifact (NO SQLite). Include ~5 EXTERNAL benchmark tasks (exercism-style), sealed the same way, to decouple 'harness improved' from 'our tickets got easier' (self-referential-eval smell Fable flagged; matches the grounding-spine's temporal-firewall discipline).\n\n**Affected files:** new funnel runner under devlab/claudecode/ or unseen_university/devices/inference/; reuse eval_slice.py, io_corpus, architect_editor. MEDIUM inertia (new standing harness).\n**Design rules:** NO SQLITE (flat-file scoreboard); Inference-Proxy-only; every-flag-stamps-io_corpus.\n**Scope boundary:** the harness + scoreboard + sealed ticket set (internal + external slices). NOT the 2x2 arms — that is T-funnel-2x2-model-harness-confound, which consumes this.\n**Test plan:** red->green — a run over a 1-ticket sealed set appends exactly one well-formed scoreboard row; a re-run appends (idempotent-append, not overwrite); an unknown/unsealed ticket id is rejected.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:**\n- A single command runs the sealed ticket set (internal + ~5 external) through the coding loop and appends one well-formed scoreboard row per run.\n- Scoreboard row carries per-ticket: gate-pass, plan-produced, edits-attempted, edits-applied, tests-green, DONE, wall-clock/turn, model/arm.\n- Re-run appends (never overwrites); unknown/unsealed ticket id is rejected.\n- Scoreboard is flat-file (no SQLite); internal vs external slices are distinguishable.",
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "worker": "master",
+    "created_at": "2026-07-06T20:53:34.522286+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every coding-loop change earns a funnel run the way every ticket earns proof-on-close — a standing, versioned builder metric instead of a hand-rebuilt ritual. Serves the compiled-inference measurement-loop-must-be-grounded telos.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T20:53:34.522330+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1f716cda-27f7-4305-9403-3a743f836343"
+  }
+}
