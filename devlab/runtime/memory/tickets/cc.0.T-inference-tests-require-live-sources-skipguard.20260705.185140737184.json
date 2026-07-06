@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-tests-require-live-sources-skipguard.20260705.185140737184",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-tests-require-live-sources-skipguard"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T00:51:40.737184+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-tests-require-live-sources-skipguard"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-tests-require-live-sources-skipguard",
+    "title": "[sprint] 4 inference tests fail without live sources — add skip-guard or fix routing assertions",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Testing"
+    ],
+    "priority": 0.2,
+    "status": "sprint",
+    "decision_id": null,
+    "description": "**Problem (pre-existing, found during T-corpus-visibility-gaps 2026-07-05):** 4 tests in tests/inference/ fail on CLEAN HEAD (verified c8c53a2b via worktree) when no live inference source (ollama/ollama_cloud/hex/google-free) is up — unrelated to any code change:\n- test_dicksimnel.py::TestORCostGate::test_worker_google_free_preferred_over_openrouter_when_available\n- test_dicksimnel_live_smoke.py::test_dicksimnel_builds_on_hex (HANGS ~2min waiting for live Hex, then fails)\n- test_mini_rack.py::test_rules_worker_routes_to_openrouter\n- test_mini_rack.py::test_rules_batch_routes_to_local_ollama_at_night\n\nRoot cause: sources unavailable → rules engine last-resort-routes to openrouter, so routing-assertion tests fail; the live_smoke test needs a real Hex. In a sandbox these are false-negatives, not regressions.\n\n**Proposed shape:** mark the live/source-dependent ones with a skip-guard (pytest.mark.skipif on source availability) so a sourceless run is green; keep the routing-logic assertions runnable by injecting a mock available source registry (as test_mini_rack partially does) rather than depending on ambient availability. The live_smoke test should skip fast (not hang 2min) when Hex is unreachable.\n\n**Affected files:** tests/inference/test_dicksimnel.py, tests/inference/test_dicksimnel_live_smoke.py, tests/inference/test_mini_rack.py (+ possibly a shared conftest source-availability fixture).\n\n**Design rules:** integration tests hit real Postgres (no mocks) — but source AVAILABILITY is environment, not logic; guarding on it is legitimate. Don't weaken the routing assertions themselves.\n\n**Scope boundary:** make a no-live-source run green (skip or mock); do NOT change rules-engine routing behavior.\n\n**Validation:** `pytest tests/inference/ -q` on a box with no ollama/hex is green (0 failed; skips allowed).\n\n**Completion criteria:** the 4 named tests either pass via injected mock sources or skip cleanly (no hang) when sources are down.\n\n**Test plan:** run the suite with all live sources down — assert 0 failures. No new proof node; this is test-hygiene (shipped-unproven if no red form: the lever is a source-availability fixture).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-06T00:51:32.423048+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T00:51:32.466798+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "22834e94-7a19-4c10-924b-7c85285483ef"
+  }
+}
