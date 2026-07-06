@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.aider-first-run-harness-gap-confirmed-2026-07-06.20260706.154908834662",
+  "emitter": "cc.0",
+  "namespace": [
+    "aider-first-run-harness-gap-confirmed-2026-07-06"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-06T15:49:08.834662",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-aider-builder-first-run",
+      "T-funnel-2x2-model-harness-confound",
+      "T-qwen-vs-devstral-architect-probe"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Aider control-arm first run: harness gap CONFIRMED, model lever priced (qwen 2.15x faster)",
+    "text": "# Aider builder first run — decisive result (2026-07-06)\n\nRan aider (external dep, isolated ~/.aider-venv, subprocess-only, v0.86.3.dev) headless against Hex ollama ($0) on a deterministic capability task (implement TTLCache so 4 failing pytests go green), isolated sandbox (own git, no UU remote). Runner: devlab/claudecode/aider_smoke.py (re-runnable, model-parameterized).\n\n## Results\n| Arm | Result | Wall |\n|---|---|---|\n| DS loop + devstral-small-2:24b (prior baseline, 07-04) | 0 edits (budget-exhaustion) | ~34min then HALT |\n| aider + devstral-small-2:24b@Hex | GREEN 4/4 | 35.6s |\n| aider + qwen3-coder:30b@Hex | GREEN 4/4 | 16.6s |\n\n## What this proves (2 confounds resolved empirically)\n1. HARNESS GAP is real and LARGE. Same model (devstral-24b), same Hex inference, same implement-till-green task shape DS produced 0 edits on -> aider makes it GREEN in 35.6s. The wall was the LOOP, not the 24B model. This is the harness-gap datapoint Fable's 2x2 was designed to produce; the aider arms are done.\n2. MODEL LEVER priced. qwen3-coder:30b (MoE ~3B active) is 2.15x FASTER than dense devstral-24b on the same box AND completes the task. Confirms Akien's iteration-velocity thesis: qwen is the builder model. Latency win compounds across every future run.\n\n## Consequences for the plan\n- Aider builder is VIABLE NOW on our $0 Hex inference. Fastest path to a swarm builder = aider + qwen3-coder, wrapped as a device.\n- Validates Akien's ordering hard: aider builder first (known quantity), THEN level DS to MATCH aider (DS-leveling target becomes 'be as good as aider's loop', not invented from scratch).\n- 2x2 status: aider x {devstral,qwen} = both GREEN (here); DS x devstral = 0-edits (baseline); DS x qwen = the remaining interesting cell (T-qwen-vs-devstral-architect-probe covers the DS side).\n- Caveat (honest): TTLCache is a 2-file TOY. Proves the mechanism, NOT that aider holds on a real multi-file orientation task (where DS died in read-wandering). Next rung: aider on a harder multi-module task before calling the builder 'one we're happy with'.\n- Not in io_corpus: aider called Hex ollama directly via litellm (external), so these bytes are NOT corpus-captured. Stage-2 OpenAI-compatible proxy endpoint (separate ticket) would fix that.\n\n## Reproduce\npython3 devlab/claudecode/aider_smoke.py --model qwen3-coder:30b   # RED sandbox -> aider -> GREEN"
+  }
+}

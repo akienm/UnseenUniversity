@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-aider-builder-first-run.20260706.154448797317",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-builder-first-run"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T21:44:48.797317+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-aider-builder-first-run"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-builder-first-run",
+    "title": "[in_progress] Aider builder — first headless run against Hex on a self-contained task (the known-quantity control arm)",
+    "size": "M",
+    "tags": [
+      "Builder",
+      "Aider",
+      "Experiment"
+    ],
+    "description": "**Problem:** Akien's steer (2026-07-06): sprint toward an aider builder we're happy with FIRST — aider is a known quantity (proven to make small local models edit). Before wrapping it as a rack device, prove aider completes a real coding task against OUR inference (Hex) on a self-contained sandbox, and see whether it edits where the DS pipeline produced 0 edits.\n\n**Proposed shape:** Install the local aider checkout (/home/akien/dev/src/aider) into an ISOLATED venv (never UU's venv; no aider imports into unseen_university/). Create a throwaway sandbox git repo (own git, no UU remote — blast radius contained by construction) holding a self-contained capability task: a stub module + a FAILING pytest. Run aider headless (--message --yes) with OLLAMA_API_BASE=http://10.0.0.100:11434, --model ollama_chat/devstral-small-2:24b. Observe: does aider edit? do the tests pass? Repeat with qwen3-coder:30b. Capture the invocation as a reviewable script (the seed of the repeatable aider-builder runner).\n\n**Affected files:** new sandbox + isolated venv (outside the repo); a reviewable runner script under devlab/claudecode/ or scripts/. NO changes to unseen_university/ (aider is external, subprocess-only).\n**Design rules:** no aider imports into unseen_university/; Inference-Proxy-only does NOT apply to aider (it is an external control arm — its bytes get corpus-captured later via a Stage-2 proxy endpoint, separate ticket); no SQLite.\n**Scope boundary:** first-run + observation + a reusable invocation script. Do NOT build the AiderDevice rack wrapper (follow-up) and do NOT wire the proxy endpoint here.\n**Completion criteria:**\n- aider runs headless against Hex and completes the sandbox task (edits applied, failing test flips to green) with at least one of {devstral-24b, qwen3-coder:30b}.\n- The invocation is captured as a reviewable, re-runnable script.\n- Result recorded: which model, did-it-edit, tests-green, wall-clock — the first harness-gap datapoint (aider vs the DS 0-edits baseline).\n**Test plan:** the sandbox's own pytest IS the proof — RED (stub fails) before aider, GREEN (aider's edits pass) after. If aider fails to edit, close shipped-unproven naming the lever (routing/edit-format/model).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "gate": null,
+    "priority": 0.72,
+    "status": "in_progress",
+    "worker": "master",
+    "intention": "I intend that aider — a known-quantity builder — is proven to make our local models edit on our own inference, giving us a working builder to run on the swarm NOW and a control-arm baseline that prices the DS harness gap. Serves the aider-builder-first standing intention and DS.0 leveling.",
+    "created_at": "2026-07-06T21:44:41.363459+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T21:44:41.407106+00:00"
+  }
+}
