@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.stuckladder-routes-a-no-answer-halt-unav.T-ds-stuck-ladder-and-rung-log.20260705.204059194833",
+  "emitter": "cc.0",
+  "namespace": [
+    "stuckladder-routes-a-no-answer-halt-unav",
+    "T-ds-stuck-ladder-and-rung-log"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-05T20:40:59.194833",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-stuck-ladder-and-rung-log"
+    ],
+    "commits": [
+      "5ede20b7b079d7a279a3ce697b43d935fc04b070"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "StuckLadder routes a no-answer/HALT-unavailable stuck event to call-CC and emits one rung-choice record",
+    "intention": "a harvest_mode stuck event with no compiled answer and HALT unavailable routes to the call-CC rung AND emits exactly one rung-choice record carrying the real rung, tier, and turn_reached",
+    "test": "tests/inference/test_stuck_ladder.py::test_no_answer_no_halt_routes_to_call_cc_and_records",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_stuck_ladder.py::test_no_answer_no_halt_routes_to_call_cc_and_records",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        ladder = StuckLadder(\n            call_cc_hook=lambda ev: fired.append(ev.ticket_id),  # rung-4 actuation seam\n            root=tmp_path,  # redirect the record store off the real memory root\n        )\n    \n        choice = ladder.resolve(_EVENT)\n    \n        assert choice.rung == RUNG_CALL_CC\n        assert fired == [\"T-stuck-proof\"], \"the call-CC actuation seam must fire when rung 4 is taken\"\n    \n        records = read_rung_choices(root=tmp_path)\n>       assert len(records) == 1, f\"exactly one rung-choice record expected, got {len(records)}\"\nE       AssertionError: exactly one rung-choice record expected, got 0\nE       assert 0 == 1\nE        +  where 0 = len([])\n\ntests/inference/test_stuck_ladder.py:45: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_stuck_ladder.py::test_no_answer_no_halt_routes_to_call_cc_and_records\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "5ede20b7b079d7a279a3ce697b43d935fc04b070",
+    "impl_paths": [
+      "unseen_university/devices/inference/stuck_ladder.py"
+    ],
+    "ticket": "T-ds-stuck-ladder-and-rung-log",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
