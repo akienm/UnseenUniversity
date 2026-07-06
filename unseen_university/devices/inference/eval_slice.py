@@ -122,6 +122,13 @@ class EvalSlice:
         """
         used = self.reads_used()
         over = used >= self.budget
+        if over and self.strict:
+            log.warning("eval_slice: '%s' read BLOCKED — budget %d exhausted (by=%s)",
+                        self.name, self.budget, by)
+            raise BudgetExceeded(
+                f"eval slice '{self.name}' is out of budget ({used}/{self.budget}) — "
+                f"consulting it again spends held-out asymmetry it no longer has"
+            )
         record = {
             "schema": READLOG_SCHEMA,
             "ts": datetime.now(timezone.utc).isoformat(),
