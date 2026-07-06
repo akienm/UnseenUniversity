@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-ds-harvest-mode-coding-loop-2026-07-05.20260705.195047688874",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-ds-harvest-mode-coding-loop-2026-07-05"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-05T19:50:47.688874",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-ds-harvest-mode-coding-loop-2026-07-05",
+    "title": "DS harvest-mode coding loop — escalation off, fixed tier, harvest failures not builds",
+    "status": "open",
+    "date": "2026-07-05",
+    "spawned_tickets": [
+      "T-ds-harvest-mode-escalation-off",
+      "T-ds-stuck-ladder-and-rung-log",
+      "T-ds-defeating-question-classifier",
+      "T-ds-resume-with-answer-loop",
+      "T-consequence-ds-harvest-mode-coding-loop"
+    ],
+    "text": "# D-ds-harvest-mode-coding-loop-2026-07-05\n**title:** DS harvest-mode coding loop — escalation off, fixed tier, harvest failures not builds\n**date:** 2026-07-05\n**status:** open\n**spawned_tickets:** T-ds-harvest-mode-escalation-off, T-ds-stuck-ladder-and-rung-log, T-ds-defeating-question-classifier, T-ds-resume-with-answer-loop, T-consequence-ds-harvest-mode-coding-loop\n**relates:** D-coding-loop-redesign-aider-survey-2026-07-04, D-ds-builder-leveling, D-proof-program-grounding-spine-2026-07-05\n\n## Decision narrative\nThe DS on-stuck escalation ladder is the builder-side ground-truth instrument (the note, 2026-07-05). A cheap builder that hits an under-designed ticket cannot absorb the design gap the way CC can — it flails to budget-exhaustion (this weekend's architect paged files to exhaustion with no 'I'm stuck' exit). On-stuck escalation is CP1-with-a-body for the builder.\n\nAkien's reframe (2026-07-05, in dialogue): for THIS testing phase, DISABLE model escalation. Escalation is a confound for the exact measurement we want — escalating mid-run mixes 'the cheap builder couldn't' with 'a stronger one could', blurring the builder starve-curve and papering over the stuck-signal. Instead, run DS at a FIXED tier on Hex (cost-safe, flat-ish host) with objective = HARVEST failures, not complete builds. A genuine stuck is reality resisting — unfakeable, uncoupled from DS's self-model — the builder-side of the same temporal firewall as the grounding spine.\n\nCC's addition (accepted by Akien): disabling escalation ALONE just makes DS re-hit the same first wall every pass. 'Fail further and further along' requires a RESUME-WITH-ANSWER loop: stuck -> name the defeating question -> the question is answered (tree/CC/Akien) -> DS resumes with the answer injected -> hits the NEXT wall, deeper. That loop IS the discovery engine. And the question-naming must separate DESIGN-STUCK (spec didn't say -> a sortable unsorted question, the gold) from CAPABILITY-STUCK (the fixed tier just can't -> a ceiling, not a question); only design-stuck sorts into the tree.\n\nThe four-rung cost-ordered ladder: (1) ANSWER from compiled artifacts [free, the win]; (2) DROP-TICKET the named design-stuck question, set current ticket needs-design, move on [cheap, async]; (3) HALT [blocks; built-but-unused primitive]; (4) CALL-CC [expensive, sync — spends the starved resource; its FREQUENCY is the metric]. The distribution over rungs IS the builder starve-curve.\n\nSEQUENCING (advisor 2026-07-05): ship tickets 1+2 (harvest-mode + ladder/log) FIRST; they generate real stuck-transcripts correlated by ticket_id in io_corpus (with role/turn from T-corpus-visibility-gaps). Then SEAL a held-out slice via eval_slice.py and grade ticket 3's classifier against THAT real, human-labeled slice — NOT author-invented fixtures (which would be the self-consistency trap this whole program exists to defeat). Hand fixtures prove only the routing plumbing. Use our own grounding tools on our own classifier.\n\nAlternatives considered: (a) keep escalation + seek completion (rejected — confounds the starve-curve, and completion isn't the phase goal); (b) harvest-and-stop-at-first-wall, no resume (rejected — no 'further and further', Akien chose full ladder incl. resume + question-naming). Constraints: escalation-off is a FLAG defaulting OFF (production unchanged), not deletion; HIGH-inertia touches agentic_loop.py/architect_editor.py/the DS driver (the escalation WALK lives in the driver, NOT the loop — the loop runs one attempt); inference-proxy-only; flat-file/Postgres never SQLite.\n\nCP1 residue: the firewall grounds 'a labeled design-stuck question is a real wall the fixed-tier builder hit'; it does NOT ground 'the harvested questions are the RIGHT ones to sort first' — that prioritization is a bet.\n\n## Hypothesis\nRunning DS at a fixed tier with escalation OFF and harvest-mode ON produces a stream of human-confirmable design-stuck defeating-questions plus a rung-choice distribution, instead of budget-exhaustion flails; and each resolve->resume pass reaches a strictly later turn on the same ticket.\n\n## Measurement Signal\nA rung-choice log record per DS stuck event (the distribution = the builder starve-curve); the drop-ticket stream contains >=1 well-labeled design-stuck defeating-question distinct from capability-stuck ceilings; a resume pass reaches a strictly later turn index than the recorded stall; call-CC frequency (top rung) is countable. All measurable from the ticket store + the rung log + io_corpus.\n\n## Intention\nI intend that a cheap builder that hits a wall it cannot resolve surfaces the specific DESIGN question that defeated it as durable, sortable work — and pushes deeper each time that question is answered — leveling DS without a smarter model."
+  }
+}

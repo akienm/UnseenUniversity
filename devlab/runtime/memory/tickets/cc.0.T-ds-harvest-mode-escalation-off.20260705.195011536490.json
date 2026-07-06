@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ds-harvest-mode-escalation-off.20260705.195011536490",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-harvest-mode-escalation-off"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-06T01:50:11.536490+00:00",
+  "links": {
+    "decisions": [
+      "D-ds-harvest-mode-coding-loop-2026-07-05"
+    ],
+    "tickets": [
+      "T-ds-harvest-mode-escalation-off"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-harvest-mode-escalation-off",
+    "title": "[sprint] harvest_mode flag: disable escalation, run DS at fixed tier to the wall",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "CodingLoop"
+    ],
+    "priority": 0.6,
+    "decision_id": "D-ds-harvest-mode-coding-loop-2026-07-05",
+    "gate": null,
+    "status": "sprint",
+    "description": "**Problem:** the coding loop's objective is a completed build, and on a capability failure it ESCALATES to a stronger tier (2-hop walk). For the failure-harvesting testing phase that confounds the exact measurement we want: escalating mid-run mixes 'the cheap builder couldn't' with 'a stronger one could', so the builder starve-curve blurs and the stuck-signal is papered over. This weekend's architect paged files to budget-exhaustion with no 'I'm stuck' exit.\n\n**Proposed shape:** a `harvest_mode` flag on the coding loop (AgenticLoop / ArchitectEditor / the DS driver). When ON: (a) the escalation walk is DISABLED — a capability failure does NOT re-dispatch at a higher difficulty; the run stays at a fixed tier and terminates at its turn/budget cap, surfacing the wall instead of climbing past it. (b) objective flips from 'reach DONE' to 'reach the wall and report it'. Hex is the flat-ish host, so burning tokens at a fixed tier is cost-safe. FLAG, not deletion — the escalation machinery is real and returns for production; harvest_mode is a testing-phase mode.\n\n**Affected files:** the DS driver / domain policy that RE-DISPATCHES on LOOP_AVAILABILITY/capability-fail (the escalation WALK — NOTE: agentic_loop.run() explicitly has NO escalation walk, it runs ONE attempt and returns a LoopResult; the walk that increments escalation_hop lives in the DRIVER, not the loop — first sprint step is to LOCATE it), plus agentic_loop.py/architect_editor.py only to THREAD the flag. Do NOT touch device.dispatch's escalation ceiling — disable at the walk layer.\n\n**⚠️ HIGH-inertia pre-approval (Akien, 2026-07-05):** the harvest-mode arrangement (escalation-off at fixed tier for the harvest phase) is APPROVED in design dialogue. This is an additive flag gating existing behavior, not a rewrite of the escalation machinery.\n\n**Design rules:** flag defaults OFF (production unchanged); escalation code stays intact behind the flag; log the mode at loop entry; inference-proxy-only (route through the device, never a direct model call).\n\n**Scope boundary:** the flag + escalation-disable ONLY. NOT the ladder/rung logic (next ticket), NOT drop-ticket, NOT resume.\n\n**Validation:** a harvest_mode run on a capability-failing ticket logs 'harvest_mode: escalation disabled' and ends at the turn cap with escalation_hop still 0 (no higher-tier re-dispatch) — observable in the run log and the io_corpus records (no escalation_hop>0 entry for that ticket).\n\n**Observable via:** log.info('AgenticLoop: harvest_mode=on — escalation disabled, fixed tier') at loop entry; absence of any escalation re-dispatch log line.\n\n**Rollback:** `git revert <hash>` — harvest_mode defaults OFF so revert is behavior-neutral; the flag is purely additive.\n\n**Test plan:** hermetic — a loop with harvest_mode=True and a stubbed device that returns a capability-fail signal must NOT re-dispatch at a higher escalation_hop (assert the driver stops the walk). PROOF NODE: with harvest_mode on, a capability failure yields a terminal 'stuck-at-wall' result and the escalation counter never increments — red (today's code escalates) → green via proof_emitter.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-06T01:49:49.168564+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-06T01:49:49.218862+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "546e4ade-aa13-4f02-9ae3-c4626510e462"
+  }
+}
