@@ -1,0 +1,9 @@
+{
+  "id": "T-harvest-cap-rdparser",
+  "class_intent": "capability_stuck",
+  "split": "dev",
+  "title": "Recursive-descent parser for arithmetic with precedence",
+  "tags": ["Parsing", "AST"],
+  "description": "Implement a recursive-descent parser in `calc_parser.py` for this exact grammar: expr = term (('+' | '-') term)*; term = factor (('*' | '/') factor)*; factor = NUMBER | '(' expr ')' | '-' factor. Tokenize an input string into numbers, operators, and parens (integers and decimals). Build an AST of dataclass nodes (`Num`, `BinOp(op, left, right)`, `Neg(operand)`) and provide `parse(s: str) -> Node` plus `evaluate(node) -> float`. Left-associativity and standard precedence must be correct; unary minus binds tighter than binary. Raise `ParseError` with the offending position on malformed input (unbalanced parens, trailing tokens, unexpected end). Include pytest tests in `test_calc_parser.py` proving: precedence (`2+3*4==14`), associativity (`10-2-3==5`), parens (`(2+3)*4==20`), nested unary (`--5==5`, `-(2+3)==-5`), and three distinct malformed inputs each raising ParseError. All tests must pass.",
+  "scratch_files": {}
+}

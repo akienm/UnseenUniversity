@@ -1,0 +1,12 @@
+{
+  "id": "T-harvest-design-improve-cache",
+  "class_intent": "design_stuck",
+  "split": "eval",
+  "title": "The cache isn't good enough — make it better",
+  "tags": ["Caching"],
+  "description": "The cache in `cache.py` isn't good enough for what we need. Make it better. Add tests.",
+  "scratch_files": {
+    "cache.py": "\"\"\"A simple in-memory cache used across the app.\"\"\"\n\n\nclass Cache:\n    def __init__(self):\n        self._store = {}\n\n    def get(self, key):\n        return self._store.get(key)\n\n    def put(self, key, value):\n        self._store[key] = value\n\n    def clear(self):\n        self._store.clear()\n",
+    "app.py": "\"\"\"Toy app that leans on the cache for expensive lookups.\"\"\"\nfrom cache import Cache\n\n_cache = Cache()\n\n\ndef expensive_lookup(user_id):\n    hit = _cache.get(user_id)\n    if hit is not None:\n        return hit\n    result = {\"user_id\": user_id, \"profile\": f\"profile-for-{user_id}\"}\n    _cache.put(user_id, result)\n    return result\n\n\ndef handle_request(user_id):\n    return expensive_lookup(user_id)\n"
+  }
+}

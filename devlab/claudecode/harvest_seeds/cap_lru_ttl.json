@@ -1,0 +1,9 @@
+{
+  "id": "T-harvest-cap-lru-ttl",
+  "class_intent": "capability_stuck",
+  "split": "eval",
+  "title": "Thread-safe LRU cache with per-entry TTL",
+  "tags": ["Caching", "Concurrency"],
+  "description": "Implement a thread-safe LRU cache class `TTLCache` in `ttl_cache.py` with this exact contract: `TTLCache(capacity: int, default_ttl: float)`; `get(key)` returns the value or raises `KeyError` if absent or expired; `put(key, value, ttl=None)` inserts/updates (ttl overrides default_ttl for that entry); on capacity overflow evict the least-recently-USED live entry (a get or put counts as a use); expired entries are treated as absent and lazily purged on access. It MUST be safe under concurrent get/put from multiple threads (use a single lock; no data races on the recency order or the expiry map). Include pytest tests in `test_ttl_cache.py` that prove: LRU eviction order, TTL expiry (use a monkeypatched clock, not real sleep), that an expired entry frees capacity, and that 8 threads hammering get/put concurrently never corrupt the structure (final invariants hold). All tests must pass.",
+  "scratch_files": {}
+}
