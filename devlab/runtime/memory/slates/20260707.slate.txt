@@ -12,8 +12,12 @@ Fable's LAST available day. Fire-and-walk-away. Brief asks for two ordered lists
 - **Guardrail impl tickets (buildable):** `T-agentic-loop-flags-in-corpus` (M, stamp loop-shape flags into io_corpus + structural invariant test), `T-sorted-prior-art-gate-in-audit-design` (M, fold prior-art check into audit-design).
 - **Lower urgency now:** funnel-CI / 2×2 / qwen-probe — the aider result answered the core harness-vs-model question directly, so the empirical-program instruments are less load-bearing (keep for the DS-side arms).
 
+## UPDATE (evening of 2026-07-06): the aider device already SHIPPED tonight
+`T-aider-rack-device-wrapper` is CLOSED (shipped-unproven) — Akien steered to it PM 07-06 as the critical path to a Windows aider-builder. `unseen_university/devices/aider/` built + proven live (real ticket → aider qwen@Hex → gate PASS 13.1s → closed). So tomorrow does NOT re-sprint it. The Windows-drivable core is `python -m unseen_university.devices.aider.runner --repo R --message M --test T`.
+Sprint-ready aider follow-ups (all under D-fable-builder-empirical-program): `T-builder-merge-time-proof` (0.6, builder-wide, makes builder throughput actually offload CC), `T-aider-real-uu-ticket-proof` (0.55, needs clone-test isolation vs the editable-finder), `T-granny-builder-load-balancing` (0.4), plus `T-aider-swarm-deployment` (now ungated).
+
 ## In-flight
-NONE — clean pushpoint from 2026-07-06 (HEAD fd303665, tree clean, all pushed). Fresh start.
+NONE — clean pushpoint from 2026-07-06 (all pushed). Fresh start.
 
 ## Session close → Next
-Next: FIRST — fire `T-fable-northstar-port-and-compile-brief` (Fable's last day). THEN /sorted its output, and sprint the aider device build (`T-aider-rack-device-wrapper`) fresh.
+Next: FIRST — fire `T-fable-northstar-port-and-compile-brief` (Fable's last day). THEN /sorted its output. The aider DEVICE is already built; the aider follow-ups above are the sprint queue (merge-time-proof is the load-bearing one).

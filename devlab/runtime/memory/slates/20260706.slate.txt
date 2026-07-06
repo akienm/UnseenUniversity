@@ -64,3 +64,6 @@ NONE — clean pushpoint (HEAD 9b62bbba, tree clean, all pushed, origin reachabl
 - **Findings surfaced by the live proof (all ticketed):** (1) editable-install MetaPathFinder beats PYTHONPATH -> clone tests import the ORIGINAL tree (fake-green trap) -> T-aider-real-uu-ticket-proof needs clone-test isolation. (2) branch-builders structurally cannot emit a HEAD-valid proof (impl on unmerged clone branch) -> honest close is shipped-unproven; real proof at merge time -> T-builder-merge-time-proof (builder-wide: DickSimnel has the same plain-close gap). (3) no builder load-balancing -> T-granny-builder-load-balancing (aider is Aider-tag opt-in for now). (4) pre-existing test_core_values stale igor path -> T-fix-core-values-igor-brainstem-path.
 - **T-aider-swarm-deployment auto-ungated** (gate was this ticket).
 - Follow-ups filed under D-fable-builder-empirical-program: T-builder-merge-time-proof (0.6), T-aider-real-uu-ticket-proof (0.55), T-granny-builder-load-balancing (0.4), T-fix-core-values-igor-brainstem-path (0.2).
+
+## In-flight (post-aider-device)
+NONE — T-aider-rack-device-wrapper closed shipped-unproven; 4 follow-ups filed; all committed+pushed (HEAD a577ae5d + memory/slate commits). Windows-drivable runner ready for Aks Windows box.
