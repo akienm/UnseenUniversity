@@ -15,6 +15,13 @@ workers:
     dispatch: bus
     mailbox: dicksimnel.0
     worker_name: dicksimnel
+  # Aider.0 — aider-backed builder ($0 on Hex). A second builder; there is no
+  # builder load-balancing yet (T-granny-builder-load-balancing), so it is opt-in
+  # by the `Aider` tag rule below rather than sharing the generic builder role.
+  Aider.0:
+    dispatch: bus
+    mailbox: aider.0
+    worker_name: aider
 
 rules:
   # HIGH-inertia tags go to CC.0 (this box's careful worker) for careful handling.
@@ -22,6 +29,13 @@ rules:
   - when:
       tags_any: [Security, Provenance, Auth, Brainstem, Database]
     route_to: CC.0
+
+  # Tickets tagged `Aider` go to the aider builder. Placed above the generic
+  # builder rule so it wins for tagged tickets; untagged builder tickets still
+  # default to DickSimnel.0 (no load-balancing between the two builders yet).
+  - when:
+      tags_any: [Aider]
+    route_to: Aider.0
 
   # Role ladder: guru=Akien, master=CC.0 (this box; a local CC.1 builder would crash
   # this 4-core/16GB box — the builder is DickSimnel.0 running off-machine on Hex).

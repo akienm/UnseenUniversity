@@ -129,11 +129,15 @@ def _default_config() -> dict:
     return {
         "workers": {
             "DickSimnel.0": {"dispatch": "bus", "mailbox": "dicksimnel.0"},
+            "Aider.0": {"dispatch": "bus", "mailbox": "aider.0"},
         },
         "rules": [
             # HIGH-inertia tags → CC.0 (careful worker), mirrors config/granny.yaml.
             {"when": {"tags_any": ["Security", "Provenance", "Auth", "Brainstem", "Database"]},
              "route_to": "CC.0"},
+            # `Aider`-tagged tickets → the aider builder (opt-in; no builder
+            # load-balancing yet). Above the generic builder rule so it wins.
+            {"when": {"tags_any": ["Aider"]}, "route_to": "Aider.0"},
             {"when": {"role_in": ["guru"]}, "route_to": "akien"},
             {"when": {"role_in": ["master"]}, "route_to": "CC.0"},
             {"when": {"role_in": ["builder", "creator"]}, "route_to": "DickSimnel.0"},
@@ -152,6 +156,7 @@ _WORKER_TO_ROLE: dict[str, str] = {
     "claude": "master",
     "cc": "master",
     "dicksimnel": "builder",
+    "aider": "builder",
     "igor": "apprentice",
 }
 
@@ -159,6 +164,7 @@ _WORKER_TO_ROLE: dict[str, str] = {
 _WORKER_ID_TO_NAME: dict[str, str] = {
     "CC.0": "claude",
     "DickSimnel.0": "dicksimnel",
+    "Aider.0": "aider",
 }
 
 
@@ -541,7 +547,7 @@ def _escalate_stale_dispatched() -> int:
         return 0
 
     # Build worker name → worker_id map dynamically from announcements + static defaults.
-    _WORKER_NAME_TO_ID: dict[str, str] = {"dicksimnel": "DickSimnel.0", "claude": "CC.0", "cc": "CC.0"}
+    _WORKER_NAME_TO_ID: dict[str, str] = {"dicksimnel": "DickSimnel.0", "aider": "Aider.0", "claude": "CC.0", "cc": "CC.0"}
     announced_dir = Path.home() / ".granny" / "announced"
     if announced_dir.exists():
         for _p in announced_dir.glob("*.json"):

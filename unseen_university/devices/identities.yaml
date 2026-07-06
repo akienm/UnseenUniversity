@@ -57,6 +57,12 @@ dicksimnel:
   url: "https://wiki.lspace.org/Dick_Simnel"
   purpose: "Builder device — executes code, implements tickets, runs tools. The engineer who makes things go."
 
+aider:
+  character: "aider (external tool)"
+  universe: "open source"
+  url: "https://aider.chat"
+  purpose: "Builder device — wraps the aider CLI to make local models ($0 on Hex) edit code from a ticket, on a throwaway clone + work branch, gated by tests-green + diff-scope."
+
 critic:
   character: "Original"
   universe: "UnseenUniversity"

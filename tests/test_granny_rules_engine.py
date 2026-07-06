@@ -93,6 +93,21 @@ class TestMatchRule:
         ticket = {"id": "T-1", "tags": ["Platform"], "role": "builder"}
         assert match_rule(ticket, _rules()) == "DickSimnel.0"
 
+    def test_aider_tag_routes_to_aider_builder(self):
+        # `Aider`-tagged tickets opt in to the aider builder…
+        ticket = {"id": "T-1", "tags": ["Aider"], "role": "builder"}
+        assert match_rule(ticket, _rules()) == "Aider.0"
+
+    def test_untagged_builder_still_defaults_to_dicksimnel(self):
+        # …while an untagged builder ticket is unaffected (no load-balancing yet).
+        ticket = {"id": "T-1", "tags": [], "role": "builder"}
+        assert match_rule(ticket, _rules()) == "DickSimnel.0"
+
+    def test_aider_tag_does_not_beat_high_inertia(self):
+        # HIGH-inertia still wins — a Security+Aider ticket goes to CC.0, not aider.
+        ticket = {"id": "T-1", "tags": ["Aider", "Security"], "role": "builder"}
+        assert match_rule(ticket, _rules()) == "CC.0"
+
     def test_creator_role_routes_to_dicksimnel(self):
         ticket = {"id": "T-1", "tags": [], "role": "creator"}
         assert match_rule(ticket, _rules()) == "DickSimnel.0"
