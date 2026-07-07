@@ -89,3 +89,25 @@ NONE in-flight — HEAD 6cad856b, tree clean, all pushed.
 Next (offload loop): T-builder-merge-time-proof (0.6, LOAD-BEARING — proof emits at merge so builder
   throughput offloads CC), then T-granny-builder-load-balancing (S) + T-aider-swarm-deployment. Live
   arms gated on Hex: T-aider-largerepo-repomap-live-proof.
+
+
+## In-flight (mid-sprint flush 2026-07-07 — merge-time proof)
+NONE in-flight — HEAD 7941f8a0, tree clean, pushed.
+- CLOSED T-builder-merge-time-proof (PROVEN — the load-bearing offload link):
+  (1) BuilderCloseMixin (unseen_university/devices/_builder_close.py) — ONE branch-builder
+      close both AiderDevice + DickSimnelDevice inherit (homogeneity/OOP per advisor). FIXES
+      DickSimnel's latent bug: it did a plain `close` the proof-gate REFUSES, bouncing every
+      success to CC. Now closes shipped-unproven honestly.
+  (2) builder_merge_proof.emit_merge_proof (devlab/claudecode/) — after CC merges a builder
+      branch (parent_ref=pre-merge), emits a HEAD-valid red->green proof so the close-gate flips
+      shipped-unproven -> proven. Trigger = CC's merge step (NO merger device, per scope).
+      Proven end-to-end via a REAL local git merge (red 1ac42077 -> green, proof bound 3b653383).
+  Verified: merge-red works for MODIFIED-file impls via proof_emitter._git_inplace_red (new-file
+  needs stub-first, inherited/honest); proven-flip path = re-run cc_queue close (re-evaluates gate).
+  Both builders + full dicksimnel suite green (58+ tests).
+- Filed T-memory-emit-frozen-root-post-import (S, 0.2): memory_emit.MEMORY_ROOT frozen at import
+  -> UU_MEMORY_ROOT redirect ignored post-import (caused test pollution, cleaned; workaround = patch
+  the module attr).
+OFFLOAD LOOP STATUS: isolation (never broken) OK; push-to-origin OK; shared-close+merge-proof OK.
+Next: T-granny-builder-load-balancing (S, route builder role across DS+Aider) + T-aider-swarm-deployment
+  (deploy across 4 boxes). Live arms gated on Hex: T-aider-largerepo-repomap-live-proof.
