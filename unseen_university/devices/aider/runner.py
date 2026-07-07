@@ -198,7 +198,12 @@ def _push_branch(workdir: Path, branch: str, remote: str) -> tuple[bool, str]:
     or clobber the remote's trunk. Returns (ok, note). Deterministic against a local
     bare remote — no network needed to prove.
     """
-    return False, "stub — not implemented"  # scaffold; real impl in the next commit
+    if branch in _PROTECTED_BRANCHES:
+        return False, f"refused: will not push protected branch {branch!r}"
+    r = _git(["push", remote, f"{branch}:{branch}"], cwd=workdir)
+    if r.returncode != 0:
+        return False, f"push failed: {r.stderr.strip()[:200]}"
+    return True, f"pushed {branch} -> {remote}"
 
 
 def _run_tests(workdir: Path, test_paths) -> tuple[bool | None, str]:
