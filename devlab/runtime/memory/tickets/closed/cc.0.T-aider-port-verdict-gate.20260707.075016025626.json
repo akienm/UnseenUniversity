@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-aider-port-verdict-gate",
-    "title": "[in_progress] Port aider auto-lint/test verdict gate into the reflection loop (P6)",
+    "title": "Port aider auto-lint/test verdict gate into the reflection loop (P6)",
     "size": "M",
     "tags": [
       "CompiledInference",
@@ -27,7 +27,7 @@
       "AiderPort",
       "Verdict"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.5,
     "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
     "gate": null,
@@ -35,9 +35,9 @@
     "created_at": "2026-07-07T13:49:59.551063+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Post-apply lint/test verdict gate (P6): new verdict_gate.py — after a clean apply, lint/compile (ruff/pyflakes shell-out if present, else py_compile parse check) + the plan-named pytest node; failures re-enter the SAME bounded reflection loop (cost <= cap+1 across all failure sources). Verdict rung rides the gradient unverified<compile_ok<lint_clean<test_green (failure: compile_error/lint_error/test_red; test_unknown caps at lint, never green, never reflects). The verdict is DATA on the DONE envelope + io_corpus (the nexus verdict column) — it does NOT flip DONE/escalate; the walk contract is unchanged. Proven red->green: a syntactically-broken applied edit earns compile_error (a failure rung), never a silent passing DONE — the anti-silent-wrongness invariant; test_green kept falsifiable by a red companion; test-couldn't-run distinguished from test-red.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-07T17:02:38.140385+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -46,6 +46,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T13:49:59.551121+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "39753b59-52f7-4f10-a846-0f3ca32eca46"
+    "inferred_intention_id": "39753b59-52f7-4f10-a846-0f3ca32eca46",
+    "proven": true,
+    "proof_id": "cc.0.post-apply-verdict-gate-anti-silent-wron.T-aider-port-verdict-gate.20260707.110227392852",
+    "proof_commit": "62487ce823559a9961733317756e952ca419c560",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
