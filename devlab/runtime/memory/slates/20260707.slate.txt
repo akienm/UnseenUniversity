@@ -32,3 +32,4 @@ Next: sprint the aider-port batch (CC/FOREGROUND — these are unseen_university
 
 ## In-flight
 NONE — clean pushpoint (HEAD 53c4edaa, tree clean, all pushed, origin reachable). Granny↔aider handshake proven+fan-out-fixed; Fable synthesis captured + /sorted into 8 tickets; 2 feedback memories captured; MEMORY.md compacted.
+- CLOSED T-aider-port-editor-block-contract (PROVEN, red->green): flag-gated SEARCH/REPLACE block editor (P2+P3) — block_apply.py (aider parser+forgiving ladder; edit-distance scar NOT ported) + architect_editor block_editor_enabled path (one completion IS the edits). Default off; verdict-gating=P6. Ungated P4(reflection-repair) + P8(editformat). Filed T-repin-coding-prompt-sha256 (pre-existing red from 124553ee, pri 0.2).
