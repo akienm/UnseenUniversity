@@ -2,11 +2,10 @@
 """
 channel.py — Shared coordination channel for Claude Code sessions and Igor.
 
-DEPRECATED: Migrate callers to comms://Shared (Router.send) directly.
-This shim is dual-write: every post() goes to both the JSONL file and the
-IMAP Shared mailbox (if unseen_university IMAP is reachable). The JSONL file
-is the authoritative read source until the IMAP migration is verified;
-after verification, the JSONL backend will be removed (Phase 5).
+DEPRECATED: Migrate callers to comms://Shared (PgBus) directly.
+This shim writes to an append-only JSONL log, with an optional Postgres
+mirror when UU_HOME_DB_URL is set. The JSONL file is the authoritative
+read source.
 
 Append-only JSONL log at ~/.unseen_university/cc_channel/messages.jsonl
 Any process can post. Any process can read the tail.
@@ -29,36 +28,6 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-
-# ── IMAP mirror (dual-write shim) ─────────────────────────────────────────────
-# Mirrors every post() to comms://Shared. Silently no-ops if IMAP is unavailable.
-# Callers of read() still read from JSONL during the migration window.
-
-_imap: object = None  # IMAPServer | None
-_imap_router: object = None  # Router | None
-_imap_init_done: bool = False
-
-
-def _get_imap_router():
-    """Lazy-init the IMAP mirror. Returns (imap_server, router) or (None, None)."""
-    global _imap, _imap_router, _imap_init_done
-    if _imap_init_done:
-        return _imap, _imap_router
-    _imap_init_done = True
-    try:
-        from unseen_university.devices.bus.imap_server import IMAPServer
-        from unseen_university.devices.bus.router import Router
-
-        s = IMAPServer()
-        s.start()
-        s.create_mailbox("Shared")
-        r = Router(s)
-        _imap = s
-        _imap_router = r
-    except Exception as _e:
-        print(f"channel: IMAP mirror unavailable — JSONL authoritative ({_e})", file=sys.stderr)
-    return _imap, _imap_router
-
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -155,22 +124,6 @@ def post(content: str, author: str = "", msg_type: str = "message") -> dict:
         "content": content,
     }
     _append(entry)
-    # Mirror to IMAP Shared mailbox (dual-write shim). Silently skipped if
-    # unseen_university IMAP is not reachable.
-    _, router = _get_imap_router()
-    if router is not None:
-        try:
-            from unseen_university.devices.bus.envelope import Envelope
-
-            env = Envelope(
-                from_device=entry["author"],
-                to_device="Shared",
-                sent_at=entry["ts"],
-                payload=entry,
-            )
-            router.send("comms://Shared", env)
-        except Exception as _e:
-            print(f"channel: IMAP mirror send failed ({_e})", file=sys.stderr)
     return entry
 
 
