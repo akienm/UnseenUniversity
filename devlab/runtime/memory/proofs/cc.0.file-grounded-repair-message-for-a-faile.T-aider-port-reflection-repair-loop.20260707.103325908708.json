@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.file-grounded-repair-message-for-a-faile.T-aider-port-reflection-repair-loop.20260707.103325908708",
+  "emitter": "cc.0",
+  "namespace": [
+    "file-grounded-repair-message-for-a-faile",
+    "T-aider-port-reflection-repair-loop"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T10:33:25.908708",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-port-reflection-repair-loop"
+    ],
+    "commits": [
+      "44b6abac016bc2a0b90a4778f6b5425cdf2ff123"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "file-grounded repair message for a failed apply",
+    "intention": "a failed SEARCH/REPLACE apply yields a repair message quoting the ACTUAL file lines (did-you-mean), not a generic no-match string",
+    "test": "tests/inference/test_block_repair.py::test_repair_message_quotes_actual_file_lines",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_block_repair.py::test_repair_message_quotes_actual_file_lines",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        f.write_text('def handler(request):\\n    log.info(\"processing now\")\\n    return process(request)\\n')\n        result = BlockApplyResult(\n            applied=[],\n            failed=[(\"svc.py\",\n                     'def handler(request):\\n    log.info(\"start\")\\n    return process(request)\\n',\n                     'def handler(request):\\n    log.info(\"start\")\\n    validate()\\n    return process(request)\\n')],\n        )\n        msg = build_repair_message(result, tmp_path)\n>       assert \"processing now\" in msg, (\n            \"repair must quote the ACTUAL file line (did-you-mean), not just echo the failed SEARCH; \"\n            f\"message was:\\n{msg}\"\n        )\nE       AssertionError: repair must quote the ACTUAL file line (did-you-mean), not just echo the failed SEARCH; message was:\nE         # 1 SEARCH/REPLACE block failed to match! Fix the SEARCH section and resend.\nE       assert 'processing now' in '# 1 SEARCH/REPLACE block failed to match! Fix the SEARCH section and resend.'\n\ntests/inference/test_block_repair.py:45: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_block_repair.py::test_repair_message_quotes_actual_file_lines\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "44b6abac016bc2a0b90a4778f6b5425cdf2ff123",
+    "impl_paths": [
+      "unseen_university/devices/inference/block_apply.py"
+    ],
+    "ticket": "T-aider-port-reflection-repair-loop",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
