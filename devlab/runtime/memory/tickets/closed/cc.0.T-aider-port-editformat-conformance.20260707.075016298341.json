@@ -19,14 +19,14 @@
   },
   "body": {
     "id": "T-aider-port-editformat-conformance",
-    "title": "[in_progress] Port aider edit-format ladder + per-model conformance registry (P8)",
+    "title": "Port aider edit-format ladder + per-model conformance registry (P8)",
     "size": "M",
     "tags": [
       "CompiledInference",
       "Inference",
       "AiderPort"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.4,
     "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
     "gate": null,
@@ -34,9 +34,9 @@
     "created_at": "2026-07-07T13:50:07.390675+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Edit-format ladder + conformance registry (P8): whole-file dialect (parse_wholefile/apply_wholefile_to_dir, port aider wholefile_coder) as the weak-model fallback; runtime LADDER in the block editor (block applies nothing across the reflection loop -> one whole-file fallback; DONE envelope records which dialect worked); edit_format.compute_conformance (offline replay -> per-(model,format) rate) + select_edit_format warm lookup (empty->block); ModelSpec.edit_format_conformance field (additive). Stamped format+model onto editor_verdict corpus records (the enabler). Proven red->green: a model that fails block falls back to whole-file and succeeds on the same intent; unit-proven wholefile parse/apply, compute_conformance on synthetic records, warm-lookup selection. Registry ships EMPTY (no per-format runs existed at build) -> population is data-gated follow-up T-aider-conformance-populate-from-replay (gate 2026-07-21).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-07T17:15:52.387653+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T13:50:07.390738+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "9bbeb933-6b31-418b-8017-5c2e9b9652d3"
+    "inferred_intention_id": "9bbeb933-6b31-418b-8017-5c2e9b9652d3",
+    "proven": true,
+    "proof_id": "cc.0.edit-format-ladder-block-whole-file-fall.T-aider-port-editformat-conformance.20260707.111508955449",
+    "proof_commit": "f859151afb2efbd43029d8700075251e0fb39125",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
