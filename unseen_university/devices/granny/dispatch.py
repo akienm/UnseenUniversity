@@ -5,7 +5,7 @@ These functions used to subprocess.Popen a
 ``claude --dangerously-skip-permissions -p /sprint-ticket <id>`` instance (and,
 for the inference variant, run a MinionDevice tool loop and spawn CC on
 escalate). They are NOT wired into the live daemon: granny/daemon.py routes every
-dispatch through ``_dispatch_bus`` — an IMAP envelope to the target worker's shim
+dispatch through ``_dispatch_bus`` — a bus envelope to the target worker's shim
 — per D-cc-shim-assignment-model-2026-06-06.
 
 Spawning CC directly violates two standing rules:
@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 _NEUTERED_MSG = (
     "granny.dispatch CC-spawn path is retired — dispatch goes through "
-    "_dispatch_bus (IMAP envelope to the worker shim) per "
+    "_dispatch_bus (bus envelope to the worker shim) per "
     "D-cc-shim-assignment-model-2026-06-06. Granny must NEVER subprocess-spawn a "
     "CC instance (feedback_granny_no_cc_spawn + feedback_cc_concurrency_hard_limit). "
     "If you hit this, you re-wired the dead path — route through the bus instead."

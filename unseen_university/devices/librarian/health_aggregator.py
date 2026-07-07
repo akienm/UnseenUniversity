@@ -1,6 +1,7 @@
 """HealthAggregator — collects heartbeats, tracks per-device status.
 
-Sits in IMAP IDLE on the heartbeat mailbox. For each heartbeat received,
+Waits on the heartbeat mailbox via bus idle_wait (PgBus LISTEN/NOTIFY with a
+poll fallback). For each heartbeat received,
 updates the last-seen table. Silence thresholds:
 
     > 2 * interval_s  → suspect
@@ -73,10 +74,11 @@ class DeviceStatus:
 
 
 class HealthAggregator:
-    """Collects heartbeat envelopes from the IMAP bus; exposes rack_health().
+    """Collects heartbeat envelopes from the bus; exposes rack_health().
 
     Args:
-        imap_server:  IMAPServer to read heartbeats from.
+        imap_server:  bus handle (PgBus at runtime; legacy param name) to
+                      read heartbeats from.
         interval_s:   Expected heartbeat interval in seconds. Silence thresholds
                       are multiples of this value. Should match the senders'
                       start_heartbeat(interval_s=…) value. Default: 30.

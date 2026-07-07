@@ -62,7 +62,7 @@ class ClaudeDevice(BaseDevice):
     def requirements(self) -> dict:
         return {
             "deps": [],
-            "system": ["Claude Code CLI running", "IMAP bus running"],
+            "system": ["Claude Code CLI running", "message bus running"],
         }
 
     def capabilities(self) -> dict:
@@ -97,7 +97,7 @@ class ClaudeDevice(BaseDevice):
         if self._imap is None:
             return {
                 "status": "degraded",
-                "detail": "IMAP server not configured — mailbox health unchecked",
+                "detail": "bus not configured — mailbox health unchecked",
                 "checked_at": _now(),
             }
         mailboxes = self._imap.list_mailboxes()

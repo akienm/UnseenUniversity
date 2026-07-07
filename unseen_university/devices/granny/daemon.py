@@ -15,7 +15,7 @@ Rule format (config/granny.yaml):
   workers:
     CC.1:
       dispatch: bus
-      mailbox: cc.1          # worker's IMAP mailbox — replies return to granny.0
+      mailbox: cc.1          # worker's bus mailbox — replies return to granny.0
       one_at_a_time: true
     DickSimnel.0:
       dispatch: set_worker
@@ -795,8 +795,9 @@ def _cascade_active_workers(config: dict, tickets: list[dict]) -> dict[str, list
 def run_once(config: dict, *, imap=None) -> None:
     """Single poll cycle. Ticket status is the authoritative state — no side files.
 
-    imap — optional IMAPServer for bus dispatch; when None, bus dispatch is
-    skipped and only legacy (tmux_send_keys / set_worker) paths are used.
+    imap — optional bus handle (PgBus at runtime; legacy param name) for bus
+    dispatch; when None, bus dispatch is skipped and only legacy
+    (tmux_send_keys / set_worker) paths are used.
     """
     from unseen_university.devices.granny.availability import check_and_expire_cooldowns, is_available
     from unseen_university.devices.granny.stall_state import is_stalled, set_stalled, record_dispatch
@@ -998,7 +999,7 @@ def run_once(config: dict, *, imap=None) -> None:
 
 
 def _make_imap_if_bus_configured(config: dict):
-    """Return a connected IMAPServer when any worker uses dispatch=bus; else None."""
+    """Return a connected bus handle (PgBus) when any worker uses dispatch=bus; else None."""
     workers_cfg = {**config.get("workers", {}), **_load_announced_workers()}
     needs_bus = any(
         v.get("dispatch") == "bus" for v in workers_cfg.values() if isinstance(v, dict)

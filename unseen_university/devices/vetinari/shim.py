@@ -7,7 +7,7 @@ each as a directive, and calls device.accept_directive() to persist it.
 
 Design:
 - BaseShim lifecycle (start / stop / restart / self_test / rollback)
-- DirectiveListener: canonical fetch_unseen polling loop (no raw IMAP IDLE)
+- DirectiveListener: canonical fetch_unseen polling loop (poll-based, not push-IDLE)
 - Malformed envelopes: logged and skipped — never crash the listener
 - Restart-safe: all state in flat-file pending_directives.json
 

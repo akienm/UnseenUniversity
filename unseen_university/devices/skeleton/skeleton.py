@@ -6,7 +6,7 @@ The skeleton is device #1 on every rack. It:
   - Maintains the flat-file device registry (no Postgres dependency)
   - Detects namespace collisions at registration time (fails hard before start)
   - Proxies {device_id}.health to each registered device object
-  - Creates IMAP mailboxes on device registration (mailboxes persist after deregistration)
+  - Creates bus mailboxes on device registration (mailboxes persist after deregistration)
   - Enforces v1 access control: halt/block require 'skeleton' or self as caller
 
 v1 proxy scope: rack.* tools + per-device .health/.halt/.block tools.
@@ -165,7 +165,7 @@ class Skeleton(BaseDevice):
 
         @self._mcp.tool()
         def rack_channels_tool() -> list[str]:
-            """List all IMAP mailbox names registered on this rack."""
+            """List all bus mailbox names registered on this rack."""
             if skel._imap_server is None:
                 return []
             return rack_channels(skel._imap_server)
@@ -324,8 +324,8 @@ class Skeleton(BaseDevice):
         )
         self._devices[device_id] = device
 
-        # Create the device's IMAP mailbox. If it already exists (reattach after
-        # offline), this is a no-op — IMAPServer.create_mailbox is idempotent.
+        # Create the device's bus mailbox. If it already exists (reattach after
+        # offline), this is a no-op — the bus's create_mailbox is idempotent.
         # Mailboxes are NOT deleted on deregistration; see deregister_device().
         if self._imap_server is not None:
             try:
@@ -344,7 +344,7 @@ class Skeleton(BaseDevice):
     def deregister_device(self, device_id: str) -> None:
         self._devices.pop(device_id, None)
         self._registry.set_status(device_id, "offline")
-        # Do NOT delete the IMAP mailbox. Messages are retained for 24hr (T-adc-imap-24hr-retention).
+        # Do NOT delete the bus mailbox. Messages are retained for 24hr (T-adc-imap-24hr-retention).
         # Manual cleanup is handled by agentctl cleanup-mailboxes (future).
         # Note: MCP tools registered via FastMCP are not dynamically removable in v1.
         # The tool remains but returns an error after deregistration.

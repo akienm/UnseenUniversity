@@ -8,7 +8,7 @@ Unix domain socket that the shim binds.
 
 Network model (T-container-shim-network-spec):
   --network=none + Unix domain socket. The container gets no TCP stack at all,
-  so it cannot reach host services (Postgres, IMAP) directly. The only channel
+  so it cannot reach host services (Postgres, the message bus) directly. The only channel
   in or out is the bind-mounted Unix socket at /var/run/uu-shim.sock inside
   the container. Bridge networking is explicitly rejected: a bridge gateway
   exposes host services to containers even when the host services bind to

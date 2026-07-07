@@ -543,8 +543,8 @@ class BaseShim(CoreValuesMixin, ABC):
         or the equivalent dict keys ({"from_device": ..., "payload": {...}}).
 
         send_fn(to_device, payload) — bus send is injected so BaseShim stays
-        transport-agnostic. In production the caller wires this to an IMAP
-        append via bus/; in tests it can be a list-append spy.
+        transport-agnostic. In production the caller wires this to a bus
+        append via bus/ (PgBus); in tests it can be a list-append spy.
 
         deliver_fn(ticket_id) -> bool — True when the app has accepted the
         work. Default: always returns True (started fires after first prod).

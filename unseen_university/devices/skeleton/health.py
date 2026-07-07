@@ -39,7 +39,7 @@ def rack_devices(registry: "DeviceRegistry") -> list[dict]:
 
 def rack_channels(imap_server: "IMAPServer") -> list[str]:
     """
-    Return all IMAP mailbox names currently registered on this rack.
+    Return all bus mailbox names currently registered on this rack.
 
     Shape: ['Shared', 'CC.0', 'igor-wild-0001', ...]
     """

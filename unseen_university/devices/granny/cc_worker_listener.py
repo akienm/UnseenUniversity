@@ -1,7 +1,7 @@
 """
 cc_worker_listener.py — CC worker-side bus dispatch listener.
 
-Listens on the cc.0 IMAP mailbox for dispatch envelopes from Granny.
+Listens on the cc.0 bus mailbox for dispatch envelopes from Granny.
 When a dispatch arrives:
   1. Calls BaseShim.receive_dispatch() → sends dispatch_ack to Granny immediately.
   2. Appends "CC.0 acked at <timestamp>" note to the ticket.

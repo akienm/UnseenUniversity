@@ -5,7 +5,7 @@ start():
   1. ADC health check: ping http://localhost:<ADC_WEB_PORT>/health.
      If no response within 3s, start via WebServerDevice.
      ADC failure does NOT block CC startup — this step is advisory.
-  2. Create CC.0 mailbox on the IMAP bus.
+  2. Create CC.0 mailbox on the bus.
   3. Register a UserPromptSubmit hook in ~/.claude/settings.json that calls
      ygm_check.py on every query submission.
 
