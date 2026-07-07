@@ -87,9 +87,20 @@ def get_file_mentions(content: str, repo_files) -> set:
     ticket's design rule). A full relpath present as a word matches; a basename matches only when
     it looks path-like (contains ``/ . _ -``) AND is unique among repo files AND appears verbatim.
     """
-    # STUB (scaffold commit): resolution lands in the next commit — return nothing so no injection
-    # fires yet (the architect keeps Reading files until the matcher is implemented).
-    return set()
+    words = {w.rstrip(",.!;:?").strip("\"'`*_").replace("\\", "/") for w in content.split()}
+    mentioned = set()
+    fname_to_rel: dict = {}
+    for rel in repo_files:
+        norm = rel.replace("\\", "/")
+        if norm in words:
+            mentioned.add(rel)
+        base = Path(rel).name
+        if any(c in base for c in "/\\._-"):
+            fname_to_rel.setdefault(base, []).append(rel)
+    for base, rels in fname_to_rel.items():
+        if len(rels) == 1 and base in words:
+            mentioned.add(rels[0])
+    return mentioned
 
 
 def _repo_relative_files(repo_root: Path) -> set:
