@@ -1,10 +1,16 @@
 """
 BusLauncher — self-healing relaunch of the unseen_university bus.
 
-When a device tries to send a message and the bus (IMAP server / skeleton)
-is unreachable, BusLauncher attempts to restart it via agentctl. If relaunch
-fails too many times within the restart window, the bus is auto-blocked and
-no further attempts are made until a human manually unblocks it.
+When a device tries to send a message and the bus is unreachable, BusLauncher
+attempts to restart it via agentctl. If relaunch fails too many times within
+the restart window, the bus is auto-blocked and no further attempts are made
+until a human manually unblocks it.
+
+DORMANT: nothing constructs a BusLauncher on the live path today (Router is
+always built with bus_launcher=None), so this self-healing is not wired in.
+The reachability probe below still uses the legacy IMAP4 port-143 check from
+the pre-PgBus era; migrating it to a PgBus/Postgres connectivity check is
+tracked as part of the IMAP-to-PgBus follow-up.
 
 Self-healing vs manual restart:
     Self-healing: triggered automatically by a failed send(); retries up to
@@ -51,7 +57,7 @@ class BusUnavailableError(Exception):
 
 class BusLauncher:
     """
-    Attempts to relaunch the bus via `agentctl init` and waits for IMAP to respond.
+    Attempts to relaunch the bus via `agentctl init` and waits for it to respond.
 
     Intended for use inside Router.send() — not for direct caller use.
     """
@@ -83,7 +89,7 @@ class BusLauncher:
         """
         Attempt to relaunch the bus via `agentctl init`.
 
-        Returns True if the bus responds to IMAP within 10s, False otherwise.
+        Returns True if the bus responds within 10s, False otherwise.
         Raises BusBlockedError if the bus is already blocked (no relaunch attempted).
         """
         global _BUS_BLOCK_FLAG
@@ -118,7 +124,10 @@ class BusLauncher:
                 )
             return False
 
-        # Wait up to 10s for IMAP to respond
+        # Wait up to 10s for the bus to respond.
+        # NOTE (dormant): legacy pre-PgBus reachability probe — checks the old
+        # IMAP4 port-143 endpoint. Not exercised on the live path; migrate to a
+        # PgBus/Postgres check as part of the IMAP-to-PgBus follow-up.
         import imaplib
 
         deadline = time.monotonic() + 10

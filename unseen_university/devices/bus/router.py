@@ -2,16 +2,16 @@
 Router — comms:// URI resolver and message dispatcher.
 
 The comms:// scheme is the only addressing layer in unseen_university. Callers are
-topology-blind: they address by name; the router handles IMAP APPEND dispatch.
+topology-blind: they address by name; the router appends to the bus mailbox.
 
-Pub/sub falls out naturally from IMAP IDLE: comms://Shared → all IDLE subscribers
-receive the message when they next poll or wake from IDLE. No separate pub/sub
-layer is needed.
+Pub/sub falls out naturally from the bus: comms://Shared → all subscribers
+receive the message when they next poll or wake (PgBus uses Postgres
+LISTEN/NOTIFY with a poll fallback). No separate pub/sub layer is needed.
 
 URI shape:
     comms://{mailbox_name}[.{surface}[.{sub-surface}...]]
 
-The mailbox_name is the registered IMAP folder. Optional dot-separated
+The mailbox_name is the registered bus mailbox. Optional dot-separated
 suffix segments after a registered mailbox name carry surface qualifiers
 (e.g. comms://myhost.1.console resolves to mailbox myhost.1
 with surface='console'). The router peels suffixes longest-prefix-wins
@@ -47,12 +47,16 @@ class AddressError(Exception):
 
 class Router:
     """
-    Resolves comms:// URIs to IMAP mailboxes and dispatches messages.
+    Resolves comms:// URIs to bus mailboxes and dispatches messages.
 
-    send() = resolve() + imap_server.append(). The split exists so callers
+    send() = resolve() + bus.append(). The split exists so callers
     can validate addresses before composing messages.
 
-    Self-healing: if the IMAP server raises ConnectionError on send(), Router
+    The bus handle (``imap_server`` param, legacy name) is a PgBus at
+    runtime — the router is transport-blind and only needs the
+    list_mailboxes()/append() interface.
+
+    Self-healing: if the bus raises ConnectionError on send(), Router
     delegates to BusLauncher.relaunch() and retries once. If relaunch fails or
     the bus is blocked, BusBlockedError / BusUnavailableError propagate to caller.
     Pass bus_launcher=None (default) to disable self-healing (e.g. in tests).

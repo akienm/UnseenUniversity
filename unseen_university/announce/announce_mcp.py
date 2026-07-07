@@ -4,7 +4,7 @@ announce_mcp.py — CC-side MCP adapter for the announce protocol.
 CC sessions are clients of the datacenter just like Igor. This module is
 the thin wrapper Claude Code's MCP layer drives so a CC session can
 announce itself, read its manifest, and react to invalidates without
-knowing about the underlying IMAP bus.
+knowing about the underlying bus.
 
 Three tool methods, all returning JSON-friendly dicts:
   - announce()                — post identity envelope + cache the manifest

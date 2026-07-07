@@ -7,12 +7,12 @@ polls comms://announce-events for the matching Manifest. Once cached,
 accessor methods expose tool bindings, state refs, channel subscriptions,
 and surface addresses without the caller having to re-parse the wire format.
 
-The IMAP bus connection is managed internally — callers supply only agent
+The bus connection (PgBus) is managed internally — callers supply only agent
 identity (agent_id, instance, surfaces). Transport is not a concern of
 call sites.
 
 Slice 3 scope: synchronous announce() with bounded poll. Slice 3b will
-add IDLE-driven wakeup so re-announce on invalidation is push-based.
+add push-driven wakeup so re-announce on invalidation is push-based.
 
 Generic across agent types — Igor, CC, research-orca all consume the
 same client. Per-agent specialization composes around it (e.g. IgorShim

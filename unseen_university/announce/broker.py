@@ -3,7 +3,7 @@ AnnounceBroker — synchronous capability broker.
 
 Takes an IdentityEnvelope, resolves the agent's profile, filters the
 registry to allowed+online devices, and assembles a Manifest. The broker
-itself is pure: no IMAP I/O, no clock state. The IMAP-driven dispatch
+itself is pure: no bus I/O, no clock state. The bus-driven dispatch
 loop lives in announce.listener.AnnounceListener (slice 2), which calls
 resolve_announce() on each inbound envelope.
 

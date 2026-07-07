@@ -45,7 +45,8 @@ class Invalidator:
 
     Args:
         profiles_dir: directory containing <agent_id>.yaml files.
-        imap_server:  bus.IMAPServer used to publish invalidation envelopes.
+        imap_server:  bus handle (PgBus at runtime; legacy param name) used
+                      to publish invalidation envelopes.
         registry:     optional registry handle exposing list_devices(). When
                       provided, registry-level changes also trigger invalidates.
         from_device:  identifier on outbound envelopes (default 'invalidator').

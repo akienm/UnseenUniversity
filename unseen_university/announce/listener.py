@@ -30,11 +30,12 @@ log = logging.getLogger(__name__)
 
 class AnnounceListener:
     """
-    Wraps an AnnounceBroker with IMAP I/O.
+    Wraps an AnnounceBroker with bus I/O.
 
     Args:
         broker:           AnnounceBroker instance (slice 1).
-        imap_server:      bus.IMAPServer used for fetch + append.
+        imap_server:      bus handle (PgBus at runtime; legacy param name)
+                          used for fetch + append + idle_wait.
         from_device:      identifier the listener uses on outbound envelopes.
                           Defaults to 'skeleton'.
         channel_registry: optional ChannelRegistry — when set, registers the

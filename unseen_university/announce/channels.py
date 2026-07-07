@@ -4,7 +4,7 @@ channels.py — multi-party channel registry and fan-out (T-swarm-channel-mechan
 A channel is a named room. When an agent announces, its subscriptions are
 registered here. send_to_channel() fans out a single envelope to every
 member's personal inbox (mirrored-inbox model: one copy per recipient, not
-one shared IMAP folder all readers poll).
+one shared mailbox all readers poll).
 
 The `shared` channel is always present from init. Other channels are
 created on-demand when the first member joins.
