@@ -20,7 +20,9 @@ What build() does, in order:
   5. Apply the OBJECTIVE gate: tests-green (load-bearing correctness) + diff-scope
      (a safety predicate: block if aider edited tests or escaped the repo).
   6. Commit the edits to the branch (evidence survives even on a failed gate).
-  7. Return an AiderResult for the caller (device -> CC validation).
+  7. Optionally push the work branch to a shared remote (guarded; never the trunk)
+     so CC can fetch it for validation.
+  8. Return an AiderResult for the caller (device -> CC validation).
 
 Windows-portability: all paths via pathlib, endpoint/bin via env (see consts),
 no shell=True, no bash-isms. git and an aider venv must be present on the box.
@@ -70,6 +72,8 @@ class AiderResult:
     scope_reasons: list[str] = field(default_factory=list)
     scope_warnings: list[str] = field(default_factory=list)
     gate_passed: bool = False
+    pushed: bool = False
+    push_note: str = ""
     wall_s: float = 0.0
     workdir: str = ""
     note: str = ""
@@ -180,6 +184,23 @@ def _run_aider(workdir: Path, message: str, model: str, add_files, map_tokens: i
     return dt, tail
 
 
+# Branch names a builder must NEVER push to. The work branch is always
+# aider/<ticket>-<ts>, but guard defensively — a device pushing to the SHARED remote
+# must never clobber the trunk (branch-not-main lesson, 124553ee).
+_PROTECTED_BRANCHES = frozenset({"main", "master"})
+
+
+def _push_branch(workdir: Path, branch: str, remote: str) -> tuple[bool, str]:
+    """Push the work branch to `remote` so CC can fetch it for validation.
+
+    Guarded: REFUSES to push a protected branch (main/master). Pushes ONLY the named
+    work branch via an explicit refspec (branch:branch) so it can never fast-forward
+    or clobber the remote's trunk. Returns (ok, note). Deterministic against a local
+    bare remote — no network needed to prove.
+    """
+    return False, "stub — not implemented"  # scaffold; real impl in the next commit
+
+
 def _run_tests(workdir: Path, test_paths) -> tuple[bool | None, str]:
     """Run pytest against the given repo-relative test paths inside the clone.
 
@@ -203,11 +224,16 @@ def _run_tests(workdir: Path, test_paths) -> tuple[bool | None, str]:
 
 def build(ticket_id: str, repo_source, message: str, *, model: str = DEFAULT_MODEL,
           add_files=None, test_paths=None, affected_files=None, branch: str = "",
-          workdir=None, map_tokens: int = 1024, timeout: int = 900) -> AiderResult:
-    """Clone -> branch -> aider -> gate -> commit. Returns an AiderResult.
+          workdir=None, map_tokens: int = 1024, timeout: int = 900,
+          push_remote: str = "") -> AiderResult:
+    """Clone -> branch -> aider -> gate -> commit -> (optional) push. Returns an AiderResult.
 
     gate_passed is TRUE only when aider edited files, tests are green, and the
     diff-scope predicate did not block. Anything else -> the caller escalates.
+
+    When push_remote is set and aider edited files, the work branch is pushed there
+    (guarded: never the trunk) so CC can fetch and validate it — the branch reaches
+    CC even on a failed gate (evidence survives), same as the local commit.
     """
     source = Path(repo_source).expanduser().resolve()
     branch = branch or f"aider/{ticket_id}-{int(time.time())}"
@@ -241,6 +267,12 @@ def build(ticket_id: str, repo_source, message: str, *, model: str = DEFAULT_MOD
               f"aider[{model}]: {ticket_id} (gate pending)"], cwd=work)
 
     res.gate_passed = bool(res.edited and res.tests_green and not res.scope_blocked)
+
+    # Push the work branch to the shared remote so CC can fetch it for validation.
+    # Only when there's something to validate (edited); guarded against the trunk.
+    if push_remote and res.edited:
+        res.pushed, res.push_note = _push_branch(work, branch, push_remote)
+
     res.note = (
         f"edited={res.edited} tests_green={res.tests_green} "
         f"scope_blocked={res.scope_blocked} :: {test_tail}"
@@ -262,13 +294,15 @@ def main() -> None:
                     help="declared affected file(s) for the advisory scope warn; repeatable")
     ap.add_argument("--map-tokens", type=int, default=1024)
     ap.add_argument("--timeout", type=int, default=900)
+    ap.add_argument("--push-remote", default="",
+                    help="push the work branch here for CC validation (guarded; never the trunk)")
     args = ap.parse_args()
 
     res = build(
         args.ticket, args.repo, args.message, model=args.model,
         add_files=args.file or None, test_paths=args.test or None,
         affected_files=args.affected or None, map_tokens=args.map_tokens,
-        timeout=args.timeout,
+        timeout=args.timeout, push_remote=args.push_remote,
     )
     print(f"== aider runner :: ticket={res.ticket_id} model={res.model} Hex={HEX_OLLAMA} ==")
     print(f"[branch]   {res.branch}")
@@ -277,6 +311,8 @@ def main() -> None:
     print(f"[edited]   {res.edited}  files={res.changed_files}")
     print(f"[tests]    green={res.tests_green}")
     print(f"[scope]    blocked={res.scope_blocked} reasons={res.scope_reasons} warnings={res.scope_warnings}")
+    if args.push_remote:
+        print(f"[push]     pushed={res.pushed} — {res.push_note}")
     print(f"[GATE]     {'PASS' if res.gate_passed else 'FAIL'} — {res.note}")
     sys.exit(0 if res.gate_passed else 1)
 
