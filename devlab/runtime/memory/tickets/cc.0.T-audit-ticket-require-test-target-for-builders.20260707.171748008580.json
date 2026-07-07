@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-audit-ticket-require-test-target-for-builders.20260707.171748008580",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-ticket-require-test-target-for-builders"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:17:48.008580+00:00",
+  "links": {
+    "decisions": [
+      "D-dev-pipeline-stations-2026-07-07"
+    ],
+    "tickets": [
+      "T-audit-ticket-require-test-target-for-builders"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-ticket-require-test-target-for-builders",
+    "title": "[sprint] audit-ticket: require a runnable test node for builder-role tickets (dominant escalation cause)",
+    "size": "M",
+    "tags": [
+      "audit-ticket",
+      "Builder",
+      "Quality"
+    ],
+    "description": "**From the 2026-07-07 escalation triage (feedback_escalation_is_spec_quality_data).** 4 of 5 aider-drain escalations traced to ONE upstream miss: the ticket carried NO discriminating, runnable test target. Symptoms: aider produces 0 edits (no target) or edits and breaks tests (no pinned invariant). A builder needs a test to build toward AND to gate against — and per separation-of-powers the test must come from UPSTREAM, not the builder writing its own (self-grading hazard).\n\n**Change:** audit-ticket (filing-time gate) flags/blocks any role=builder|creator ticket that lacks a concrete runnable test node (e.g. a `tests/...::test_x` the gate can run). Options for a testless builder ticket: (a) AMEND — add the discriminating test; (b) re-route to master (CC writes the test first, then re-dispatches as a precise edit ticket); (c) hand to the build-packet compiler to synthesize the test. Do NOT dispatch a testless builder ticket to fail.\n\n**Affected files:** skills/audit-ticket (or its checks), possibly the build-packet compiler.\n**Completion test:** a role=builder ticket with no runnable test node gets AMEND/re-route from audit-ticket; one WITH a test node passes.\n**Scope boundary:** the test-target requirement for builder tickets. NOT a full ticket-quality overhaul.\n**intention:** I intend that no builder-role ticket is dispatched without a discriminating test to build toward, so escalations from missing-test-target stop happening.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-dev-pipeline-stations-2026-07-07",
+    "priority": 0.45,
+    "status": "sprint",
+    "worker": null,
+    "role": "master",
+    "created_at": "2026-07-07T23:17:39.420540+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T23:17:39.468403+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "73ec9599-7876-40bc-9456-75ae8dc2b62d"
+  }
+}
