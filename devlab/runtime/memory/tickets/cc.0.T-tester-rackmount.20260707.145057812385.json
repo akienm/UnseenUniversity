@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-tester-rackmount.20260707.145057812385",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tester-rackmount"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T20:50:57.812385+00:00",
+  "links": {
+    "decisions": [
+      "D-dev-pipeline-stations-2026-07-07"
+    ],
+    "tickets": [
+      "T-tester-rackmount"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tester-rackmount",
+    "title": "[gated] Tester rackmount — the first dev-pipeline station; owns the testing container",
+    "size": "L",
+    "tags": [
+      "architecture",
+      "Pipeline",
+      "Testing",
+      "Isolation"
+    ],
+    "description": "**GATED — north-star tier (D-dev-pipeline-stations-2026-07-07); build when debt-clearing done (offload-loop scale + Windows aider) and Akien reopens.**\n\n**Problem / shape:** The post-build checklist is a PIPELINE of independent station-components; TESTING is the first station to formalize. Today testing is ad-hoc (CC spins subagents / test-fix skill; aider's runner shells pytest IN ITS CLONE ON THE HOST — the builder grading itself). Build a TESTER rackmount (device.py/shim.py) that: (1) takes a built branch/diff, (2) runs its tests in ISOLATION, (3) returns a verdict — an INDEPENDENT grader (separation of powers: the builder never grades its own work).\n\n**Owns the testing container (ABSORBS D-containers-sandbox-device-2026-07-07):** the sandbox container is the tester's execution environment, NOT a standalone device. Untrusted model-generated code runs INSIDE the tester's container — off the host, isolated (imports + FS + net + DB), CP6. Windows-portability + cold-start tradeoffs from the containers decision carry here (fast in-process import-isolation may stay the hot path for cheap runs; container for untrusted/heavy).\n\n**Pipeline implication:** aider's runner STOPS running the gate itself and HANDS OFF to the tester. Build produces the diff; tester validates. This is the separation-of-powers refactor.\n\n**Affected files (at gate-open):** new unseen_university/devices/tester/; aider runner._run_tests / device gate re-routed to dispatch the tester; reconcile emit_merge_proof to consume the tester verdict.\n\n**Completion test:** the tester validates an aider-built branch in its container and returns a verdict; a deliberately-hollow build earns a RED verdict the builder could not have graded away; aider's runner no longer runs the gate on the host.\n\n**Scope boundary:** the tester station + its container. NOT the examiner/merger stations (separate). NOT the full pipeline orchestration decomposition.\n\n**Design rules:** separation of powers (builder != grader); device.py/shim.py design center; container owned by the tester; no SQLITE; Windows-portable.\n\n**Test plan:** the hollow-build-earns-red + isolated-verdict test above.\n\n**intention:** I intend that an independent tester rackmount grades built code in its own sandboxed container, so the builder never certifies itself and untrusted code never runs on the host.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-dev-pipeline-stations-2026-07-07",
+    "priority": 0.15,
+    "status": "gated",
+    "gate": "debt-clearing (offload-loop scale + Windows aider) AND Akien reopens",
+    "worker": null,
+    "role": "master",
+    "created_at": "2026-07-07T20:50:50.948330+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T20:50:50.996820+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6b536469-0bd1-4c00-9fbd-050a19513771"
+  }
+}
