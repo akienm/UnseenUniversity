@@ -421,7 +421,17 @@ def _select_builder(workers_cfg: dict, already_dispatched: set,
     builders one-per-cycle; fitness-based routing (aider for edit-heavy, DS for
     reasoning-heavy) is deliberately out of scope (T-granny-builder-load-balancing).
     """
-    return "DickSimnel.0"  # scaffold: old hard-route to one builder; real impl next commit
+    if avail_fn is None:
+        from unseen_university.devices.granny.availability import is_available
+        avail_fn = is_available
+    builders = sorted(
+        wid for wid, cfg in (workers_cfg or {}).items()
+        if _worker_is_builder(wid, workers_cfg)
+    )
+    for wid in builders:
+        if wid not in already_dispatched and avail_fn(wid):
+            return wid
+    return None
 
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
