@@ -388,6 +388,20 @@ def build_graph_map(
 
     Fail-open: any error or an empty repo → '' (the caller falls back to the keyword map).
     """
-    # STUB (scaffold commit): graph ranking lands in the next commit; return empty so the caller
-    # uses the keyword map until then.
-    return ""
+    try:
+        repo_root = Path(repo_root)
+        sources, tags = _gather_py_files(repo_root, cache)
+        if not sources:
+            return ""
+        mentioned_fnames, mentioned_idents = _ticket_mentions(ticket, sources.keys())
+        # Reuse the (cached) tags: rank without re-parsing.
+        ranked_tags, _ranks = rank_tags(tags, mentioned_fnames, mentioned_idents)
+        packet = budget_packet(ranked_tags, budget_chars)
+        log.info("GRAPH_MAP|ticket=%s|files=%d|chars=%d",
+                 ticket.get("id", "?"), len(sources), len(packet))
+        if cache:
+            cache.save()
+        return (packet + "\n\n") if packet else ""
+    except Exception as exc:  # fail-open: orientation must never hard-fail
+        log.warning("GRAPH_MAP|ticket=%s|error=%s — empty map", ticket.get("id", "?"), exc)
+        return ""
