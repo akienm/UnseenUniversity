@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.graph-ranked-orientation-packet.T-aider-port-graph-orientation-packet.20260707.102311078496",
+  "emitter": "cc.0",
+  "namespace": [
+    "graph-ranked-orientation-packet",
+    "T-aider-port-graph-orientation-packet"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T10:23:11.078496",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-port-graph-orientation-packet"
+    ],
+    "commits": [
+      "b7721b509961e7d0061ba24c82d862da94f26c10"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "graph-ranked orientation packet",
+    "intention": "graph-rank surfaces a zero-keyword-overlap file that a ticket-mentioned file heavily references — keyword-Jaccard drops it",
+    "test": "tests/scraps/test_repo_graph_map.py::test_graph_rank_surfaces_zero_keyword_referenced_file",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/scraps/test_repo_graph_map.py::test_graph_rank_surfaces_zero_keyword_referenced_file",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n        ticket = {\n            \"id\": \"T-x\",\n            \"title\": \"refactor the dispatch entry\",\n            \"description\": \"Change dispatch_entry in entry.py to validate inputs.\",\n        }\n        packet = build_graph_map(ticket, tmp_path, budget_chars=3500)\n    \n>       assert \"core_engine.py\" in packet, (\n            \"graph-rank must surface the zero-keyword file that the mentioned file references — \"\n            f\"keyword-Jaccard drops it; packet was:\\n{packet}\"\n        )\nE       AssertionError: graph-rank must surface the zero-keyword file that the mentioned file references — keyword-Jaccard drops it; packet was:\nE         \nE       assert 'core_engine.py' in ''\n\ntests/scraps/test_repo_graph_map.py:54: AssertionError\n=========================== short test summary info ============================\nFAILED tests/scraps/test_repo_graph_map.py::test_graph_rank_surfaces_zero_keyword_referenced_file\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "b7721b509961e7d0061ba24c82d862da94f26c10",
+    "impl_paths": [
+      "unseen_university/devices/scraps/repo_graph_map.py"
+    ],
+    "ticket": "T-aider-port-graph-orientation-packet",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
