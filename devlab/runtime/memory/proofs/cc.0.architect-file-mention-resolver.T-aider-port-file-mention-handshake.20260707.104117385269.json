@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.architect-file-mention-resolver.T-aider-port-file-mention-handshake.20260707.104117385269",
+  "emitter": "cc.0",
+  "namespace": [
+    "architect-file-mention-resolver",
+    "T-aider-port-file-mention-handshake"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T10:41:17.385269",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-port-file-mention-handshake"
+    ],
+    "commits": [
+      "cb75f385e65d58bc737dd32c5e3d34234f21ee31"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "architect file-mention resolver",
+    "intention": "a NAMED real repo file is resolved for injection; a named non-existent file is not",
+    "test": "tests/inference/test_file_mention_handshake.py::test_get_file_mentions_matches_real_not_ghost",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_file_mention_handshake.py::test_get_file_mentions_matches_real_not_ghost",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________ test_get_file_mentions_matches_real_not_ghost _________________\n\ntmp_path = PosixPath('/tmp/pytest-of-akien/pytest-482/test_get_file_mentions_matches0')\n\n    def test_get_file_mentions_matches_real_not_ghost(tmp_path):\n        (tmp_path / \"engine.py\").write_text(\"def go():\\n    return 1\\n\")\n        repo_files = _repo_relative_files(tmp_path)\n        mentions = get_file_mentions(\n            \"Please edit engine.py to fix it — but the missing ghost.py file is not here.\", repo_files\n        )\n>       assert \"engine.py\" in mentions, \"a named REAL repo file must be resolved\"\nE       AssertionError: a named REAL repo file must be resolved\nE       assert 'engine.py' in set()\n\ntests/inference/test_file_mention_handshake.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_file_mention_handshake.py::test_get_file_mentions_matches_real_not_ghost\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "cb75f385e65d58bc737dd32c5e3d34234f21ee31",
+    "impl_paths": [
+      "unseen_university/devices/inference/architect_editor.py"
+    ],
+    "ticket": "T-aider-port-file-mention-handshake",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
