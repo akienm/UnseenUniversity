@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.builder-merge-time-proof-emit-merge-proo.T-builder-merge-time-proof.20260707.125442959625",
+  "emitter": "cc.0",
+  "namespace": [
+    "builder-merge-time-proof-emit-merge-proo",
+    "T-builder-merge-time-proof"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T12:54:42.959625",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-builder-merge-time-proof"
+    ],
+    "commits": [
+      "3b6533838d819b62d1e6a26b02247d1ea4beb292"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "builder merge-time proof (emit_merge_proof): a merged branch-builder branch emits a HEAD-valid proof that flips the ticket shipped-unproven -> proven",
+    "intention": "After a builder branch merges to HEAD, emit_merge_proof produces a proof the close-gate accepts, so the ticket flips to proven instead of CC eyeballing the branch",
+    "test": "tests/test_builder_merge_proof.py::test_gate_flips_shipped_unproven_to_proven",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_builder_merge_proof.py::test_gate_flips_shipped_unproven_to_proven",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "merged_repo = (PosixPath('/tmp/pytest-of-akien/pytest-521/test_gate_flips_shipped_unprov0/repo'), '411401def931242f8b370291e475d71f450642fa')\n\n    \u001b[0m\u001b[94mdef\u001b[39;49;00m\u001b[90m \u001b[39;49;00m\u001b[92mtest_gate_flips_shipped_unproven_to_proven\u001b[39;49;00m(merged_repo):\u001b[90m\u001b[39;49;00m\n        repo, parent_ref = merged_repo\u001b[90m\u001b[39;49;00m\n        emit_merge_proof(\u001b[90m\u001b[39;49;00m\n            \u001b[33m\"\u001b[39;49;00m\u001b[33mT-merge-x\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m, \u001b[33m\"\u001b[39;49;00m\u001b[33mtest_calc.py::test_add\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m,\u001b[90m\u001b[39;49;00m\n            thing=\u001b[33m\"\u001b[39;49;00m\u001b[33mcalc.add returns the sum\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m,\u001b[90m\u001b[39;49;00m\n            intention=\u001b[33m\"\u001b[39;49;00m\u001b[33madd(a,b) returns a+b\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m,\u001b[90m\u001b[39;49;00m\n            parent_ref=parent_ref, repo_root=\u001b[96mstr\u001b[39;49;00m(repo),\u001b[90m\u001b[39;49;00m\n        )\u001b[90m\u001b[39;49;00m\n        \u001b[90m# The proof-on-close gate now finds the merge proof and returns proven=True —\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n        \u001b[90m# the flip that shipped-unproven -> proven a re-close would apply.\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n        allowed, annotations, _msg = cc_queue._proof_gate({\u001b[33m\"\u001b[39;49;00m\u001b[33mid\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m: \u001b[33m\"\u001b[39;49;00m\u001b[33mT-merge-x\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m}, repo_root=\u001b[96mstr\u001b[39;49;00m(repo))\u001b[90m\u001b[39;49;00m\n>       \u001b[94massert\u001b[39;49;00m allowed \u001b[95mis\u001b[39;49;00m \u001b[94mTrue\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n\u001b[1m\u001b[31mE       assert False is True\u001b[0m\n\n\u001b[1m\u001b[31mtests/test_builder_merge_proof.py\u001b[0m:98: AssertionError\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m tests/test_builder_merge_proof.py::\u001b[1mtest_gate_flips_shipped_unproven_to_proven\u001b[0m - assert False is True\n\u001b[31m\u001b[31m\u001b[1m1 failed\u001b[0m\u001b[31m in 0.16s\u001b[0m\u001b[0m",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": "\u001b[32m.\u001b[0m\u001b[32m                                                                        [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m1 passed\u001b[0m\u001b[32m in 1.00s\u001b[0m\u001b[0m"
+          }
+        }
+      }
+    ],
+    "commit": "3b6533838d819b62d1e6a26b02247d1ea4beb292",
+    "impl_paths": [
+      "devlab/claudecode/builder_merge_proof.py",
+      "devlab/runtime/memory/inference_prereg/20260707.prereg.jsonl",
+      "devlab/runtime/memory/tickets/cc.0.T-builder-merge-time-proof.20260706.171551333543.json"
+    ],
+    "ticket": "T-builder-merge-time-proof",
+    "narrative": "",
+    "why": "The offload loop only reduces CC's queue once builder throughput closes proven; the flip must happen from a real merge, not a mock",
+    "bootstrap": false
+  }
+}
