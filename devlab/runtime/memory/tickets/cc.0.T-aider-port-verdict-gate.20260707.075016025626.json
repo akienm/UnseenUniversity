@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-aider-port-verdict-gate",
-    "title": "[sprint] Port aider auto-lint/test verdict gate into the reflection loop (P6)",
+    "title": "[in_progress] Port aider auto-lint/test verdict gate into the reflection loop (P6)",
     "size": "M",
     "tags": [
       "CompiledInference",
@@ -27,7 +27,7 @@
       "AiderPort",
       "Verdict"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.5,
     "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
     "gate": null,

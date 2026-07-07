@@ -74,6 +74,19 @@ def _log_repair_pair(ticket_id: str, turn: int, failure_class_name: str, applied
         log.warning("architect_editor: repair-pair corpus write failed for %s: %s", ticket_id, exc)
 
 
+def _log_verdict(ticket_id: str, verdict, applied: int) -> None:
+    """Log the deterministic edit verdict to the io_corpus (the verdict column for the nexus write).
+
+    The rung is recorded exactly as produced — a failure rung on cap-exhaustion is logged as a
+    failure, never masked. Fail-soft. (T-aider-port-verdict-gate.)"""
+    try:
+        from unseen_university.devices.inference.io_corpus import capture
+        capture({"kind": "editor_verdict", "ticket_id": ticket_id, "role": "editor",
+                 "rung": verdict.rung, "applied": applied, "detail": verdict.detail[:800]})
+    except Exception as exc:  # noqa: BLE001
+        log.warning("architect_editor: verdict corpus write failed for %s: %s", ticket_id, exc)
+
+
 #: Injection budget — never feed more than this many chars of named-file content back to the
 #: architect (a huge file named would otherwise blow the context; F-D is the failure to avoid).
 _MENTION_INJECT_BUDGET = 24_000
@@ -411,11 +424,14 @@ class ArchitectEditorFlow:
         from unseen_university.devices.inference.shim import InferenceRequest
 
         from unseen_university.devices.inference.clone_commit import CloneCommitter
+        from unseen_university.devices.inference import verdict_gate
 
         inference_device = self._inference_device or InferenceDevice()
         editor_cwd = Path(cwd) if cwd is not None else Path.cwd()
         # Commit-per-edit granularity in the throwaway clone (fail-soft outside a git repo).
         committer = CloneCommitter(editor_cwd)
+        # Where to find a plan/ticket-named test for the verdict gate (P6).
+        verdict_hint = f"{plan}\n{initial_message}"
 
         messages = [{
             "role": "user",
@@ -431,6 +447,7 @@ class ArchitectEditorFlow:
         last_text = ""
         last_reason = "no SEARCH/REPLACE blocks emitted"
         pending_failure: str | None = None  # failure class awaiting a repair attempt
+        last_verdict = verdict_gate.Verdict(verdict_gate.UNVERIFIED)
 
         for turn in range(self.MAX_REFLECTIONS + 1):
             req = InferenceRequest(
@@ -482,7 +499,24 @@ class ArchitectEditorFlow:
             applied_total.extend(result.applied)
 
             if result.clean:
-                break
+                # P6 VERDICT GATE: the edit applied cleanly — now VERIFY it (lint/compile + the
+                # plan-named test). A fixable failure (compile/lint error, red test) re-enters the
+                # SAME bounded reflection loop (cost stays ≤ cap+1 dispatches across all failure
+                # sources). A passing rung, or an un-runnable test, stops. The verdict is DATA —
+                # it does NOT flip DONE→escalate; the walk contract is untouched.
+                last_verdict, vrepair = verdict_gate.evaluate(editor_cwd, applied_total, verdict_hint)
+                log.info("architect_editor: crossing|step=verdict|ticket=%s|turn=%d|rung=%s",
+                         ticket_id, turn, last_verdict.rung)
+                if vrepair is None or turn == self.MAX_REFLECTIONS:
+                    # Verified as far as it got — or out of reflections (last_verdict is HONEST: a
+                    # broken edit that never got fixed carries a FAILURE rung, never a passing one).
+                    break
+                pending_failure = last_verdict.rung
+                messages = messages + [
+                    {"role": "assistant", "content": last_text},
+                    {"role": "user", "content": vrepair},
+                ]
+                continue
 
             last_reason = result.parse_error or "; ".join(p for p, *_ in result.failed)
             pending_failure = failure_class(result, editor_cwd)
@@ -496,13 +530,17 @@ class ArchitectEditorFlow:
 
         if applied_total:
             files = ", ".join(dict.fromkeys(applied_total))  # de-dup, preserve order
+            _log_verdict(ticket_id, last_verdict, len(applied_total))
             return LoopResult(
                 LOOP_DONE,
                 text=last_text,
                 envelope={
                     "status": "done",
                     "result": f"applied {len(applied_total)} edit(s) to: {files} "
-                              f"(UNVERIFIED — P6 gates on tests)",
+                              f"[verdict: {last_verdict.rung}]",
+                    # The verdict column (fingerprint → plan → VERDICT) — DATA for the nexus write,
+                    # honest even on cap-exhaustion (a failure rung is never masked as passing).
+                    "verdict": last_verdict.as_dict(),
                     "error_class": None,
                     "error_number": None,
                 },
