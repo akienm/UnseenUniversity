@@ -86,9 +86,27 @@ def lint_verdict(cwd: str | Path, py_files: list) -> Verdict:
     """Lint the edited .py files. Real linter if installed (lint_clean/lint_error), else a compile
     check (compile_ok/compile_error). compile_ok is the BOTTOM rung — it verifies the edit parses,
     the ticket's core concern; it is NOT recorded as lint_clean (that would overclaim strength)."""
-    # STUB (scaffold commit): real linter shell-out + the compile/parse check land in the next
-    # commit. Until then this is the silent-wrongness baseline — it claims compile_ok without
-    # actually verifying, which the proof node red-flags.
+    cwd = Path(cwd)
+    if not py_files:
+        return Verdict(COMPILE_OK, "")  # nothing to lint (e.g. non-python edits) — parses vacuously
+
+    real = _run_real_linter(cwd, py_files)
+    if real is not None:
+        clean, errors = real
+        return Verdict(LINT_CLEAN if clean else LINT_ERROR, errors)
+
+    # Fallback: does each edited file even parse/compile? (py_compile-equivalent, no .pyc written)
+    errors = []
+    for rel in py_files:
+        p = cwd / rel
+        try:
+            compile(p.read_text(encoding="utf-8"), str(rel), "exec")
+        except SyntaxError as exc:
+            errors.append(f"{rel}:{exc.lineno}: {exc.msg}")
+        except OSError:
+            continue
+    if errors:
+        return Verdict(COMPILE_ERROR, "\n".join(errors))
     return Verdict(COMPILE_OK, "")
 
 
