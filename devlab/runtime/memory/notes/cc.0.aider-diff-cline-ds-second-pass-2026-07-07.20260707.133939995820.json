@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.aider-diff-cline-ds-second-pass-2026-07-07.20260707.133939995820",
+  "emitter": "cc.0",
+  "namespace": [
+    "aider-diff-cline-ds-second-pass-2026-07-07"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-07T13:39:39.995820",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Why aider codes well (diff-based -> less hallucination); DS second-pass = aider + cline strengths; domain model-temps",
+    "date": "2026-07-07",
+    "text": "Akien insight injection (2026-07-07), LOWER PRIORITY — aider is a solid base, this is a later pass.\n\n1. WHY AIDER IS A GOOD CODER: it is a DIFF-BASED tool. Editing as a diff/SEARCH-REPLACE (vs free-form whole-file generation) is structurally HARDER TO HALLUCINATE — the model must anchor edits to text that actually exists. This is a substrate reason, not a model-quality reason (matches the harness-gap finding: the wall was the loop/edit-format, not the model).\n\n2. MODEL TEMPS PER DOMAIN: the diff-anchoring insight raises the question of TEMPERATURE. Maybe DOMAINS should specify model temperature (e.g. CodingDomain -> low temp for less hallucination, a creative/design domain -> higher). Ties to the inference tier-not-model contract: a domain could carry a temp alongside its tier. Filed T-domain-model-temps (gated).\n\n3. CLINE is the closest thing to Claude Code in AGENTIC WORKFLOW. Repo at /home/akien/dev/src/cline. \n\n4. DS SECOND PASS (later): make another pass on DickSimnel, deliberately incorporating strengths from BOTH aider (diff-based edit format -> less hallucination; already the base we ported) AND cline (agentic workflow closest to CC). Decide which strengths from each to fold into DS. Filed T-ds-second-pass-aider-cline-strengths (gated). Aider remains the solid base; this is optimization, not a rebuild.\n\nTIMING: all LOWER PRIORITY. Offload loop + scale first. Revisit when Akien reopens."
+  }
+}

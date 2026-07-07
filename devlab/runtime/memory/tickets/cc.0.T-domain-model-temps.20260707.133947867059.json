@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-domain-model-temps.20260707.133947867059",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-domain-model-temps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T19:39:47.867059+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-domain-model-temps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-domain-model-temps",
+    "title": "[gated] Domains specify model temperature (low-temp coding = less hallucination)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Domain"
+    ],
+    "description": "**GATED — lower priority (Akien 2026-07-07); offload loop + scale first.**\n\n**Idea:** Aider codes well partly because diff-based editing is hard to hallucinate. The temperature analogue: a DOMAIN should be able to specify the model TEMPERATURE for its inference (e.g. CodingDomain -> low temp for determinism/less hallucination; a design/ideation domain -> higher). Today the inference contract is tier-not-model (caller asks for a TIER); extend so a domain can carry a temperature (and possibly other sampling params) alongside its tier.\n\n**Shape:** add an optional temperature to the domain/inference request; thread through the Inference Proxy; default preserves current behavior. Verify low-temp coding reduces edit hallucination on the aider/DS harness.\n\n**Affected files:** TBD (inference proxy/router, CodingDomain, domain base). See note aider-diff-cline-ds-second-pass-2026-07-07.\n\n**Completion test:** a domain sets temp; the proxy honors it end-to-end; a low-temp coding run is observably more deterministic than the default.\n\n**Scope boundary:** domain-level temperature plumbing. NOT a full sampling-param overhaul.\n\n**intention:** I intend that each domain controls its model temperature, so coding runs at low temp (less hallucination) without hard-coding a model.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "priority": 0.2,
+    "status": "gated",
+    "gate": "Akien reopens; after offload-loop scale",
+    "worker": null,
+    "role": "builder",
+    "created_at": "2026-07-07T19:39:40.254888+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T19:39:40.300480+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "815a5b37-33db-4f42-9a02-41e5042d76cf"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ds-second-pass-aider-cline-strengths.20260707.133951149227",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-second-pass-aider-cline-strengths"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T19:39:51.149227+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ds-second-pass-aider-cline-strengths"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-second-pass-aider-cline-strengths",
+    "title": "[gated] DS second pass — fold in aider (diff-edit) + cline (agentic) strengths",
+    "size": "L",
+    "tags": [
+      "DickSimnel",
+      "Research",
+      "Design"
+    ],
+    "description": "**GATED — lower priority (Akien 2026-07-07); aider is a solid base, this is optimization not rebuild.**\n\n**Idea:** Make a second pass on DickSimnel deliberately incorporating strengths from BOTH tools: (a) AIDER — diff-based / SEARCH-REPLACE edit format that is structurally harder to hallucinate (already the ported base); (b) CLINE — the closest tool to Claude Code in AGENTIC WORKFLOW. Repo to study: /home/akien/dev/src/cline. Decide which strengths of each to fold into DS.\n\n**Shape (at gate-open):** study cline's agentic loop (planning, tool orchestration, context management) vs our agentic_loop/architect_editor; enumerate the concrete strengths worth porting; scope them into tickets. Pairs with the aider-port batch already landed.\n\n**Affected files:** TBD (agentic_loop, architect_editor). See note aider-diff-cline-ds-second-pass-2026-07-07.\n\n**Completion test:** at gate-open, a named list of cline+aider strengths with per-item port/skip decisions; NOT open-ended.\n\n**Scope boundary:** the study + decomposition (this ticket) produces the port tickets. NOT the ports themselves.\n\n**intention:** I intend that DS absorbs the best of aider (anti-hallucination editing) and cline (agentic workflow), so DS closes the gap to CC-level building.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "priority": 0.15,
+    "status": "gated",
+    "gate": "Akien reopens; after offload-loop scale + Windows aider",
+    "worker": null,
+    "role": "master",
+    "created_at": "2026-07-07T19:39:48.161015+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T19:39:48.215492+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "997b19bb-9827-47bf-8226-28933a62019f"
+  }
+}
