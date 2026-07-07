@@ -525,6 +525,64 @@ def _dispatch_bus(
     return True
 
 
+def _cc_queue(*args) -> bool:
+    """Run cc_queue.py as GRANNY — the ticket owner exercising the canonical close/note
+    path (proof-on-close gate, decision rollup, ungate). Granny-as-owner using cc_queue
+    is NOT the leak the single-writer rule forbids (the BUILDER using it was). Simple
+    handshake transitions still use _setstatus_direct (ticket_store). Returns True on ok."""
+    try:
+        r = subprocess.run([_PYTHON, str(_CC_QUEUE), *args],
+                           capture_output=True, text=True, timeout=25)
+        if r.returncode != 0:
+            log.warning("Granny: cc_queue %s failed: %s", list(args[:2]), (r.stderr or "")[:200])
+        return r.returncode == 0
+    except Exception as exc:
+        log.warning("Granny: cc_queue %s error: %s", list(args[:2]), exc)
+        return False
+
+
+def _reconcile_builder_result(tid: str, payload: dict) -> None:
+    """Apply a builder's dispatch_done RESULT ARTIFACT to the canonical ticket. Granny is
+    the SOLE writer (D-granny-sole-ticket-writer-2026-07-07): the builder reports
+    {outcome, branch, note, missing_lever | reason+analysis} and Granny commits it —
+    close shipped-unproven (with the builder's named lever) or set escalated. Idempotent:
+    a no-op if the ticket is already terminal (redelivery / out-of-order safe)."""
+    from unseen_university import ticket_store
+
+    outcome = payload.get("outcome")
+    builder = payload.get("from_device", "?")
+    cur = (ticket_store.read(tid) or {}).get("status")
+    if cur in ("closed", "done", "escalated", "cancelled", "discarded"):
+        log.info("Granny: reconcile_skip|ticket=%s|current=%s|outcome=%s|already_terminal",
+                 tid, cur, outcome)
+        return
+
+    if outcome == "done":
+        note = payload.get("note") or f"{builder}: done (branch {payload.get('branch', '?')})"
+        lever = payload.get("missing_lever") or (
+            "branch-builder gate passed but cannot emit a HEAD-valid proof at build time "
+            "— real proof emits at merge/validation time")
+        ok = _cc_queue("close", tid, note[:1500], "--shipped-unproven", lever[:400])
+        log.info("Granny: reconciled_done|ticket=%s|builder=%s|closed=%s", tid, builder, ok)
+        if not ok:
+            # Close failed (e.g. already closed) — leave a trail; do not crash the cycle.
+            _post_channel(f"GRANNY_RECONCILE_FAIL|ticket={tid}|outcome=done|builder={builder}")
+    elif outcome == "escalated":
+        reason = payload.get("reason", "(no reason given)")
+        analysis = payload.get("analysis", "")
+        summary = (
+            "## Escalation summary (Aider)\n"
+            f"**What was tried:** {analysis or '(no analysis captured)'}\n"
+            f"**Where it broke:** {reason}\n"
+            "**What now?**"
+        )
+        _cc_queue("append-note", tid, summary[:1800])
+        _setstatus_direct(tid, "escalated")
+        log.info("Granny: reconciled_escalated|ticket=%s|builder=%s|reason=%s", tid, builder, reason)
+    else:
+        log.warning("Granny: reconcile_unknown_outcome|ticket=%s|outcome=%r|no_write", tid, outcome)
+
+
 def _process_handshake_replies(imap, granny_mailbox: str) -> int:
     """Fetch all pending handshake replies from Granny's mailbox and apply transitions.
 
@@ -550,9 +608,11 @@ def _process_handshake_replies(imap, granny_mailbox: str) -> int:
             continue
 
         if kind == "dispatch_done":
-            # Builder closed the ticket directly — observability only, no status change needed.
-            builder = payload.get("from_device", "?")
-            log.info("Granny: builder %s completed %s (dispatch_done)", builder, tid)
+            # Single-writer (D-granny-sole-ticket-writer-2026-07-07): the builder
+            # REPORTED a result artifact; GRANNY owns the write and reconciles it into
+            # the canonical ticket (close shipped-unproven / escalate). The builder
+            # never touches the store, so no cross-process overwrite is possible.
+            _reconcile_builder_result(tid, payload)
             count += 1
             continue
 

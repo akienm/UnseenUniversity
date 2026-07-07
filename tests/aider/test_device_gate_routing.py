@@ -29,32 +29,37 @@ def _passing():
                        scope_blocked=False, gate_passed=True, wall_s=20.0, workdir="/w")
 
 
-def test_passed_gate_closes_shipped_unproven(device):
-    # A branch-builder cannot emit a HEAD-valid proof — an honest close names the
-    # gate result as the missing proof-lever (merge-time proof), never fakes one.
-    outcome = device._post_result("T-x", _passing())
-    assert outcome == "done"
-    close_calls = [c for c in device._run_queue_cmd.call_args_list if c[0][0] == "close"]
-    assert len(close_calls) == 1
-    assert "--shipped-unproven" in close_calls[0][0]
+def _no_ticket_writes(device):
+    # Single-writer (D-granny-sole-ticket-writer): the builder must make ZERO ticket
+    # mutations — only Granny writes. _build_report may READ (show) but never
+    # close/setstatus/append-note.
     verbs = [c[0][0] for c in device._run_queue_cmd.call_args_list]
-    assert "setstatus" not in verbs  # not escalated
+    assert not ({"close", "setstatus", "append-note"} & set(verbs)), f"builder wrote: {verbs}"
 
 
-def test_zero_edits_escalates_never_closes(device):
+def test_passed_gate_returns_done_artifact_no_writes(device):
+    # A branch-builder can't emit a HEAD-valid proof — it REPORTS a done artifact naming
+    # the missing proof-lever (merge-time proof); GRANNY closes shipped-unproven.
+    art = device._build_report("T-x", _passing())
+    assert art["outcome"] == "done"
+    assert art["branch"] == "aider/T-x-1"
+    assert "missing_lever" in art and art["missing_lever"]
+    _no_ticket_writes(device)
+
+
+def test_zero_edits_returns_escalated_artifact(device):
     r = AiderResult(ticket_id="T-x", model="m", branch="b", edited=False, gate_passed=False)
-    outcome = device._post_result("T-x", r)
-    assert outcome == "escalated"
-    verbs = [c[0][0] for c in device._run_queue_cmd.call_args_list]
-    assert "close" not in verbs
-    assert ("setstatus", "T-x", "escalated") in [tuple(c[0]) for c in device._run_queue_cmd.call_args_list]
+    art = device._build_report("T-x", r)
+    assert art["outcome"] == "escalated"
+    assert "0 edits" in art["reason"]
+    _no_ticket_writes(device)
 
 
 def test_red_tests_escalate(device):
     r = AiderResult(ticket_id="T-x", model="m", branch="b", edited=True,
                     changed_files=["shop/models.py"], tests_green=False, gate_passed=False)
-    assert device._post_result("T-x", r) == "escalated"
-    assert "close" not in [c[0][0] for c in device._run_queue_cmd.call_args_list]
+    assert device._build_report("T-x", r)["outcome"] == "escalated"
+    _no_ticket_writes(device)
 
 
 def test_scope_blocked_escalates(device):
@@ -62,18 +67,18 @@ def test_scope_blocked_escalates(device):
                     changed_files=["tests/test_x.py"], tests_green=True,
                     scope_blocked=True, scope_reasons=["edited test file: tests/test_x.py"],
                     gate_passed=False)
-    assert device._post_result("T-x", r) == "escalated"
-    assert "close" not in [c[0][0] for c in device._run_queue_cmd.call_args_list]
+    assert device._build_report("T-x", r)["outcome"] == "escalated"
+    _no_ticket_writes(device)
 
 
 def test_no_test_target_escalates(device):
     r = AiderResult(ticket_id="T-x", model="m", branch="b", edited=True,
                     changed_files=["shop/models.py"], tests_green=None, gate_passed=False)
-    assert device._post_result("T-x", r) == "escalated"
+    assert device._build_report("T-x", r)["outcome"] == "escalated"
 
 
 def test_none_result_escalates(device):
-    assert device._post_result("T-x", None) == "escalated"
+    assert device._build_report("T-x", None)["outcome"] == "escalated"
 
 
 def test_gate_failure_reason_maps_each_mode():

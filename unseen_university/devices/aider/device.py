@@ -35,7 +35,6 @@ from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from unseen_university._uu_root import uu_root
 from unseen_university.identity import home_db_url
 from unseen_university.capabilities import IdentityMixin
-from unseen_university.devices._builder_close import BuilderCloseMixin
 
 from .shim import AiderShim
 from .consts import DEVICE_ID, INSTANCE_ABBREVIATION, DEFAULT_MODEL, MAX_INSTANCES
@@ -50,7 +49,7 @@ _CC_QUEUE = Path(uu_root()) / "devlab" / "claudecode" / "cc_queue.py"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
 
-class AiderDevice(IdentityMixin, BuilderCloseMixin, BaseDevice):
+class AiderDevice(IdentityMixin, BaseDevice):
     """Aider.0 — bus-dispatched aider builder. Dormant between dispatches; works one
     ticket synchronously on dispatch, then returns to listening."""
 
@@ -219,20 +218,17 @@ class AiderDevice(IdentityMixin, BuilderCloseMixin, BaseDevice):
             return True, f"HIGH-inertia tags: {sorted(hit)}"
         return False, ""
 
-    def _escalate_ticket(self, ticket_id: str, reason: str, analysis: str = "") -> None:
+    def _escalation_artifact(self, ticket_id: str, reason: str, analysis: str = "") -> dict:
+        """Build an escalation ARTIFACT — NO ticket writes (single-writer,
+        D-granny-sole-ticket-writer-2026-07-07). The escalation reason/analysis ride the
+        dispatch_done envelope; Granny reconciles it (append-note + set escalated). The
+        builder only reports."""
         tried = (analysis[:500] + "...") if len(analysis) > 500 else analysis or "(no analysis captured)"
-        summary_block = (
-            "## Escalation summary (Aider)\n"
-            f"**What was tried:** {tried}\n"
-            f"**Where it broke:** {reason}\n"
-            "**What now?**"
-        )
-        self._run_queue_cmd("append-note", ticket_id, summary_block)
         self._channel_event(f"AIDER_ESCALATE ticket={ticket_id} reason={reason!r}", event_type="escalated")
-        self._run_queue_cmd("setstatus", ticket_id, "escalated")
-        log.info("AiderDevice: escalated ticket %s to CC — %s", ticket_id, reason)
+        log.info("AiderDevice: reporting ESCALATED for %s — %s", ticket_id, reason)
         self._tickets_escalated += 1
         self._active_ticket = None
+        return {"outcome": "escalated", "reason": reason, "analysis": tried}
 
     # ── Build ───────────────────────────────────────────────────────────────────
 
@@ -300,17 +296,27 @@ class AiderDevice(IdentityMixin, BuilderCloseMixin, BaseDevice):
 
     # ── Result ───────────────────────────────────────────────────────────────────
 
-    def _post_result(self, ticket_id: str, result) -> str:
-        """Close on a passed gate; escalate to CC otherwise. Returns the outcome
-        string ('done' | 'escalated') for the listener's dispatch_done envelope."""
+    def _build_report(self, ticket_id: str, result) -> dict:
+        """Compute the result ARTIFACT for Granny to reconcile — the builder makes NO
+        ticket writes (single-writer, D-granny-sole-ticket-writer-2026-07-07): the
+        builder REPORTS, Granny owns and applies the ticket state. Returns an interim
+        artifact: {outcome: done|escalated, branch, changed_files, note,
+        missing_lever (done) | reason+analysis (escalated)}. Granny's reconcile of the
+        dispatch_done envelope is what closes/escalates the canonical ticket."""
         if result is None:
-            self._escalate_ticket(ticket_id, "runner returned no result")
-            return "escalated"
+            return {"outcome": "escalated", "reason": "runner returned no result"}
 
         if not result.gate_passed:
-            why = self._gate_failure_reason(result)
-            self._escalate_ticket(ticket_id, why, analysis=result.aider_tail)
-            return "escalated"
+            self._tickets_escalated += 1
+            self._channel_event(
+                f"AIDER_ESCALATE ticket={ticket_id} reason={self._gate_failure_reason(result)!r}",
+                event_type="escalated")
+            return {
+                "outcome": "escalated",
+                "reason": self._gate_failure_reason(result),
+                "analysis": (result.aider_tail or "")[:500],
+                "branch": result.branch,
+            }
 
         note = (
             f"{self.instance_name}[{result.model}]: gate PASS — branch={result.branch} "
@@ -319,24 +325,26 @@ class AiderDevice(IdentityMixin, BuilderCloseMixin, BaseDevice):
         )
         if result.scope_warnings:
             note += f" | scope-warn={result.scope_warnings}"
-        # A branch-builder cannot emit a HEAD-valid proof_store artifact: the impl lives
-        # on an unmerged branch in a throwaway clone, not at the UU repo's HEAD. The
-        # objective gate (tests-green + diff-scope) IS the build-time proof; the real
-        # proof emits at branch-merge/validation time (the missing lever —
-        # T-builder-merge-time-proof, builder-wide: DickSimnel has the same close path).
-        # So close HONEST: shipped-unproven, with the gate result named as the lever.
+        # A branch-builder cannot emit a HEAD-valid proof at build time: the impl lives
+        # on an unmerged branch in a throwaway clone, not at HEAD. The objective gate
+        # (tests-green + diff-scope) IS the build-time signal; the real proof emits at
+        # merge/validation time (T-builder-merge-time-proof). So Granny closes HONEST:
+        # shipped-unproven, with this gate result named as the missing lever.
         unproven = (
             f"aider objective gate PASSED (tests-green + diff-scope in-scope) on branch "
             f"{result.branch}; branch-builder cannot emit a HEAD-valid proof (impl on an "
             f"unmerged clone branch) — real proof emits at merge/validation time"
         )
-        if not self._builder_close(ticket_id, note=note, missing_lever=unproven):
-            self._escalate_ticket(ticket_id, "gate passed but close failed", analysis=note)
-            return "escalated"
         self._tickets_processed += 1
         self._channel_event(f"AIDER_DONE ticket={ticket_id} branch={result.branch}", event_type="done")
-        log.info("AiderDevice: closed ticket %s (branch %s)", ticket_id, result.branch)
-        return "done"
+        log.info("AiderDevice: reported DONE for ticket %s (branch %s)", ticket_id, result.branch)
+        return {
+            "outcome": "done",
+            "branch": result.branch,
+            "changed_files": result.changed_files,
+            "note": note,
+            "missing_lever": unproven,
+        }
 
     @staticmethod
     def _gate_failure_reason(result) -> str:

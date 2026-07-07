@@ -139,16 +139,14 @@ class AiderWorkerListener:
         ticket = self._device._fetch_ticket(ticket_id)
         if ticket is None:
             log.warning("AiderWorkerListener: could not fetch ticket %s — escalating", ticket_id)
-            self._device._escalate_ticket(ticket_id, "could not fetch ticket for dispatch")
-            self._send(reply_to, {"kind": "dispatch_done", "ticket_id": ticket_id,
-                                  "from_device": self._device_mailbox, "outcome": "escalated"})
+            self._send_done(reply_to, ticket_id,
+                            self._device._escalation_artifact(ticket_id, "could not fetch ticket for dispatch"))
             return
 
         should_esc, esc_reason = self._device._should_escalate(ticket)
         if should_esc:
-            self._device._escalate_ticket(ticket_id, esc_reason)
-            self._send(reply_to, {"kind": "dispatch_done", "ticket_id": ticket_id,
-                                  "from_device": self._device_mailbox, "outcome": "escalated"})
+            self._send_done(reply_to, ticket_id,
+                            self._device._escalation_artifact(ticket_id, esc_reason))
             return
 
         self._send(reply_to, {"kind": "dispatch_started", "ticket_id": ticket_id,
@@ -162,13 +160,20 @@ class AiderWorkerListener:
             result = self._device._run_build(ticket)
         except Exception as exc:
             log.warning("AiderWorkerListener: build raised for %s: %s", ticket_id, exc)
-            self._device._escalate_ticket(ticket_id, f"build raised: {exc}")
-            outcome = "escalated"
+            artifact = self._device._escalation_artifact(ticket_id, f"build raised: {exc}")
         else:
-            outcome = self._device._post_result(ticket_id, result)
+            artifact = self._device._build_report(ticket_id, result)
 
-        self._send(reply_to, {"kind": "dispatch_done", "ticket_id": ticket_id,
-                              "from_device": self._device_mailbox, "outcome": outcome})
-        log.info("AiderWorkerListener: task_outcome|ticket=%s|outcome=%s", ticket_id, outcome)
+        self._send_done(reply_to, ticket_id, artifact)
         self._device._active_ticket = None
         self._last_active = time.monotonic()
+
+    def _send_done(self, reply_to: str, ticket_id: str, artifact: dict) -> None:
+        """Send dispatch_done CARRYING the builder's result artifact for Granny to
+        reconcile (single-writer, D-granny-sole-ticket-writer). The artifact fields
+        (outcome/branch/changed_files/note/missing_lever/reason/analysis) ride the
+        envelope — the builder writes no ticket state itself."""
+        self._send(reply_to, {"kind": "dispatch_done", "ticket_id": ticket_id,
+                              "from_device": self._device_mailbox, **artifact})
+        log.info("AiderWorkerListener: task_outcome|ticket=%s|outcome=%s",
+                 ticket_id, artifact.get("outcome"))

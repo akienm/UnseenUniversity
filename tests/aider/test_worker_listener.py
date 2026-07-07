@@ -27,7 +27,10 @@ def _stub_device(*, ticket=None, should_escalate=(False, ""), result=None, outco
     dev._fetch_ticket.return_value = ticket or {"id": "T-x", "title": "t", "tags": [], "description": ""}
     dev._should_escalate.return_value = should_escalate
     dev._run_build.return_value = result or AiderResult(ticket_id="T-x", model="m", branch="b", gate_passed=True)
-    dev._post_result.return_value = outcome
+    # Single-writer: the builder returns result ARTIFACTS; the listener rides them on
+    # dispatch_done for Granny to reconcile (no _post_result / _escalate_ticket writes).
+    dev._build_report.return_value = {"outcome": outcome, "branch": "b"}
+    dev._escalation_artifact.return_value = {"outcome": "escalated", "reason": "x"}
     dev._active_ticket = None
     return dev
 
@@ -59,7 +62,7 @@ def test_high_inertia_escalated_before_build():
     device = _stub_device(should_escalate=(True, "HIGH-inertia tags: ['Security']"))
     _make_listener(bus=bus, device=device)._handle_dispatch("T-sec", "granny.0")
     device._run_build.assert_not_called()
-    device._escalate_ticket.assert_called_once_with("T-sec", "HIGH-inertia tags: ['Security']")
+    device._escalation_artifact.assert_called_once_with("T-sec", "HIGH-inertia tags: ['Security']")
     assert _payloads(bus)[-1] == "dispatch_done"
     assert bus.append.call_args_list[-1][0][1].payload["outcome"] == "escalated"
 
@@ -70,7 +73,8 @@ def test_unfetchable_ticket_escalates():
     device._fetch_ticket.return_value = None
     _make_listener(bus=bus, device=device)._handle_dispatch("T-missing", "granny.0")
     device._run_build.assert_not_called()
-    device._escalate_ticket.assert_called_once()
+    device._escalation_artifact.assert_called_once()
+    assert bus.append.call_args_list[-1][0][1].payload["outcome"] == "escalated"
 
 
 def test_build_exception_escalates_gracefully():
@@ -78,7 +82,7 @@ def test_build_exception_escalates_gracefully():
     device = _stub_device()
     device._run_build.side_effect = RuntimeError("aider blew up")
     _make_listener(bus=bus, device=device)._handle_dispatch("T-boom", "granny.0")
-    device._escalate_ticket.assert_called_once()
+    device._escalation_artifact.assert_called_once()
     assert bus.append.call_args_list[-1][0][1].payload["outcome"] == "escalated"
 
 
