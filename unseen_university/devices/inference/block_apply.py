@@ -427,12 +427,17 @@ class BlockApplyResult:
         return not self.failed and not self.parse_error
 
 
-def apply_blocks_to_dir(response_text: str, cwd: Path, fence=DEFAULT_FENCE) -> BlockApplyResult:
+def apply_blocks_to_dir(response_text: str, cwd: Path, fence=DEFAULT_FENCE,
+                        committer=None) -> BlockApplyResult:
     """Parse SEARCH/REPLACE blocks from `response_text` and apply them to files under `cwd`.
 
     Reads the current file content from disk, runs each block through the forgiving ladder, and
     writes matches back. A block that does not match a real span is recorded in ``failed`` — it
     is never silently skipped (F-C). Malformed block syntax lands in ``parse_error``.
+
+    ``committer`` (optional, duck-typed ``before(rel)``/``after(rel)`` — a CloneCommitter) gives
+    commit-per-edit granularity in the throwaway clone: dirty-snapshot each file before it is
+    touched, commit each applied edit after. None → no commits (the pure default; unit tests).
     """
     cwd = Path(cwd)
     result = BlockApplyResult()
@@ -456,9 +461,14 @@ def apply_blocks_to_dir(response_text: str, cwd: Path, fence=DEFAULT_FENCE) -> B
             result.failed.append((path, original, updated))
             continue
 
+        # Commit-per-edit (clone only): snapshot a dirty file BEFORE touching it, commit AFTER.
+        if committer is not None:
+            committer.before(path)
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(new_content, encoding="utf-8")
         result.applied.append(path)
+        if committer is not None:
+            committer.after(path)
 
     return result
 

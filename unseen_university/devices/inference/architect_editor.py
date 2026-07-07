@@ -410,8 +410,12 @@ class ArchitectEditorFlow:
         from unseen_university.devices.inference.device import InferenceDevice
         from unseen_university.devices.inference.shim import InferenceRequest
 
+        from unseen_university.devices.inference.clone_commit import CloneCommitter
+
         inference_device = self._inference_device or InferenceDevice()
         editor_cwd = Path(cwd) if cwd is not None else Path.cwd()
+        # Commit-per-edit granularity in the throwaway clone (fail-soft outside a git repo).
+        committer = CloneCommitter(editor_cwd)
 
         messages = [{
             "role": "user",
@@ -467,7 +471,7 @@ class ArchitectEditorFlow:
             cost += getattr(response, "cost_estimate", 0.0)
             last_text = response.text or ""
 
-            result = apply_blocks_to_dir(last_text, editor_cwd)
+            result = apply_blocks_to_dir(last_text, editor_cwd, committer=committer)
             log.info("architect_editor: crossing|step=block-editor-apply|ticket=%s|turn=%d|"
                      "applied=%d|failed=%d%s", ticket_id, turn, len(result.applied),
                      len(result.failed), "|parse_error" if result.parse_error else "")
