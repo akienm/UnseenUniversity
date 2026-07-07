@@ -52,8 +52,9 @@ _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "B
 # CodingCapability mixin (D-agent-capability-mixins-over-domains, stream A). DS composes
 # the capability and delegates through it — it no longer resolves the domain directly.
 from unseen_university.capabilities import CodingCapability, IdentityMixin
+from unseen_university.devices._builder_close import BuilderCloseMixin
 
-class DickSimnelDevice(IdentityMixin, CodingCapability, BaseDevice):
+class DickSimnelDevice(IdentityMixin, CodingCapability, BuilderCloseMixin, BaseDevice):
     """
     DickSimnel.0 — bus-dispatched sprint ticket worker.
 
@@ -281,18 +282,19 @@ class DickSimnelDevice(IdentityMixin, CodingCapability, BaseDevice):
             self._escalate_ticket(ticket_id, "result missing DONE: prefix — not a completion", analysis=result_text)
             return
 
-        note = result_text[:2000]
-        close_result = self._run_queue_cmd("close", ticket_id, f"DickSimnel.0: {note}")
-        if close_result is None:
-            # close() returns None on error and when ticket is already closed.
-            # Check the actual status before escalating — double-close is success.
-            show_result = self._run_queue_cmd("show", ticket_id)
-            if show_result and show_result.get("status") in ("done", "closed"):
-                log.info("DickSimnel: ticket %s already closed — treating as success", ticket_id)
-            else:
-                log.warning("DickSimnel: close failed for %s — escalating to CC", ticket_id)
-                self._escalate_ticket(ticket_id, "close command failed", analysis=result_text[:300])
-                return
+        note = f"DickSimnel.0: {result_text[:2000]}"
+        # DickSimnel is a branch-builder: its impl lives on an unmerged branch, not at
+        # HEAD, so a bare close is REFUSED by the proof-on-close gate. Close honest via
+        # the shared mixin (shipped-unproven, gate-result as lever); the real proof
+        # emits at merge time (builder_merge_proof.emit_merge_proof).
+        unproven = (
+            "DickSimnel branch-builder: work completed on an unmerged branch; a "
+            "branch-builder cannot emit a HEAD-valid proof — real proof emits at "
+            "merge/validation time"
+        )
+        if not self._builder_close(ticket_id, note=note, missing_lever=unproven):
+            self._escalate_ticket(ticket_id, "close command failed", analysis=result_text[:300])
+            return
 
         self._tickets_processed += 1
         self._channel_event(f"DICKSIMNEL_DONE ticket={ticket_id} summary={result_text[:100]!r}", event_type="done")

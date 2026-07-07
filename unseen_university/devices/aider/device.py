@@ -35,6 +35,7 @@ from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from unseen_university._uu_root import uu_root
 from unseen_university.identity import home_db_url
 from unseen_university.capabilities import IdentityMixin
+from unseen_university.devices._builder_close import BuilderCloseMixin
 
 from .shim import AiderShim
 from .consts import DEVICE_ID, INSTANCE_ABBREVIATION, DEFAULT_MODEL, MAX_INSTANCES
@@ -49,7 +50,7 @@ _CC_QUEUE = Path(uu_root()) / "devlab" / "claudecode" / "cc_queue.py"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
 
-class AiderDevice(IdentityMixin, BaseDevice):
+class AiderDevice(IdentityMixin, BuilderCloseMixin, BaseDevice):
     """Aider.0 — bus-dispatched aider builder. Dormant between dispatches; works one
     ticket synchronously on dispatch, then returns to listening."""
 
@@ -329,14 +330,9 @@ class AiderDevice(IdentityMixin, BaseDevice):
             f"{result.branch}; branch-builder cannot emit a HEAD-valid proof (impl on an "
             f"unmerged clone branch) — real proof emits at merge/validation time"
         )
-        close = self._run_queue_cmd("close", ticket_id, note[:1500], "--shipped-unproven", unproven[:400])
-        if close is None:
-            show = self._run_queue_cmd("show", ticket_id)
-            if show and show.get("status") in ("done", "closed"):
-                log.info("AiderDevice: ticket %s already closed — success", ticket_id)
-            else:
-                self._escalate_ticket(ticket_id, "gate passed but close failed", analysis=note)
-                return "escalated"
+        if not self._builder_close(ticket_id, note=note, missing_lever=unproven):
+            self._escalate_ticket(ticket_id, "gate passed but close failed", analysis=note)
+            return "escalated"
         self._tickets_processed += 1
         self._channel_event(f"AIDER_DONE ticket={ticket_id} branch={result.branch}", event_type="done")
         log.info("AiderDevice: closed ticket %s (branch %s)", ticket_id, result.branch)
