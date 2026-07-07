@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.commit-per-edit-in-the-throwaway-clone.T-aider-port-commit-per-edit.20260707.104519370389",
+  "emitter": "cc.0",
+  "namespace": [
+    "commit-per-edit-in-the-throwaway-clone",
+    "T-aider-port-commit-per-edit"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T10:45:19.370389",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-port-commit-per-edit"
+    ],
+    "commits": [
+      "4891eb3d2d9560617b9e458def1de2af2b065d0f"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "commit-per-edit in the throwaway clone",
+    "intention": "each applied SEARCH/REPLACE edit produces a distinct commit in the clone — commit count equals applied-edit count",
+    "test": "tests/inference/test_clone_commit.py::test_commit_count_equals_applied_edit_count",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_clone_commit.py::test_commit_count_equals_applied_edit_count",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    def test_commit_count_equals_applied_edit_count(tmp_path):\n        _init_repo(tmp_path)\n        base = _count(tmp_path)\n    \n        committer = CloneCommitter(tmp_path)\n        result = apply_blocks_to_dir(_TWO_EDITS, tmp_path, committer=committer)\n    \n        assert result.applied == [\"a.py\", \"b.py\"], f\"both edits should apply: {result}\"\n>       assert _count(tmp_path) - base == 2, (\n            \"each applied edit must produce a distinct commit in the clone; \"\n            f\"got {_count(tmp_path) - base} commits for 2 edits\"\n        )\nE       AssertionError: each applied edit must produce a distinct commit in the clone; got 0 commits for 2 edits\nE       assert (1 - 1) == 2\nE        +  where 1 = _count(PosixPath('/tmp/pytest-of-akien/pytest-487/test_commit_count_equals_appli0'))\n\ntests/inference/test_clone_commit.py:52: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_clone_commit.py::test_commit_count_equals_applied_edit_count\n1 failed in 0.19s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.15s"
+          }
+        }
+      }
+    ],
+    "commit": "4891eb3d2d9560617b9e458def1de2af2b065d0f",
+    "impl_paths": [
+      "unseen_university/devices/inference/clone_commit.py"
+    ],
+    "ticket": "T-aider-port-commit-per-edit",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
