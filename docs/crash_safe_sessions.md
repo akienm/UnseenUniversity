@@ -1,5 +1,5 @@
 # Crash-Safe Sessions
-*Migrated from ClaudeAndAkien 2026-04-27. DB references reflect old pattern; Phase 1+ uses IMAP bus.*
+*Migrated from ClaudeAndAkien 2026-04-27. DB references reflect old pattern; Phase 1+ uses the PgBus (Postgres) message bus.*
 
 
 The problem: the times you most need to save state are exactly when you can't.

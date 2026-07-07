@@ -8,7 +8,7 @@ Install the platform without any device; install any device without the others.
 | Layer | Path | Purpose |
 |---|---|---|
 | Base classes | `UnseenUniversity/device.py`, `UnseenUniversity/shim.py` | `BaseDevice`, `BaseShim` — every device inherits these |
-| Bus | `bus/` | comms:// routing, IMAP transport |
+| Bus | `bus/` | comms:// routing, PgBus (Postgres) transport |
 | Skeleton | `skeleton/` | flat-file tool registry, no Postgres dependency |
 | MCP aggregator | `UnseenUniversity/skeleton/` | MCP server skeleton |
 

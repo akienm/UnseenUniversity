@@ -36,7 +36,7 @@ pip install -e .
 agentctl init --instance my-first-agent
 ```
 
-This starts the skeleton (MCP aggregator), starts the IMAP bus, registers the Postgres device, and prints a health summary.
+This starts the skeleton (MCP aggregator), starts the PgBus (Postgres) message bus, registers the Postgres device, and prints a health summary.
 
 ### Plug in an agent
 
@@ -67,7 +67,7 @@ agentctl skills status    # show what's deployed vs master
 A portable substrate that any agent can run on:
 
 - **Skeleton** — MCP aggregator on localhost; flat-file device registry; health rollup
-- **IMAP bus** — `comms://` addressing; pub/sub via IDLE; 24hr message retention
+- **PgBus (Postgres) message bus** — `comms://` addressing; pub/sub via LISTEN/NOTIFY + poll; 24hr message retention
 - **Announce protocol** — agents send an identity envelope, get a manifest of bound capabilities back
 - **Device contract** — `BaseDevice` / `BaseShim`; every component is a device
 - **Profile system** — declarative YAML per agent type; canonical → runtime; deep-merge inheritance
@@ -256,7 +256,7 @@ Canonical profiles in `UnseenUniversity/config/profiles/`. Runtime copies sync t
 | Path | What it is |
 |---|---|
 | `announce/` | Announce protocol — envelopes, broker, client, manifest, listener |
-| `bus/` | IMAP server + envelope shape + `comms://` router |
+| `bus/` | PgBus (Postgres) + envelope shape + `comms://` router |
 | `skeleton/` | MCP aggregator + flat-file registry + health |
 | `cli/` | `agentctl` CLI |
 | `skills/` | Master skill set (deployed to `~/.claude/skills/`) |
@@ -275,7 +275,7 @@ Component-level docstrings at the top of each module are the canonical spec for 
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Design locked, repo scaffold | ✅ done |
-| 1 | Skeleton + IMAP bus + Postgres device | ✅ done |
+| 1 | Skeleton + PgBus (Postgres) bus + Postgres device | ✅ done |
 | 2 | Igor on the rack | ✅ done |
 | 3 | Claude on the rack + YGM | ✅ done |
 | 4 | Discord + SWADL + browser-use + installer | ✅ done |

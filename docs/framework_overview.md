@@ -10,8 +10,8 @@
 
 A Claude Code session is not just a coding assistant — it's a worker with a context window,
 tools, and the ability to coordinate with other sessions. UnseenUniversity treats CC sessions
-as first-class agents (devices) that share state through the IMAP bus and communicate via
-comms:// addresses.
+as first-class agents (devices) that share state through the PgBus (Postgres) message bus and
+communicate via comms:// addresses.
 
 ## The Device Model
 
@@ -19,7 +19,7 @@ Every component that connects to the rack is a device:
 - It has a mailbox (comms://<device-name>/<mailbox>)
 - It registers on startup via the flat-file registry
 - It reports health to the rack's rollup loop
-- It can subscribe to other devices' mailboxes via IMAP IDLE (pub/sub)
+- It can subscribe to other devices' mailboxes via the bus (LISTEN/NOTIFY + poll) (pub/sub)
 
 Igor is a device. Claude is a device. Postgres is a device. Each independently deployable.
 
@@ -29,7 +29,7 @@ All persistent data follows the same shape: a trail through time.
 
 - **Activation trails** — which nodes fired, in what sequence, with what weights
 - **Decision logs** — prepend-newest-first; read top until context sufficient
-- **IMAP mailboxes** — append-only messages; any subscriber reads via IDLE
+- **Bus mailboxes** — append-only messages; any subscriber reads via poll / LISTEN-NOTIFY
 - **Logs** — newest at top; cold context at bottom; rarely need the bottom
 
 Trails give you gradients for free: rising heat = active/important, fading heat = deprioritize.

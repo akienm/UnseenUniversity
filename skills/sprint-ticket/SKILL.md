@@ -123,7 +123,7 @@ complete and the plan survives scrutiny.
 ### 5. Infrastructure brief (D-scaffold-not-correct-2026-04-21)
 
 After the inertia check, surface a one-screen infrastructure brief for the
-touched areas (MCP tools, proxies, base classes, IMAP buses, channels).
+touched areas (MCP tools, proxies, base classes, message buses, channels).
 
 ```bash
 python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/sprint_infrastructure_brief.py \

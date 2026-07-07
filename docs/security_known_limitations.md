@@ -40,9 +40,9 @@ The output validator (T-shim-output-validation) uses regex patterns for email/ph
 
 Per T-shim-output-validation design, failed PII validation redacts and logs but does not block delivery. For ContainerShim-tier (untrusted) agents, this means PII can still pass through. Explicitly by design for v1; blocking default is a follow-on configuration option.
 
-### KL-5: IMAP inter-agent communication bypasses policy gate
+### KL-5: bus inter-agent communication bypasses policy gate
 
-The policy gate (T-shim-policy-gate) enforces tool calls routed through BaseShim.dispatch(). Direct IMAP message exchange between agents is not subject to the gate. This is an intentional architectural gap: content-layer message inspection would require deep IMAP interception. Acceptable for v1 given all agents are same-UID same-machine trusted processes.
+The policy gate (T-shim-policy-gate) enforces tool calls routed through BaseShim.dispatch(). Direct bus message exchange between agents is not subject to the gate. This is an intentional architectural gap: content-layer message inspection would require deep interception at the bus layer. Acceptable for v1 given all agents are same-UID same-machine trusted processes.
 
 ### KL-6: `source_agent` in memory_writer.py is self-reported
 
@@ -73,7 +73,7 @@ The ContainerShim spec does not explicitly forbid mounting the host Docker socke
 | T-provenance-identity | Token forgery requires rack.secret access; same-UID process can always read it — in-model attacker is a prompt-injected agent reading the file via a tool call | Ticketed: T-announce-proof-validation (identity spoofing), T-halt-caller-auth-token (token-backed auth) |
 | T-provenance-write-attribution | source_token stored without verification | Ticketed: T-provenance-write-enforce |
 | T-provenance-trust-scoring | Trust tier gameable via identity spoofing | Follows from T-announce-proof-validation |
-| T-shim-policy-gate | dispatch() is advisory (direct calls bypass gate); cold-start window; IMAP bypass | KL-5; direct-call bypass is code-smell requiring discipline, not a runtime attack surface |
+| T-shim-policy-gate | dispatch() is advisory (direct calls bypass gate); cold-start window; bus bypass | KL-5; direct-call bypass is code-smell requiring discipline, not a runtime attack surface |
 | T-shim-output-validation | Regex PII evasion; no prompt-injection detection; non-blocking default | KL-3, KL-4; evaluator device is the planned fix path |
 | T-agent-kill-switch | from_device self-report defeats halt; resume authorization unclear | Ticketed: T-halt-caller-auth-token |
 | T-container-shim | Network isolation spec ambiguous; Docker socket; resource limits | Ticketed: T-container-shim-network-spec; KL-10 |

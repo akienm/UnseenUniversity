@@ -4,8 +4,8 @@
 
 > **More complete install steps are in the [README](../README.md#getting-started).**
 
-UnseenUniversity turns an empty machine into a rack: devices plug in, the IMAP bus
-routes messages, and every agent (Claude, Igor, or custom) runs as a first-class device.
+UnseenUniversity turns an empty machine into a rack: devices plug in, the PgBus (Postgres)
+message bus routes messages, and every agent (Claude, Igor, or custom) runs as a first-class device.
 
 ---
 
@@ -24,7 +24,7 @@ pip install UnseenUniversity
 agentctl init
 ```
 
-`agentctl init` will: start the skeleton (MCP aggregator), start the IMAP bus,
+`agentctl init` will: start the skeleton (MCP aggregator), start the PgBus (Postgres) message bus,
 find or launch Postgres, register the Postgres device, and print a health summary.
 
 **Status (2026-04-27):** not yet implemented. See `docs/decisions/installer-bootstrap.md`
@@ -54,7 +54,7 @@ pip install -e .
 
 ```
 UnseenUniversity/  — core package (rack, device, shim base classes)
-bus/               — IMAP bus (comms:// routing, pub/sub)
+bus/               — PgBus (Postgres) message bus (comms:// routing, pub/sub)
 skeleton/          — MCP aggregator + flat-file device registry
 devices/           — one directory per device (postgres, igor, claude, ...)
 config/            — DeviceConfig dataclass, per-device policy
@@ -68,7 +68,7 @@ docs/              — design decisions + workflow guides
 ## Key concepts
 
 - **Device**: any component that registers on the rack (BaseDevice / BaseShim contract)
-- **Mailbox**: comms://<device-name>/inbox — each device has one, IMAP-backed
+- **Mailbox**: comms://<device-name>/inbox — each device has one, Postgres-backed (PgBus)
 - **Skeleton**: MCP aggregator on localhost:port; flat-file registry at startup
 - **DeviceConfig**: per-device policy (queue overflow, restart behavior)
 

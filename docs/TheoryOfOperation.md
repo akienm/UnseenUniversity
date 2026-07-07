@@ -36,9 +36,9 @@ UnseenUniversity is a **rack** — a place where devices plug in and communicate
 
 ### 1.3 Bus
 
-> **Mental model:** The bus *is* the rack's internal network. Every device speaks to every other device through it — nothing communicates out-of-band. A shim is each device's interface to that network: it handles announce, routing, capability advertisement, and wake-on-demand so the device itself never touches transport. IMAP is the current transport implementation; it is an implementation detail, not the concept. Swap IMAP for any other transport by changing only `bus/` — nothing else moves.
+> **Mental model:** The bus *is* the rack's internal network. Every device speaks to every other device through it — nothing communicates out-of-band. A shim is each device's interface to that network: it handles announce, routing, capability advertisement, and wake-on-demand so the device itself never touches transport. The transport is an implementation detail, not the concept: swap it by changing only `bus/` — nothing else moves. (The current transport is **PgBus**, a Postgres-backed bus; an earlier IMAP/Dovecot transport was removed.)
 
-`UnseenUniversity/bus/` — IMAP server + `comms://` router + envelope model. Transport: Dovecot IMAP in production; asyncio in-process stub in test mode (`AGENT_DATACENTER_TEST_MODE=1`).
+`UnseenUniversity/bus/` — PgBus (Postgres-backed message bus) + `comms://` router + envelope model. Messages persist in the `bus.messages` table; delivery uses Postgres `LISTEN/NOTIFY` with a poll fallback.
 
 Every message is an **envelope** (`bus/envelope.py`):
 
@@ -59,19 +59,19 @@ The rigid envelope fields are exactly `from_device`, `to_device`, `sent_at`, `sc
 
 **Address resolution:** longest-prefix-wins. `comms://cc.0/console` resolves to the `/console` surface of `cc.0`'s mailbox even when `cc.0` is also registered as a top-level address.
 
-**IDLE receive model:** The bus receive primitive is `IMAPServer.idle_wait(mailbox, timeout_s)`. It blocks until a message arrives or the timeout expires. The shim's `start()` launches a bus-facing component (e.g. `AnnounceListener.run_forever`, `HealthAggregator.run_forever`) that drives this loop:
+**Receive model:** The bus receive primitives are `PgBus.fetch_unseen(mailbox)` (poll) and `PgBus.idle_wait(mailbox, timeout_s)` (block until a message arrives or the timeout expires, via Postgres `LISTEN/NOTIFY` with a poll fallback). The shim's `start()` launches a bus-facing component (e.g. `AnnounceListener.run_forever`, `HealthAggregator.run_forever`, or a worker poll loop) that drives a loop like:
 
 ```python
 while not stop.is_set():
-    woke = imap.idle_wait(mailbox, timeout_s=25 * 60)
+    woke = bus.idle_wait(mailbox, timeout_s=25 * 60)
     if woke:
         self.pump()   # fetch_unseen() + process
-    # timeout → re-enter (keepalive; RFC 2177 servers may drop IDLE after 29 min)
+    # timeout → re-enter (keepalive)
 ```
 
-Agents never poll their mailboxes directly — the bus-facing component calls `idle_wait`; the shim owns that component's lifecycle. In production, `idle_wait` polls Dovecot at 2s intervals (true IMAP IDLE is a noted follow-on; see `imap_server.py:idle_wait`). In test mode it uses `threading.Event` and wakes instantly on `append()`.
+Agents never poll their mailboxes directly — the bus-facing component runs the loop; the shim owns that component's lifecycle. `idle_wait` uses Postgres `LISTEN/NOTIFY` and falls back to polling; many worker/builder listeners simply poll `fetch_unseen()` on a fixed interval (default ~5s).
 
-**Request/response:** The bus has no separate RPC mechanism — none is needed. Every envelope carries `from_device`; the responder appends its reply to `to_device=env.from_device`, and the requester's `idle_wait` delivers it. The announce → manifest flow is the canonical working example:
+**Request/response:** The bus has no separate RPC mechanism — none is needed. Every envelope carries `from_device`; the responder appends its reply to `to_device=env.from_device`, and the requester's poll/`idle_wait` delivers it. The announce → manifest flow is the canonical working example:
 
 1. Agent appends an `IdentityEnvelope` to `comms://announce` (its own mailbox as `from_device`)
 2. `AnnounceListener` receives via `idle_wait`, resolves the profile, appends a Manifest reply back to `env.from_device`
@@ -149,7 +149,7 @@ These agents run as host processes. The rack trusts them at the same level as an
 
 Enforcement: the container boundary IS the security perimeter. `ContainerShim` (`unseen_university/skeleton/container_shim.py`) wraps the agent process in a Docker container with:
 
-- `--network=none`: the container has no TCP stack at all. It cannot reach the host's Postgres, IMAP, or any other network service directly. Bridge networking is explicitly rejected — a bridge gateway exposes host services to containers even when those services bind to `0.0.0.0`.
+- `--network=none`: the container has no TCP stack at all. It cannot reach the host's Postgres, the message bus, or any other network service directly. Bridge networking is explicitly rejected — a bridge gateway exposes host services to containers even when those services bind to `0.0.0.0`.
 - **Unix domain socket only**: the shim binds a socket at `HOST_DIR/uu-shim-<device_id>.sock` and mounts it into the container at `/var/run/uu-shim.sock`. This is the only channel in or out.
 - **docker.sock denied**: mounting `/var/run/docker.sock` grants full Docker API access and trivially escapes the container. `ContainerShim.start()` raises `ValueError` on any mount containing `docker.sock`, regardless of the profile.
 - **Resource limits**: `--cpus` and `--memory` from the profile's `container.resource_limits` block.
@@ -160,7 +160,7 @@ Container spec is per-agent-profile (see `config/profiles/external_agent.yaml` f
 
 **Why Docker, not a VM?** Docker provides process-level isolation sufficient for the threat model (prompt-injected agents; not physically-local adversaries). VMs are explicitly out of scope for v1. See `docs/security_known_limitations.md` for the full list of accepted gaps.
 
-**Why not enforce at the network layer for tier-1?** Same-UID same-machine trusted processes communicate at the process level. Inter-process network inspection would require deep packet interception and would add latency with no real security gain for processes that already share the OS context. The policy gate (IMAP message routing) is the correct enforcement layer for tier-1.
+**Why not enforce at the network layer for tier-1?** Same-UID same-machine trusted processes communicate at the process level. Inter-process network inspection would require deep packet interception and would add latency with no real security gain for processes that already share the OS context. The policy gate (bus message routing) is the correct enforcement layer for tier-1.
 
 ### 2.4 Logging Convention
 
@@ -586,7 +586,7 @@ Skills are **compiled inference** — multi-step workflows encoded as structured
 
 Hooks in `~/.claude/settings.json` run on every matching tool call regardless of context state. Key hooks:
 
-- `UserPromptSubmit` — checks YGM (you've got mail) inbox and IMAP; fires before every CC turn
+- `UserPromptSubmit` — checks the YGM (you've got mail) mailbox; fires before every CC turn
 - `PostToolUse` — formatter hooks (black, etc.) run after every file edit
 - `Stop` / `StopFailure` — session logging, usage tracking
 
