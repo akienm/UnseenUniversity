@@ -63,5 +63,13 @@ class CloneCommitter:
         self._commit(rel_path, f"aider: edit {rel_path}")
 
     def _commit(self, rel_path: str, message: str) -> None:
-        # STUB (scaffold commit): the git add+commit lands in the next commit — no-op for now.
-        return
+        add = _git(self.cwd, "add", "--", rel_path)
+        if add.returncode != 0:
+            log.warning("clone_commit: git add failed for %s: %s", rel_path, add.stderr.strip())
+            return
+        commit = _git(self.cwd, "commit", "--no-verify", "-m", message, "--", rel_path)
+        if commit.returncode == 0:
+            self.commits += 1
+        else:
+            # Nothing staged / identity unset / hook refusal — fail-soft, never break the apply.
+            log.debug("clone_commit: git commit skipped for %s: %s", rel_path, commit.stderr.strip())
