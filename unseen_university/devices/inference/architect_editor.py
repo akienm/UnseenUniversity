@@ -35,6 +35,7 @@ import re
 from pathlib import Path
 
 from unseen_university.devices.inference.agentic_loop import (
+    _REPO_ROOT,
     HISTORY_WINDOW_TURNS,
     LOOP_AVAILABILITY,
     LOOP_DONE,
@@ -71,6 +72,70 @@ def _log_repair_pair(ticket_id: str, turn: int, failure_class_name: str, applied
         })
     except Exception as exc:  # noqa: BLE001 — corpus write is best-effort
         log.warning("architect_editor: repair-pair corpus write failed for %s: %s", ticket_id, exc)
+
+
+#: Injection budget — never feed more than this many chars of named-file content back to the
+#: architect (a huge file named would otherwise blow the context; F-D is the failure to avoid).
+_MENTION_INJECT_BUDGET = 24_000
+_MENTION_SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules", "build", "dist", ".tox"}
+
+
+def get_file_mentions(content: str, repo_files) -> set:
+    """Return the repo files NAMED in `content` (port of aider base_coder.get_file_mentions).
+
+    Deterministic word/basename match against the ACTUAL repo file list — no fuzzy identity (the
+    ticket's design rule). A full relpath present as a word matches; a basename matches only when
+    it looks path-like (contains ``/ . _ -``) AND is unique among repo files AND appears verbatim.
+    """
+    # STUB (scaffold commit): resolution lands in the next commit — return nothing so no injection
+    # fires yet (the architect keeps Reading files until the matcher is implemented).
+    return set()
+
+
+def _repo_relative_files(repo_root: Path) -> set:
+    """The repo's file set as rel-paths (for mention matching). Skips vcs/venv/build dirs."""
+    files = set()
+    for p in repo_root.rglob("*"):
+        if not p.is_file():
+            continue
+        if any(part in _MENTION_SKIP_DIRS for part in p.parts):
+            continue
+        try:
+            files.add(str(p.relative_to(repo_root)))
+        except ValueError:
+            continue
+    return files
+
+
+def _emit_file_set_corpus(ticket_id: str, files: list) -> None:
+    """Emit the architect's resolved file-set to the corpus (a nexus-row candidate for the
+    accumulating arm: 'which files does this question touch'). Fail-soft."""
+    try:
+        from unseen_university.devices.inference.io_corpus import capture
+        capture({"kind": "architect_file_set", "ticket_id": ticket_id,
+                 "role": "architect", "files": files})
+    except Exception as exc:  # noqa: BLE001
+        log.warning("architect_editor: file-set corpus write failed for %s: %s", ticket_id, exc)
+
+
+def _build_file_injection(mentions: set, repo_root: Path) -> str:
+    """Render named files' full content into an injection block, bounded by _MENTION_INJECT_BUDGET."""
+    blocks = []
+    used = 0
+    for rel in sorted(mentions):
+        try:
+            body = (repo_root / rel).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        block = f"### {rel}\n```\n{body}\n```"
+        if used + len(block) > _MENTION_INJECT_BUDGET and blocks:
+            break
+        blocks.append(block)
+        used += len(block)
+    if not blocks:
+        return ""
+    return ("\n\n## Files you named — full content injected below (do NOT Read them again):\n"
+            + "\n\n".join(blocks))
 
 #: The architect may inspect the repo but MUST NOT edit — so it is offered read-only tools.
 ARCHITECT_TOOLS = ["Read", "Bash"]
@@ -197,20 +262,40 @@ class ArchitectEditorFlow:
             # files and reaches a plan instead of paging forever (T-architect-read-window-unblock).
             plan_mode=True,
         )
-        plan_result = architect.run(
-            system_prompt=ARCHITECT_PROMPT + "\n\n" + system_prompt,
-            initial_message=initial_message,
-            task_class=task_class,
-            domain=domain,
-            ticket_id=ticket_id,
-            agent_id=agent_id,
-            escalation_hop=escalation_hop,
-            prior_attempt=prior_attempt,
-            foreground=foreground,
-            cwd=cwd,
-            role="architect",
-        )
+        def _run_architect(msg: str) -> LoopResult:
+            return architect.run(
+                system_prompt=ARCHITECT_PROMPT + "\n\n" + system_prompt,
+                initial_message=msg,
+                task_class=task_class,
+                domain=domain,
+                ticket_id=ticket_id,
+                agent_id=agent_id,
+                escalation_hop=escalation_hop,
+                prior_attempt=prior_attempt,
+                foreground=foreground,
+                cwd=cwd,
+                role="architect",
+            )
+
+        plan_result = _run_architect(initial_message)
         plan = self._extract_plan(plan_result)
+
+        # P5: file-mention handshake (T-aider-port-file-mention-handshake). If the architect NAMED
+        # repo files, inject their full content and reflect ONCE — so it stops spending turns
+        # Reading files it could just name (F-A/F-D). With P1's packet this collapses most
+        # orientation to ≤1 reflection. Deterministic word/basename match; capped at one reflection.
+        repo_root = Path(cwd) if cwd is not None else _REPO_ROOT
+        mentions = get_file_mentions((plan_result.text or "") + "\n" + plan,
+                                     _repo_relative_files(repo_root))
+        if mentions:
+            _emit_file_set_corpus(ticket_id, sorted(mentions))
+            injection = _build_file_injection(mentions, repo_root)
+            if injection:
+                log.info("architect_editor: crossing|step=file-mention-inject|ticket=%s|files=%d "
+                         "— one reflection", ticket_id, len(mentions))
+                plan_result = _run_architect(initial_message + injection)
+                plan = self._extract_plan(plan_result)
+
         if plan_result.outcome != LOOP_DONE:
             # The architect did not emit a clean done-envelope. But a weak local model routinely
             # produces a REAL plan and then drifts into prose ("Now I'll implement…") or fails to
