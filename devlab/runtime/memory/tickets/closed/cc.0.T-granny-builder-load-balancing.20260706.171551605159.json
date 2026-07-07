@@ -19,22 +19,22 @@
   },
   "body": {
     "id": "T-granny-builder-load-balancing",
-    "title": "[in_progress] Granny: load-balance the builder role across DickSimnel + Aider (retire the Aider tag opt-in)",
+    "title": "Granny: load-balance the builder role across DickSimnel + Aider (retire the Aider tag opt-in)",
     "size": "S",
     "tags": [
       "Granny",
       "Dispatch"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.6,
     "decision_id": "D-fable-builder-empirical-program-2026-07-06",
     "description": "**Problem:** There are now two builder-tier workers (DickSimnel.0, Aider.0) but Granny's role rules are first-match-wins with no load-balancing — the generic builder role hard-routes to DickSimnel.0. Aider.0 is reachable only via an opt-in `Aider` tag rule (added in T-aider-rack-device-wrapper) so it doesn't steal DS traffic. That is a stopgap.\n\n**Proposed shape:** When both builders are viable, route the builder/creator role across available builders by availability (and later, by fitness — aider for edit-heavy, DS for reasoning-heavy). Retire the `Aider` tag opt-in once load-balancing lands.\n**Affected files:** unseen_university/devices/granny/daemon.py (match_rule + dispatch loop), unseen_university/config/granny.yaml (keep both write-sites in sync — they duplicate). HIGH inertia (Granny dispatch).\n**Design rules:** yaml<->daemon fallback must stay in sync (drift-debt); homogeneity; handshake not spawn.\n**Scope boundary:** builder-role load-balancing across DS+Aider. NOT the fitness-based routing (later).\n**Test plan:** red->green on match_rule/dispatch — with both builders available, builder tickets distribute; with one down, all route to the other.\n**Completion criteria:** an untagged builder ticket can reach Aider.0 when DS is busy/unavailable, and vice versa.\n**intention:** I intend that builder work spreads across all available builders instead of piling on one, so the swarm's throughput scales with boxes.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**HAZARD EVIDENCE (2026-07-06 live handshake test):** the `Aider` tag is a semantic collision — it means BOTH 'route this to the aider builder' (dispatch) AND is the topic tag on aider's OWN follow-up tickets (T-aider-swarm-deployment, T-aider-real-uu-ticket-proof are tagged `Aider` because they are ABOUT aider). When Aider.0 came online, Granny vacuumed the entire Aider-topic backlog and tried to BUILD those design/deployment tickets against the builder's configured repo. Contained (no false-close; both reset to sprint), but if a bring-up points AIDER_REPO_SOURCE at the real UU repo, tomorrow's fleet re-vacuums them against real code. Retiring the tag opt-in (this ticket) removes the collision. Until then, do NOT bring an aider instance online with real-repo AIDER_REPO_SOURCE while Aider-topic tickets sit in `sprint`. Single-cycle fan-out is split out to T-granny-builder-one-at-a-time-flag.",
     "created_at": "2026-07-06T23:15:43.285780+00:00",
     "worker": "claude",
     "created_by": null,
-    "result": null,
+    "result": "Builder load-balancing across DS.0 + Aider.0. _select_builder (daemon.py) picks an AVAILABLE builder for any builder-targeted ticket; dispatch loop gates on target-is-builder (never disturbs CC.0/HIGH-inertia routing); one-per-cycle spreading honours one_at_a_time; fails over when one builder is down. RETIRED the Aider-tag opt-in from BOTH write-sites (daemon _default_config + granny.yaml) — the tag collided with aider's own topic tag (Granny vacuumed aider-ABOUT tickets to the builder). Proven red->green (failover, 6fcfa9a9->green). No new test failures vs HEAD; 13 pre-existing granny reds ticketed (T-granny-dispatch-tests-preexisting-failures). Fitness-based routing deliberately out of scope. HIGH-inertia (Granny dispatch).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-07T19:51:43.152521+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-06T23:15:43.285826+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "501b7c8e-2e65-4511-8113-96e2e9889334"
+    "inferred_intention_id": "501b7c8e-2e65-4511-8113-96e2e9889334",
+    "proven": true,
+    "proof_id": "cc.0.granny-builder-load-balancing-select-bui.T-granny-builder-load-balancing.20260707.135132219170",
+    "proof_commit": "bc58b6406083e21e199ccd89d3b46a223a81fc7e",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
