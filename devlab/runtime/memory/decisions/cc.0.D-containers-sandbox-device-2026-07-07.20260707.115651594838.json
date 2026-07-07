@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.D-containers-sandbox-device-2026-07-07.20260707.115651594838",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-containers-sandbox-device-2026-07-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-07T11:56:51.594838",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-containers-sandbox-device-2026-07-07",
+    "title": "A containers/sandbox device — the full-isolation substrate for running untrusted builder-generated code",
+    "status": "open",
+    "date": "2026-07-07",
+    "spawned_tickets": [
+      "T-containers-sandbox-device"
+    ],
+    "text": "# D-containers-sandbox-device-2026-07-07\n**title:** A containers/sandbox device — full-isolation substrate for builder code execution\n**date:** 2026-07-07\n**status:** open\n\n## Context\nRaised by Akien while sprinting T-aider-real-uu-ticket-proof. That ticket's clone-test isolation is being solved NOW with a lightweight finder-disable (neutralize setuptools' editable MetaPathFinder in the aider gate's test subprocess so tests import the CLONE's edits, not the original tree — the finder redirects every `unseen_university.X` submodule to the original absolute path, beating PYTHONPATH → silent fake-green). That fix isolates IMPORTS ONLY.\n\n## Decision\nBuild a `containers` (sandbox) device as the eventual FULL-isolation substrate: run arbitrary builder work in a container with a fresh filesystem, fresh Python env (the clone is the only `unseen_university` — no editable-finder problem exists), and no ambient access to the real Postgres / ~/.unseen_university / network. It supersedes the finder-disable hack when built, and — the load-bearing reason it's more than a nicety — it SANDBOXES untrusted model-generated code execution. As the aider swarm scales to ~8 builders across 4 boxes running qwen-generated code + its tests, executing that code in the same process/machine/DB context is a CP6 exposure ('the world is not a safe place; build safety as we go'). A container is the containment boundary.\n\n## Sequencing (Akien's call, 2026-07-07)\nSHIP THE LIGHT FINDER-DISABLE FIX NOW (unblocks the offload loop this session; deterministic; Windows-portable pure-Python). FILE this decision as the proper full-isolation substrate, designed right rather than rushed. The finder-disable is the interim; containers supersede it.\n\n## Open constraints / risks\n- WINDOWS PORTABILITY: the aider swarm includes a Windows box; Docker Desktop on Windows is heavier and a new dependency across all 4 laptops. The design must decide the runtime (docker/podman/other) and whether every swarm box must have it, or only some route through it.\n- COLD-START COST: container spin-up is seconds/run vs the finder-disable's ~0. Fast in-process import-isolation may remain the hot path for cheap tickets, with containers reserved for untrusted/heavy runs — TBD at design.\n- SCOPE: this is a device (device.py/shim.py), independently deployable per CLAUDE.md. Likely consumed by the aider gate (runner._run_tests routes through it) and reusable by anything needing isolation.\n\n## Hypothesis\nA container substrate can run the aider gate's test step with the clone as the sole `unseen_university` and no ambient DB/network/FS access, giving true isolation (import + side-effect + code-exec safety) that the import-only finder-disable cannot — falsifiable by: a builder gate run inside the container passes iff the clone's edits are correct, AND a deliberately hostile generated snippet (touches real DB / escapes cwd) is contained, where the finder-disable path would not contain it.\n\n## Measurement Signal\nAn aider gate test-run executes inside the container against a full UU clone with the finder problem structurally absent (clone-only install), and a side-effect probe (attempt to reach the real Postgres) is blocked — vs today, where the gate runs in the host process with ambient access.\n\n## Intention\nI intend that builder-generated code runs inside a containment boundary, so scaling the swarm to many untrusted builders across boxes adds throughput without adding host/DB/network exposure (CP6), and clone-test isolation becomes structural rather than a targeted import hack."
+  }
+}

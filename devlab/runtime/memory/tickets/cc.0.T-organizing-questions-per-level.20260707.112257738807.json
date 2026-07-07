@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-organizing-questions-per-level.20260707.112257738807",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-organizing-questions-per-level"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T17:22:57.738807+00:00",
+  "links": {
+    "decisions": [
+      "D-organizing-question-cascade-2026-07-07"
+    ],
+    "tickets": [
+      "T-organizing-questions-per-level"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-organizing-questions-per-level",
+    "title": "[gated] GATED: Organizing-question cascade — name each level's organizing-question set",
+    "size": "L",
+    "tags": [
+      "Design",
+      "NorthStar",
+      "Cascade"
+    ],
+    "description": "**GATED — do not sprint until debt-clearing done (aider-port batch + repo cleanup) and Akien reopens. Vision still crystallizing; full per-level decomposition + audit chain deferred to gate-open.**\n\n**Problem / shape:** Every build level (design, architecture, ticket, workflow, file, symbol) has a finite SET OF ORGANIZING QUESTIONS = that level's rubric AND its resolution-loop checklist. Intention descends by filtering through each level's set; code is the instantiation of the answered questions. Because descent is deterministically pinned top-down, conflict has no unpinned surface to form on. See D-organizing-question-cascade-2026-07-07 for the full narrative, resolution-loop (4 outcomes: extant-pattern / flag-missing-work / escalate-to-meta-question / spawn-Watch-For), and cortical-columns grounding.\n\n**First concrete deliverable when gate opens:** the cross-level map — for each level, name its finite organizing-question set. Pre-fill levels that already compile (code -> does-it-pass; model-select -> cost/capability argmin; build -> evaluator judge panel). Real work = the empty rows: DESIGN and ARCHITECTURE. Scope boundary: organizing questions ONLY (the few that structure the level), NOT an exhaustive enumeration of every question needed to replace the LLM.\n\n**Completion test (design level, when built):** a reviewer can adjudicate a hand-picked pair AND a NEAR-TIE pair of competing designs using only the named set. If the set can't discriminate the near-tie, the missing organizing question has been found (that failure is the informative outcome).\n\n**Unifies existing tickets (do not duplicate):** T-substrate-experiment-cascade (conductor that walks levels before escalating), T-experiment-primitive (EPIC substrate), T-inference-outcome-learner (observe->discover), and the existing repo-pattern-collection ticket that populates design_patterns/ (the extant-pattern library outcome-1 queries).\n\n**Affected files:** TBD at gate-open (spec/store artifacts under devlab/runtime/memory/; likely touches evaluator + design_patterns store). No code changes while gated.\n\n**Design rules:** proof-on-close; organizing-questions-only scope boundary; do not freeze the vision by over-decomposing while molten.\n\n**Test plan:** the near-tie adjudication test above; audit-design decidability on the named sets.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-organizing-question-cascade-2026-07-07",
+    "gate": "debt-clearing complete (aider-port batch + repo cleanup) AND Akien reopens",
+    "priority": 0.15,
+    "status": "gated",
+    "created_at": "2026-07-07T17:22:50.303069+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T17:22:50.350065+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9923c807-380d-45f7-95db-7b9515c7aad6"
+  }
+}

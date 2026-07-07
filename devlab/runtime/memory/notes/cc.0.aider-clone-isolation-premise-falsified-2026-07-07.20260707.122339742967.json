@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.aider-clone-isolation-premise-falsified-2026-07-07.20260707.122339742967",
+  "emitter": "cc.0",
+  "namespace": [
+    "aider-clone-isolation-premise-falsified-2026-07-07"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-07T12:23:39.742967",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Falsified premise: aider clone-test isolation already works (no fake-green)",
+    "date": "2026-07-07",
+    "ticket": "T-aider-real-uu-ticket-proof",
+    "text": "CP2 finding (FAIL = data). T-aider-real-uu-ticket-proof surface #1 claimed clone-test isolation was BROKEN: that aider's gate would fake-green by importing the ORIGINAL working tree instead of the clone's edits, because setuptools' editable install registers a MetaPathFinder (_EditableFinder) that redirects unseen_university.* submodules to the original absolute path, beating PYTHONPATH.\n\nEMPIRICALLY FALSE for the real code path. The finder DOES beat PYTHONPATH under a bare `python -c` import (confirmed: unseen_university.identity resolves to the original tree). BUT the actual runner._run_tests runs `python -m pytest` with cwd=clone. The `-m` flag puts cwd (the clone) on sys.path, so PathFinder resolves unseen_university to the CLONE ahead of the editable finder, and every submodule follows from the clone's __path__. Verified on a FULL git clone across three cases — shallow (identity.py), deep (devices/aider/consts.py), and namespace-mapped (config/policies/) — all GREEN (clone edits seen), under the repo's own --import-mode=importlib.\n\nCONCLUSION: the existing _run_tests already isolates correctly via cwd=clone. There is no fake-green to fix and therefore NO red form — a red->green isolation 'proof' would have been fabricated (CP1). Action taken: reverted the speculative finder-neutralizing change; added a REGRESSION GUARD (tests/aider/test_clone_isolation.py) that locks the isolation invariant (passes on current code; fails if a future change drops cwd=clone). The push-to-origin surface WAS built + proven (red->green). The large-repo repo-map surface remains — it needs a live aider run on Hex (gated follow-up T-aider-largerepo-repomap-live-proof).\n\nLESSON: 'empirically X' in a ticket is a HYPOTHESIS until reproduced against the REAL invocation. The isolation fear was real in the abstract (the finder does redirect) but did not survive contact with how _run_tests actually calls pytest. Reproduce the exact code path before building the fix."
+  }
+}
