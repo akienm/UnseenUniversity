@@ -80,8 +80,8 @@ ever differ, the file wins — fix this shim.**
   and live at `unseen_university/devices/bus/` and `unseen_university/devices/skeleton/`.
   *Why: seven co-equal top-level packages let a future CC/DS instance guess wrong about which tree
   is canonical — the torn-tree drift that motivated the 2026-06-28 collapse (D-single-package-reorg).*
-- **unseen_university/devices/bus/** owns comms:// routing. Nothing outside `bus/` speaks to IMAP directly.
-  *Why: transport decoupling — swapping IMAP for another transport requires touching only bus/, not every device.*
+- **unseen_university/devices/bus/** owns comms:// routing via **PgBus (Postgres-backed)**. Nothing outside `bus/` speaks to the transport directly.
+  *Why: transport decoupling — the bus is Postgres (PgBus); swapping transport touches only bus/, not every device. **IMAP was the OLD transport and is fully removed — any `IMAP`/`IMAPServer` mention anywhere in this repo is stale debt being purged (T-imap-references-purge); do not treat it as live.***
 - **unseen_university/devices/skeleton/** owns the MCP aggregator and flat-file registry. No Postgres dependency.
   *Why: skeleton must boot before the DB is up; a Postgres dependency in skeleton would make cold-start impossible.
   The package `__init__.py` files (`unseen_university/__init__.py`, `unseen_university/devices/__init__.py`)
@@ -129,11 +129,11 @@ ever differ, the file wins — fix this shim.**
 
 A CC session misdiagnosing "agent-to-agent RPC" as a missing capability is a known false pattern. The rack already has everything needed.
 
-**IDLE push — agents don't poll.** `IMAPServer.idle_wait(mailbox)` is the receive primitive. A device's bus-facing component (`AnnounceListener`, `HealthAggregator`, etc.) runs an `idle_wait` loop in a background thread started by `shim.start()`. When a message arrives the loop wakes, calls `fetch_unseen()`, and dispatches. `BaseShim` itself has no `idle_wait` — the lifecycle is `start/stop/restart/self_test/rollback`. The IDLE loop lives in the component the shim launches, not in the shim class.
+**The bus is PgBus (Postgres). Workers POLL — there is no IMAP.** `PgBus.fetch_unseen(mailbox)` is the receive primitive. A device's bus-facing component (a worker listener, `AnnounceListener`, etc.) runs a **poll loop** (default ~5s) in a background thread started by `shim.start()`: each tick it calls `fetch_unseen()` and dispatches new envelopes. `BaseShim` itself has no receive loop — its lifecycle is `start/stop/restart/self_test/rollback`; the poll loop lives in the component the shim launches. (`PgBus.idle_wait` also exists for a LISTEN/NOTIFY-style block, but the builder/worker listeners poll.) *The prior "IDLE push via `IMAPServer.idle_wait`, agents don't poll" claim was IMAP-era and is FALSE now — flagged because it repeatedly misleads CC.*
 
-**Request/response is built in.** Every envelope carries `from_device` (sender) and `to_device` (destination). To do request/response: append to target, let it append its reply to `env.from_device`, and your `idle_wait` delivers it. No RPC library needed. The announce → manifest flow (`comms://announce` → reply to caller's mailbox) is the canonical live example. When the reply should go to a *different* address than `from_device`, include `reply_to` in the payload by convention (payload field, not a rigid envelope field).
+**Request/response is built in.** Every envelope carries `from_device` (sender) and `to_device` (destination). To do request/response: append to the target's mailbox, let it append its reply to `env.from_device`, and your poll loop delivers it. No RPC library needed. The announce → manifest flow (`comms://announce` → reply to caller's mailbox) is the canonical live example. When the reply should go to a *different* address than `from_device`, include `reply_to` in the payload by convention (payload field, not a rigid envelope field).
 
-**Canonical reference:** `unseen_university/announce/listener.py` `AnnounceListener.run_forever()` — the complete IDLE loop pattern in ~15 lines.
+**Canonical reference:** `unseen_university/devices/aider/worker_listener.py` `AiderWorkerListener` — the complete PgBus poll-receive loop; `unseen_university/announce/listener.py` `AnnounceListener` is the announce-side example.
 
 ---
 
