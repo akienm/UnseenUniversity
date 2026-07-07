@@ -48,8 +48,6 @@ Usage:
 """
 
 import json
-from unseen_university.identity import home_db_url
-from unseen_university._uu_root import uu_home
 import logging
 import os
 import re
@@ -61,16 +59,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # This script is invoked as a bare file (`python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py`)
-# by every ticket skill, under the SYSTEM python3 — not the venv. For a script file
-# sys.path[0] is the script's own dir (devlab/claudecode), so top-level packages
-# `devices` and `unseen_university` are NOT importable. The lazy `from devices.*`
-# hooks below (classifier, annotator, constraint decorator, intent, scraps) all
-# fail-open on ImportError, so the breakage was SILENT: every queue op printed
-# "No module named 'devices'" to stderr and skipped classification/decoration.
-# Put the repo root (two parents up) on sys.path so those features actually run.
+# by every ticket skill AND by rack devices (e.g. AiderDevice subprocess), often
+# under a python that lacks the editable install. For a script file sys.path[0] is
+# the script's own dir (devlab/claudecode), so top-level packages `devices` and
+# `unseen_university` are NOT importable. This bootstrap MUST run BEFORE the
+# `unseen_university` imports below — otherwise the eager import raises
+# ModuleNotFoundError and every queue op the device runs (setstatus/close) fails,
+# silently escalating all builder work to CC. (Regression fixed 2026-07-07: the
+# bootstrap used to sit after the unseen_university import.)
 _REPO_ROOT = str(Path(__file__).resolve().parents[2])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
+
+from unseen_university.identity import home_db_url  # noqa: E402 (needs the bootstrap above)
+from unseen_university._uu_root import uu_home  # noqa: E402
 
 # Canonical gate/dependency-ordering logic — single source shared with
 # queue_view.py (T-gate-clear-source-consolidation). Imported, not copied, so the
