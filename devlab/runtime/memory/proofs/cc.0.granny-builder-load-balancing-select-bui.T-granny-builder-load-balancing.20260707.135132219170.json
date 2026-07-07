@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.granny-builder-load-balancing-select-bui.T-granny-builder-load-balancing.20260707.135132219170",
+  "emitter": "cc.0",
+  "namespace": [
+    "granny-builder-load-balancing-select-bui",
+    "T-granny-builder-load-balancing"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T13:51:32.219170",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-builder-load-balancing"
+    ],
+    "commits": [
+      "bc58b6406083e21e199ccd89d3b46a223a81fc7e"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "granny builder load-balancing (_select_builder): a builder ticket reaches Aider.0 when DickSimnel.0 is unavailable",
+    "intention": "Builder work spreads across available builders — when one builder is down, the ticket fails over to another instead of piling on one",
+    "test": "tests/granny/test_builder_load_balancing.py::test_fails_over_to_aider_when_ds_unavailable",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/granny/test_builder_load_balancing.py::test_fails_over_to_aider_when_ds_unavailable",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\u001b[31mF\u001b[0m\u001b[31m                                                                        [100%]\u001b[0m\n=================================== FAILURES ===================================\n\u001b[31m\u001b[1m_________________ test_fails_over_to_aider_when_ds_unavailable _________________\u001b[0m\n\n    \u001b[0m\u001b[94mdef\u001b[39;49;00m\u001b[90m \u001b[39;49;00m\u001b[92mtest_fails_over_to_aider_when_ds_unavailable\u001b[39;49;00m():\u001b[90m\u001b[39;49;00m\n        \u001b[90m# THE completion criterion: DS down -> the builder ticket reaches Aider.0.\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n>       \u001b[94massert\u001b[39;49;00m _select_builder(_WORKERS, \u001b[96mset\u001b[39;49;00m(), avail_fn=_avail({\u001b[33m\"\u001b[39;49;00m\u001b[33mAider.0\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m})) == \u001b[33m\"\u001b[39;49;00m\u001b[33mAider.0\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n\u001b[1m\u001b[31mE       AssertionError: assert 'DickSimnel.0' == 'Aider.0'\u001b[0m\n\u001b[1m\u001b[31mE         \u001b[0m\n\u001b[1m\u001b[31mE         \u001b[0m\u001b[91m- Aider.0\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\u001b[0m\n\u001b[1m\u001b[31mE         \u001b[92m+ DickSimnel.0\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\u001b[0m\n\n\u001b[1m\u001b[31mtests/granny/test_builder_load_balancing.py\u001b[0m:32: AssertionError\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m tests/granny/test_builder_load_balancing.py::\u001b[1mtest_fails_over_to_aider_when_ds_unavailable\u001b[0m - AssertionError: assert 'DickSimnel.0' == 'Aider.0'\n\u001b[31m\u001b[31m\u001b[1m1 failed\u001b[0m\u001b[31m in 0.13s\u001b[0m\u001b[0m",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": "\u001b[32m.\u001b[0m\u001b[32m                                                                        [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m1 passed\u001b[0m\u001b[32m in 0.07s\u001b[0m\u001b[0m"
+          }
+        }
+      }
+    ],
+    "commit": "bc58b6406083e21e199ccd89d3b46a223a81fc7e",
+    "impl_paths": [
+      "unseen_university/devices/granny/daemon.py"
+    ],
+    "ticket": "T-granny-builder-load-balancing",
+    "narrative": "",
+    "why": "The swarm's throughput only scales with boxes if builder tickets distribute across available builders instead of hard-routing to one",
+    "bootstrap": false
+  }
+}
