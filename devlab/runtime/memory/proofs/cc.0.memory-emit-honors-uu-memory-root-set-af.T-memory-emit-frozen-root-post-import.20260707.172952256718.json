@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.memory-emit-honors-uu-memory-root-set-af.T-memory-emit-frozen-root-post-import.20260707.172952256718",
+  "emitter": "cc.0",
+  "namespace": [
+    "memory-emit-honors-uu-memory-root-set-af",
+    "T-memory-emit-frozen-root-post-import"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T17:29:52.256718",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-memory-emit-frozen-root-post-import"
+    ],
+    "commits": [
+      "d9b4c2293b3d6097b8494474e2075ad53df31352"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "memory_emit honors UU_MEMORY_ROOT set after import (live root resolution)",
+    "intention": "memory_emit.emit() writes under the CURRENT UU_MEMORY_ROOT even when the env is set after import — no frozen-root store split",
+    "test": "tests/test_memory_emit_frozen_root.py::test_emit_honors_uu_memory_root_set_after_import",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_memory_emit_frozen_root.py::test_emit_honors_uu_memory_root_set_after_import",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \u001b[90m# Simulate the import-time capture landing on 'frozen'...\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n        monkeypatch.setattr(memory_emit, \u001b[33m\"\u001b[39;49;00m\u001b[33mMEMORY_ROOT\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m, \u001b[96mstr\u001b[39;49;00m(frozen))\u001b[90m\u001b[39;49;00m\n        \u001b[90m# ...then the environment changes to 'live' AFTER import (the real-world case).\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n        monkeypatch.setenv(\u001b[33m\"\u001b[39;49;00m\u001b[33mUU_MEMORY_ROOT\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m, \u001b[96mstr\u001b[39;49;00m(live))\u001b[90m\u001b[39;49;00m\n    \u001b[90m\u001b[39;49;00m\n        path = memory_emit.emit(\u001b[33m\"\u001b[39;49;00m\u001b[33mnotes\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m, \u001b[33m\"\u001b[39;49;00m\u001b[33mtest-frozen-root\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m, {\u001b[33m\"\u001b[39;49;00m\u001b[33mtext\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m: \u001b[33m\"\u001b[39;49;00m\u001b[33mprobe\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m})\u001b[90m\u001b[39;49;00m\n    \u001b[90m\u001b[39;49;00m\n        \u001b[90m# A live-resolving emit writes under 'live'; the frozen bug writes under 'frozen'.\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n>       \u001b[94massert\u001b[39;49;00m \u001b[96mstr\u001b[39;49;00m(live) \u001b[95min\u001b[39;49;00m path, (\u001b[90m\u001b[39;49;00m\n            \u001b[33mf\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m\u001b[33memit ignored UU_MEMORY_ROOT set after import — wrote to \u001b[39;49;00m\u001b[33m{\u001b[39;49;00mpath\u001b[33m!r}\u001b[39;49;00m\u001b[33m \u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n            \u001b[33m\"\u001b[39;49;00m\u001b[33m(frozen MEMORY_ROOT), splitting the store\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n        )\u001b[90m\u001b[39;49;00m\n\u001b[1m\u001b[31mE       AssertionError: emit ignored UU_MEMORY_ROOT set after import — wrote to '/tmp/pytest-of-akien/pytest-556/test_emit_honors_uu_memory_roo0/frozen/notes/test-frozen-root.20260707.172952045659.json' (frozen MEMORY_ROOT), splitting the store\u001b[0m\n\u001b[1m\u001b[31mE       assert '/tmp/pytest-of-akien/pytest-556/test_emit_honors_uu_memory_roo0/live' in '/tmp/pytest-of-akien/pytest-556/test_emit_honors_uu_memory_roo0/frozen/notes/test-frozen-root.20260707.172952045659.json'\u001b[0m\n\u001b[1m\u001b[31mE        +  where '/tmp/pytest-of-akien/pytest-556/test_emit_honors_uu_memory_roo0/live' = str(PosixPath('/tmp/pytest-of-akien/pytest-556/test_emit_honors_uu_memory_roo0/live'))\u001b[0m\n\n\u001b[1m\u001b[31mtests/test_memory_emit_frozen_root.py\u001b[0m:32: AssertionError\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m tests/test_memory_emit_frozen_root.py::\u001b[1mtest_emit_honors_uu_memory_root_set_after_import\u001b[0m - AssertionError: emit ignored UU_MEMORY_ROOT set after import — wrote to '/t...\n\u001b[31m\u001b[31m\u001b[1m1 failed\u001b[0m\u001b[31m in 0.12s\u001b[0m\u001b[0m",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": "\u001b[32m.\u001b[0m\u001b[32m                                                                        [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m1 passed\u001b[0m\u001b[32m in 0.07s\u001b[0m\u001b[0m"
+          }
+        }
+      }
+    ],
+    "commit": "d9b4c2293b3d6097b8494474e2075ad53df31352",
+    "impl_paths": [
+      "devlab/claudecode/memory_emit.py",
+      "devlab/runtime/memory/tickets/cc.0.T-memory-emit-frozen-root-post-import.20260707.125526250569.json"
+    ],
+    "ticket": "T-memory-emit-frozen-root-post-import",
+    "narrative": "",
+    "why": "Frozen import-time root silently split the store; discriminating test CC wrote after aider escalated 0-edits (conceptual refactor beyond qwen)",
+    "bootstrap": false
+  }
+}
