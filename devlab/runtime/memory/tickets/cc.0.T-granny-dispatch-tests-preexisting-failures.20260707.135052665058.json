@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-dispatch-tests-preexisting-failures.20260707.135052665058",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-dispatch-tests-preexisting-failures"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T19:50:52.665058+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-dispatch-tests-preexisting-failures"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-dispatch-tests-preexisting-failures",
+    "title": "[sprint] Pre-existing granny dispatch/cascade/e2e test failures (env-dependent)",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Test"
+    ],
+    "description": "**Pre-existing at HEAD (verified 2026-07-07 via a clean worktree during T-granny-builder-load-balancing — NOT caused by that change).** 13 granny tests fail in-session: tests/granny/test_cascade.py (4: builder_ticket_routes_to_cc_when_cascade_active, _routes_to_ds_when_no_cascade, _stays_with_ds_when_master_exists, cascade_worker_field_updated), test_e2e_dispatch_smoke.py (7: envelope/handshake/one-at-a-time), test_exact_match.py (2: run_once defers/dispatches). Symptom: `_dispatch_bus`/`setstatus` called 0 times (assert 0 == 1) — run_once isn't dispatching under the in-session mocks. Likely a missing setup (availability dir / DB / IMAP mock) these tests assume; may pass in CI/overnight.\n\n**Task:** determine whether these are hermetic-setup gaps (fix the fixtures) or genuinely env-dependent (mark/xfail with reason). Get a clean green or an honest skip.\n\n**Affected files:** tests/granny/test_cascade.py, test_e2e_dispatch_smoke.py, test_exact_match.py (+ maybe a shared granny conftest).\n\n**Scope boundary:** the granny dispatch test fixtures only.\n\n**Test plan:** the three files run green (or explicitly xfail/skip with a named reason) in-session.\n\n**intention:** I intend that the granny dispatch tests give a trustworthy signal in-session instead of silent pre-existing red.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "priority": 0.2,
+    "status": "sprint",
+    "worker": null,
+    "role": "builder",
+    "created_at": "2026-07-07T19:50:44.924361+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T19:50:44.971322+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5a5c154a-9fef-4d1e-8ec2-8527ec6a18fa"
+  }
+}

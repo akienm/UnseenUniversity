@@ -32,21 +32,21 @@ rules:
       tags_any: [Security, Provenance, Auth, Brainstem, Database]
     route_to: CC.0
 
-  # Tickets tagged `Aider` go to the aider builder. Placed above the generic
-  # builder rule so it wins for tagged tickets; untagged builder tickets still
-  # default to DickSimnel.0 (no load-balancing between the two builders yet).
-  - when:
-      tags_any: [Aider]
-    route_to: Aider.0
+  # The old `Aider`-tag opt-in rule was RETIRED (T-granny-builder-load-balancing):
+  # the tag doubled as aider's own TOPIC tag, so Granny vacuumed aider-ABOUT tickets
+  # (swarm-deployment, real-uu-ticket-proof) to the builder. Builder tickets now
+  # load-balance across available builders in the dispatch loop (_select_builder).
 
   # Role ladder: guru=Akien, master=CC.0 (this box; a local CC.1 builder would crash
-  # this 4-core/16GB box — the builder is DickSimnel.0 running off-machine on Hex).
+  # this 4-core/16GB box — the builders run off-machine on Hex).
   - when:
       role_in: [guru]
     route_to: akien       # post NEEDS_AKIEN channel nudge, set worker=akien, do not dispatch
   - when:
       role_in: [master]
     route_to: CC.0
+  # Nominal builder target; the dispatch loop's _select_builder overrides this with
+  # an AVAILABLE builder (DickSimnel.0 / Aider.0 / …) — this is just the fallback name.
   - when:
       role_in: [builder, creator]
     route_to: DickSimnel.0

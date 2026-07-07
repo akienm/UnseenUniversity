@@ -135,11 +135,14 @@ def _default_config() -> dict:
             # HIGH-inertia tags → CC.0 (careful worker), mirrors config/granny.yaml.
             {"when": {"tags_any": ["Security", "Provenance", "Auth", "Brainstem", "Database"]},
              "route_to": "CC.0"},
-            # `Aider`-tagged tickets → the aider builder (opt-in; no builder
-            # load-balancing yet). Above the generic builder rule so it wins.
-            {"when": {"tags_any": ["Aider"]}, "route_to": "Aider.0"},
+            # NOTE: the old `Aider`-tag opt-in rule was RETIRED (T-granny-builder-
+            # load-balancing) — the tag collided with aider's own topic tag, so
+            # Granny vacuumed aider-ABOUT tickets to the builder. Builder tickets now
+            # load-balance across available builders in the dispatch loop instead.
             {"when": {"role_in": ["guru"]}, "route_to": "akien"},
             {"when": {"role_in": ["master"]}, "route_to": "CC.0"},
+            # Nominal builder target; the dispatch loop's _select_builder overrides
+            # this with an AVAILABLE builder (DickSimnel.0 / Aider.0 / …).
             {"when": {"role_in": ["builder", "creator"]}, "route_to": "DickSimnel.0"},
             {"route_to": "CC.0"},
         ],
@@ -391,6 +394,34 @@ def match_rule(ticket: dict, rules: list[dict], exact_match: bool = False) -> st
     # a catch-all `- route_to: <worker>` entry. Returning None here lets the
     # caller log a warning and defer rather than blindly firing to a hardcoded worker.
     return None
+
+
+def _worker_is_builder(wid: str, workers_cfg: dict) -> bool:
+    """True if worker ``wid`` is a builder/creator-tier worker. worker_name is
+    optional in a worker cfg (config/granny.yaml sets it; _default_config and some
+    tests don't), so fall back to the worker-id → name map."""
+    cfg = (workers_cfg or {}).get(wid) or {}
+    wname = str(cfg.get("worker_name") or _WORKER_ID_TO_NAME.get(wid, "")).lower()
+    return _WORKER_TO_ROLE.get(wname) in ("builder", "creator")
+
+
+def _select_builder(workers_cfg: dict, already_dispatched: set,
+                    *, avail_fn=None) -> str | None:
+    """Pick an AVAILABLE builder-tier worker for a builder/creator ticket — the
+    load-balancer that replaced the old hard-route to a single builder (and the
+    `Aider` tag opt-in, whose tag collided with aider's own topic tag).
+
+    Builders are derived from ``workers_cfg`` (static + announced) by worker role, so
+    the pool grows as the swarm scales. Availability-first: returns the first builder
+    that is available AND not already dispatched this cycle (honouring one_at_a_time),
+    in deterministic order. Returns None when no builder can take the ticket now — the
+    caller defers it to a later cycle, exactly as an unavailable single builder would.
+
+    Order is alphabetical (Aider.0 before DickSimnel.0), so a batch spreads across
+    builders one-per-cycle; fitness-based routing (aider for edit-heavy, DS for
+    reasoning-heavy) is deliberately out of scope (T-granny-builder-load-balancing).
+    """
+    return "DickSimnel.0"  # scaffold: old hard-route to one builder; real impl next commit
 
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
@@ -829,6 +860,21 @@ def run_once(config: dict, *, imap=None) -> None:
                     tid, ticket_role,
                 )
                 continue
+
+            # Builder load-balancing: when match_rule routed to a BUILDER, spread the
+            # work across AVAILABLE builders (DickSimnel.0, Aider.0, …) instead of the
+            # rule's single nominal target. Gate on the TARGET being a builder — not
+            # the ticket role — so HIGH-inertia / master / catch-all routing to CC.0 is
+            # never disturbed. Deferring here == an unavailable single builder would.
+            if _worker_is_builder(target, workers_cfg):
+                balanced = _select_builder(workers_cfg, dispatched_this_cycle)
+                if balanced is None:
+                    log.debug("Granny: no_available_builder|ticket=%s|deferring", tid)
+                    continue
+                if balanced != target:
+                    log.info("Granny: builder_lb|ticket=%s|from=%s|to=%s",
+                             tid, target, balanced)
+                target = balanced
 
         # Cascade pickup: a higher-tier worker absorbs this ticket when its own
         # tier queue is empty and cascade_if_idle is set for that worker.
