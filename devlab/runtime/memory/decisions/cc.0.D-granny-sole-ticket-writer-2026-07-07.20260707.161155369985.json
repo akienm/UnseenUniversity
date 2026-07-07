@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.D-granny-sole-ticket-writer-2026-07-07.20260707.161155369985",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-sole-ticket-writer-2026-07-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-07T16:11:55.369985",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-sole-ticket-writer-2026-07-07",
+    "title": "Granny is the SOLE writer of ticket data; builders return an interim result artifact and never touch the store",
+    "status": "open",
+    "date": "2026-07-07",
+    "spawned_tickets": [
+      "T-builder-report-not-write"
+    ],
+    "text": "# D-granny-sole-ticket-writer-2026-07-07\n**title:** Single-owner ticket writes — builders report, Granny reconciles\n**date:** 2026-07-07\n**status:** open\n\n## Principle (Akien, 2026-07-07)\nGranny and a builder are two cooperative elements with different jobs: Granny OWNS the ticket data; the builder sends/receives MESSAGES about it. If ownership is strict, an overwrite is impossible by construction. We already made Granny the ticket owner (to stop the builder-claims-all-then-builds-none failure), but the ownership LEAKED: the builder still reaches into the shared store and WRITES status. That dual-write is the root of the handshake race.\n\n## Root cause it fixes\nThe drain-killer race (2026-07-07): aider writes ticket status DIRECTLY (_escalate_ticket -> cc_queue setstatus escalated; _builder_close mixin -> cc_queue close; append-note) AND Granny writes handshake transitions (_process_handshake_replies -> _setstatus_direct). Two writers on one datum -> a late dispatch_started overwrote 'escalated' back to 'in_progress' -> worker permanently busy -> drain dead. Symptom-fixed by the no-regress guard (commit e60e9a13); THIS is the root fix. With one writer the guard is unnecessary.\n\n## The contract\n1. DISPATCH: Granny assigns a ticket and sends it as a COPY in the message payload (already the case — the builder never gets a file path).\n2. WORK: the builder builds in its throwaway clone; produces a branch + a RESULT.\n3. REPORT: the builder returns a marked-up INTERIM ARTIFACT (a result envelope) via message: {outcome: done|escalated, branch, changed_files, verdict/gate_result, missing_lever_or_reason, notes}. It is NOT the ticket file / not a path — an interim artifact.\n4. RECONCILE: Granny (sole writer) applies the artifact to the canonical ticket — close shipped-unproven with the builder's named lever, or set escalated with the reason. The builder calls cc_queue NEVER.\n\n## What this supersedes / keeps\n- SUPERSEDES the builder-side _builder_close mixin (T-builder-merge-time-proof): the close moves OUT of the builder INTO Granny's reconcile. The mixin's LESSON (honest shipped-unproven close naming the lever) moves into Granny's reconcile logic.\n- SUPERSEDES the no-regress handshake guard as load-bearing (kept as belt-and-suspenders).\n- KEEPS emit_merge_proof (merge-time proof) — orthogonal to who writes status.\n- dispatch_done changes from 'observability only, no status change' to 'carries the markup; Granny applies it'.\n\n## Benefits\n- No race BY CONSTRUCTION (single writer).\n- The builder loses its cc_queue dependency ENTIRELY -> the whole bug class from today vanishes: the ModuleNotFound sys.path bug was aider shelling cc_queue; if the builder only sends a message, that failure mode cannot exist. No direct-write bugs, no path bugs.\n- ONE place for status/close/proof logic (the owner), not per-builder mixins.\n- Enforces the ownership we intended, strictly.\n\n## Connections\n- Single-atomic-owner (the button pattern: DB atomic owner, callers don't write).\n- Separation of powers / D-dev-pipeline-stations-2026-07-07: the interim artifact IS the 'marked-up ticket' a station returns to the owner; the owner (not the station) commits the state.\n\n## Hypothesis\nMaking Granny the sole ticket writer (builders report an interim artifact, never write) eliminates the overwrite-race class by construction and removes the builder's cc_queue dependency. Falsifiable: after the refactor, a builder makes ZERO writes to the ticket store (grep/audit), a fast escalation cannot regress ticket state even with the no-regress guard REMOVED, and the drain survives an unbuildable ticket without sticking.\n\n## Measurement Signal\nBuilders (aider, dicksimnel) call no cc_queue mutation (setstatus/close/append-note); all ticket state changes originate in Granny's reconcile of a builder result envelope; the handshake-race regression test passes with the guard removed.\n\n## Intention\nI intend that exactly one element (Granny) writes ticket state, and builders only report interim result artifacts, so overwrite races and builder-side store bugs are impossible rather than guarded-against."
+  }
+}
