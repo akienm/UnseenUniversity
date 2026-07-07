@@ -111,3 +111,20 @@ NONE in-flight — HEAD 7941f8a0, tree clean, pushed.
 OFFLOAD LOOP STATUS: isolation (never broken) OK; push-to-origin OK; shared-close+merge-proof OK.
 Next: T-granny-builder-load-balancing (S, route builder role across DS+Aider) + T-aider-swarm-deployment
   (deploy across 4 boxes). Live arms gated on Hex: T-aider-largerepo-repomap-live-proof.
+
+
+## In-flight (mid-sprint flush 2026-07-07 — granny builder LB)
+NONE in-flight — tree clean, pushed.
+- CLOSED T-granny-builder-load-balancing (PROVEN, HIGH-INERTIA Granny dispatch):
+  _select_builder (daemon.py) picks an AVAILABLE builder for any builder-TARGETED ticket;
+  dispatch-loop gate is target-is-builder (NOT ticket-role) so CC.0 / HIGH-inertia / catch-all
+  routing is never disturbed; one-per-cycle spreading honours one_at_a_time; fails over when a
+  builder is down. RETIRED the Aider-tag opt-in from BOTH write-sites (daemon _default_config +
+  granny.yaml) — removes the topic-tag collision (Granny had vacuumed aider-ABOUT tickets to the
+  builder). Proven red->green (failover 6fcfa9a9->green). Fitness-routing out of scope.
+  Granny was NOT live during the change (no session) -> lower risk. HIGH-INERTIA: review the diff.
+- Verified via clean worktree: the 13 granny cascade/e2e/exact_match reds are PRE-EXISTING at HEAD
+  (env/dispatch-infra dependent), NOT caused by this change. Filed T-granny-dispatch-tests-preexisting-failures (0.2).
+OFFLOAD LOOP: isolation OK, push OK, shared-close+merge-proof OK, builder LB OK. Remaining = swarm
+  deployment (T-aider-swarm-deployment) + live Hex arms.
+Next: T-aider-swarm-deployment (deploy AiderDevice across 4 boxes, CPU-gated, Granny pool). Akien on Windows.
