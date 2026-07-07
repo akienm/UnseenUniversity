@@ -14,6 +14,7 @@
 - T-aider-device-live-proof — Aider device live proof — implement checkout on a throwaway clone (Aider.0[qwen3-coder:30b]: gate PASS branch=aider/T-aider-device-live-proof-1783379151 files=[shop/models.py,shop/service)
 - T-aider-device-live-proof-2 — Aider device live proof 2 — device closes end-to-end (Aider.0[qwen3-coder:30b]: gate PASS — branch=aider/T-aider-device-live-proof-2-1783379485 files=['shop/models.py', 'shop)
 - T-aider-rack-device-wrapper — AiderDevice — wrap aider as a rack builder (Granny-dispatched, throwaway-clone, branch-not-main, CC-validated) (AiderDevice shipped: devices/aider/ (runner standalone+bus-free with own __main__ = Windows-drivable; device/shim/listen)
+- T-aider-bus-handshake-live-smoke — Implement Order.total() (Aider.0[qwen3-coder:30b]: gate PASS — branch=aider/T-aider-bus-handshake-live-smoke-1783387443 files=['shop/models.py'] )
 ## Notes
 
 - Root cause of contamination was PROMPT path injection, not a cwd-seam leak — fix is at the source (relative paths), no dedicated user / sudo / guard needed.

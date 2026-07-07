@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-builder-one-at-a-time-flag.20260706.193359322968",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-builder-one-at-a-time-flag"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T01:33:59.322968+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-builder-empirical-program-2026-07-06"
+    ],
+    "tickets": [
+      "T-granny-builder-one-at-a-time-flag"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-builder-one-at-a-time-flag",
+    "title": "[in_progress] Granny: static bus-builders (Aider.0, DickSimnel.0) omit one_at_a_time — fan-out per cycle",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Dispatch",
+      "Builder"
+    ],
+    "status": "in_progress",
+    "priority": 0.6,
+    "decision_id": "D-fable-builder-empirical-program-2026-07-06",
+    "description": "**Problem (exposed by the 2026-07-06 live Granny→aider handshake test):** Granny's one-at-a-time dispatch guard (`daemon.py` run_once: `if wcfg.get('one_at_a_time') and (target in dispatched_this_cycle or _is_busy): continue`) is GATED on the worker config carrying `one_at_a_time: true`. Neither `Aider.0` nor `DickSimnel.0` sets it in `config/granny.yaml` OR daemon `_default_config()` (self-announced workers default it to False via `_load_announced_workers`). So the guard is skipped for both static bus-builders: in one poll cycle Granny dispatched 3 Aider-tagged tickets into the `aider.0` mailbox at once (aider log: `fetch_unseen mailbox='aider.0' count=3`). The listener serializes them so it is not overload, but it (a) marks N tickets `dispatched` simultaneously — if the builder dies mid-queue the rest are stuck until the stale-dispatch watchdog fires, and (b) defeats the intended one-ticket-at-a-time handshake. Latent for DickSimnel (never run live); the aider bring-up exposed it.\n\n**Proposed shape:** add `one_at_a_time: true` to `Aider.0` and `DickSimnel.0` in BOTH write-sites (config/granny.yaml + daemon `_default_config`, which must stay in sync — drift-debt). Both are synchronous one-at-a-time builders, so the flag is semantically correct.\n\n**Affected files:** unseen_university/config/granny.yaml, unseen_university/devices/granny/daemon.py (_default_config). HIGH inertia (Granny dispatch — needs Akien pre-approval).\n**Design rules:** yaml<->daemon fallback must stay in sync; homogeneity; handshake not spawn.\n**Scope boundary:** just the one_at_a_time flag on the two static builders + its test. NOT load-balancing (T-granny-builder-load-balancing) and NOT the Aider tag-semantics collision (also T-granny-builder-load-balancing).\n**Test plan:** red->green in tests/test_granny_rules_engine.py — with a builder available and >=2 dispatchable tickets routed to it, run_once dispatches AT MOST ONE per cycle (assert exactly one `dispatched` transition for that worker per cycle).\n**Completion criteria:** the test above passes (fails before the flag, passes after) for both Aider.0 and DickSimnel.0.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-07T01:33:50.675994+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T01:33:50.720384+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4c470223-2f8a-4a63-a11c-b7ae2525a1c0"
+  }
+}
