@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-aider-through-inference-proxy.20260707.175803638130",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-through-inference-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:58:03.638130+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-through-inference-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-through-inference-proxy",
+    "title": "[sprint] Route aider through the inference proxy — limited Ollama-compatible HTTP endpoint IN the proxy shim",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Aider",
+      "Proxy"
+    ],
+    "description": "**Akien 2026-07-07: the direct-Hex bypass was fine for bringup; now do it right — unlocks model escalation (incl. cloud) as a routing DECISION + real cost measurement.** Today aider bypasses the proxy: runner.py sets OLLAMA_API_BASE=HEX_OLLAMA (direct http://10.0.0.100:11434) and --model ollama_chat/qwen3-coder:30b (hardcoded model). Violates Inference-Proxy-only + tier-not-model. aider/shim.py:7-8 documents it as intentional-for-now.\n\n**Key context (routing already EXISTS — do NOT rebuild it):** inference/device.py already does tier->model+source selection WITH escalation (the 'tier-escalation hop'); rules_engine.py defines the builder/worker tiers incl. cloud sources (OpenRouter sonnet/haiku, Google free-tier, Ollama-Pro, qwen@Hex). The ONLY gap is that aider is an external CLI that needs an HTTP endpoint to hit; the proxy has no HTTP door.\n\n**Design (Akien): a LIMITED HTTP endpoint IN the inference proxy SHIM — NOT a full web server.** The inference shim already runs in the device lifecycle; add a tiny http.server handler that speaks just enough Ollama/OpenAI dialect for aider (e.g. POST /api/chat or /v1/chat/completions): (1) receive aider's request, (2) call the device's existing builder-tier completion entry (tier=builder, NOT a model), (3) forward to the selected source with escalation, (4) log real cost to budget_ledger + the run to io_corpus, (5) return the response in aider's expected shape. Then point aider's OLLAMA_API_BASE at the shim endpoint and drop the hardcoded --model (or pass a tier alias).\n\n**Unlocks:** model/cloud escalation as a routing decision (device already escalates tiers); REAL cost measurement (budget_ledger); io_corpus capture of aider runs; tier abstraction (swap qwen->cloud by policy, not code).\n\n**Affected files:** unseen_university/devices/inference/shim.py (the HTTP handler), unseen_university/devices/inference/device.py (reuse the tier-completion entry), unseen_university/devices/aider/runner.py + consts.py (point OLLAMA_API_BASE at the proxy; tier not model).\n**Design rules:** keep it a LIMITED endpoint (no web framework); reuse the existing rules_engine/device routing + escalation + ledger — do not reimplement; tier-not-model; Windows-portable (stdlib http.server).\n**Completion test:** aider runs a build with OLLAMA_API_BASE pointed at the proxy shim, requesting the builder TIER; the proxy selects+routes (Hex or cloud), the run lands in budget_ledger with a real cost + io_corpus; forcing a Hex-unavailable condition escalates to a cloud source instead of failing.\n**Scope boundary:** the HTTP door + aider wiring + cost/corpus capture. NOT new routing logic (exists). NOT a general proxy web server.\n**intention:** I intend that aider's inference goes through the proxy so model escalation (incl. cloud) is a routing decision and cost is measured, not hardcoded to $0-on-Hex.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "priority": 0.5,
+    "status": "sprint",
+    "worker": null,
+    "role": "master",
+    "created_at": "2026-07-07T23:57:59.316939+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T23:57:59.365955+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f7d7f6b7-ac0a-4eae-9e55-8a1c641c4e19"
+  }
+}
