@@ -291,6 +291,20 @@ def build_signature_map(ticket: dict, db_url: str | None = None) -> str:
     dependency-graph rank is a follow-up (code_index carries no edge data). Bounded by
     _MAP_CHAR_BUDGET. Fail-open: any DB error → '' and the loop continues without it.
     """
+    # Graph-ranked packet is the PRIMARY orientation (T-aider-port-graph-orientation-packet):
+    # reference-graph centrality surfaces files keyword-Jaccard can't (a zero-keyword file a
+    # mentioned file heavily references). Fail-open → the keyword map below. The graph map has no
+    # DB dependency (stdlib ast over the repo), so it works even when code_index is stale/down.
+    try:
+        from unseen_university._uu_root import uu_root
+        from unseen_university.devices.scraps.repo_graph_map import build_graph_map
+        graph_packet = build_graph_map(ticket, uu_root(), budget_chars=_MAP_CHAR_BUDGET)
+        if graph_packet:
+            return graph_packet
+    except Exception as exc:  # never let orientation hard-fail on the graph path
+        log.warning("SIGNATURE_MAP|ticket=%s|graph_error=%s — falling back to keyword map",
+                    ticket.get("id", "?"), exc)
+
     if db_url is None:
         db_url = home_db_url()
     keywords = extract_keywords(ticket)
