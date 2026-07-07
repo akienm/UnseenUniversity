@@ -1,0 +1,65 @@
+{
+  "id": "cc.0.aider-push-to-origin-push-branch-deliver.T-aider-real-uu-ticket-proof.20260707.122505348421",
+  "emitter": "cc.0",
+  "namespace": [
+    "aider-push-to-origin-push-branch-deliver",
+    "T-aider-real-uu-ticket-proof"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T12:25:05.348421",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-real-uu-ticket-proof"
+    ],
+    "commits": [
+      "b5ac11f4a1dcdcc376057d3d73edb736ddc5fb3a"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "aider push-to-origin (_push_branch): delivers the work branch to a shared remote, guarded against the trunk",
+    "intention": "The aider builder's work branch reaches CC for validation via a guarded push that can never clobber main",
+    "test": "tests/aider/test_push_branch.py::test_push_delivers_branch_to_remote",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/aider/test_push_branch.py::test_push_delivers_branch_to_remote",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\u001b[31mF\u001b[0m\u001b[31m                                                                        [100%]\u001b[0m\n=================================== FAILURES ===================================\n\u001b[31m\u001b[1m_____________________ test_push_delivers_branch_to_remote ______________________\u001b[0m\n\ntmp_path = PosixPath('/tmp/pytest-of-akien/pytest-506/test_push_delivers_branch_to_r0')\n\n    \u001b[0m\u001b[94mdef\u001b[39;49;00m\u001b[90m \u001b[39;49;00m\u001b[92mtest_push_delivers_branch_to_remote\u001b[39;49;00m(tmp_path):\u001b[90m\u001b[39;49;00m\n        src, bare = _make_repo_and_bare_remote(tmp_path)\u001b[90m\u001b[39;49;00m\n        ok, note = _push_branch(src, _WORK_BRANCH, \u001b[96mstr\u001b[39;49;00m(bare))\u001b[90m\u001b[39;49;00m\n>       \u001b[94massert\u001b[39;49;00m ok \u001b[95mis\u001b[39;49;00m \u001b[94mTrue\u001b[39;49;00m, \u001b[33mf\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m\u001b[33mpush should succeed; note=\u001b[39;49;00m\u001b[33m{\u001b[39;49;00mnote\u001b[33m!r}\u001b[39;49;00m\u001b[33m\"\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n\u001b[1m\u001b[31mE       AssertionError: push should succeed; note='stub — not implemented'\u001b[0m\n\u001b[1m\u001b[31mE       assert False is True\u001b[0m\n\n\u001b[1m\u001b[31mtests/aider/test_push_branch.py\u001b[0m:53: AssertionError\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m tests/aider/test_push_branch.py::\u001b[1mtest_push_delivers_branch_to_remote\u001b[0m - AssertionError: push should succeed; note='stub — not implemented'\n\u001b[31m\u001b[31m\u001b[1m1 failed\u001b[0m\u001b[31m in 0.15s\u001b[0m\u001b[0m",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": "\u001b[32m.\u001b[0m\u001b[32m                                                                        [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m1 passed\u001b[0m\u001b[32m in 0.11s\u001b[0m\u001b[0m"
+          }
+        }
+      }
+    ],
+    "commit": "b5ac11f4a1dcdcc376057d3d73edb736ddc5fb3a",
+    "impl_paths": [
+      "devlab/runtime/memory/decisions/cc.0.D-containers-sandbox-device-2026-07-07.20260707.115651594838.json",
+      "devlab/runtime/memory/decisions/cc.0.D-organizing-question-cascade-2026-07-07.20260707.112230834597.json",
+      "devlab/runtime/memory/inference_prereg/20260707.prereg.jsonl",
+      "devlab/runtime/memory/notes/cc.0.aider-clone-isolation-premise-falsified-2026-07-07.20260707.122339742967.json",
+      "devlab/runtime/memory/slates/20260707.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-aider-largerepo-repomap-live-proof.20260707.122404198431.json",
+      "devlab/runtime/memory/tickets/cc.0.T-aider-real-uu-ticket-proof.20260706.171551474813.json",
+      "devlab/runtime/memory/tickets/cc.0.T-containers-sandbox-device.20260707.115740650815.json",
+      "devlab/runtime/memory/tickets/cc.0.T-organizing-questions-per-level.20260707.112257738807.json",
+      "unseen_university/devices/aider/runner.py"
+    ],
+    "ticket": "T-aider-real-uu-ticket-proof",
+    "narrative": "",
+    "why": "Background offload requires the branch to leave the throwaway clone and reach CC; a hollow push would silently strand the work",
+    "bootstrap": false
+  }
+}
