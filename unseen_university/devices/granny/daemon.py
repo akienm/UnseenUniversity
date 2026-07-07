@@ -257,7 +257,21 @@ def _sprint_tickets() -> list[dict]:
                 t["priority"] = 0.5
             tickets[tid] = t
         ordered = sorted(tickets.values(), key=lambda t: -(t.get("priority") or 0.5))
-        return ordered[:50]
+        # Cap is a RUNAWAY BACKSTOP only. The old LIMIT 50 STARVED low-priority
+        # dispatchable work: with 265 sprint tickets, the top-50-by-priority were all
+        # higher-priority tickets routing to an unavailable CC.0, so the aider drain's
+        # low-priority builder tickets never entered the dispatch loop — the drain
+        # silently ran dry after one ticket (2026-07-07, found via added dispatch
+        # logging). Raised far above current volume; WARN if the backlog ever nears it
+        # so starvation is visible, never silent again.
+        _SPRINT_CAP = 1000
+        if len(ordered) > _SPRINT_CAP:
+            log.warning(
+                "Granny: sprint backlog %d exceeds cap %d — %d ticket(s) NOT considered "
+                "this cycle (STARVATION RISK; raise _SPRINT_CAP or shed backlog)",
+                len(ordered), _SPRINT_CAP, len(ordered) - _SPRINT_CAP,
+            )
+        return ordered[:_SPRINT_CAP]
     except Exception as e:
         log.warning("Granny: ticket query failed: %s", e)
         return []
@@ -880,11 +894,13 @@ def run_once(config: dict, *, imap=None) -> None:
             if _worker_is_builder(target, workers_cfg):
                 balanced = _select_builder(workers_cfg, dispatched_this_cycle)
                 if balanced is None:
-                    log.debug("Granny: no_available_builder|ticket=%s|deferring", tid)
+                    log.info(
+                        "Granny: dispatch_defer|ticket=%s|role=%s|reason=no_available_builder"
+                        "|builders_dispatched_this_cycle=%s", tid, ticket_role,
+                        sorted(dispatched_this_cycle),
+                    )
                     continue
-                if balanced != target:
-                    log.info("Granny: builder_lb|ticket=%s|from=%s|to=%s",
-                             tid, target, balanced)
+                log.info("Granny: builder_lb|ticket=%s|from=%s|to=%s", tid, target, balanced)
                 target = balanced
 
         # Cascade pickup: a higher-tier worker absorbs this ticket when its own
@@ -908,7 +924,7 @@ def run_once(config: dict, *, imap=None) -> None:
             wcfg = workers_cfg.get(target, {})
 
             if not is_available(target):
-                log.debug("Granny: %s unavailable — deferring %s", target, tid)
+                log.info("Granny: dispatch_defer|ticket=%s|target=%s|reason=unavailable", tid, target)
                 continue
 
             # Circuit breaker check — skip and post GRANNY_THROTTLED when open
@@ -935,7 +951,9 @@ def run_once(config: dict, *, imap=None) -> None:
             if wcfg.get("one_at_a_time") and (
                 target in dispatched_this_cycle or _is_busy
             ):
-                log.debug("Granny: %s one-at-a-time — deferring %s", target, tid)
+                _reason = "already_dispatched_this_cycle" if target in dispatched_this_cycle else "worker_busy"
+                log.info("Granny: dispatch_defer|ticket=%s|target=%s|reason=one_at_a_time:%s",
+                         tid, target, _reason)
                 continue
 
             dispatch_kind = wcfg.get("dispatch", "set_worker")
@@ -962,6 +980,7 @@ def run_once(config: dict, *, imap=None) -> None:
                 ok = False
 
         if ok:
+            log.info("Granny: dispatch_ok|ticket=%s|target=%s|kind=%s", tid, target, dispatch_kind)
             dispatched_this_cycle.add(target)
             record_dispatch(target)
             # Cascade: update the ticket's worker field — prefer workers_cfg worker_name,
