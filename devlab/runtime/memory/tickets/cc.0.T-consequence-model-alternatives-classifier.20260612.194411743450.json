@@ -27,10 +27,10 @@
       "Consequence",
       "Inference"
     ],
-    "title": "[sprint] Consequence check: model alternatives classifier",
+    "title": "[escalated] Consequence check: model alternatives classifier",
     "result": null,
-    "status": "sprint",
-    "worker": "dicksimnel",
+    "status": "escalated",
+    "worker": "aider",
     "priority": 0.3,
     "intention": "I intend that any unintended effects of adding model_not_found classification and alternatives ranking are observed and documented.",
     "claimed_at": null,
@@ -38,12 +38,13 @@
     "created_by": null,
     "related_to": null,
     "decision_id": "D-model-alternatives-classifier-2026-06-12",
-    "description": "**What changed:** ModelAlternativesClassifier added; Source._classify_ping_failure() now returns dict with alternatives field; subclass ping() except blocks call the extended _classify_ping_failure().\n**Predicted unintended effects:**\n- Latency spike in failure path: list_models() calls on every model 404; if provider API is slow or down, it blocks the except branch.\n- Ranking fail-open: if alternatives ranking logic crashes (missing token_window on model metadata, malformed response), exception masking could hide the actual error.\n- Empty alternatives spam: logging alternatives=[] on every model_not_found could fill logs if a model is persistently unavailable.\n- Provider API drift: if a provider changes their /models endpoint format, alternatives extraction silently returns empty list; no alerting.\n**Signals to watch:** inference log volume before/after; latency of Source.ping() calls when model endpoint returns 404; whether alternatives lists are non-empty when they should be (spot check a few logs); any new exceptions in datacenter_logs/inference/.\n**Gate condition:** Check by 2026-06-26 or after first DS run following deploy.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "description": "**What changed:** ModelAlternativesClassifier added; Source._classify_ping_failure() now returns dict with alternatives field; subclass ping() except blocks call the extended _classify_ping_failure().\n**Predicted unintended effects:**\n- Latency spike in failure path: list_models() calls on every model 404; if provider API is slow or down, it blocks the except branch.\n- Ranking fail-open: if alternatives ranking logic crashes (missing token_window on model metadata, malformed response), exception masking could hide the actual error.\n- Empty alternatives spam: logging alternatives=[] on every model_not_found could fill logs if a model is persistently unavailable.\n- Provider API drift: if a provider changes their /models endpoint format, alternatives extraction silently returns empty list; no alerting.\n**Signals to watch:** inference log volume before/after; latency of Source.ping() calls when model endpoint returns 404; whether alternatives lists are non-empty when they should be (spot check a few logs); any new exceptions in datacenter_logs/inference/.\n**Gate condition:** Check by 2026-06-26 or after first DS run following deploy.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Escalation summary (Aider)\n**What was tried:** Scanning repo:  92%|█████████▏| 4397/4784 [00:08<00:02, 150.71it/s]\nScanning repo:  92%|█████████▏| 4413/4784 [00:08<00:02, 144.47it/s]\nScanning repo:  93%|█████████▎| 4428/4784 [00:08<00:03, 112.02it/s]\nScanning repo:  93%|█████████▎| 4448/4784 [00:09<00:02, 126.55it/s]\nScanning repo:  93%|█████████▎| 4463/4784 [00:09<00:02, 126.13it/s]\nScanning repo:  94%|█████████▎| 4477/4784 [00:09<00:02, 119.90it/s]\nScanning repo:  94%|█████████▍| 4490/4784 [00:09<00:02, 112.71it/s]\nScanning repo:  94%|████...\n**Where it broke:** aider produced 0 edits\n**What now?**",
     "completed_at": null,
     "github_issue": null,
     "required_files": [],
     "target_difficulty": 1,
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
-    "dispatched_at": null
+    "dispatched_at": null,
+    "updated_at": "2026-07-07T21:10:20.455351+00:00"
   }
 }
