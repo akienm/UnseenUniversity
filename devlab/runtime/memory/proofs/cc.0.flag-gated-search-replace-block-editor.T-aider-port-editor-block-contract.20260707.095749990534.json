@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.flag-gated-search-replace-block-editor.T-aider-port-editor-block-contract.20260707.095749990534",
+  "emitter": "cc.0",
+  "namespace": [
+    "flag-gated-search-replace-block-editor",
+    "T-aider-port-editor-block-contract"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T09:57:49.990534",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-port-editor-block-contract"
+    ],
+    "commits": [
+      "8ebda13e48dd0dc3bdecb8da4fba95ede2233893"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "flag-gated SEARCH/REPLACE block editor",
+    "intention": "under the block-editor flag, a multi-file coding attempt that the tool-loop editor leaves at 0 edits now applies edits to both files",
+    "test": "tests/inference/test_block_editor_flow.py::test_block_editor_produces_multifile_edits_the_toolloop_misses",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_block_editor_flow.py::test_block_editor_produces_multifile_edits_the_toolloop_misses",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "2026-07-07 09:57:49.672 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=classify|ticket=T-block-editor-proof|hop=0|outcome=escalate|class=capability\n2026-07-07 09:57:49.672 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=escalate|ticket=T-block-editor-proof|hop→1|reason=capability\n2026-07-07 09:57:49.672 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=loop|ticket=T-block-editor-proof|hop=1|difficulty=design\n2026-07-07 09:57:49.826 | INFO     | logging:callHandlers:1762 - SIGNATURE_MAP|query|keywords=9|files=14\n2026-07-07 09:57:49.827 | INFO     | logging:callHandlers:1762 - SIGNATURE_MAP|ticket=T-block-editor-proof|files=8|chars=1162\n2026-07-07 09:57:49.827 | INFO     | logging:callHandlers:1762 - AgenticLoop turn 1/50 $0.0000 — ticket T-block-editor-proof (native)\n2026-07-07 09:57:49.827 | INFO     | logging:callHandlers:1762 - AgenticLoop: terminal for T-block-editor-proof turn 1 status=done\n2026-07-07 09:57:49.827 | INFO     | logging:callHandlers:1762 - architect_editor: crossing|step=handoff|ticket=T-block-editor-proof|plan_chars=101 — handing plan to editor\n2026-07-07 09:57:49.828 | INFO     | logging:callHandlers:1762 - Critic: loaded 450 rules (0 skipped)\n2026-07-07 09:57:49.828 | INFO     | logging:callHandlers:1762 - AgenticLoop: Critic initialized for T-block-editor-proof (450 prior rules)\n2026-07-07 09:57:49.828 | INFO     | logging:callHandlers:1762 - AgenticLoop turn 1/50 $0.0000 — ticket T-block-editor-proof (native)\n2026-07-07 09:57:49.829 | WARNING  | logging:callHandlers:1762 - AgenticLoop: turn 1 no tool/terminal for T-block-editor-proof — correcting\n2026-07-07 09:57:49.829 | INFO     | logging:callHandlers:1762 - AgenticLoop turn 2/50 $0.0000 — ticket T-block-editor-proof (native)\n2026-07-07 09:57:49.829 | INFO     | logging:callHandlers:1762 - AgenticLoop: prose finish for T-block-editor-proof turn 2 — escalate\n2026-07-07 09:57:49.829 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=classify|ticket=T-block-editor-proof|hop=1|outcome=escalate|class=capability\n2026-07-07 09:57:49.829 | INFO     | logging:callHandlers:1762 - domain=coding crossing|step=escalate|ticket=T-block-editor-proof|hop→2|reason=capability\n2026-07-07 09:57:49.829 | ERROR    | logging:callHandlers:1762 - domain=coding crossing|step=escalate|ticket=T-block-editor-proof|hop=2|result=capability-ceiling-halt\n=========================== short test summary info ============================\nFAILED tests/inference/test_block_editor_flow.py::test_block_editor_produces_multifile_edits_the_toolloop_misses\n1 failed in 0.48s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.29s"
+          }
+        }
+      }
+    ],
+    "commit": "8ebda13e48dd0dc3bdecb8da4fba95ede2233893",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-aider-port-editor-block-contract.20260707.075015447304.json",
+      "tests/inference/test_block_apply.py",
+      "unseen_university/devices/inference/architect_editor.py",
+      "unseen_university/devices/inference/block_apply.py",
+      "unseen_university/devices/inference/domains/coding.py"
+    ],
+    "ticket": "T-aider-port-editor-block-contract",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
