@@ -61,6 +61,12 @@ class ModelSpec:
     # domain filter (routing_buckets.domain_eligible) reads this. Adding a model for a
     # new kind of task is a data edit here, not a code change.
     domains: list[str] = field(default_factory=list)
+    # Per-edit-format conformance rate ({format: 0.0–1.0}), computed OFFLINE from corpus
+    # replay (edit_format.compute_conformance) — the warm-lookup data for edit-dialect
+    # selection (T-aider-port-editformat-conformance). Empty → block (the runtime ladder
+    # then falls back to whole-file). Populated as both editors accumulate real runs; the
+    # selector reads it with zero inference, exactly like tier routing.
+    edit_format_conformance: dict = field(default_factory=dict)
 
     @property
     def cacheable(self) -> bool:

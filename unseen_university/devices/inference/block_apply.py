@@ -473,6 +473,63 @@ def apply_blocks_to_dir(response_text: str, cwd: Path, fence=DEFAULT_FENCE,
     return result
 
 
+# ── Whole-file dialect (aider wholefile_coder) — the weak-model fallback format ────────────────
+
+def parse_wholefile(text: str, fence=DEFAULT_FENCE) -> dict:
+    """Parse a whole-file response into ``{rel_path: full_content}`` (port of aider wholefile_coder).
+
+    The simpler contract for small/quantized models that can't hold a strict SEARCH/REPLACE format
+    (T-aider-port-editformat-conformance): a filename on its own line, then a fenced block with the
+    ENTIRE new file. Nothing to match — the file is overwritten wholesale.
+    """
+    lines = text.splitlines(keepends=True)
+    out: dict = {}
+    i = 0
+    while i < len(lines):
+        stripped = lines[i].strip()
+        # A filename candidate is path-like and is directly followed by an opening fence.
+        is_fname = stripped and ("." in stripped or "/" in stripped) and not stripped.startswith(fence[0])
+        if is_fname and i + 1 < len(lines) and lines[i + 1].strip().startswith(fence[0]):
+            fname = strip_filename(stripped, fence)
+            body = []
+            k = i + 2
+            while k < len(lines) and not lines[k].strip().startswith(fence[1]):
+                body.append(lines[k])
+                k += 1
+            if fname:
+                out[fname] = "".join(body)
+            i = k + 1  # skip past the closing fence
+            continue
+        i += 1
+    return out
+
+
+def apply_wholefile_to_dir(response_text: str, cwd: Path, committer=None) -> BlockApplyResult:
+    """Apply a whole-file response by overwriting each named file with its full content.
+
+    A whole-file edit cannot 'fail to match' (it overwrites) — the only failure is a completion
+    with no parseable file block, which lands in ``parse_error``. Same committer hook as the block
+    path (commit-per-edit in the clone).
+    """
+    cwd = Path(cwd)
+    result = BlockApplyResult()
+    files = parse_wholefile(response_text)
+    if not files:
+        result.parse_error = ("no whole-file blocks found (expected: a filename on its own line, "
+                              "then a fenced block containing the entire file)")
+        return result
+    for path, content in files.items():
+        full_path = cwd / path
+        if committer is not None:
+            committer.before(path)
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(content, encoding="utf-8")
+        result.applied.append(path)
+        if committer is not None:
+            committer.after(path)
+    return result
+
+
 # ── Rich, file-grounded repair errors (port of aider apply_edits error construction) ──────────
 
 def find_similar_lines(search: str, content: str, threshold: float = 0.6) -> str:

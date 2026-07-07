@@ -19,14 +19,14 @@
   },
   "body": {
     "id": "T-aider-port-editformat-conformance",
-    "title": "[sprint] Port aider edit-format ladder + per-model conformance registry (P8)",
+    "title": "[in_progress] Port aider edit-format ladder + per-model conformance registry (P8)",
     "size": "M",
     "tags": [
       "CompiledInference",
       "Inference",
       "AiderPort"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.4,
     "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
     "gate": null,

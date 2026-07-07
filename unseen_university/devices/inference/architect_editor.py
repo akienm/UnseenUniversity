@@ -46,6 +46,7 @@ from unseen_university.devices.inference.agentic_loop import (
 )
 from unseen_university.devices.inference.block_apply import (
     apply_blocks_to_dir,
+    apply_wholefile_to_dir,
     build_repair_message,
     failure_class,
 )
@@ -74,15 +75,19 @@ def _log_repair_pair(ticket_id: str, turn: int, failure_class_name: str, applied
         log.warning("architect_editor: repair-pair corpus write failed for %s: %s", ticket_id, exc)
 
 
-def _log_verdict(ticket_id: str, verdict, applied: int) -> None:
+def _log_verdict(ticket_id: str, verdict, applied: int, edit_format_name: str = "block",
+                 model: str = "") -> None:
     """Log the deterministic edit verdict to the io_corpus (the verdict column for the nexus write).
 
     The rung is recorded exactly as produced — a failure rung on cap-exhaustion is logged as a
-    failure, never masked. Fail-soft. (T-aider-port-verdict-gate.)"""
+    failure, never masked. Stamps ``format`` (and ``model`` when known) so an OFFLINE replay can
+    later compute per-(model, format) conformance (T-aider-port-editformat-conformance — without
+    this stamp the conformance registry is unpopulatable). Fail-soft. (T-aider-port-verdict-gate.)"""
     try:
         from unseen_university.devices.inference.io_corpus import capture
         capture({"kind": "editor_verdict", "ticket_id": ticket_id, "role": "editor",
-                 "rung": verdict.rung, "applied": applied, "detail": verdict.detail[:800]})
+                 "rung": verdict.rung, "applied": applied, "format": edit_format_name,
+                 "model": model, "detail": verdict.detail[:800]})
     except Exception as exc:  # noqa: BLE001
         log.warning("architect_editor: verdict corpus write failed for %s: %s", ticket_id, exc)
 
@@ -211,6 +216,21 @@ Rules:
 - To create a NEW file, use an empty SEARCH section and put the whole file in REPLACE.
 - Use a relative path (as named in the plan) on the line directly above each block.
 ONLY EVER RETURN CODE IN A *SEARCH/REPLACE BLOCK*."""
+
+#: The WHOLE-FILE prompt — the weak-model fallback dialect (T-aider-port-editformat-conformance).
+#: A model that can't hold the SEARCH/REPLACE contract can often just emit the whole file. No
+#: matching, no partial edits — the simplest contract that still produces a real edit.
+WHOLEFILE_EDITOR_PROMPT = """\
+You are the EDITOR. An EDIT PLAN produced by the architect is in the first message. For EACH file
+you need to change, output the file's RELATIVE PATH on its own line, then a fenced code block
+containing the ENTIRE new contents of that file (not a diff, not a fragment — the whole file):
+
+path/to/file.py
+```
+<the complete new file contents>
+```
+
+Repeat for every changed file. Output ONLY these filename+fenced-file pairs — no prose."""
 
 
 # A finish counts as a plan the editor can act on if it names a file path (…/x.py) or is a
@@ -414,17 +434,17 @@ class ArchitectEditorFlow:
         ledger) and reflect — up to MAX_REFLECTIONS times (F-C/F-E). Every (failure-class →
         successful-repair) pair is logged to the io_corpus (recurring repair shapes → future nexus
         rows). Outcome mapping keeps the walk's contract:
-          - ≥1 block applied across the loop → LOOP_DONE. The envelope is marked UNVERIFIED: this
-            path does NOT run tests — verdict-gating is P6. A DONE here only stops the walk
-            retrying; the aider device still closes shipped-unproven, so nothing false-closes.
-          - 0 applied (nothing parsed / every block failed after repairs) → LOOP_ESCALATE.
+          - ≥1 edit applied across the loop → LOOP_DONE, envelope carrying the deterministic
+            verdict rung (P6) and the edit_format that worked (P8). A DONE here only stops the
+            walk retrying; the aider device still closes shipped-unproven, so nothing false-closes.
+          - 0 applied by block AND by the whole-file ladder fallback → LOOP_ESCALATE.
           - dispatch raised / no live source with nothing yet applied → LOOP_AVAILABILITY.
         """
         from unseen_university.devices.inference.device import InferenceDevice
         from unseen_university.devices.inference.shim import InferenceRequest
 
         from unseen_university.devices.inference.clone_commit import CloneCommitter
-        from unseen_university.devices.inference import verdict_gate
+        from unseen_university.devices.inference import edit_format, verdict_gate
 
         inference_device = self._inference_device or InferenceDevice()
         editor_cwd = Path(cwd) if cwd is not None else Path.cwd()
@@ -528,19 +548,55 @@ class ArchitectEditorFlow:
                 {"role": "user", "content": repair},
             ]
 
+        # P8 EDIT-FORMAT LADDER: the block dialect produced nothing across the whole reflection
+        # loop — fall back ONCE to the simpler whole-file dialect (a weak model that can't hold
+        # SEARCH/REPLACE often can emit a whole file). Warm-lookup would pick the START format from
+        # the conformance registry, but that ships empty (format was only just stamped onto
+        # records), so block is the start and this ladder is the runtime fallback until data accrues.
+        used_format = edit_format.BLOCK
+        if not applied_total:
+            wf_req = InferenceRequest(
+                messages=[{"role": "user", "content": messages[0]["content"]}],
+                system=WHOLEFILE_EDITOR_PROMPT + "\n\n" + system_prompt,
+                tools=None, task_class=task_class, domain=domain, ticket_id=ticket_id,
+                agent_id=agent_id, max_tokens=4096, temperature=0.0, foreground=foreground,
+                role="editor", turn=0,
+            )
+            log.info("architect_editor: crossing|step=wholefile-fallback|ticket=%s", ticket_id)
+            try:
+                wf_resp = inference_device.dispatch(wf_req)
+            except Exception as exc:  # noqa: BLE001 — fallback is best-effort; block already failed
+                log.warning("architect_editor: wholefile fallback dispatch raised for %s: %s",
+                            ticket_id, exc)
+                wf_resp = None
+            if wf_resp is not None and not (wf_resp.finish_reason == "error"
+                                            or wf_resp.source_kind == "none"):
+                in_tok += getattr(wf_resp, "input_tokens", 0)
+                out_tok += getattr(wf_resp, "output_tokens", 0)
+                cost += getattr(wf_resp, "cost_estimate", 0.0)
+                wf_result = apply_wholefile_to_dir(wf_resp.text or "", editor_cwd, committer=committer)
+                log.info("architect_editor: crossing|step=wholefile-apply|ticket=%s|applied=%d",
+                         ticket_id, len(wf_result.applied))
+                if wf_result.applied:
+                    applied_total = wf_result.applied
+                    last_text = wf_resp.text or ""
+                    last_verdict, _ = verdict_gate.evaluate(editor_cwd, applied_total, verdict_hint)
+                    used_format = edit_format.WHOLEFILE
+
         if applied_total:
             files = ", ".join(dict.fromkeys(applied_total))  # de-dup, preserve order
-            _log_verdict(ticket_id, last_verdict, len(applied_total))
+            _log_verdict(ticket_id, last_verdict, len(applied_total), used_format)
             return LoopResult(
                 LOOP_DONE,
                 text=last_text,
                 envelope={
                     "status": "done",
                     "result": f"applied {len(applied_total)} edit(s) to: {files} "
-                              f"[verdict: {last_verdict.rung}]",
+                              f"[format: {used_format}, verdict: {last_verdict.rung}]",
                     # The verdict column (fingerprint → plan → VERDICT) — DATA for the nexus write,
                     # honest even on cap-exhaustion (a failure rung is never masked as passing).
                     "verdict": last_verdict.as_dict(),
+                    "edit_format": used_format,
                     "error_class": None,
                     "error_number": None,
                 },

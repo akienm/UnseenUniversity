@@ -103,10 +103,14 @@ def test_reflection_repairs_on_second_attempt(tmp_path):
 
 
 def test_reflection_cap_is_enforced(tmp_path):
-    """An always-mismatching model stops after MAX_REFLECTIONS+1 block dispatches, then escalates."""
-    device, result = _run(tmp_path, [_BAD])  # every attempt is bad
-    assert device.block_calls == ArchitectEditorFlow.MAX_REFLECTIONS + 1, (
-        f"cap must bound dispatches to {ArchitectEditorFlow.MAX_REFLECTIONS + 1}, "
+    """An always-mismatching model stops after the bounded block loop + one whole-file fallback.
+
+    Block reflection is capped at MAX_REFLECTIONS+1 dispatches; when block applies nothing, the
+    P8 edit-format ladder adds exactly ONE whole-file fallback dispatch — still bounded, then
+    escalates (the fallback also can't apply the mismatching content)."""
+    device, result = _run(tmp_path, [_BAD])  # every attempt is bad, in both dialects
+    assert device.block_calls == ArchitectEditorFlow.MAX_REFLECTIONS + 2, (
+        f"bound = block-cap ({ArchitectEditorFlow.MAX_REFLECTIONS + 1}) + 1 whole-file fallback, "
         f"got {device.block_calls}"
     )
     assert result.outcome == "escalate" and (tmp_path / "svc.py").read_text() == "value = 1\n"
