@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.post-apply-verdict-gate-anti-silent-wron.T-aider-port-verdict-gate.20260707.110227392852",
+  "emitter": "cc.0",
+  "namespace": [
+    "post-apply-verdict-gate-anti-silent-wron",
+    "T-aider-port-verdict-gate"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T11:02:27.392852",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-port-verdict-gate"
+    ],
+    "commits": [
+      "62487ce823559a9961733317756e952ca419c560"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "post-apply verdict gate (anti-silent-wrongness)",
+    "intention": "a syntactically-broken applied edit earns a compile_error verdict — a failure rung, never a silent passing DONE",
+    "test": "tests/inference/test_verdict_gate.py::test_broken_edit_final_verdict_is_failure_rung_not_passing",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_verdict_gate.py::test_broken_edit_final_verdict_is_failure_rung_not_passing",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        dev = _FakeDev([_BROKEN])  # the model keeps producing a broken edit\n        result = ArchitectEditorFlow(block_editor_enabled=True, inference_device=dev).run(\n            system_prompt=\"\", initial_message=\"edit m.py\", ticket_id=\"T-verdict\", cwd=tmp_path,\n        )\n        verdict = (result.envelope or {}).get(\"verdict\", {})\n>       assert verdict.get(\"rung\") == verdict_gate.COMPILE_ERROR, (\n            f\"a broken edit must carry a compile_error verdict, not a passing rung; got {verdict}\"\n        )\nE       AssertionError: a broken edit must carry a compile_error verdict, not a passing rung; got {'rung': 'compile_ok', 'detail': ''}\nE       assert 'compile_ok' == 'compile_error'\nE         \nE         - compile_error\nE         ?         --- ^\nE         + compile_ok\nE         ?          ^\n\ntests/inference/test_verdict_gate.py:106: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_verdict_gate.py::test_broken_edit_final_verdict_is_failure_rung_not_passing\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "62487ce823559a9961733317756e952ca419c560",
+    "impl_paths": [
+      "unseen_university/devices/inference/verdict_gate.py"
+    ],
+    "ticket": "T-aider-port-verdict-gate",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
