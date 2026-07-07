@@ -281,6 +281,71 @@ class TestRunOnce:
 
         assert dispatched_ids == ["T-first"], "second CC ticket must be deferred to next cycle"
 
+    def test_builder_one_at_a_time_prevents_second_dispatch_same_cycle(self):
+        """Two builder-role tickets in one cycle → only ONE dispatches to DickSimnel.0.
+
+        Regression for the missing one_at_a_time flag on the static bus-builders
+        (T-granny-builder-one-at-a-time-flag). Exposed live 2026-07-06: Granny
+        fanned 3 dispatch envelopes into aider.0 at once because Aider.0/DickSimnel.0
+        omitted the flag. A synchronous builder must get one ticket per cycle.
+        """
+        tickets = [
+            {"id": "T-b1", "tags": [], "role": "builder", "status": "sprint", "title": "B1"},
+            {"id": "T-b2", "tags": [], "role": "builder", "status": "sprint", "title": "B2"},
+        ]
+        dispatched = []
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox, *, worker_name=None):
+            dispatched.append(ticket["id"])
+            return True
+
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=tickets), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cascade_active_workers", return_value={}), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._worker_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
+
+        assert dispatched == ["T-b1"], "second builder ticket must defer to next cycle (one_at_a_time)"
+
+    def test_aider_tagged_one_at_a_time_prevents_mailbox_fanout(self):
+        """Two `Aider`-tagged tickets in one cycle → only ONE dispatches to Aider.0.
+
+        The exact live failure: three Aider-tagged tickets landed in the aider.0
+        mailbox in a single poll cycle. With one_at_a_time set, Granny defers the rest.
+        """
+        tickets = [
+            {"id": "T-a1", "tags": ["Aider"], "role": "builder", "status": "sprint", "title": "A1"},
+            {"id": "T-a2", "tags": ["Aider"], "role": "builder", "status": "sprint", "title": "A2"},
+            {"id": "T-a3", "tags": ["Aider"], "role": "builder", "status": "sprint", "title": "A3"},
+        ]
+        dispatched = []
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox, *, worker_name=None):
+            dispatched.append((ticket["id"], worker_mailbox))
+            return True
+
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=tickets), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cascade_active_workers", return_value={}), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._worker_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
+            run_once(_config(), imap=imap)
+
+        assert dispatched == [("T-a1", "aider.0")], "only one Aider ticket per cycle; no mailbox fan-out"
+
     def test_gated_ticket_not_dispatched_when_gate_blocked(self):
         """A ticket with gate: T-A is NOT dispatched when T-A is not closed."""
         ungated = []
