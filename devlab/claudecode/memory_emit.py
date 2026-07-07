@@ -35,9 +35,20 @@ from datetime import datetime
 
 # devlab/claudecode/memory_emit.py -> repo root is three dirs up.
 _REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MEMORY_ROOT = os.environ.get(
-    "UU_MEMORY_ROOT", os.path.join(_REPO, "devlab", "runtime", "memory")
-)
+
+
+def _memory_root() -> str:
+    """Resolve the memory-store root at CALL time so UU_MEMORY_ROOT set at ANY time is
+    honored — parity with unseen_university.memory_root.memory_root() and proof_store /
+    ticket_store. Was a module constant frozen at import (T-memory-emit-frozen-root):
+    an env change after import was ignored, silently splitting the store (writes to the
+    frozen default while readers used the new root)."""
+    return os.environ.get("UU_MEMORY_ROOT", os.path.join(_REPO, "devlab", "runtime", "memory"))
+
+
+# Back-compat: some callers import MEMORY_ROOT. It reflects the import-time value; live
+# code paths must use _memory_root() (emit() does) so a later env change is honored.
+MEMORY_ROOT = _memory_root()
 
 # Folders == categories. Reserved names (judge, chat.cc.0, chat.igor) are kept
 # exactly as Akien named them; renames are his call, not this helper's.
@@ -151,7 +162,7 @@ def emit(category, emitter, body, *, kind=None, namespace=None, links=None,
         "links": merged,
         "body": body,
     }
-    out_dir = os.path.join(MEMORY_ROOT, *category.split("/"))
+    out_dir = os.path.join(_memory_root(), *category.split("/"))
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, stem + ".json")
     tmp = path + ".tmp"
