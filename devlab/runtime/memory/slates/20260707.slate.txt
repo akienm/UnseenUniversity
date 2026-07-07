@@ -67,3 +67,25 @@ Done: Done (talk-and-ticket session, ran parallel to a builder session): Invento
 Next: Next: ROLE SWAP after compact — THIS session becomes BUILDER. FIRST reconcile in-flight T-aider-port-commit-per-edit tree (M architect_editor.py, M block_apply.py, ?? clone_commit.py, ?? tests/inference/test_clone_commit.py) via git BEFORE touching tree. Then resume aider-port batch: P1 T-aider-port-graph-orientation-packet from its BUILD ORIENTATION addendum, then P4/P5/P7/P8. D-organizing-question-cascade stays GATED.
 
 ## In-flight: NONE in-flight for MY work — talk-and-ticket session is clean (D-organizing-question-cascade + gated ticket filed, slate appended, nothing uncommitted by me). The ONLY dirty tree state belongs to the OTHER session's T-aider-port-commit-per-edit build, which I inherit and must reconcile first after the role swap.
+
+
+## In-flight (mid-sprint flush 2026-07-07)
+NONE in-flight — HEAD 6cad856b, tree clean, all pushed.
+- CLOSED T-aider-real-uu-ticket-proof (shipped-unproven, per-surface honest close):
+  (1) clone-test ISOLATION — premise FALSIFIED: _run_tests already isolates via cwd=clone
+      (verified shallow/deep/namespace on a full clone under --import-mode=importlib; the
+      editable-finder only beats PYTHONPATH under bare `python -c`, not `-m pytest cwd=clone`).
+      No fake-green, no red form. Added regression guard tests/aider/test_clone_isolation.py.
+      Note: aider-clone-isolation-premise-falsified-2026-07-07.
+  (2) PUSH-TO-ORIGIN — BUILT + PROVEN: runner._push_branch (guarded refspec branch:branch,
+      REFUSES main/master). Red 5c02879d -> green; proof bound b5ac11f4. New --push-remote CLI.
+  (3) LARGE-REPO repo-map — split to gated T-aider-largerepo-repomap-live-proof (needs Hex).
+- Filed NORTH-STAR-adjacent: D-containers-sandbox-device-2026-07-07 + gated T-containers-sandbox-device
+  (full-isolation substrate: imports + FS + net + DB + CP6 sandbox of untrusted builder code;
+  supersedes the finder concern; Akien-approved sequencing: light fix now, containers later).
+- Side-fixes: cc_hook_pending.py sys.path bootstrap (UserPromptSubmit hook regression from c8477b6a,
+  committed ab.. earlier); tmux `set -g mouse on` to work around CC mode-1003 mouse-tracking copy
+  regression under tmux (root cause = CC TUI, not tmux).
+Next (offload loop): T-builder-merge-time-proof (0.6, LOAD-BEARING — proof emits at merge so builder
+  throughput offloads CC), then T-granny-builder-load-balancing (S) + T-aider-swarm-deployment. Live
+  arms gated on Hex: T-aider-largerepo-repomap-live-proof.
