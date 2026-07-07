@@ -527,13 +527,47 @@ def build_repair_message(result: BlockApplyResult, cwd: Path, fence=DEFAULT_FENC
     echo, 'did you mean' similar lines pulled from the ACTUAL file, a 'REPLACE already present'
     note, and a partial-success ledger so the model does NOT re-send the blocks that applied.
     """
-    # STUB (scaffold commit): a generic non-empty message so the reflection loop still retries;
-    # the file-grounded 'did you mean' / 'already present' / partial-ledger construction lands in
-    # the next commit.
+    cwd = Path(cwd)
     if result.clean:
         return ""
     if result.parse_error:
-        return "The SEARCH/REPLACE blocks were malformed — resend well-formed blocks."
+        return (
+            "The SEARCH/REPLACE blocks were malformed and could not be parsed:\n"
+            f"{result.parse_error}\n\n"
+            "Resend ALL edits as well-formed SEARCH/REPLACE blocks (filename on its own line, "
+            "then <<<<<<< SEARCH / ======= / >>>>>>> REPLACE)."
+        )
+
     n = len(result.failed)
     blocks = "block" if n == 1 else "blocks"
-    return f"# {n} SEARCH/REPLACE {blocks} failed to match! Fix the SEARCH section and resend."
+    parts = [f"# {n} SEARCH/REPLACE {blocks} failed to match!"]
+    for path, original, updated in result.failed:
+        full = cwd / path
+        content = full.read_text(encoding="utf-8") if full.exists() else ""
+        parts.append(
+            f"\n## SearchReplaceNoExactMatch: this SEARCH block failed to exactly match lines in {path}\n"
+            f"<<<<<<< SEARCH\n{original}=======\n{updated}>>>>>>> REPLACE"
+        )
+        did_you_mean = find_similar_lines(original, content)
+        if did_you_mean:
+            parts.append(
+                f"\nDid you mean to match some of these actual lines from {path}?\n\n"
+                f"{fence[0]}\n{did_you_mean}\n{fence[1]}"
+            )
+        if updated and updated in content:
+            parts.append(
+                f"\nAre you sure you need this SEARCH/REPLACE block?\n"
+                f"The REPLACE lines are already present in {path}!"
+            )
+    parts.append(
+        "\nThe SEARCH section must EXACTLY match existing lines including all whitespace, "
+        "comments, indentation, and docstrings."
+    )
+    if result.applied:
+        m = len(result.applied)
+        pblocks = "block" if m == 1 else "blocks"
+        parts.append(
+            f"\n# The other {m} SEARCH/REPLACE {pblocks} applied successfully — do NOT re-send them. "
+            f"Reply with fixed versions of ONLY the {blocks} above that failed to match."
+        )
+    return "\n".join(parts)
