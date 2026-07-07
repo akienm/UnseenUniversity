@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-memory-emit-frozen-root-post-import.20260707.125526250569",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-emit-frozen-root-post-import"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T18:55:26.250569+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-memory-emit-frozen-root-post-import"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-emit-frozen-root-post-import",
+    "title": "[sprint] memory_emit.MEMORY_ROOT frozen at import — UU_MEMORY_ROOT redirect ignored after import",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Testability"
+    ],
+    "description": "**Problem:** devlab/claudecode/memory_emit.py:38 binds `MEMORY_ROOT = os.environ.get('UU_MEMORY_ROOT', <repo>/devlab/runtime/memory)` as a MODULE-LEVEL constant at import time. Every OTHER reader (unseen_university/memory_root.memory_root(), proof_store) resolves UU_MEMORY_ROOT LIVE at call time. Consequence: any process that sets UU_MEMORY_ROOT AFTER importing memory_emit writes to the OLD (real) store while readers read the NEW store — a silent split. Surfaced in T-builder-merge-time-proof: a pytest fixture set UU_MEMORY_ROOT after collection-time import, so emit_merge_proof wrote 2 stray proofs into the REAL devlab/runtime/memory/proofs (cleaned up); the test had to monkeypatch memory_emit.MEMORY_ROOT directly as a workaround.\n\n**Fix shape:** make memory_emit resolve the root LIVE — a `def _memory_root()` reading os.environ (or reuse unseen_university.memory_root.memory_root()) at each write, instead of the frozen module constant. Keep the default fallback identical.\n\n**Affected files:** devlab/claudecode/memory_emit.py (MEMORY_ROOT usage at line ~154 out_dir).\n\n**Completion test / Test plan:** red->green — set UU_MEMORY_ROOT AFTER importing memory_emit, emit one record, assert it lands under the NEW root (fails today: lands under the frozen default). \n\n**Scope boundary:** memory_emit root resolution only. NOT a broader store-path refactor.\n\n**intention:** I intend that memory_emit honors UU_MEMORY_ROOT set at any time, so tests and tools can't silently split the store.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "priority": 0.2,
+    "status": "sprint",
+    "worker": null,
+    "role": "builder",
+    "created_at": "2026-07-07T18:55:18.689037+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T18:55:18.735386+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "73bc568d-30c9-4c47-b0df-7679dadde0bc"
+  }
+}
