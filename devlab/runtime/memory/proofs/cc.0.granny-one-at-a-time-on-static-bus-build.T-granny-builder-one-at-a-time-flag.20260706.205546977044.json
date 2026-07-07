@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.granny-one-at-a-time-on-static-bus-build.T-granny-builder-one-at-a-time-flag.20260706.205546977044",
+  "emitter": "cc.0",
+  "namespace": [
+    "granny-one-at-a-time-on-static-bus-build",
+    "T-granny-builder-one-at-a-time-flag"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-06T20:55:46.977044",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-builder-one-at-a-time-flag"
+    ],
+    "commits": [
+      "2b480730a8a055c2a00b557aa28b7c4918acdd67"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "Granny one_at_a_time on static bus-builders (Aider.0, DickSimnel.0)",
+    "intention": "Granny dispatches at most one ticket per static bus-builder per poll cycle (no mailbox fan-out)",
+    "test": "tests/test_granny_rules_engine.py::TestRunOnce::test_aider_tagged_one_at_a_time_prevents_mailbox_fanout",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_granny_rules_engine.py::TestRunOnce::test_aider_tagged_one_at_a_time_prevents_mailbox_fanout",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "             patch(\"unseen_university.devices.granny.daemon._cascade_active_workers\", return_value={}), \\\n             patch(\"unseen_university.devices.granny.daemon._cc0_busy\", return_value=False), \\\n             patch(\"unseen_university.devices.granny.daemon._worker_busy\", return_value=False), \\\n             patch(\"unseen_university.devices.granny.daemon._dispatch_bus\", side_effect=fake_bus), \\\n             patch(\"unseen_university.devices.granny.daemon._escalate_stale_dispatched\", return_value=0), \\\n             patch(\"unseen_university.devices.granny.daemon._reset_stale_inprogress\", return_value=0), \\\n             patch(\"unseen_university.devices.granny.daemon._post_channel\"):\n            run_once(_config(), imap=imap)\n    \n>       assert dispatched == [(\"T-a1\", \"aider.0\")], \"only one Aider ticket per cycle; no mailbox fan-out\"\nE       AssertionError: only one Aider ticket per cycle; no mailbox fan-out\nE       assert [('T-a1', 'ai...', 'aider.0')] == [('T-a1', 'aider.0')]\nE         \nE         Left contains 2 more items, first extra item: ('T-a2', 'aider.0')\nE         Use -v to get more diff\n\ntests/test_granny_rules_engine.py:347: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_granny_rules_engine.py::TestRunOnce::test_aider_tagged_one_at_a_time_prevents_mailbox_fanout\n1 failed in 0.10s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "2b480730a8a055c2a00b557aa28b7c4918acdd67",
+    "impl_paths": [
+      "unseen_university/config/granny.yaml",
+      "unseen_university/devices/granny/daemon.py"
+    ],
+    "ticket": "T-granny-builder-one-at-a-time-flag",
+    "narrative": "",
+    "why": "Live 2026-07-06 handshake test: Granny dropped 3 dispatch envelopes into aider.0 in one cycle because the builders omitted the flag",
+    "bootstrap": false
+  }
+}
