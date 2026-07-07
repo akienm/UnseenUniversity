@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-imap-references-purge.20260707.142004171770",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-imap-references-purge"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T20:20:04.171770+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-imap-references-purge"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-imap-references-purge",
+    "title": "[sprint] Purge all stale IMAP references — bus is PgBus; IMAP was removed a month ago but ~808 refs + dead code remain",
+    "size": "L",
+    "tags": [
+      "Cleanup",
+      "Bus",
+      "TechDebt"
+    ],
+    "description": "**Akien 2026-07-07: 'yank out ALL the references to IMAP — it's still confusing you a month later after taking it out.'** The live bus is PgBus (Postgres, unseen_university/devices/bus/pg_bus.py). IMAP was the OLD transport and was removed, but ~808 references remain (grep -rniIE imap, excl .venv/.git/runtime-memory-data) across LIVE code, docstrings, comments, tests, and config — a dual-path that repeatedly misleads CC (this session: I checked IMAP reachability when the bus is PgBus).\n\n**Confirmed dead/stale (samples):** unseen_university/devices/bus/imap_server.py (IMAPServer); bus_launcher.py (imap_host, imap_port=143, 'waits for IMAP to respond', agentctl init); announce/idle_loop.py + listener.py idle_wait wording; device.py; tests/test_imap_idle.py, tests/test_bus.py, etc.; CLAUDE.md (FIXED this session).\n\n**Decomposition (do in this order, verify PgBus green between each):**\n1. MAP all refs by category: (a) dead IMAP code to delete, (b) stale docstrings/comments to rewrite to PgBus, (c) IMAP-only tests to delete, (d) LEGIT history ('IMAP replaced by PgBus') to KEEP, (e) any still-live IMAP path (should be none — verify).\n2. Delete dead code (imap_server.py + IMAP branches in bus_launcher etc.) ONLY after proving PgBus is the sole live path.\n3. Rewrite stale docstrings/comments to PgBus/poll reality.\n4. Delete/rewrite IMAP tests.\n\n**Affected files:** broad — unseen_university/devices/bus/*, announce/*, device.py, many tests. NOT the live PgBus code.\n**Design rules:** never delete a live path; PgBus stays green (run bus/announce/granny tests between steps); preserve accurate 'IMAP was removed' history where it aids understanding.\n**Completion test:** `grep -rniIE imap` over non-.venv/.git source returns only intentional historical mentions (or zero); bus/announce/granny test suites green.\n**Scope boundary:** IMAP reference/deadcode removal. NOT a bus rewrite.\n**intention:** I intend that no stale IMAP reference remains to mislead CC — the bus is unambiguously PgBus in code and docs.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "priority": 0.45,
+    "status": "sprint",
+    "worker": null,
+    "role": "master",
+    "created_at": "2026-07-07T20:19:56.560389+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-07T20:19:56.606609+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3bbf4bbf-ade8-4da8-a692-8798acb26e99"
+  }
+}
