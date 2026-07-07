@@ -48,6 +48,10 @@ class CodingDomain(BaseDomain):
     #: run each attempt as the architect/editor split (D-coding-loop-redesign-aider-survey).
     #: A flag so the single-loop attempt can be restored without a code change (ticket rollback).
     architect_editor_enabled = True
+    #: run the EDITOR phase as ONE completion of SEARCH/REPLACE blocks, applied deterministically
+    #: (T-aider-port-editor-block-contract). Default OFF — the proven tool-loop editor stays the
+    #: default until this path is proven; flip to restore/roll-forward without a code change.
+    block_editor_enabled = False
 
     def _initial_message(self, ticket: dict) -> str:
         """Prepend the orientation builder report to the generalist ticket message."""
@@ -79,7 +83,11 @@ class CodingDomain(BaseDomain):
             )
         from unseen_university.devices.inference.architect_editor import ArchitectEditorFlow
 
-        return ArchitectEditorFlow(critic_enabled=self.critic_enabled, aci_mode=self.aci_mode).run(
+        return ArchitectEditorFlow(
+            critic_enabled=self.critic_enabled,
+            aci_mode=self.aci_mode,
+            block_editor_enabled=self.block_editor_enabled,
+        ).run(
             system_prompt=system_prompt,
             initial_message=self._initial_message(ticket),
             task_class=self.task_class,

@@ -36,11 +36,14 @@ from pathlib import Path
 
 from unseen_university.devices.inference.agentic_loop import (
     HISTORY_WINDOW_TURNS,
+    LOOP_AVAILABILITY,
     LOOP_DONE,
+    LOOP_ESCALATE,
     AgenticLoop,
     LoopResult,
     NativeToolCodec,
 )
+from unseen_university.devices.inference.block_apply import apply_blocks_to_dir
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +72,31 @@ Your only job is to APPLY it: for each planned change, call Edit (exact-string r
 or Write (whole file), using absolute paths. Do not re-plan or re-explore beyond what you
 need to apply a change. After applying the plan, run the tests named in the plan (or the
 ticket) and then signal done."""
+
+#: The BLOCK EDITOR prompt — the editor's whole response IS the edits. There is no tool loop
+#: and nothing to *choose* to call (fixes F-B: the DS editor never chose to call Edit). The
+#: model emits SEARCH/REPLACE blocks; deterministic code (block_apply) applies them through a
+#: forgiving ladder (fixes F-C: whitespace/elision drift no longer bounces the edit).
+BLOCK_EDITOR_PROMPT = """\
+You are the EDITOR. An EDIT PLAN produced by the architect is in the first message. Turn that
+plan into edits and RETURN ONLY *SEARCH/REPLACE* blocks — no prose, no tool calls, no commentary.
+
+Every *SEARCH/REPLACE block* uses exactly this format (the filename alone on the line above it):
+
+path/to/file.py
+<<<<<<< SEARCH
+    exact existing lines to find
+=======
+    the replacement lines
+>>>>>>> REPLACE
+
+Rules:
+- The SEARCH section must match the existing file content (indentation, comments, docstrings).
+- Each block replaces the FIRST match; use several small blocks rather than one huge one.
+- Include enough surrounding lines in SEARCH to match uniquely.
+- To create a NEW file, use an empty SEARCH section and put the whole file in REPLACE.
+- Use a relative path (as named in the plan) on the line directly above each block.
+ONLY EVER RETURN CODE IN A *SEARCH/REPLACE BLOCK*."""
 
 
 # A finish counts as a plan the editor can act on if it names a file path (…/x.py) or is a
@@ -103,6 +131,7 @@ class ArchitectEditorFlow:
         inference_device=None,
         history_window_turns: int = HISTORY_WINDOW_TURNS,
         aci_mode: bool = False,
+        block_editor_enabled: bool = False,
     ) -> None:
         self._critic_enabled = critic_enabled
         self._inference_device = inference_device
@@ -110,6 +139,11 @@ class ArchitectEditorFlow:
         # Minion-tier ACI (windowed Read + edit-centric tools) applies to BOTH roles — the
         # architect reads to plan and the editor reads to apply, both on the weak local tier.
         self._aci_mode = aci_mode
+        # When True the EDITOR phase is ONE completion whose response IS SEARCH/REPLACE blocks,
+        # applied deterministically (block_apply) — no tool loop, nothing to *choose* to call
+        # (fixes F-B/F-C). Default off: the tool-loop editor stays the proven default until this
+        # path is proven (T-aider-port-editor-block-contract; ticket rollback = flip the flag).
+        self._block_editor_enabled = block_editor_enabled
 
     def run(
         self,
@@ -172,7 +206,24 @@ class ArchitectEditorFlow:
         log.info("architect_editor: crossing|step=handoff|ticket=%s|plan_chars=%d — handing plan to editor",
                  ticket_id, len(plan))
 
-        # 2. EDITOR — apply the plan with the full tool set; its result IS the attempt's result.
+        # 2. EDITOR — block-contract (one completion → deterministic apply) when enabled, else the
+        # proven tool-loop editor. Both return the attempt's LoopResult; the walk is untouched.
+        if self._block_editor_enabled:
+            return self._run_block_editor(
+                plan=plan,
+                system_prompt=system_prompt,
+                initial_message=initial_message,
+                task_class=task_class,
+                domain=domain,
+                ticket_id=ticket_id,
+                agent_id=agent_id,
+                escalation_hop=escalation_hop,
+                prior_attempt=prior_attempt,
+                foreground=foreground,
+                cwd=cwd,
+            )
+
+        # 2b. EDITOR (tool-loop, default) — apply the plan with the full tool set.
         editor = AgenticLoop(
             codec=NativeToolCodec(),
             critic_enabled=self._critic_enabled,
@@ -198,6 +249,108 @@ class ArchitectEditorFlow:
             foreground=foreground,
             cwd=cwd,
             role="editor",
+        )
+
+    def _run_block_editor(
+        self,
+        *,
+        plan: str,
+        system_prompt: str,
+        initial_message: str,
+        task_class: str,
+        domain: str,
+        ticket_id: str,
+        agent_id: str,
+        escalation_hop: int,
+        prior_attempt: str,
+        foreground: bool,
+        cwd: Path | None,
+    ) -> LoopResult:
+        """EDITOR as ONE completion → deterministic apply. Returns the attempt's LoopResult.
+
+        The completion's whole response IS the edits (SEARCH/REPLACE blocks) — there is no tool
+        loop and nothing to *choose* to call (fixes F-B), and block_apply's forgiving ladder
+        absorbs whitespace/elision drift (fixes F-C). Outcome mapping keeps the walk's contract:
+          - ≥1 block applied → LOOP_DONE (the attempt produced edits). The envelope is marked
+            UNVERIFIED: this path does NOT run tests — verdict-gating is P4/P6
+            (T-aider-port-reflection-repair-loop / verdict gate), out of this ticket's scope. A
+            DONE here only stops the escalation walk retrying; the aider device still closes
+            shipped-unproven, so nothing false-closes as proven.
+          - 0 applied (nothing parsed / every block failed) → LOOP_ESCALATE (hand to the walk).
+          - dispatch raised / no live source → LOOP_AVAILABILITY (re-select, never a paid bump).
+        """
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest
+
+        inference_device = self._inference_device or InferenceDevice()
+        editor_cwd = Path(cwd) if cwd is not None else Path.cwd()
+
+        editor_message = (
+            "## EDIT PLAN (produced by the architect — turn it into SEARCH/REPLACE blocks)\n"
+            f"{plan}\n\n"
+            "## TICKET (context)\n"
+            f"{initial_message}"
+        )
+        req = InferenceRequest(
+            messages=[{"role": "user", "content": editor_message}],
+            system=BLOCK_EDITOR_PROMPT + "\n\n" + system_prompt,
+            tools=None,  # the response IS the edits — no tool loop
+            task_class=task_class,
+            domain=domain,
+            ticket_id=ticket_id,
+            agent_id=agent_id,
+            max_tokens=4096,
+            temperature=0.0,
+            foreground=foreground,
+            escalation_hop=escalation_hop,
+            prior_attempt=prior_attempt,
+            role="editor",
+            turn=0,
+        )
+        # Interface crossing (editor dispatch): log it (AR-009).
+        log.info("architect_editor: crossing|step=block-editor-dispatch|ticket=%s — one completion",
+                 ticket_id)
+        try:
+            response = inference_device.dispatch(req)
+        except Exception as exc:
+            log.error("architect_editor: block-editor dispatch raised for %s: %s", ticket_id, exc)
+            return LoopResult(LOOP_AVAILABILITY, text=str(exc), turns=0)
+        if response.finish_reason == "error" or response.source_kind == "none":
+            log.warning("architect_editor: block-editor no live source (finish=%s kind=%s) for %s",
+                        response.finish_reason, response.source_kind, ticket_id)
+            return LoopResult(LOOP_AVAILABILITY, text=response.text or "", turns=0)
+
+        applied = apply_blocks_to_dir(response.text or "", editor_cwd)
+        # State change (edits applied to the working dir): log the outcome (AR-009).
+        log.info("architect_editor: crossing|step=block-editor-apply|ticket=%s|applied=%d|failed=%d"
+                 "%s — block-editor result", ticket_id, len(applied.applied), len(applied.failed),
+                 "|parse_error" if applied.parse_error else "")
+
+        cost = getattr(response, "cost_estimate", 0.0)
+        in_tok = getattr(response, "input_tokens", 0)
+        out_tok = getattr(response, "output_tokens", 0)
+        if applied.any_applied:
+            files = ", ".join(applied.applied)
+            return LoopResult(
+                LOOP_DONE,
+                text=response.text or "",
+                envelope={
+                    "status": "done",
+                    "result": f"applied {len(applied.applied)} edit(s) to: {files} "
+                              f"(UNVERIFIED — P6 gates on tests)",
+                    "error_class": None,
+                    "error_number": None,
+                },
+                turns=1, input_tokens=in_tok, output_tokens=out_tok, cost_usd=cost,
+            )
+        # Nothing applied — an honest capability signal for the walk. Name why.
+        reason = applied.parse_error or (
+            "; ".join(f"{p}: {r}" for p, r in applied.failed) or "no SEARCH/REPLACE blocks emitted"
+        )
+        return LoopResult(
+            LOOP_ESCALATE, text=(response.text or "") + "\n\n[block-editor: 0 edits applied — "
+            + reason + "]",
+            turns=1, input_tokens=in_tok, output_tokens=out_tok, cost_usd=cost,
         )
 
     @staticmethod
