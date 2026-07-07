@@ -19,14 +19,14 @@
   },
   "body": {
     "id": "T-aider-port-reflection-repair-loop",
-    "title": "[sprint] Port aider reflection loop + rich repair errors (P4)",
+    "title": "[in_progress] Port aider reflection loop + rich repair errors (P4)",
     "size": "M",
     "tags": [
       "CompiledInference",
       "Inference",
       "AiderPort"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.5,
     "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
     "gate": null,

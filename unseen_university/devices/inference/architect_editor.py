@@ -43,9 +43,34 @@ from unseen_university.devices.inference.agentic_loop import (
     LoopResult,
     NativeToolCodec,
 )
-from unseen_university.devices.inference.block_apply import apply_blocks_to_dir
+from unseen_university.devices.inference.block_apply import (
+    apply_blocks_to_dir,
+    build_repair_message,
+    failure_class,
+)
 
 log = logging.getLogger(__name__)
+
+
+def _log_repair_pair(ticket_id: str, turn: int, failure_class_name: str, applied: int) -> None:
+    """Log a (failure-class → successful-repair) pair to the io_corpus with role/turn labels.
+
+    Recurring repair shapes are future nexus rows (T-aider-port-reflection-repair-loop). Fail-soft:
+    corpus write must never break the editor loop.
+    """
+    try:
+        from unseen_university.devices.inference.io_corpus import capture
+        capture({
+            "kind": "editor_repair_pair",
+            "ticket_id": ticket_id,
+            "role": "editor",
+            "turn": turn,
+            "failure_class": failure_class_name,
+            "outcome": "repaired",
+            "applied": applied,
+        })
+    except Exception as exc:  # noqa: BLE001 — corpus write is best-effort
+        log.warning("architect_editor: repair-pair corpus write failed for %s: %s", ticket_id, exc)
 
 #: The architect may inspect the repo but MUST NOT edit — so it is offered read-only tools.
 ARCHITECT_TOOLS = ["Read", "Bash"]
@@ -251,6 +276,11 @@ class ArchitectEditorFlow:
             role="editor",
         )
 
+    #: reflection cap — the loop's cost meter (T-aider-port-reflection-repair-loop). Do NOT raise:
+    #: each reflection is a paid completion, and an unbounded repair loop is exactly the
+    #: budget-exhaustion failure (F-D). 3 = one initial attempt + up to 3 file-grounded repairs.
+    MAX_REFLECTIONS = 3
+
     def _run_block_editor(
         self,
         *,
@@ -266,18 +296,20 @@ class ArchitectEditorFlow:
         foreground: bool,
         cwd: Path | None,
     ) -> LoopResult:
-        """EDITOR as ONE completion → deterministic apply. Returns the attempt's LoopResult.
+        """EDITOR as a bounded reflection loop of block-contract completions → deterministic apply.
 
-        The completion's whole response IS the edits (SEARCH/REPLACE blocks) — there is no tool
-        loop and nothing to *choose* to call (fixes F-B), and block_apply's forgiving ladder
-        absorbs whitespace/elision drift (fixes F-C). Outcome mapping keeps the walk's contract:
-          - ≥1 block applied → LOOP_DONE (the attempt produced edits). The envelope is marked
-            UNVERIFIED: this path does NOT run tests — verdict-gating is P4/P6
-            (T-aider-port-reflection-repair-loop / verdict gate), out of this ticket's scope. A
-            DONE here only stops the escalation walk retrying; the aider device still closes
-            shipped-unproven, so nothing false-closes as proven.
-          - 0 applied (nothing parsed / every block failed) → LOOP_ESCALATE (hand to the walk).
-          - dispatch raised / no live source → LOOP_AVAILABILITY (re-select, never a paid bump).
+        The completion's whole response IS the edits (SEARCH/REPLACE blocks) — nothing to *choose*
+        to call (fixes F-B), and block_apply's forgiving ladder absorbs whitespace/elision drift
+        (fixes F-C). On a failed apply we don't die: we build a RICH, file-grounded repair message
+        (the actual 'did you mean' lines, a 'REPLACE already present' note, a partial-success
+        ledger) and reflect — up to MAX_REFLECTIONS times (F-C/F-E). Every (failure-class →
+        successful-repair) pair is logged to the io_corpus (recurring repair shapes → future nexus
+        rows). Outcome mapping keeps the walk's contract:
+          - ≥1 block applied across the loop → LOOP_DONE. The envelope is marked UNVERIFIED: this
+            path does NOT run tests — verdict-gating is P6. A DONE here only stops the walk
+            retrying; the aider device still closes shipped-unproven, so nothing false-closes.
+          - 0 applied (nothing parsed / every block failed after repairs) → LOOP_ESCALATE.
+          - dispatch raised / no live source with nothing yet applied → LOOP_AVAILABILITY.
         """
         from unseen_university.devices.inference.device import InferenceDevice
         from unseen_university.devices.inference.shim import InferenceRequest
@@ -285,71 +317,100 @@ class ArchitectEditorFlow:
         inference_device = self._inference_device or InferenceDevice()
         editor_cwd = Path(cwd) if cwd is not None else Path.cwd()
 
-        editor_message = (
-            "## EDIT PLAN (produced by the architect — turn it into SEARCH/REPLACE blocks)\n"
-            f"{plan}\n\n"
-            "## TICKET (context)\n"
-            f"{initial_message}"
-        )
-        req = InferenceRequest(
-            messages=[{"role": "user", "content": editor_message}],
-            system=BLOCK_EDITOR_PROMPT + "\n\n" + system_prompt,
-            tools=None,  # the response IS the edits — no tool loop
-            task_class=task_class,
-            domain=domain,
-            ticket_id=ticket_id,
-            agent_id=agent_id,
-            max_tokens=4096,
-            temperature=0.0,
-            foreground=foreground,
-            escalation_hop=escalation_hop,
-            prior_attempt=prior_attempt,
-            role="editor",
-            turn=0,
-        )
-        # Interface crossing (editor dispatch): log it (AR-009).
-        log.info("architect_editor: crossing|step=block-editor-dispatch|ticket=%s — one completion",
-                 ticket_id)
-        try:
-            response = inference_device.dispatch(req)
-        except Exception as exc:
-            log.error("architect_editor: block-editor dispatch raised for %s: %s", ticket_id, exc)
-            return LoopResult(LOOP_AVAILABILITY, text=str(exc), turns=0)
-        if response.finish_reason == "error" or response.source_kind == "none":
-            log.warning("architect_editor: block-editor no live source (finish=%s kind=%s) for %s",
-                        response.finish_reason, response.source_kind, ticket_id)
-            return LoopResult(LOOP_AVAILABILITY, text=response.text or "", turns=0)
+        messages = [{
+            "role": "user",
+            "content": (
+                "## EDIT PLAN (produced by the architect — turn it into SEARCH/REPLACE blocks)\n"
+                f"{plan}\n\n## TICKET (context)\n{initial_message}"
+            ),
+        }]
 
-        applied = apply_blocks_to_dir(response.text or "", editor_cwd)
-        # State change (edits applied to the working dir): log the outcome (AR-009).
-        log.info("architect_editor: crossing|step=block-editor-apply|ticket=%s|applied=%d|failed=%d"
-                 "%s — block-editor result", ticket_id, len(applied.applied), len(applied.failed),
-                 "|parse_error" if applied.parse_error else "")
+        applied_total: list[str] = []
+        in_tok = out_tok = 0
+        cost = 0.0
+        last_text = ""
+        last_reason = "no SEARCH/REPLACE blocks emitted"
+        pending_failure: str | None = None  # failure class awaiting a repair attempt
 
-        cost = getattr(response, "cost_estimate", 0.0)
-        in_tok = getattr(response, "input_tokens", 0)
-        out_tok = getattr(response, "output_tokens", 0)
-        if applied.any_applied:
-            files = ", ".join(applied.applied)
+        for turn in range(self.MAX_REFLECTIONS + 1):
+            req = InferenceRequest(
+                messages=messages,
+                system=BLOCK_EDITOR_PROMPT + "\n\n" + system_prompt,
+                tools=None,  # the response IS the edits — no tool loop
+                task_class=task_class,
+                domain=domain,
+                ticket_id=ticket_id,
+                agent_id=agent_id,
+                max_tokens=4096,
+                temperature=0.0,
+                foreground=foreground,
+                escalation_hop=escalation_hop if turn == 0 else 0,
+                prior_attempt=prior_attempt if turn == 0 else "",
+                role="editor",
+                turn=turn,
+            )
+            log.info("architect_editor: crossing|step=block-editor-dispatch|ticket=%s|turn=%d",
+                     ticket_id, turn)
+            try:
+                response = inference_device.dispatch(req)
+            except Exception as exc:
+                log.error("architect_editor: block-editor dispatch raised for %s turn %d: %s",
+                          ticket_id, turn, exc)
+                if applied_total:
+                    break  # keep the edits already on disk; report them as the attempt's result
+                return LoopResult(LOOP_AVAILABILITY, text=str(exc), turns=turn)
+            if response.finish_reason == "error" or response.source_kind == "none":
+                log.warning("architect_editor: block-editor no live source (finish=%s kind=%s) %s",
+                            response.finish_reason, response.source_kind, ticket_id)
+                if applied_total:
+                    break
+                return LoopResult(LOOP_AVAILABILITY, text=response.text or "", turns=turn)
+
+            in_tok += getattr(response, "input_tokens", 0)
+            out_tok += getattr(response, "output_tokens", 0)
+            cost += getattr(response, "cost_estimate", 0.0)
+            last_text = response.text or ""
+
+            result = apply_blocks_to_dir(last_text, editor_cwd)
+            log.info("architect_editor: crossing|step=block-editor-apply|ticket=%s|turn=%d|"
+                     "applied=%d|failed=%d%s", ticket_id, turn, len(result.applied),
+                     len(result.failed), "|parse_error" if result.parse_error else "")
+
+            # A prior round's failure that THIS round applied over = a successful repair → log it.
+            if pending_failure is not None and result.applied:
+                _log_repair_pair(ticket_id, turn, pending_failure, len(result.applied))
+            applied_total.extend(result.applied)
+
+            if result.clean:
+                break
+
+            last_reason = result.parse_error or "; ".join(p for p, *_ in result.failed)
+            pending_failure = failure_class(result, editor_cwd)
+            repair = build_repair_message(result, editor_cwd)
+            if turn == self.MAX_REFLECTIONS or not repair:
+                break
+            messages = messages + [
+                {"role": "assistant", "content": last_text},
+                {"role": "user", "content": repair},
+            ]
+
+        if applied_total:
+            files = ", ".join(dict.fromkeys(applied_total))  # de-dup, preserve order
             return LoopResult(
                 LOOP_DONE,
-                text=response.text or "",
+                text=last_text,
                 envelope={
                     "status": "done",
-                    "result": f"applied {len(applied.applied)} edit(s) to: {files} "
+                    "result": f"applied {len(applied_total)} edit(s) to: {files} "
                               f"(UNVERIFIED — P6 gates on tests)",
                     "error_class": None,
                     "error_number": None,
                 },
                 turns=1, input_tokens=in_tok, output_tokens=out_tok, cost_usd=cost,
             )
-        # Nothing applied — an honest capability signal for the walk. Name why.
-        reason = applied.parse_error or (
-            "; ".join(f"{p}: {r}" for p, r in applied.failed) or "no SEARCH/REPLACE blocks emitted"
-        )
         return LoopResult(
-            LOOP_ESCALATE, text=(response.text or "") + "\n\n[block-editor: 0 edits applied — "
-            + reason + "]",
+            LOOP_ESCALATE,
+            text=last_text + f"\n\n[block-editor: 0 edits applied after reflection — {last_reason}]",
             turns=1, input_tokens=in_tok, output_tokens=out_tok, cost_usd=cost,
         )
 

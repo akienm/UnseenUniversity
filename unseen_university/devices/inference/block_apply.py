@@ -414,12 +414,17 @@ def find_original_update_blocks(content, fence=DEFAULT_FENCE, valid_fnames=None)
 class BlockApplyResult:
     """Outcome of applying a completion's SEARCH/REPLACE blocks to a working dir."""
     applied: list = field(default_factory=list)      # relative paths that were written
-    failed: list = field(default_factory=list)       # (path, reason) for blocks that didn't match
+    failed: list = field(default_factory=list)       # (path, original, updated) blocks that didn't match
     parse_error: str = ""                             # non-empty if the completion didn't parse
 
     @property
     def any_applied(self) -> bool:
         return bool(self.applied)
+
+    @property
+    def clean(self) -> bool:
+        """True when every block applied — no failures and no parse error (the DONE condition)."""
+        return not self.failed and not self.parse_error
 
 
 def apply_blocks_to_dir(response_text: str, cwd: Path, fence=DEFAULT_FENCE) -> BlockApplyResult:
@@ -448,7 +453,7 @@ def apply_blocks_to_dir(response_text: str, cwd: Path, fence=DEFAULT_FENCE) -> B
         new_content = do_replace(str(full_path), content, original, updated, fence)
 
         if new_content is None:
-            result.failed.append((path, "SEARCH block did not match any span in the file"))
+            result.failed.append((path, original, updated))
             continue
 
         full_path.parent.mkdir(parents=True, exist_ok=True)
@@ -456,3 +461,79 @@ def apply_blocks_to_dir(response_text: str, cwd: Path, fence=DEFAULT_FENCE) -> B
         result.applied.append(path)
 
     return result
+
+
+# ── Rich, file-grounded repair errors (port of aider apply_edits error construction) ──────────
+
+def find_similar_lines(search: str, content: str, threshold: float = 0.6) -> str:
+    """Find the run of lines in `content` most similar to `search` (the 'did you mean' hint).
+
+    Port of aider editblock_coder.find_similar_lines: slide a window the size of `search` over
+    `content`, keep the best SequenceMatcher ratio; return that window (± a few lines of context)
+    when it clears `threshold`, else ''. This grounds a repair in the ACTUAL file, not a generic
+    'no match' string — the whole point of the reflection loop (F-C/F-E).
+    """
+    from difflib import SequenceMatcher
+
+    search_lines = search.splitlines()
+    content_lines = content.splitlines()
+    if not search_lines or not content_lines:
+        return ""
+
+    best_ratio = 0.0
+    best_match = None
+    best_i = 0
+    for i in range(len(content_lines) - len(search_lines) + 1):
+        chunk = content_lines[i : i + len(search_lines)]
+        ratio = SequenceMatcher(None, search_lines, chunk).ratio()
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_match = chunk
+            best_i = i
+
+    if best_ratio < threshold or best_match is None:
+        return ""
+
+    if best_match[0] == search_lines[0] and best_match[-1] == search_lines[-1]:
+        return "\n".join(best_match)
+
+    n = 5
+    start = max(0, best_i - n)
+    end = min(len(content_lines), best_i + len(search_lines) + n)
+    return "\n".join(content_lines[start:end])
+
+
+def failure_class(result: BlockApplyResult, cwd: Path) -> str:
+    """A coarse class for the FIRST failure — the label the corpus keys repair pairs by.
+
+    'parse_error' | 'replace_already_present' | 'no_exact_match' | 'clean'. Recurring
+    (class → successful-repair) shapes are future nexus rows (per the ticket).
+    """
+    if result.parse_error:
+        return "parse_error"
+    if not result.failed:
+        return "clean"
+    path, _original, updated = result.failed[0]
+    full = Path(cwd) / path
+    if updated.strip() and full.exists() and updated in full.read_text(encoding="utf-8"):
+        return "replace_already_present"
+    return "no_exact_match"
+
+
+def build_repair_message(result: BlockApplyResult, cwd: Path, fence=DEFAULT_FENCE) -> str:
+    """Build a rich, file-grounded repair message from a failed apply, or '' if nothing to repair.
+
+    Port of aider editblock_coder.apply_edits error construction: per-failed-block SEARCH/REPLACE
+    echo, 'did you mean' similar lines pulled from the ACTUAL file, a 'REPLACE already present'
+    note, and a partial-success ledger so the model does NOT re-send the blocks that applied.
+    """
+    # STUB (scaffold commit): a generic non-empty message so the reflection loop still retries;
+    # the file-grounded 'did you mean' / 'already present' / partial-ledger construction lands in
+    # the next commit.
+    if result.clean:
+        return ""
+    if result.parse_error:
+        return "The SEARCH/REPLACE blocks were malformed — resend well-formed blocks."
+    n = len(result.failed)
+    blocks = "block" if n == 1 else "blocks"
+    return f"# {n} SEARCH/REPLACE {blocks} failed to match! Fix the SEARCH section and resend."
