@@ -61,7 +61,19 @@ def emit_merge_proof(ticket_id: str, test_node: str, *, thing: str, intention: s
     {proof_id, valid, rejections}; valid=True means a re-close (no --shipped-unproven)
     will now pass the gate and set proven=True.
     """
-    return {"proof_id": None, "valid": False, "rejections": ["stub — not implemented"]}  # scaffold; real impl next commit
+    repo_root = repo_root or _toplevel()
+    proof_emitter.prove(
+        thing, intention, test_node, ticket=ticket_id, why=why,
+        repo_root=repo_root, parent_ref=parent_ref,
+    )
+    # Source the id from the stored, gate-validated proof envelope (not the prove()
+    # summary) — it's the proof the close-gate will actually bind to.
+    proof, rejections = proof_store.best_valid_proof(ticket_id, repo_root)
+    return {
+        "proof_id": (proof or {}).get("id"),
+        "valid": proof is not None,
+        "rejections": rejections,
+    }
 
 
 def main() -> None:
