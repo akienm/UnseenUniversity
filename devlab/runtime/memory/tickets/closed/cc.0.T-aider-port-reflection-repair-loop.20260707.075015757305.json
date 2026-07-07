@@ -19,14 +19,14 @@
   },
   "body": {
     "id": "T-aider-port-reflection-repair-loop",
-    "title": "[in_progress] Port aider reflection loop + rich repair errors (P4)",
+    "title": "Port aider reflection loop + rich repair errors (P4)",
     "size": "M",
     "tags": [
       "CompiledInference",
       "Inference",
       "AiderPort"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.5,
     "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
     "gate": null,
@@ -34,9 +34,9 @@
     "created_at": "2026-07-07T13:49:51.785549+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Bounded reflection repair loop (P4): cap=3 around the block-contract editor; on failed apply builds a RICH file-grounded repair (find_similar_lines did-you-mean from the actual file + REPLACE-already-present note + partial-success ledger, port of aider apply_edits error construction) and reflects. Enriched BlockApplyResult.failed to carry (path,original,updated). Logs (failure-class->successful-repair) pairs to io_corpus with role/turn labels. Proven red->green: a failed apply yields a message quoting the ACTUAL file lines, not a generic string; e2e tests cover second-attempt repair, cap enforcement, and corpus logging.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-07T16:33:41.445874+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T13:49:51.785596+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "538d377e-02c4-444e-a63a-5ea119b6e627"
+    "inferred_intention_id": "538d377e-02c4-444e-a63a-5ea119b6e627",
+    "proven": true,
+    "proof_id": "cc.0.file-grounded-repair-message-for-a-faile.T-aider-port-reflection-repair-loop.20260707.103325908708",
+    "proof_commit": "44b6abac016bc2a0b90a4778f6b5425cdf2ff123",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
