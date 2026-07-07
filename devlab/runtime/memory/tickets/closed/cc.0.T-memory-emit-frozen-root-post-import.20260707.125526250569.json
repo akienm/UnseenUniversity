@@ -17,7 +17,7 @@
   },
   "body": {
     "id": "T-memory-emit-frozen-root-post-import",
-    "title": "[escalated] memory_emit.MEMORY_ROOT frozen at import — UU_MEMORY_ROOT redirect ignored after import",
+    "title": "memory_emit.MEMORY_ROOT frozen at import — UU_MEMORY_ROOT redirect ignored after import",
     "size": "S",
     "tags": [
       "Bug",
@@ -25,14 +25,14 @@
     ],
     "description": "Make devlab/claudecode/memory_emit.py honor UU_MEMORY_ROOT set at ANY time, not only at import. Bug: MEMORY_ROOT is a module constant captured at import (memory_emit.py:38) and used at line ~154 (out_dir), so a later env change is ignored while every other reader (unseen_university.memory_root, proof_store, ticket_store) resolves the root LIVE — silently splitting the store.\n\n**Fix:** resolve the root at CALL time — replace the frozen MEMORY_ROOT usage at line ~154 with a live lookup (a helper reading os.environ['UU_MEMORY_ROOT'] each call, mirroring unseen_university.memory_root.memory_root()); keep the same default fallback. Do NOT edit tests.\n\n**Affected files:** devlab/claudecode/memory_emit.py\n\n**Test plan:** make tests/test_memory_emit_frozen_root.py pass (it is RED today: sets UU_MEMORY_ROOT after import and asserts emit() writes to the new root). red->green on tests/test_memory_emit_frozen_root.py\n\n**Completion criteria:** tests/test_memory_emit_frozen_root.py green; existing behavior (default root when env unset) unchanged.\n\n**intention:** I intend that memory_emit honors UU_MEMORY_ROOT set at any time.",
     "priority": 0.2,
-    "status": "escalated",
+    "status": "closed",
     "worker": "aider",
     "role": "builder",
     "created_at": "2026-07-07T18:55:18.689037+00:00",
     "created_by": null,
-    "result": null,
+    "result": "Fixed by CC after aider escalated 0-edits even WITH the discriminating test (conceptual import-time->call-time refactor beyond qwen@30b). memory_emit.emit() now resolves the store root live via _memory_root() at call time (MEMORY_ROOT kept for back-compat), so UU_MEMORY_ROOT set at any time is honored — no more frozen-root store split. Proven red->green (62874ade->green) on the test CC wrote.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-07T23:30:02.335406+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -43,6 +43,13 @@
     "scraps_validated": "2026-07-07T18:55:18.735386+00:00",
     "inferred_intention": "unknown",
     "inferred_intention_id": "73bc568d-30c9-4c47-b0df-7679dadde0bc",
-    "updated_at": "2026-07-07T23:27:01.581633+00:00"
+    "updated_at": "2026-07-07T23:27:01.581633+00:00",
+    "proven": true,
+    "proof_id": "cc.0.memory-emit-honors-uu-memory-root-set-af.T-memory-emit-frozen-root-post-import.20260707.172952256718",
+    "proof_commit": "d9b4c2293b3d6097b8494474e2075ad53df31352",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
