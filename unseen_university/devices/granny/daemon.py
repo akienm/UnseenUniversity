@@ -562,6 +562,28 @@ def _process_handshake_replies(imap, granny_mailbox: str) -> int:
             "dispatch_timeout": "escalated",
         }[kind]
 
+        # Guard against a LATE / out-of-order handshake reply REGRESSING a ticket the
+        # builder already advanced. A fast builder can escalate or close (e.g. aider
+        # producing 0 edits) BEFORE Granny processes its 'dispatch_started' reply a
+        # cycle later; applying that stale 'started' would overwrite 'escalated' back
+        # to 'in_progress', leaving the worker permanently _worker_busy and starving
+        # the whole drain (2026-07-07 aider drain — one unbuildable ticket killed it).
+        # Only apply a handshake transition FROM its expected pre-state.
+        from unseen_university import ticket_store as _ts
+        _allowed_from = {
+            "dispatch_ack": {"dispatched"},
+            "dispatch_started": {"dispatched", "acked"},
+            "dispatch_timeout": {"dispatched", "acked", "in_progress"},
+        }[kind]
+        _cur = (_ts.read(tid) or {}).get("status")
+        if _cur is not None and _cur not in _allowed_from:
+            log.info(
+                "Granny: handshake_ignored|kind=%s|ticket=%s|current=%s|reason=no_regress",
+                kind, tid, _cur,
+            )
+            count += 1
+            continue
+
         ok = _setstatus_direct(tid, new_status)
         if not ok:
             log.warning(
