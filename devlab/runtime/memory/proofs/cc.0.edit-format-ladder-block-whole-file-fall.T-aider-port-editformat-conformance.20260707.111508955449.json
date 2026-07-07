@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.edit-format-ladder-block-whole-file-fall.T-aider-port-editformat-conformance.20260707.111508955449",
+  "emitter": "cc.0",
+  "namespace": [
+    "edit-format-ladder-block-whole-file-fall",
+    "T-aider-port-editformat-conformance"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-07T11:15:08.955449",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-port-editformat-conformance"
+    ],
+    "commits": [
+      "f859151afb2efbd43029d8700075251e0fb39125"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "edit-format ladder (block -> whole-file fallback)",
+    "intention": "a model that fails the block dialect falls back to whole-file and succeeds on the same intent",
+    "test": "tests/inference/test_edit_format_ladder.py::test_block_fails_wholefile_ladder_succeeds",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_edit_format_ladder.py::test_block_fails_wholefile_ladder_succeeds",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "tmp_path = PosixPath('/tmp/pytest-of-akien/pytest-496/test_block_fails_wholefile_lad0')\n\n    def test_block_fails_wholefile_ladder_succeeds(tmp_path):\n        (tmp_path / \"target.py\").write_text(\"value = 1\\n\")\n        result = ArchitectEditorFlow(block_editor_enabled=True, inference_device=_LadderDev()).run(\n            system_prompt=\"\", initial_message=\"set value to 42 in target.py\",\n            ticket_id=\"T-ladder\", cwd=tmp_path,\n        )\n>       assert \"value = 42\" in (tmp_path / \"target.py\").read_text(), (\n            \"block format applied nothing; the whole-file ladder must fall back and write the file\"\n        )\nE       AssertionError: block format applied nothing; the whole-file ladder must fall back and write the file\nE       assert 'value = 42' in 'value = 1\\n'\nE        +  where 'value = 1\\n' = read_text()\nE        +    where read_text = (PosixPath('/tmp/pytest-of-akien/pytest-496/test_block_fails_wholefile_lad0') / 'target.py').read_text\n\ntests/inference/test_edit_format_ladder.py:50: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_edit_format_ladder.py::test_block_fails_wholefile_ladder_succeeds\n1 failed in 0.16s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "f859151afb2efbd43029d8700075251e0fb39125",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-aider-port-editformat-conformance.20260707.075016298341.json",
+      "tests/inference/test_block_repair.py",
+      "tests/inference/test_edit_format_registry.py",
+      "unseen_university/devices/inference/architect_editor.py",
+      "unseen_university/devices/inference/block_apply.py",
+      "unseen_university/devices/inference/edit_format.py",
+      "unseen_university/devices/inference/models_registry.py"
+    ],
+    "ticket": "T-aider-port-editformat-conformance",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
