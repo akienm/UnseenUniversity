@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-aider-port-editor-block-contract.20260707.075015447304",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-port-editor-block-contract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T13:50:15.447304+00:00",
+  "links": {
+    "decisions": [
+      "D-aider-port-to-nexus-writepath-2026-07-07"
+    ],
+    "tickets": [
+      "T-aider-port-editor-block-contract"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-port-editor-block-contract",
+    "title": "[sprint] Port aider block-contract editor + flexible-apply ladder (P2+P3)",
+    "size": "L",
+    "tags": [
+      "CompiledInference",
+      "Inference",
+      "AiderPort"
+    ],
+    "status": "sprint",
+    "priority": 0.65,
+    "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
+    "description": "**Problem:** our DS editor died by never *choosing* to call Edit (F-B: 0 Write/Edit across 149 tool calls) and by rejecting any non-exact-unique edit with a bare error (F-C). aider avoids both: the editor emits ALL edits in ONE completion as SEARCH/REPLACE blocks, and deterministic code applies them through a forgiving ladder. This is the confirmed bottleneck (07-05 funnel) and Fable's #2-to-sort.\n\n**Proposed shape:** a new editor path in `ArchitectEditorFlow`, behind a flag (mirror the existing `architect_editor_enabled`-style gate), that: (1) dispatches ONE completion whose response IS the edits (SEARCH/REPLACE block contract, port `editblock_coder.py::find_original_update_blocks` + the few-shot `example_messages` from `editblock_prompts.py`); (2) applies via a flexible ladder ported near-verbatim from aider `search_replace.py` — perfect -> whitespace-outdent-tolerant (`replace_part_with_missing_leading_whitespace`) -> `...`-elision (`try_dotdotdots`), plus `strip_quoted_wrapping` / `strip_filename` / difflib fuzzy filename resolution. Keep the current tool-loop editor as the default until proven.\n\n**Affected files:** unseen_university/devices/inference/architect_editor.py (new flag-gated editor path); new pure-function apply module (port of search_replace.py). MEDIUM+ inertia (inference design center) — additive path behind a flag, LoopResult contract unchanged.\n**Design rules:** flexible layers are APPLY-side ranking/forgiveness ONLY, never identity (aider itself disabled edit-distance replacement after it burned them — respect that scar); LoopResult/walk contract unchanged; feature-flag gated; ⛔ NO SQLITE.\n**Scope boundary:** the block-contract editor + flexible apply, behind a flag. NOT the reflection loop (P4, separate), NOT the format ladder (P8, separate).\n**Test plan:** red->green — (a) a single completion carrying N SEARCH/REPLACE blocks applies all N to a fixture; (b) a whitespace-mangled block still applies via the ladder; (c) a genuinely non-matching block fails cleanly (no silent skip). The corpus multi-file task that produced 0 edits produces edits under the flag.\n**Completion criteria:** flag-gated block-contract editor applies multi-edit single completions through the flexible ladder; the 3 tests above pass; a previously-0-edit corpus task now edits.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-07T13:49:40.573537+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T13:49:40.618867+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "28f39139-ebd6-4868-89c5-1d87f4b1db71"
+  }
+}

@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-fable-northstar-port-and-compile-brief",
-    "title": "[sprint] Fable last-day north-star session — DS port-list + compile-vs-loop split for the nexus (anchored on the proven aider builder)",
+    "title": "Fable last-day north-star session — DS port-list + compile-vs-loop split for the nexus (anchored on the proven aider builder)",
     "size": "S",
     "tags": [
       "Fable",
@@ -31,19 +31,25 @@
     "decision_id": "D-compiled-inference-proof-program-2026-07-05",
     "gate": null,
     "priority": 0.8,
-    "status": "sprint",
+    "status": "closed",
     "worker": "master",
     "intention": "I intend that Fable's last-day altitude compiles the proven aider builder's competence into a concrete DS port-list AND a nexus compile-vs-loop split — turning a working exemplar into the compiled-inference roadmap, so graph-trees eventually absorb the competence and we don't need aider forever. Serves the graph-trees-self-aware telos and the self-improving founding property.",
     "created_at": "2026-07-06T22:09:52.326528+00:00",
     "created_by": null,
-    "result": null,
+    "result": "Fable last-day consult delivered: note fable-port-compile-synthesis-2026-07-07 (8-item PORT-LIST + COMPILE-vs-LOOP split). /sorted into D-aider-port-to-nexus-writepath-2026-07-07 = 7 phased build tickets + consequence, and re-scoped T-nexus-write-path-ds-architect-loop up to plan-as-IR.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-07T13:51:13.430315+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-06T22:09:52.371999+00:00"
+    "scraps_validated": "2026-07-06T22:09:52.371999+00:00",
+    "proven": false,
+    "unproven_reason": "design/consult ticket — no red form; observable outcome is the /sorted build tickets it spawned (now filed under D-aider-port-to-nexus-writepath-2026-07-07)",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

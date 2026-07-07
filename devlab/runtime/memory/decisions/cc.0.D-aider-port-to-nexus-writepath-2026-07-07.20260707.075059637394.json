@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.D-aider-port-to-nexus-writepath-2026-07-07.20260707.075059637394",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-aider-port-to-nexus-writepath-2026-07-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-07T07:50:59.637394",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
+    "title": "Port aider's deterministic loop into DS, phased to assemble the nexus write-path",
+    "status": "open",
+    "date": "2026-07-07",
+    "spawned_tickets": [
+      "T-aider-port-editor-block-contract",
+      "T-aider-port-graph-orientation-packet",
+      "T-aider-port-reflection-repair-loop",
+      "T-aider-port-file-mention-handshake",
+      "T-aider-port-verdict-gate",
+      "T-aider-port-commit-per-edit",
+      "T-aider-port-editformat-conformance",
+      "T-consequence-aider-port-to-nexus-writepath"
+    ],
+    "text": "# D-aider-port-to-nexus-writepath-2026-07-07\n**title:** Port aider's deterministic loop into DS, phased so each port assembles a column of the nexus write-path\n**date:** 2026-07-07\n**status:** open\n**spawned_tickets:** T-aider-port-editor-block-contract, T-aider-port-graph-orientation-packet, T-aider-port-reflection-repair-loop, T-aider-port-file-mention-handshake, T-aider-port-verdict-gate, T-aider-port-commit-per-edit, T-aider-port-editformat-conformance, T-consequence-aider-port-to-nexus-writepath\n\n## Decision narrative\nFrom Fable's last-day north-star synthesis (note fable-port-compile-synthesis-2026-07-07): the decisive gap between aider (our proven builder) and our DS loop is WHERE the work happens — aider does orientation, editing, and repair OUTSIDE the model (deterministic repo-map, single-completion block contract, forgiving applier, rich repair errors); our loop asks a weak model to DRIVE all of it and dies (0 edits / 149 tool calls). The strategic reframe: each deterministic aider piece is a pre-compiled column of the nexus row — porting aider IS building the plan-as-IR write-path. P1 compiles the FINGERPRINT (graph-ranked orientation packet), P2+P3 compile the PLAN into a replayable IR with a built-in falsifier (block contract + flexible apply), P6+P7 compile the VERDICT (lint/test gate + commit-per-edit). Filed 7 phased ports + a consequence check; ordered by Fable's leverage ranking.\n\nThis decision EXTENDS (does not re-spawn) T-nexus-write-path-ds-architect-loop, which stays owned by D-compiled-inference-proof-program-2026-07-05 and was re-scoped up to the full fingerprint->plan->verdict row on 2026-07-07 — it is the write-path these ports feed, not a member of this decision's spawned_tickets.\n\nNote: these ports are unseen_university-PACKAGE work, so they are CC/foreground until T-aider-real-uu-ticket-proof (clone-test isolation) lands — the aider builder cannot yet safely self-close UU-package tickets (editable-finder trap).\n\n## Hypothesis\nAfter these ports ship, the DS architect/editor loop produces NON-ZERO edits on the multi-file corpus tasks where it produced 0, AND the nexus write-path stores fingerprint->plan->verdict rows that yield the first warm plan-hit on replay.\n\n## Measurement Signal\nDS-loop edit-rate on the corpus tasks goes 0 -> >0 (funnel/replay measurement); the nexus table has verdict-stamped rows (count > 0); the first warm plan-hit is observable via T-nexus-replay-experiment.\n\n## Intention\nI intend that coding competence compiles into the graph-tree nexus — the expensive LLM resolver is needed only for genuinely novel packets, with orientation/plan/verdict served warm from a deterministic write-path."
+  }
+}

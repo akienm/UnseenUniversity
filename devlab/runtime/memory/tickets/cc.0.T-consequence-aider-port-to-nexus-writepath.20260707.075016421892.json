@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-aider-port-to-nexus-writepath.20260707.075016421892",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-aider-port-to-nexus-writepath"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T13:50:16.421892+00:00",
+  "links": {
+    "decisions": [
+      "D-aider-port-to-nexus-writepath-2026-07-07"
+    ],
+    "tickets": [
+      "T-consequence-aider-port-to-nexus-writepath"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-aider-port-to-nexus-writepath",
+    "title": "[sprint] Consequence check: aider port -> nexus write-path",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
+    "gate": "2026-07-21",
+    "description": "**What changed:** ported aider's deterministic loop (block-contract editor + flexible apply, graph-ranked orientation packet, reflection repair, verdict gate, commit-per-edit, format ladder) into the DS loop, phased so each port assembles a column of the nexus write-path.\n\n**Predicted unintended effects:** (1) P2/P4/P6/P8 all mutate the SAME editor path in architect_editor.py — regression of the EXISTING tool-loop editor is the top risk; (2) flag-leak — the new block-contract editor path activating when its flag is OFF (or vice-versa); (3) the graph-orientation packet (P1) replacing build_signature_map could regress orientation for tickets keyword-Jaccard handled, or blow the token budget on UU's 613-file scale (repo-map unproven above small repos); (4) a NEW sqlite dependency sneaking in via aider's diskcache (repomap) or the conformance store — must stay Postgres/flat-file; (5) nexus plan rows cached WITHOUT a verdict (P6 lands after P2) = silent-wrongness window until the verdict gate ships.\n\n**Signals to watch:** existing agentic_loop / architect_editor tests still green with the flag OFF; audit_check_sqlite_imports stays clean; DS-loop edit-rate on the corpus 0->>0 (the intended effect, not a regression); token-budget of the P1 packet on a real UU ticket; first nexus rows carry a verdict column.\n**Gate condition:** Check by 2026-07-21 or when the P2+P4+P6 chain has shipped.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-07T13:50:11.292647+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T13:50:11.292713+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e8154b28-7194-4926-a6aa-0cd540e19677"
+  }
+}

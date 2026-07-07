@@ -24,3 +24,4 @@ Next: FIRST — fire `T-fable-northstar-port-and-compile-brief` (Fable's last da
 
 ## Fable fired (2026-07-07 AM)
 T-fable-northstar-port-and-compile-brief FIRED (Plan/claude-fable-5, 96k tok, 32 tool reads). Synthesis captured: note fable-port-compile-synthesis-2026-07-07 (8-item PORT-LIST + COMPILE-vs-LOOP split; frames the port as ASSEMBLING the nexus row — P1=fingerprint, P2+P3=plan-as-replayable-IR, P6+P7=verdict). /sorted HELD for Akien review. Top-3 to sorted: (1) re-scope T-nexus-write-path-ds-architect-loop up to plan-as-IR, (2) P2+P3 editor block-contract+flexible-apply, (3) P1 graph-ranked orientation packet.
+- D-aider-port-to-nexus-writepath-2026-07-07: Fable synthesis /sorted -> 7 phased aider ports + consequence; re-scoped T-nexus-write-path-ds-architect-loop up to plan-as-IR (fingerprint->plan->verdict). aider ports are CC/foreground until T-aider-real-uu-ticket-proof lands.

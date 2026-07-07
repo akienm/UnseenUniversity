@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-aider-port-editformat-conformance.20260707.075016298341",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-port-editformat-conformance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T13:50:16.298341+00:00",
+  "links": {
+    "decisions": [
+      "D-aider-port-to-nexus-writepath-2026-07-07"
+    ],
+    "tickets": [
+      "T-aider-port-editformat-conformance"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-port-editformat-conformance",
+    "title": "[sprint] Port aider edit-format ladder + per-model conformance registry (P8)",
+    "size": "M",
+    "tags": [
+      "CompiledInference",
+      "Inference",
+      "AiderPort"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
+    "gate": "T-aider-port-editor-block-contract",
+    "description": "**Problem:** small/quantized models can't reliably follow a strict edit format; aider's hardest-won lesson is that the fix is a SIMPLER contract, not 'try harder'. Extends our tier-not-model contract to edit DIALECT.\n\n**Proposed shape:** a per-(model, format) edit-format concept (aider `edit_format`/`editor_edit_format`) with `wholefile_coder.py` as the weak-model fallback dialect; compute per-(model,format) conformance rates OFFLINE from corpus replay into the models_registry, so format selection becomes a warm lookup (zero-inference, exactly like tier routing).\n**Affected files:** unseen_university/devices/inference/architect_editor.py (editor path), models_registry, the corpus replay tooling.\n**Design rules:** conformance rates are computed offline from replay (zero-inference routing data); format selection is a warm lookup. Gated on P2 (block contract) existing.\n**Scope boundary:** the format ladder (block -> whole-file fallback) + the conformance registry field + warm-lookup selection. NOT new models.\n**Test plan:** red->green — a model that fails block-format falls back to whole-file and succeeds; conformance rates computed from a replay populate the registry; format selection reads the registry (no inference).\n**Completion criteria:** edit-format ladder with whole-file fallback; per-(model,format) conformance registry populated from replay; format chosen by warm lookup.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-07T13:50:07.390675+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T13:50:07.390738+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9bbeb933-6b31-418b-8017-5c2e9b9652d3"
+  }
+}

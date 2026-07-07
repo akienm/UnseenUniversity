@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-aider-port-commit-per-edit.20260707.075016166729",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-port-commit-per-edit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T13:50:16.166729+00:00",
+  "links": {
+    "decisions": [
+      "D-aider-port-to-nexus-writepath-2026-07-07"
+    ],
+    "tickets": [
+      "T-aider-port-commit-per-edit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-port-commit-per-edit",
+    "title": "[sprint] Port aider commit-per-applied-edit in the throwaway clone (P7)",
+    "size": "S",
+    "tags": [
+      "CompiledInference",
+      "Inference",
+      "AiderPort"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
+    "description": "**Problem:** coarse rollback granularity and coarse temporal resolution for corpus_verdict's later-commit-on-same-paths firewall (flagged in the 07-06 levers note).\n\n**Proposed shape:** port `auto_commit`/`dirty_commit` (base_coder.py:2375-2423): commit each applied edit in the throwaway clone, and dirty-commit a dirty file before touching it. Not a 0-edits fixer — a measurement/safety enabler for the verdict side.\n**Affected files:** the aider runner / clone-flow (unseen_university/devices/aider/runner.py) and/or the editor apply path.\n**Design rules:** feeds the corpus_verdict temporal firewall at edit granularity — verdicts to git history before any hypothesis exists (grounding-spine asymmetry).\n**Scope boundary:** commit-per-edit + dirty-commit in the clone only. No change to the merge/main path.\n**Test plan:** red->green — each applied edit produces a distinct commit in the clone; a pre-dirty file is committed before the edit touches it.\n**Completion criteria:** commit-per-edit granularity in the throwaway clone with dirty-file pre-commit; verified by commit count == applied-edit count on a fixture.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-07T13:50:03.469017+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T13:50:03.469106+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "57a0e673-37ba-4489-bda7-35b2f714699f"
+  }
+}

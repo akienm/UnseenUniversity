@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-aider-port-file-mention-handshake.20260707.075015895225",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-port-file-mention-handshake"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T13:50:15.895225+00:00",
+  "links": {
+    "decisions": [
+      "D-aider-port-to-nexus-writepath-2026-07-07"
+    ],
+    "tickets": [
+      "T-aider-port-file-mention-handshake"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-port-file-mention-handshake",
+    "title": "[sprint] Port aider file-mention -> inject-content handshake (P5)",
+    "size": "S",
+    "tags": [
+      "CompiledInference",
+      "Inference",
+      "AiderPort",
+      "Orientation"
+    ],
+    "status": "sprint",
+    "priority": 0.45,
+    "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
+    "description": "**Problem:** the architect spends turns Reading files it could just name (F-A, F-D). aider's architect NAMES repo files and the harness feeds their content back.\n\n**Proposed shape:** port `get_file_mentions`/`check_for_file_mentions` (base_coder.py:1714-1781): when an architect response names repo files not in context, deterministically add their full content and reflect once. With P1's packet this collapses most orientation to <=1 reflection.\n**Affected files:** unseen_university/devices/inference/architect_editor.py (architect flow).\n**Design rules:** matching is deterministic word/basename against the repo file list — no fuzzy identity. The resolved file-set per ticket-fingerprint is a nexus-row candidate ('which files does this question touch') — emit it to the corpus for the accumulating arm.\n**Scope boundary:** the mention->inject handshake for the architect. NOT the nexus row write (that consumes the emitted file-set later).\n**Test plan:** red->green — an architect response naming an un-loaded repo file triggers exactly one reflection with that file's content injected; naming a non-existent file does not inject.\n**Completion criteria:** mention->inject handshake wired; single-reflection injection on named files; resolved file-set emitted to corpus.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-07T13:49:55.691046+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T13:49:55.691120+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9527f275-e5d1-42ac-b725-eeb2b9c9e46d"
+  }
+}

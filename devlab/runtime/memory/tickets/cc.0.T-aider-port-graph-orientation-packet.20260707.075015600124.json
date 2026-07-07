@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-aider-port-graph-orientation-packet.20260707.075015600124",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-port-graph-orientation-packet"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T13:50:15.600124+00:00",
+  "links": {
+    "decisions": [
+      "D-aider-port-to-nexus-writepath-2026-07-07"
+    ],
+    "tickets": [
+      "T-aider-port-graph-orientation-packet"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-aider-port-graph-orientation-packet",
+    "title": "[sprint] Port aider graph-ranked token-budgeted orientation packet (P1)",
+    "size": "L",
+    "tags": [
+      "CompiledInference",
+      "Inference",
+      "AiderPort",
+      "Orientation"
+    ],
+    "status": "sprint",
+    "priority": 0.6,
+    "decision_id": "D-aider-port-to-nexus-writepath-2026-07-07",
+    "description": "**Problem:** our loop read-wandered (F-A: 47-102 Reads, 0 edits) because orientation is a MODEL behavior driven by tool calls. aider makes orientation a DATA STRUCTURE: a graph-ranked, token-budgeted repo map delivered as context with zero tool calls — the single capability that carried aider's 4/4 multi-file checkout with nothing pre-added. Our `build_signature_map` is keyword-Jaccard over a code_index with NO edge data (its own docstring flags graph-rank as a follow-up).\n\n**Proposed shape:** replace/augment `build_signature_map` (orientation_classifier.py:284) with a graph-ranked packet ported from aider `repomap.py`: def/ref edges (Python import/ref graph or tree-sitter tags) -> PageRank personalized by ticket-mentioned files/idents (`get_ranked_tags`) -> token-budget binary search (`get_ranked_tags_map_uncached`) -> content/mtime-keyed cache. Deliver the packet as orientation context to the architect.\n\n**Affected files:** unseen_university/devices/scraps/orientation_classifier.py (build_signature_map); new repomap-style module; cache in Postgres or flat-file. MEDIUM inertia.\n**Design rules:** ⛔ NO SQLITE — aider's diskcache IS SQLite and must NOT be ported as-is; re-home the cache to Postgres/flat-file. PageRank is a RANK, never an identity key. Packet is the deterministic input to the nexus packet-fingerprint — keep its keying exact/structural.\n**Scope boundary:** the graph-ranked budgeted orientation packet + its cache. NOT wiring it as a nexus row yet (that is T-nexus-write-path-ds-architect-loop's packet-fingerprint input).\n**Test plan:** red->green — given a repo + a ticket seeding idents, the packet ranks the truly-relevant files above noise WITHIN a token budget (assert the known-relevant files appear, noise files do not, total <= budget); the multi-file orientation task resolves with the packet as sole orientation, no files pre-added.\n**Completion criteria:** graph-ranked token-budgeted packet replaces keyword-Jaccard; ranking + budget tests pass; the multi-file orientation task passes with the packet alone; cache is Postgres/flat-file (no sqlite import — audit_check_sqlite_imports clean).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-07T13:49:47.923678+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T13:49:47.923772+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "62cb9452-fcf3-4c5d-ba08-5778ea41284f"
+  }
+}
