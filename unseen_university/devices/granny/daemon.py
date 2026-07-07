@@ -128,8 +128,8 @@ def _default_config() -> dict:
     # Routing rules mirror config/granny.yaml — no worker_id hardcoded as fallback.
     return {
         "workers": {
-            "DickSimnel.0": {"dispatch": "bus", "mailbox": "dicksimnel.0"},
-            "Aider.0": {"dispatch": "bus", "mailbox": "aider.0"},
+            "DickSimnel.0": {"dispatch": "bus", "mailbox": "dicksimnel.0", "one_at_a_time": True},
+            "Aider.0": {"dispatch": "bus", "mailbox": "aider.0", "one_at_a_time": True},
         },
         "rules": [
             # HIGH-inertia tags → CC.0 (careful worker), mirrors config/granny.yaml.

@@ -15,6 +15,7 @@ workers:
     dispatch: bus
     mailbox: dicksimnel.0
     worker_name: dicksimnel
+    one_at_a_time: true   # synchronous builder — one ticket per cycle (no mailbox fan-out)
   # Aider.0 — aider-backed builder ($0 on Hex). A second builder; there is no
   # builder load-balancing yet (T-granny-builder-load-balancing), so it is opt-in
   # by the `Aider` tag rule below rather than sharing the generic builder role.
@@ -22,6 +23,7 @@ workers:
     dispatch: bus
     mailbox: aider.0
     worker_name: aider
+    one_at_a_time: true   # synchronous builder — one ticket per cycle (no mailbox fan-out)
 
 rules:
   # HIGH-inertia tags go to CC.0 (this box's careful worker) for careful handling.
