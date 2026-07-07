@@ -24,6 +24,15 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Bootstrap repo root onto sys.path so `unseen_university` imports resolve when
+# this file is run by absolute path as a Claude Code hook (sys.path[0] is then
+# this script's dir, not the repo root, and the package is not pip-installed
+# into the system python the hook runs under). Same pattern as cc_queue.py.
+_REPO_ROOT = str(Path(__file__).resolve().parents[2])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 from unseen_university.identity import instance_id
 
 CURSOR_DIR = Path.home() / ".unseen_university"
