@@ -270,7 +270,7 @@ class Level0ExactRecall(BaseCascadeLevel):
 
         n = len(results) if results else 0
         if n > 0:
-            # Filter bus-format memories (MSG|ch=... ring/IMAP records) — these are
+            # Filter bus-format memories (MSG|ch=... ring-bus records) — these are
             # internal transport entries that must never be returned as responses.
             usable = [
                 m

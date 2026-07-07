@@ -1,7 +1,7 @@
 """The Librarian — always-on rack device.
 
 The Librarian is the rack-minion, renamed. Runs whenever the rack is running,
-independent of Igor. Handles: MCP surface for CC, IMAP/bus inter-agent comms,
+independent of Igor. Handles: MCP surface for CC, bus inter-agent comms,
 web chat interface, DB proxy, inference routing (phase 2+).
 
 Discworld canon: the Librarian's word is OOK.

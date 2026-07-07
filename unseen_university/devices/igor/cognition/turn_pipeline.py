@@ -641,7 +641,7 @@ class TurnPipeline(IgorBase):
 
 
 def _is_bus_format(text: str) -> bool:
-    """True for raw IMAP/ring bus messages that should never surface as responses.
+    """True for raw ring bus messages that should never surface as responses.
     MSG|ch=... and MSG_ch=... are internal transport formats, not user-facing content.
     """
     return bool(text) and (text.startswith("MSG|") or text.startswith("MSG_ch="))
@@ -650,7 +650,7 @@ def _is_bus_format(text: str) -> bool:
 def _extract_cascade_content(cascade_result: CascadeResult) -> str:
     """Pull the best narrative text from cascade match data.
 
-    Skips bus-format memories (MSG|ch=...) — these are internal ring/IMAP
+    Skips bus-format memories (MSG|ch=...) — these are internal ring-bus
     records that land in cortex search results but must never be returned
     as responses. Returns "" when no non-bus narrative is found.
     """

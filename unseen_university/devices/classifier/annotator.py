@@ -69,7 +69,7 @@ def _haiku_problem_signature(path: str, symbols: list[dict]) -> str:
         lines.append(f"  [{s['kind']}] {s['symbol']}: {s['summary'][:120]}")
     prompt = "\n".join(lines) + (
         "\n\nRespond with ONE LINE only: a problem_signature describing what "
-        "this module handles (e.g. 'handles: IMAP bus dispatch, envelope routing, "
+        "this module handles (e.g. 'handles: bus dispatch, envelope routing, "
         "connection lifecycle'). No preamble, no punctuation at end."
     )
 
