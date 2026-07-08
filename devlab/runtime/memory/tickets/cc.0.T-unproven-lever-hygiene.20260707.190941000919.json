@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-unproven-lever-hygiene.20260707.190941000919",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-unproven-lever-hygiene"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:09:41.000919+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-unproven-lever-hygiene"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-unproven-lever-hygiene",
+    "title": "[sprint] shipped-unproven accepts any non-empty string — structure the lever + recurrence audit",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Audits"
+    ],
+    "description": "intention: I intend that the accumulated missing-proof-levers are a queryable backlog that earns gate removal, not free text lost in close messages.\n\ngate-attack-report.20260707.md G6b, verified at cc_queue.py:1019-1027: the close gate rejects only an EMPTY unproven reason; --shipped-unproven \"x\" closes a ticket. CLAUDE.md says the accumulated levers ARE the backlog that earns the gates' removal — today they are un-aggregated free text. Shape: (1) lever format nudge: reason should name the missing harness/checker as a noun phrase (soft-validated: reject single-token reasons); (2) levers land in a queryable place (annotation already stored as unproven_reason — add a day-close aggregation view); (3) recurrence rule: same lever named >=2 times -> auto-draft the harness ticket (via the normal filing path, Granny/CC reviewed).\n\n**Affected files:** devlab/claudecode/cc_queue.py (lever soft-validation), skills/day-close-audit/SKILL.md or skills/audit-day/SKILL.md (aggregation + recurrence check)\n\n**Design rules:** CP1/CP2 — unproven closes are the learning signal; visible nuisance drives the lever (CP4)\n\n**Scope boundary:** validation nudge + aggregation + recurrence-draft only; NO hard taxonomy of levers; never blocks an honest close that names a real lever in free words.\n\n**Test plan:** hermetic — close with \"x\" rejected; close with a named-lever phrase passes; aggregation lists levers by count; a twice-named lever yields a drafted ticket.\n\n**Completion criteria:** single-token lever rejected; day-close prints lever counts; recurrence draft fires in test.\n\n**Validation:** Observable via day-close lever-aggregation output line.\n\naudit-emphasis: none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:09:28.700412+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the accumulated missing-proof-levers are a queryable backlog that earns gate removal.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:09:28.700572+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bdc2122e-1495-49f7-a663-43bee999b0e7"
+  }
+}

@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-adversarial-gate-attack",
-    "title": "[sprint] Fable window: adversarial hollow-artifact attack on every filing/close gate",
+    "title": "Fable window: adversarial hollow-artifact attack on every filing/close gate",
     "size": "L",
     "tags": [
       "Audits",
@@ -30,12 +30,12 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.7,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-07T23:59:08.319291+00:00",
     "created_by": null,
-    "result": null,
+    "result": "Attack report notes/gate-attack-report.20260707.md: 8 gates attacked, all sections ticketed or verdicted. Systemic pair: audits are self-attested (T-audit-run-records-enforced) + author-as-judge (T-filing-audits-independent-examiner, gated on the first). Local: T-discriminating-signal-check, T-unproven-lever-hygiene (cc_queue.py:1019 verified — any non-empty string closes), T-audit-smell-evasion-guards (sub-threshold slicing + self-declared skip), T-consequence-ticket-aging-alarm (June consequence tickets sitting overdue). Live evidence used from today's session: Scraps form-only red->green, warn-only intention teeth, self-audited /sorted batch. No attack artifacts touched the live store.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T01:10:13.233714+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T23:59:08.319364+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "6f4c07be-f73f-4504-bcba-4769d34aed81"
+    "inferred_intention_id": "6f4c07be-f73f-4504-bcba-4769d34aed81",
+    "proven": false,
+    "unproven_reason": "attack constructions are on-paper; candidate lever: a gate-attack regression harness that replays each construction against the amended gates (named as attack-regression in T-discriminating-signal-check / T-audit-smell-evasion-guards test plans)",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

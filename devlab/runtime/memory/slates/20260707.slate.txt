@@ -136,3 +136,4 @@ Next: T-aider-swarm-deployment (deploy AiderDevice across 4 boxes, CPU-gated, Gr
 - CLOSED T-feedback-edge-design (shipped-unproven: no design-artifact completeness harness) -> architecture/cc.0.feedback-edges.20260707.181212678946.json; ungated T-produced-by-emission-sweep + T-escalation-dispatch-producer-review; KEY: verb = result-envelope enrichment, NO bus change, HIGH-inertia moot
 - T-uu-spec-extraction-rebuildability-diff claimed (Fable window #2)
 - CLOSED T-uu-spec-extraction-rebuildability-diff (shipped-unproven: no rebuild-drill harness) -> notes/generative-spec.20260707.md + notes/rebuildability-diff.20260707.md; 12 findings; NEW: T-rules-store-materialize(CRIT) T-builder-memory-repo-residency(CRIT) T-claude-md-stale-anchors T-store-layout-reconcile
+- CLOSED T-adversarial-gate-attack (shipped-unproven: no attack-regression harness) -> notes/gate-attack-report.20260707.md; 8 gates; SYSTEMIC: audits self-attested + author-as-judge; 6 new tickets

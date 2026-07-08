@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-ticket-aging-alarm.20260707.190941275398",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-ticket-aging-alarm"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:09:41.275398+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-consequence-ticket-aging-alarm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-ticket-aging-alarm",
+    "title": "[sprint] Consequence tickets never fire: overdue-gate aging alarm at day-close/Nanny",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Consequence"
+    ],
+    "description": "intention: I intend that a consequence check past its gate date makes noise until it is worked, so the learning loop closes in reality, not on paper.\n\ngate-attack-report.20260707.md G7, live evidence: many T-consequence-* tickets from June sit open in sprint past their gate dates — the gate mandates the ticket's existence (audit-ticket #19) but nothing makes it FIRE. Shape: day-close (and/or Nanny cron) checks consequence tickets whose gate date has passed and status is not closed -> surface as an OVERDUE list with age; >=7 days overdue escalates to Akien inbox. References T-consequence-checks-default-master-role (role routing — different hole).\n\n**Affected files:** skills/day-close-audit/SKILL.md or skills/audit-day/SKILL.md (overdue check), optionally unseen_university/devices/nanny/ cron entry\n\n**Design rules:** the consequence loop is what makes decisions falsifiable (D-consequence-enforcement-gap-2026-06-09); calm signals (list, not urgency flags)\n\n**Scope boundary:** aging surfacing only; does NOT auto-work or auto-close consequence tickets.\n\n**Test plan:** hermetic — seeded overdue consequence ticket appears in the day-close overdue list with correct age; a closed one does not.\n\n**Completion criteria:** day-close prints the overdue-consequence list (count line even when 0).\n\n**Validation:** Observable via day-close line: consequence overdue: N (oldest: T-..., age Xd).\n\naudit-emphasis: none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:09:36.414309+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that a consequence check past its gate date makes noise until it is worked.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:09:36.414379+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "34dde4f5-30a4-4bfb-8143-3573f01173f7"
+  }
+}

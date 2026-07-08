@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-filing-audits-independent-examiner.20260707.190940727211",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-filing-audits-independent-examiner"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:09:40.727211+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-filing-audits-independent-examiner"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-filing-audits-independent-examiner",
+    "title": "[dependency] Author-as-judge: route filing-time audits + proof-test review to an independent examiner",
+    "size": "L",
+    "tags": [
+      "Audits",
+      "Architecture"
+    ],
+    "description": "intention: I intend that no artifact is graded by the instance that authored it — separation of powers at filing time, matching the stations invariant at build time.\n\ngate-attack-report.20260707.md G2/G3/G6a: audit-hypothesis/design/ticket are executed by the SAME model instance that drafted the artifacts (live evidence 2026-07-07: the /sorted batch was author-audited); proof-on-close cannot distinguish intent-tests from echo-tests — only an independent reader can. D-dev-pipeline-stations-2026-07-07 already establishes the invariant (builder never grades own work) and names the EXAMINER station (evaluator device = 3-voter panel exists). Shape: filing-time audits and proof-test review become examiner dispatches — an independent instance (evaluator device, or a separate minion/tier call through the Proxy) receives the draft + the audit checklist and returns the verdict; the authoring session merely relays. Includes G3d: constraint_decorator's indiscriminate 51-constraint stamping gets curated by the examiner path.\n\n**Affected files:** per design: unseen_university/devices/evaluator/ (examiner surface), skills/sorted/SKILL.md + skills/audit-ticket|design|hypothesis (dispatch instead of self-run), inference proxy tier call\n\n**Design rules:** separation of powers (D-dev-pipeline-stations-2026-07-07); tier-not-model; Granny sole ticket writer unaffected (examiner returns verdicts, never writes tickets)\n\n**Scope boundary:** filing-time audits + proof-test review routing ONLY; the audit CHECKLISTS are unchanged; offline fallback (no examiner reachable) = file with a loud UNEXAMINED mark, never silent self-audit.\n\n**Test plan:** hermetic — draft + checklist dispatched, verdict consumed; fallback path marks UNEXAMINED; author-instance verdict path removed from skills.\n\n**Completion criteria:** a /sorted batch's audit verdicts carry an examiner identity != the authoring session; UNEXAMINED mark appears when examiner is down.\n\n**Validation:** Observable via examiner verdict records naming the examiner instance (log + run-record per T-audit-run-records-enforced).\n\naudit-emphasis: needs-deep-smell\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": "T-audit-run-records-enforced",
+    "priority": 0.55,
+    "status": "dependency",
+    "created_at": "2026-07-08T01:09:21.086326+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that no artifact is graded by the instance that authored it — separation of powers at filing time.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:09:21.086385+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d3b0d69c-ca39-46d4-a92a-ad1e2ea14a55"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-smell-evasion-guards.20260707.190941137390",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-smell-evasion-guards"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:09:41.137390+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-audit-smell-evasion-guards"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-smell-evasion-guards",
+    "title": "[sprint] audit-smell skips are attacker-controlled: sub-threshold slicing + self-declared skip tag",
+    "size": "S",
+    "tags": [
+      "Audits"
+    ],
+    "description": "intention: I intend that smell-audit exemptions are earned, not self-declared.\n\ngate-attack-report.20260707.md G5, verified in the skill's skip logic: (a) <30-changed-lines threshold is per-run — slicing a change across commits accumulates rot with zero smell passes; (b) the audit-skip-smell tag is declared at filing time by the ticket author with no cross-check. Shape: (1) cumulative trigger — track changed-lines per TICKET across commits; threshold applies to the sum; (2) skip-tag justification — audit-ticket gains a check: audit-skip-smell requires a stated reason, and doc-only tickets get it automatically while code-touching tickets get it stripped with a warning.\n\n**Affected files:** skills/audit-smell/SKILL.md (cumulative threshold), skills/audit-ticket/SKILL.md (skip-tag justification check)\n\n**Design rules:** no escape hatches (CP6); attacker never controls their own exemption\n\n**Scope boundary:** the two named guards only; thresholds stay configurable; no new smell checks.\n\n**Test plan:** construction test — three 15-line commits on one ticket trigger the cumulative pass; a code-touching ticket with bare audit-skip-smell gets the tag stripped+warned at filing.\n\n**Completion criteria:** both constructions from the report now fail against the amended logic.\n\n**Validation:** attack-regression note in close message.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.45,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:09:32.581070+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that smell-audit exemptions are earned, not self-declared.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:09:32.581117+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "29f8128f-52b0-4956-a10b-48af268124fe"
+  }
+}
