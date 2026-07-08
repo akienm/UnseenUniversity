@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-produced-by-emission-sweep",
-    "title": "[sprint] Stamp produced_by at every emission chokepoint (memory_emit, cc_queue, proof_emitter, skills)",
+    "title": "Stamp produced_by at every emission chokepoint (memory_emit, cc_queue, proof_emitter, skills)",
     "size": "M",
     "tags": [
       "Workflow",
@@ -29,13 +29,13 @@
     "decision_id": "D-feedback-edge-every-emission-2026-07-07",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-07T23:58:51.287345+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "produced_by stamped at all 3 chokepoints: memory_emit.emit (param + session:<emitter> default + --produced-by CLI), ticket_store._envelope (derives from decision_id, else session), proof_emitter (passes proven ticket). Additive top-level field — legacy artifacts without it still read (regression test). Envelope schema-pin test updated. /sorted skill gains --produced-by for the richer intent: producer; /ticket + /note get correct edges automatically via the chokepoint (no skill change needed). Proof red=AssertionError green=passed @670b06fd (the proof itself now carries produced_by=T-produced-by-emission-sweep); 5 tests + 49 in affected suites green. NOTE: memory_emit stays logger-free (boot-light), so the observable is the grep-able JSON field, not a log line. Found+cleaned pre-existing test debris: test_proof_emitter.py leaks fixture proofs into the real store (no UU_MEMORY_ROOT monkeypatch) — filing a follow-up.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T13:51:13.819904+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T23:58:51.287407+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "26a5d66c-dae9-4017-b363-96e329603c04"
+    "inferred_intention_id": "26a5d66c-dae9-4017-b363-96e329603c04",
+    "proven": true,
+    "proof_id": "cc.0.produced-by-stamped-at-emission.T-produced-by-emission-sweep.20260708.075054262127",
+    "proof_commit": "670b06fd5300b010e4a4c5f8b5ab176a289fa535",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
