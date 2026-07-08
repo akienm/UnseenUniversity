@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-saturation-aware-escalation.20260707.201618146316",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-saturation-aware-escalation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T02:16:18.146316+00:00",
+  "links": {
+    "decisions": [
+      "D-single-central-inference-proxy-2026-07-07"
+    ],
+    "tickets": [
+      "T-inference-saturation-aware-escalation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-saturation-aware-escalation",
+    "title": "[sprint] Escalate on source SATURATION (latency/queue), not only failure — the Hex-bottleneck relief valve",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Routing",
+      "Proxy"
+    ],
+    "description": "**From D-single-central-inference-proxy-2026-07-07.** With one central proxy and a growing aider swarm, Hex (the compute) bottlenecks first — and a bottlenecked Hex goes SLOW/QUEUED, not DOWN. Today tier-escalation (device.py tier-escalation hop) fires on source FAILURE/unavailability, so the cloud relief valve does NOT trip on a busy-but-up Hex; requests just queue/wait.\n\n**Change:** make source SATURATION an escalation trigger — escalate the tier to a cloud source when Hex (local) latency (p95) or in-flight/queue-depth crosses a threshold, so overflow spills to Ollama-cloud/OpenRouter under load and the ledger shows the Hex-vs-cloud cost tradeoff. Reuse provider_health / resource_monitor signals if present.\n\n**Affected files:** unseen_university/devices/inference/device.py (escalation trigger), provider_health.py / resource_monitor.py (saturation signal), rules_engine.py (prefer cloud when local saturated).\n**Completion test:** under synthetic local saturation (latency/queue over threshold) a builder-tier dispatch escalates to a cloud source instead of waiting; below threshold it stays local; the ledger records the cloud cost.\n**Scope boundary:** saturation-based escalation for the local source. NOT a routing rewrite.\n**intention:** I intend that Hex saturation (not just failure) trips the cloud relief valve, so the swarm doesn't stall on a busy-but-up Hex.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-single-central-inference-proxy-2026-07-07",
+    "priority": 0.35,
+    "status": "sprint",
+    "worker": null,
+    "role": "master",
+    "created_at": "2026-07-08T02:16:10.482134+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-08T02:16:10.530387+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e53ebb63-244a-4b64-9386-1633dc37a12f"
+  }
+}

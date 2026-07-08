@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.D-single-central-inference-proxy-2026-07-07.20260707.201610230109",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-single-central-inference-proxy-2026-07-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-07T20:16:10.230109",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "category": "decisions",
+    "title": "One central inference proxy; Hex is the first bottleneck; saturation-escalation is the relief valve",
+    "text": "# D-single-central-inference-proxy-2026-07-07\n**date:** 2026-07-07\n**status:** open\n\n## Decision (Akien)\nThere is ONE central inference proxy (the limited Ollama HTTP door in the inference shim, T-aider-through-inference-proxy), NOT per-box. Every aider instance in the swarm (Aider.0 here, Aider.1 on Windows, ...) points AIDER_PROXY_BASE at the single proxy over the network. Rationale: one budget-ledger, one io_corpus, one routing policy -> swarm-wide cost is ONE measurable thing and escalation is uniform. The proxy is a thin http.server router (I/O-bound, negligible) so it will not bottleneck for a long time. Split to per-box or multiple proxies ONLY if the proxy itself is ever proven the constraint.\n\n## Insight: Hex bottlenecks first\nThe compute (Hex = M1 Max 32GB running 24-30B models) saturates long before the proxy does. As the swarm scales (N aider builders -> 1 proxy -> Hex), the capacity limit is Hex throughput.\n\n## Consequence + the real lever\nThe central proxy's cloud-escalation is the RELIEF VALVE for Hex saturation: overflow routes to Ollama-cloud/OpenRouter by policy, and the ledger measures the Hex-vs-cloud cost tradeoff. BUT a bottlenecked Hex goes SLOW/QUEUED, not DOWN — and today tier-escalation fires on source FAILURE/unavailability, not SATURATION. So the valve as built won't trip on a busy-but-up Hex; it just waits. The real lever = SATURATION-AWARE routing: escalate when Hex latency (p95) or queue-depth crosses a threshold, not only on failure. FOLLOW-UP (not yet built): latency/queue-depth-aware escalation in the inference router.\n\n## Links\nBuilds on T-aider-through-inference-proxy (shipped). Feeds T-aider-swarm-deployment (per-box aider identity; all point at the one proxy). Relates to project_inference_cost_optimizing_router, project_hex_ollama_model_slate, project_mac_studio_inference_host.\n\n## Intention\nI intend one central proxy so swarm inference cost + routing are one measurable thing, and that Hex saturation (not just failure) becomes an escalation trigger so the cloud relief valve actually trips under swarm load."
+  }
+}
