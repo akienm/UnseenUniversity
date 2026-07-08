@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-claude-md-stale-anchors",
-    "title": "[sprint] CLAUDE.md stale anchors: core_values path (+ sweep for other dead pointers)",
+    "title": "CLAUDE.md stale anchors: core_values path (+ sweep for other dead pointers)",
     "size": "S",
     "tags": [
       "Docs"
@@ -28,13 +28,13 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-08T01:05:05.366156+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "swept CLAUDE.md path anchors via new claude_md_anchor_check.py (6 file-path anchors): the one genuine stale anchor (diagnostic_base/core_values.py -> unseen_university/diagnostic_base/core_values.py, F3) fixed; announce/listener.py verified correct (AnnounceListener exists; it's the announce-side example, aider worker_listener is the canonical PgBus example — both resolve). Bare-filename prose (core_values.py, __init__.py) and retired refs (worker_daemon.sh) excluded as non-anchors. Checker green: anchors=6 stale=0. Proof red=AssertionError green=passed @ec86eda8; 3 tests (incl checker-detects-stale + retired-not-flagged).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T12:52:45.472010+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -43,6 +43,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T01:05:05.366200+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "db467ac9-352d-4d21-bb78-a8dfaf3ad887"
+    "inferred_intention_id": "db467ac9-352d-4d21-bb78-a8dfaf3ad887",
+    "proven": true,
+    "proof_id": "cc.0.claude-md-path-anchors-resolve.T-claude-md-stale-anchors.20260708.065233803752",
+    "proof_commit": "ec86eda8a283d12941f570332be3a060becde79f",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
