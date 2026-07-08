@@ -48,8 +48,16 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from unseen_university.devices.inference.connections import (
+    Connection,
+    ConnectionsRegistry,
+    seed_from_models,
+)
+from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
+from unseen_university.devices.inference.policy import PolicyRule, build_envelope
 from unseen_university.devices.inference.routing_buckets import (
+    DIFFICULTY_BUCKETS,
     cost_class_rank,
     difficulty_meets,
     domain_eligible,
@@ -156,6 +164,8 @@ class RulesEngine:
         sources: SourceRegistry,
         models: ModelsRegistry,
         rules: list[RoutingRule] | None = None,
+        connections: ConnectionsRegistry | None = None,
+        policies: list[PolicyRule] | None = None,
     ) -> None:
         self._sources = sources
         self._models = models
@@ -168,6 +178,14 @@ class RulesEngine:
         self._session_map: dict[str, tuple[str, str]] = (
             {}
         )  # session_id → (model_id, source_name)
+        # ── Dimensional resolver stacks (D-inference-router-stack-decomposition) ──
+        # ADDITIVE: consumed only by resolve(); route() never reads these, so the
+        # live triple-rules path is untouched. connections default to a lazy snapshot
+        # of the current 1:1 ModelSpec.source_name bindings (seed_from_models); an
+        # explicit `None` policies means "use the default policy set" (build_envelope
+        # applies _DEFAULT_POLICIES when passed None).
+        self._connections = connections
+        self._policies = policies
 
     def route(
         self,
@@ -321,6 +339,26 @@ class RulesEngine:
                     return RoutingDecision(source, spec, "last-resort")
 
         log.error("rules: no available source for task_class=%r", task_class)
+        return None
+
+    def _resolve_connections(self) -> ConnectionsRegistry:
+        """The connections stack this resolver composes over (lazy default snapshot).
+
+        When no explicit ConnectionsRegistry was supplied, seed one from the current
+        1:1 ModelSpec.source_name bindings — a faithful snapshot of live reachability —
+        so resolve() works out of the box before the cutover moves reachability onto
+        the connections stack as its sole home.
+        """
+        if self._connections is None:
+            self._connections = seed_from_models(self._models)
+        return self._connections
+
+    def resolve(
+        self, req: RouteRequest, required_difficulty: str = ""
+    ) -> RoutingDecision | None:
+        # STUB (T-inference-resolver-compose): the real dimensional resolver is
+        # implemented in the next commit. Returns None so the proof test's assertion
+        # (a concrete provider/model with no hardcoded triple) fails as authentic red.
         return None
 
     def clear_session(self, session_id: str) -> None:
