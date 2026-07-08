@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-rules-store-materialize",
-    "title": "[sprint] Materialize the phantom rules namespace: 14 rule artifacts cited 86x by skills, rules/ has 1 file",
+    "title": "Materialize the phantom rules namespace: 14 rule artifacts cited 86x by skills, rules/ has 1 file",
     "size": "M",
     "tags": [
       "Store",
@@ -29,13 +29,13 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.65,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-08T01:04:53.852665+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "14 rule artifacts materialized via memory_emit (statement+why each, produced_by, validity_conditions where real); rules_citation_check.py: citations=15 unresolved=0 (red vs pre-change store: 14 MISSING, exit 1); cat rules/*safeguards* returns the authoritative inertia list; proof cc.0.rules-store-materialization bound to 2950bebb (red=AssertionError green=passed). Q1 for Akien: confirm/amend the HIGH-inertia file list in the safeguards artifact (composed from enforcement sites, decision-extensible).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T12:26:26.225043+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T01:04:53.901919+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "50dd3118-4f94-481d-b40f-a1d218652a99"
+    "inferred_intention_id": "50dd3118-4f94-481d-b40f-a1d218652a99",
+    "proven": true,
+    "proof_id": "cc.0.rules-store-materialization.T-rules-store-materialize.20260708.062613995458",
+    "proof_commit": "2950bebb2f2bc6e6aa3b62f22978ea2a131024f4",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
