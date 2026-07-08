@@ -20,14 +20,14 @@
   "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
   "body": {
     "id": "T-inference-connections-stack",
-    "title": "[sprint] Inference router: introduce the model<->provider connections stack (additive)",
+    "title": "Inference router: introduce the model<->provider connections stack (additive)",
     "size": "M",
     "tags": [
       "Inference",
       "Router"
     ],
     "priority": 0.85,
-    "status": "sprint",
+    "status": "closed",
     "role": "master",
     "target_difficulty": 4,
     "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
@@ -36,13 +36,20 @@
     "created_at": "2026-07-08T21:12:22.792073+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Added the model<->provider connections stack (stack 3 of 4, D-inference-router-stack-decomposition-2026-07-08). Connection = first-class (model_id, source_name, dollars_per_unit) edge; ConnectionsRegistry.by_model returns a model's N connections; seed_from_models mirrors the current 1:1 ModelSpec bindings (22 connections). ADDITIVE — nothing routes through it yet (route()/_DEFAULT_RULES untouched), zero live-dispatch risk. Built stub-first for an authentic proof. Proof 62f3e261 red=AssertionError->green. 4/4 tests pass.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T21:28:33.424276+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-08T21:12:22.839739+00:00"
+    "scraps_validated": "2026-07-08T21:12:22.839739+00:00",
+    "proven": true,
+    "proof_id": "cc.0.model-provider-connections-stack.T-inference-connections-stack.20260708.152822118529",
+    "proof_commit": "62f3e26155d15b5ef309d46a0fd3d535810327c9",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

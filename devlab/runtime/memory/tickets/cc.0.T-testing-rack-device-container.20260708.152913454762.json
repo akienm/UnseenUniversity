@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-testing-rack-device-container.20260708.152913454762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-testing-rack-device-container"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:29:13.454762+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-testing-rack-device-container"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-testing-rack-device-container",
+    "title": "[triage] Testing rack device — runs a builder's output (tests/builds) in an isolated container",
+    "size": "L",
+    "tags": [
+      "Testing",
+      "Device"
+    ],
+    "priority": 0.4,
+    "status": "triage",
+    "role": "master",
+    "target_difficulty": 4,
+    "intention": "I intend that a rack device executes a builder's produced tests/builds inside an isolated container, so the Hex-hosted builder assistant's output can be run safely and its red->green verified without touching the host.",
+    "description": "VISION / NEXT-PHASE (Akien 2026-07-08, while sprinting the inference router). North star: a builder assistant runs on Hex and escalates as needed (the inference router redesign is its routing brain), AND a TESTING RACK DEVICE with its own CONTAINER runs the builds/tests the builder produces. The container isolates execution (a builder's generated code runs sandboxed, not on the host); the device reports pass/fail + the red->green signal proof-on-close needs. This is the safe-execution partner to the builder assistant and a step toward the automated test factory (see project_automated_test_factory).\n\n**Affected files:** TBD — new device under unseen_university/devices/<testing|examiner>/ following device.py/shim.py; container runtime wiring; likely consumes proof_emitter / the post-build reconciliation.\n**Design rules:** device-shim-design-center; one-daemon-ground-loop; external-state-principle; no-sqlite.\n**Scope boundary:** VISION capture only — not to be built until the inference router redesign ships and the shape is designed (needs its own /sorted). Investigate container runtime + isolation model first.\n**Test plan:** TBD at design time — a build submitted to the device runs its tests in-container and returns a pass/fail + proof-shaped result.\n**Depends on:** the inference router redesign (builder routing) + a design pass for the device shape.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:29:06.259977+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:29:06.305741+00:00"
+  }
+}
