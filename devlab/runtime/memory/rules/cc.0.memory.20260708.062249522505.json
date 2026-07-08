@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.memory.20260708.062249522505",
+  "emitter": "cc.0",
+  "namespace": [
+    "memory"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.522505",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "memory",
+    "title": "One store, one envelope — distinctions become tags, never new types, schemas, or stores",
+    "statement": "All dev-process memory lives under devlab/runtime/memory/, written through memory_emit (the single chokepoint). A new distinction becomes a tag, a body field, or a category subdir — NEVER a new artifact type, a new MemoryType enum value, a new table, or a new store. The envelope shape (emitter/namespace/category/kind/links/body) is stable; new contracts (produced_by, validity_conditions) land as envelope fields on the existing shape. Retired paths (lab/, devlab/design_docs/, devlab/design_docs_for_igor/) are invalid write targets — the path-moves monitor alarms on them.",
+    "why": "A renamed store with a surviving write-path silently splits the source of truth — decisions were written to dead lab/design_docs/ for days before anyone noticed. Tags are additive; schemas are fissive. One enforced home makes a tool writing elsewhere a detectable error instead of invisible drift.",
+    "sources": [
+      "CLAUDE.md structural rules (one home)",
+      "devlab/claudecode/memory_emit.py docstring",
+      "skills/audit-smell/SKILL.md Check 8"
+    ],
+    "consumed_by": [
+      "audit-design",
+      "audit-smell",
+      "ticket"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize",
+  "validity_conditions": [
+    {
+      "type": "depends-on-path",
+      "target": "devlab/claudecode/memory_emit.py"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.igor-constraints.20260708.062249521455",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-constraints"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.521455",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "igor-constraints",
+    "title": "No speculative flags — build to intent, gate go-live with a ticket",
+    "statement": "Never add a speculative capability flag (the IGOR_*_ENABLED pattern, or any config switch for a capability that does not exist yet). Build to the intent, and file a go-live-when ticket that flips the real gate when the capability lands. Igor-specific: Igor USES systems, it does not contain them — no UU code grows Igor-shaped couplings, and UU stays importable with no TheIgors/Igor presence at all.",
+    "why": "A dead switch reads as live capability — confabulated surface a future session will trust (CP1). The flag's existence is a claim; claims that nothing can observe are exactly what the audit gates exist to keep out of the tree.",
+    "sources": [
+      "skills/audit-precode/SKILL.md preferred-paths patterns",
+      "CLAUDE.md hard rules (no TheIgors imports)"
+    ],
+    "consumed_by": [
+      "audit-design",
+      "audit-smell",
+      "audit-precode"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

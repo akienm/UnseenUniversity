@@ -1,0 +1,93 @@
+{
+  "id": "cc.0.ticket_design_checks.20260708.062249524986",
+  "emitter": "cc.0",
+  "namespace": [
+    "ticket_design_checks"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.524986",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "ticket_design_checks",
+    "title": "The named checks a ticket's Design-rules field cites",
+    "statement": "Each check has a name a ticket can cite in its **Design rules:** field ('none apply' only after thinking about it), an applies_when, and a failure shape audit-ticket flags at filing time. audit-audits proposes new entries here (rule_promotion) when a finding recurs across tickets.",
+    "checks": [
+      {
+        "name": "no-sqlite",
+        "applies_when": "any persistence-touching ticket",
+        "check_body": "no SQLite/file-store fallback in the proposed shape",
+        "failure_message": "see unseenuniversity/rules/database"
+      },
+      {
+        "name": "test-plan-or-why-not",
+        "applies_when": "every ticket",
+        "check_body": "Test plan names specific tests OR states 'no tests because: <reason>'",
+        "failure_message": "blank test plan — TBD-with-reason is accepted, silence is not"
+      },
+      {
+        "name": "scope-boundary-stated",
+        "applies_when": "every ticket",
+        "check_body": "explicit in-scope and out-of-scope lines",
+        "failure_message": "unbounded scope invites helpful-refactor drift"
+      },
+      {
+        "name": "affected-files-or-tbd",
+        "applies_when": "every ticket",
+        "check_body": "Affected files listed, or 'TBD — discovery step in sprint' if genuinely unknown",
+        "failure_message": "no files named and no discovery step declared"
+      },
+      {
+        "name": "two-sided-build",
+        "applies_when": "capability tickets",
+        "check_body": "handler AND skill-consumer paths both in Affected files (or explicit exemption line)",
+        "failure_message": "see unseenuniversity/rules/capability-protocol"
+      },
+      {
+        "name": "validation-observable",
+        "applies_when": "every ticket",
+        "check_body": "completion criteria name a runtime-observable signal",
+        "failure_message": "see unseenuniversity/rules/budget"
+      },
+      {
+        "name": "remediation-plan",
+        "applies_when": "HIGH-inertia tickets",
+        "check_body": "rollback path stated before the edit",
+        "failure_message": "HIGH-inertia change with no way back"
+      },
+      {
+        "name": "logging-requirements",
+        "applies_when": "tickets adding state changes or interface crossings",
+        "check_body": "the new crossing/state-change names its log point (INFO crossing, DEBUG high-frequency)",
+        "failure_message": "unlogged boundary — AR-009"
+      },
+      {
+        "name": "proof-on-close",
+        "applies_when": "every ticket",
+        "check_body": "close points at a proof a hollow build couldn't pass, or declares shipped-unproven naming the missing lever",
+        "failure_message": "close posing as done (CP1)"
+      }
+    ],
+    "why": "Named checks make the Design-rules field a real filter instead of prose: the ticket author thinks per-check at filing (cheapest moment), and audit-audits can measure which checks catch and which are dead — a rubric can only improve if its questions have names.",
+    "sources": [
+      "skills/ticket/SKILL.md description shape",
+      "skills/audit-ticket/SKILL.md",
+      "skills/audit-audits/SKILL.md rule_promotion"
+    ],
+    "consumed_by": [
+      "ticket",
+      "audit-ticket",
+      "audit-audits"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

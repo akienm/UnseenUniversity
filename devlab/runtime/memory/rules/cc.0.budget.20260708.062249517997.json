@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.budget.20260708.062249517997",
+  "emitter": "cc.0",
+  "namespace": [
+    "budget"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.517997",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "budget",
+    "title": "Verify end-to-end before flipping gates — verification is part of the build budget",
+    "statement": "A gate flips only on a runtime-observable signal: a log line, a behavioral change, a metric, a UI element, a database row, an end-to-end flow producing user-facing output. 'Code merged' and 'unit tests green in isolation' are not gate-flipping signals. Every decision and ticket budgets the end-to-end verification pass as part of the work, not as overhead to trim when time runs short. Gate here means any go-live switch: a feature flag, a ticket close, a decision status change, a dependency ungate.",
+    "why": "A gate flipped on assertion ships hollow builds posing as done (CP1). Proof-on-close is this rule at ticket granularity; the consequence-checking gap (impl closed but never shipped) is what this rule exists to prevent at decision granularity.",
+    "sources": [
+      "skills/audit-design/SKILL.md Check 2",
+      "CLAUDE.md proof-on-close rule"
+    ],
+    "consumed_by": [
+      "audit-design"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

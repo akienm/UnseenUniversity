@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.inherit-base-class.20260708.062249521983",
+  "emitter": "cc.0",
+  "namespace": [
+    "inherit-base-class"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.521983",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "inherit-base-class",
+    "title": "Every non-library class inherits the base — the base IS the logging and lifecycle layer",
+    "statement": "Device classes inherit BaseDevice (unseen_university/device.py); shim classes inherit BaseShim (unseen_university/shim.py); both chains carry DiagnosticBase + CoreValuesMixin, which is where self.log, the canonical per-device log hierarchy, lifecycle verbs (start/stop/restart/self_test/rollback), and the CP1-CP6 contract come from. A non-library class outside the hierarchy, or module-level functions doing device work, is a failure. Exempt: pure data classes, exceptions, test fixtures, and library code with no device role.",
+    "why": "Uniform lifecycle and logging come from inheritance — the rack can start, stop, and self-test every device without knowing its internals, and every bare except has a self.log handle to report through. A class outside the hierarchy is invisible to the rack and silent when it fails.",
+    "sources": [
+      "CLAUDE.md structural rules (design center)",
+      "skills/audit-smell/SKILL.md Checks 1 and 12"
+    ],
+    "consumed_by": [
+      "audit-design",
+      "audit-smell"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize",
+  "validity_conditions": [
+    {
+      "type": "depends-on-path",
+      "target": "unseen_university/device.py"
+    },
+    {
+      "type": "depends-on-path",
+      "target": "unseen_university/shim.py"
+    }
+  ]
+}

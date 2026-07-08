@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.coding.20260708.062249519315",
+  "emitter": "cc.0",
+  "namespace": [
+    "coding"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.519315",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "coding",
+    "title": "OOP-first — shared state gets a class; device work inherits the design center",
+    "statement": "When shared state crosses functions, a class wraps it: module-level mutable state (dicts, lists, sets) read or written by two or more functions is a failure unless a class encapsulates it (constants and frozen singletons excepted). Device work is done by classes inheriting BaseDevice/BaseShim — no standalone functions doing device work (see unseenuniversity/rules/inherit-base-class). Device code logs through self.log.*, never print(). Inertia tiers for planned edits are defined in unseenuniversity/rules/safeguards; per-piece executor routing in unseenuniversity/rules/collaboration.",
+    "why": "A single well-known entry point per component makes lifecycle and logging uniform — the framework can iterate all devices without knowing their internals. Loose shared state is the torn-tree failure mode in miniature: two writers, no owner, silent drift.",
+    "sources": [
+      "CLAUDE.md structural rules (device.py/shim.py design center)",
+      "skills/audit-smell/SKILL.md Check 13"
+    ],
+    "consumed_by": [
+      "audit-design",
+      "audit-smell"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

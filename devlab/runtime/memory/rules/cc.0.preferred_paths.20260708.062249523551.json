@@ -1,0 +1,98 @@
+{
+  "id": "cc.0.preferred_paths.20260708.062249523551",
+  "emitter": "cc.0",
+  "namespace": [
+    "preferred_paths"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.523551",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "preferred_paths",
+    "title": "Deprecated → preferred pairs — the forms a plan must not propose",
+    "statement": "Registry of deprecated forms and their preferred replacements. audit-precode checks each entry's 'deprecated' field against plan text; audit-smell checks the diff. A match is an AMEND naming the preferred form. Entries are added by decision or by a deprecation ticket; an entry is removed only when the deprecated form is purged from the tree (delete-after-successful-merge).",
+    "entries": [
+      {
+        "deprecated": "psycopg2.connect / raw psql for dev-process memory reads",
+        "preferred": "read the flat-file store (devlab/runtime/memory/, grep-able JSON)",
+        "why": "the palace DB is retired; a DB read path resurrects a dead source of truth"
+      },
+      {
+        "deprecated": "from devlab.claudecode.channel import ... (direct channel writes)",
+        "preferred": "_post_to_channel or the MCP channel tools",
+        "why": "direct writes bypass the logging/trust chokepoint"
+      },
+      {
+        "deprecated": "print() in device code",
+        "preferred": "self.log.* (comes from the base class)",
+        "why": "print bypasses the canonical per-device log hierarchy"
+      },
+      {
+        "deprecated": "new MemoryType enum value / new memory table or store",
+        "preferred": "metadata tag or body field on the existing envelope",
+        "why": "rules/memory: distinctions become tags, schemas are fissive"
+      },
+      {
+        "deprecated": "new IGOR_*_ENABLED-style speculative flag",
+        "preferred": "build to intent + a go-live-when ticket",
+        "why": "rules/igor-constraints: dead switches read as live capability"
+      },
+      {
+        "deprecated": "IMAP / IMAPServer as the bus transport",
+        "preferred": "PgBus (Postgres-backed) via unseen_university/devices/bus/",
+        "why": "IMAP is fully removed; poll loops via PgBus.fetch_unseen (T-imap-references-purge)"
+      },
+      {
+        "deprecated": "datacenter_logs/ root log paths",
+        "preferred": "~/.unseen_university/logs/<device>/<stream>/ via uu_home()",
+        "why": "flat root logs are ungreppable; T-per-device-log-hierarchy"
+      },
+      {
+        "deprecated": "writes to lab/, devlab/design_docs/, devlab/design_docs_for_igor/",
+        "preferred": "devlab/runtime/memory/<category>/ via memory_emit",
+        "why": "retired paths; the path-moves monitor alarms on them"
+      },
+      {
+        "deprecated": "IGOR_HOME env var",
+        "preferred": "unseen_university._uu_root.uu_home()",
+        "why": "single-repo-era holdover; eliminated in T-uu-eliminate-igor-home-env"
+      },
+      {
+        "deprecated": "/decided skill",
+        "preferred": "/sorted",
+        "why": "renamed; /decided is the old wrong name"
+      },
+      {
+        "deprecated": "worker_daemon.sh / spawning claude for dispatch",
+        "preferred": "Granny handshake (availability flag + bus routing + shim ACK)",
+        "why": "no claim, no launch — pure handshake; spawn paths violate the dispatch model"
+      },
+      {
+        "deprecated": "cc_queue.py next / cc_queue.py list to pick work",
+        "preferred": "/query-ticket",
+        "why": "the queue abstraction will switch to the ADC rack device; list also hides tickets"
+      }
+    ],
+    "why": "Deprecated forms are how purged debt regrows: each pair pins the direction of a completed (or in-flight) migration so a fresh plan can't innocently propose the dead form. The registry is the machine-readable half of every 'X is retired' decision.",
+    "sources": [
+      "skills/audit-precode/SKILL.md Check 4",
+      "skills/audit-smell/SKILL.md",
+      "CLAUDE.md structural rules"
+    ],
+    "consumed_by": [
+      "audit-precode",
+      "audit-smell"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.database.20260708.062249520391",
+  "emitter": "cc.0",
+  "namespace": [
+    "database"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.520391",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "database",
+    "title": "Postgres or flat-file only — no SQLite, no fallbacks, no dual paths, no mocked DB in proofs",
+    "statement": "Shared state lives in Postgres. Boot-time state that must load before Postgres is up lives in flat files (the skeleton registry pattern). There is no third option: any use of SQLite — import, file creation, in-memory — is unconditionally prohibited (sqlite3, aiosqlite, tinydb, pickleDB, *.db/*.sqlite backends). No 'fallback' file store for state that belongs in Postgres — dual paths split the source of truth. Proof tests exercise the real store, never a mocked DB.",
+    "why": "SQLite under concurrent write load (multiple devices) produces lock contention and silent data loss. A fallback path is a second writer with no owner. A mocked DB in a proof is a test that passes on hollow output — the exact signature proof-on-close exists to catch.",
+    "sources": [
+      "CLAUDE.md hard-stop banner + hard rules",
+      "skills/audit-smell/SKILL.md Check 9",
+      "skills/sprint-ticket/SKILL.md (no mocks)"
+    ],
+    "consumed_by": [
+      "audit-design",
+      "audit-smell",
+      "ticket",
+      "sprint-ticket"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

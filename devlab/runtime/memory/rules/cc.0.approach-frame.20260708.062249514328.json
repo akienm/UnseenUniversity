@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.approach-frame.20260708.062249514328",
+  "emitter": "cc.0",
+  "namespace": [
+    "approach-frame"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.514328",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "approach-frame",
+    "title": "Intentions are phrased as positive observable targets",
+    "statement": "Every decision summary, root intention, and ticket intention names a thing to move TOWARD — 'I intend that <observable state>' or a verb describing the desired observable state. A summary that opens with no/don't/never/avoid/stop/prevent, or names only an absence, fails the frame and must be rewritten around what to do instead.",
+    "why": "A prohibition tells the builder nothing about what to build; only a positive target is checkable against the runtime (CP3 — there's always a why; the why points somewhere). Prohibition-only decisions are how 'don't do X' ships as 'nothing shipped'.",
+    "sources": [
+      "skills/audit-design/SKILL.md Check 1",
+      "CLAUDE.md intention vocabulary ('I intend that...')"
+    ],
+    "consumed_by": [
+      "audit-design"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

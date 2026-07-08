@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.collaboration.20260708.062249519843",
+  "emitter": "cc.0",
+  "namespace": [
+    "collaboration"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.519843",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "collaboration",
+    "title": "Executor routing + the closing pass",
+    "statement": "CLOSING PASS (Akien's standing practice): before /sorted files a design block, ask 'What am I missing? What could we do better?' and record the concrete answers — additions, corrections, or an explicit 'nothing else' with reasoning. EXECUTOR ROUTING (current): CC (Claude Code) authors all diffs; Granny routes tickets by role to available builders over the bus (handshake, never spawn); rack builders (DS/aider tier) take mechanical builder-tier tickets when live; HIGH-inertia diffs stay with CC.0 under inline Akien pre-approval (unseenuniversity/rules/safeguards). Igor is retired from coding (2026-05) — any 'Igor handles MEDIUM and LOW diffs' text is stale and must not route work.",
+    "why": "The two closing questions reliably surface gaps while they cost a sentence instead of a sprint. Routing by role keeps the expensive resolver on judgment work — the whole point of the substrate — and dead routing targets (Igor-as-coder) send tickets into a void.",
+    "sources": [
+      "skills/audit-design/SKILL.md Checks 5 and 9",
+      "CLAUDE.md workflow (Granny handshake)",
+      "builder feedback: Igor coding retired 2026-05; CC owns all work"
+    ],
+    "consumed_by": [
+      "audit-design"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize",
+  "validity_conditions": [
+    {
+      "type": "depends-on-fact",
+      "target": "Igor is retired from authoring code tickets",
+      "note": "if an Igor coding loop is re-approved, the routing half of this rule is stale"
+    }
+  ]
+}

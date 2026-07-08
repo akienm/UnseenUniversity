@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.docs-live-in-code.20260708.062249520933",
+  "emitter": "cc.0",
+  "namespace": [
+    "docs-live-in-code"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.520933",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "docs-live-in-code",
+    "title": "Load-bearing files carry their doc in a top-of-file docstring, updated in the same diff",
+    "statement": "Every load-bearing file opens with a docstring stating what it is and why it exists (CP3). A change that touches load-bearing behavior updates the primary file's docstring in the same diff — the doc travels with the code. No parallel doc trees: design intent that outgrows a docstring becomes an architecture/<subsystem>.json intention-point in the memory store, pointing back at the implementing files.",
+    "why": "Parallel docs rot silently — the retired lab/ and design_docs/ trees are the scar tissue. A docstring is the one doc location a reader of the code cannot miss and a diff reviewer cannot skip.",
+    "sources": [
+      "CLAUDE.md structural rules (architecture intention-points)",
+      "skills/audit-smell/SKILL.md doc-rot check"
+    ],
+    "consumed_by": [
+      "audit-design",
+      "audit-smell",
+      "sprint-ticket"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

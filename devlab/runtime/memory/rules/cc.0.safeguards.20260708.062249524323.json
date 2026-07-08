@@ -1,0 +1,85 @@
+{
+  "id": "cc.0.safeguards.20260708.062249524323",
+  "emitter": "cc.0",
+  "namespace": [
+    "safeguards"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.524323",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "safeguards",
+    "title": "Inertia tiers + the CP6 working safeguards — what a plan must check before touching files",
+    "statement": "Every planned edit is tiered by the blast radius of a wrong diff. HIGH-inertia: a wrong diff propagates system-wide or corrupts durable state — touching one requires inline Akien pre-approval BEFORE coding, stamped into the ticket body as 'pre-approved by Akien YYYY-MM-DD for touching <file>' ('the ticket said so' is not a reaffirmation); audit-precode escalates Haiku→Sonnet; the plan gets an ultrathink pass. MEDIUM-inertia: shared infrastructure consumed by multiple devices — proceed with tests plus interface-crossing logging, no pre-approval needed. LOW-inertia: leaf/device-local code — proceed. L/XL tickets get the ultrathink pass regardless of tier.",
+    "high_inertia": [
+      {
+        "path": "unseen_university/diagnostic_base/core_values.py",
+        "why": "frozen CP1-CP6 contract; tests pin set and order"
+      },
+      {
+        "path": "unseen_university/device.py",
+        "why": "design center — every device inherits it"
+      },
+      {
+        "path": "unseen_university/shim.py",
+        "why": "design center — every shim inherits it"
+      },
+      {
+        "path": "unseen_university/devices/bus/",
+        "why": "the transport; every envelope crosses it"
+      },
+      {
+        "path": "unseen_university/devices/granny/",
+        "why": "dispatch — a wrong diff misroutes every ticket"
+      },
+      {
+        "path": "devlab/claudecode/memory_emit.py",
+        "why": "store envelope chokepoint; every emission passes through"
+      },
+      {
+        "path": "devlab/claudecode/cc_queue.py",
+        "why": "ticket status model; the queue every workflow reads"
+      },
+      {
+        "path": "unseen_university/devices/skeleton/",
+        "why": "boot path — must come up before Postgres"
+      },
+      {
+        "path": "unseen_university/devices/igor/cognition/",
+        "why": "live cognition (protects LIVE runs; moot while Igor is down)"
+      }
+    ],
+    "working_safeguards": [
+      "no git stash — stash is hidden divergent state",
+      "never git checkout over uncommitted work",
+      "clean tree before a ticket closes; push after every close",
+      "halt-until-sorted on divergence between memory and reality — no improvising past it",
+      "no escape hatches: no 'load-bearing enough to need proof' judgment calls, no silent fallbacks",
+      "exact-id pre-flight before destructive rm"
+    ],
+    "why": "CP6 — the world is not a safe place; safety is built and carried, not defaulted. Inertia tiers price the irreversibility of an edit into the plan before the first keystroke, which is the only time the price is still a sentence. The HIGH list is extensible by decision; entries carry their own why so removal is an argument, not an accident.",
+    "sources": [
+      "skills/sprint-ticket/SKILL.md step 4 (this artifact is the authoritative list it reads)",
+      "skills/audit-precode/SKILL.md Check 3",
+      "CLAUDE.md CP6 + hard rules",
+      "builder feedback: stash/checkout hazards, exact-id pre-flight"
+    ],
+    "consumed_by": [
+      "sprint-ticket",
+      "audit-precode",
+      "audit-design",
+      "ticket"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}

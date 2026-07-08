@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.metrics.20260708.062249523024",
+  "emitter": "cc.0",
+  "namespace": [
+    "metrics"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.523024",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "metrics",
+    "title": "Metrics are SensorTree-shaped counters + history; the metric IS the output",
+    "statement": "Process metrics live under unseenuniversity/metrics/<area>/* as counters plus history, per the SensorTree shape (unseen_university/devices/igor/cognition/sensor_tree.py: named nodes carrying a current value and an appended history, updated in place). Metric updates are direct writes — observations, not changes — so they take no /sorted gate and file no tickets. A metric that only ever gets written and never read is dead and gets retired, not accumulated.",
+    "why": "Observation must be cheaper than the thing observed, or it stops happening — metrics that require ceremony don't get written, and un-written metrics are how habit drift goes undetected (the audit-audits layer runs entirely on this corpus).",
+    "sources": [
+      "skills/audit-audits/SKILL.md Analyzer 7 + step 5",
+      "unseen_university/devices/igor/cognition/sensor_tree.py"
+    ],
+    "consumed_by": [
+      "audit-audits"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize",
+  "validity_conditions": [
+    {
+      "type": "depends-on-path",
+      "target": "unseen_university/devices/igor/cognition/sensor_tree.py"
+    }
+  ]
+}

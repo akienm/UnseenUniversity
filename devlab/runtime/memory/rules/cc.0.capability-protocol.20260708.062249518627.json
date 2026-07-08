@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.capability-protocol.20260708.062249518627",
+  "emitter": "cc.0",
+  "namespace": [
+    "capability-protocol"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:22:49.518627",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "capability-protocol",
+    "title": "Capabilities ship two-sided and get consumed deliberately",
+    "statement": "The protocol has a producer side and a consumer side. PRODUCER (two-sided-build): a ticket that adds a new capability ships the handler AND the skill/workflow consumer together — never just one half. CONSUMER (workflow side): before claiming work, scan the ticket's tags and Affected files against the live capability surface (MCP tool names, datacenter manifest); if a minion or rack device would do the work better than inline, surface the delegate option before the claim — the prompt is mandatory, the delegation is Akien's call. POST-SPRINT: ask 'what from this sprint would I deposit into the palace?' — default skip; deposit only non-obvious reasoning.",
+    "two-sided-build": {
+      "check": "Capability tickets (tag 'Capability', or description creating an MCP capability / shim / handler) must list both a HANDLER path (unseen_university/devices/, devlab/claudecode/mcp_*, **/device*.py, **/capability*.py) and a SKILL CONSUMER path (skills/) in Affected files.",
+      "exemption": "A description line 'exempt from unseenuniversity/rules/capability-protocol/two-sided-build' with a stated reason (pure consumer of an existing surface, or the enforcer ticket itself). The exemption is noted in audit output."
+    },
+    "why": "A capability without a consumer is dead weight nobody exercises, and a consumer without a handler is a hallucinated surface — both are the two-sided cost of specifying intent showing up late instead of at filing (CP4: the friction belongs up-front where it's visible).",
+    "sources": [
+      "skills/audit-ticket/SKILL.md Check 16",
+      "skills/sprint-ticket/SKILL.md steps 1 and 9"
+    ],
+    "consumed_by": [
+      "audit-ticket",
+      "sprint-ticket"
+    ]
+  },
+  "produced_by": "T-rules-store-materialize"
+}
