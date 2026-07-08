@@ -61,3 +61,5 @@ NONE — 9 tickets closed proven this session (3 Fable + 6 Opus) + 1 design half
 
 ✅ CLOSED
 - D-branching-model-2026-07-08: per-ticket <ticket>.<builder> branches, matched-pair with merger station (triggered by 2nd live builder), retires CC-straight-to-main — T-consequence-D-branching-model
+
+## In-flight: IN-FLIGHT: none mid-build (tree clean, all pushed @5e4a732a). NEXT (Akien-directed): T-collapse-daemons-to-ground-loop (L) — collapse granny+scraps standalone run_loop/__main__ into shim-started components under the SINGLE Ground Loop (new HARD RULE in CLAUDE.md: one daemon structure, PERIOD). This SUPERSEDES the transitional configure_process_logging bridge from the just-closed T-granny-dispatch-observability-gap (PROVEN @5868ac32) — relocate the dispatch-health _emit into the driven tick, delete the __main__ blocks. Also open: T-black-format-repo (M, black OFF until deliberate repo-wide pass; hook made graceful). Granny NOT restarted (running 16h-old code) — chose the real collapse fix over a restart on the bridge.
