@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.rules-as-policy-capability-envelope-stac.T-inference-rules-as-policy.20260708.153431754516",
+  "emitter": "cc.0",
+  "namespace": [
+    "rules-as-policy-capability-envelope-stac",
+    "T-inference-rules-as-policy"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T15:34:31.754516",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-rules-as-policy"
+    ],
+    "commits": [
+      "a6620843323a2003efacd11184ba7b75f488a135"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-rules-as-policy",
+  "body": {
+    "thing": "rules-as-policy capability-envelope stack",
+    "intention": "build_envelope seeds min_difficulty from the request's ticket_tier and applies matching policies to tighten it (coding request -> code difficulty + tools feature + coding domain), producing a pure capability envelope with no model/provider.",
+    "test": "tests/inference/test_rules_as_policy.py::test_build_envelope_seeds_from_request_and_applies_policy",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_rules_as_policy.py::test_build_envelope_seeds_from_request_and_applies_policy",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________ test_build_envelope_seeds_from_request_and_applies_policy ___________\n\n    def test_build_envelope_seeds_from_request_and_applies_policy():\n        \"\"\"A coding/builder request seeds min_difficulty=code and gains the coding-tools policy.\"\"\"\n        req = RouteRequest(ticket_tier=\"builder\", builder_tier=\"builder\", domain=\"coding\")\n        env = build_envelope(req)\n>       assert env.min_difficulty == \"code\"          # seed from ticket_tier=builder\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       AssertionError: assert 'classify' == 'code'\nE         \nE         - code\nE         + classify\n\ntests/inference/test_rules_as_policy.py:26: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_rules_as_policy.py::test_build_envelope_seeds_from_request_and_applies_policy\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "a6620843323a2003efacd11184ba7b75f488a135",
+    "impl_paths": [
+      "unseen_university/devices/inference/policy.py"
+    ],
+    "ticket": "T-inference-rules-as-policy",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
