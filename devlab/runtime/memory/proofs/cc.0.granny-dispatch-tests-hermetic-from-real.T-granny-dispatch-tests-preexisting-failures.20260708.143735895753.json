@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.granny-dispatch-tests-hermetic-from-real.T-granny-dispatch-tests-preexisting-failures.20260708.143735895753",
+  "emitter": "cc.0",
+  "namespace": [
+    "granny-dispatch-tests-hermetic-from-real",
+    "T-granny-dispatch-tests-preexisting-failures"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T14:37:35.895753",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-dispatch-tests-preexisting-failures"
+    ],
+    "commits": [
+      "cf2415d14dcefbe4b64c727c1fb3cadb00517c5a"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-granny-dispatch-tests-preexisting-failures",
+  "body": {
+    "thing": "granny dispatch tests hermetic from real stall-state",
+    "intention": "With the tests/granny hermetic conftest, run_once dispatch tests pass regardless of the box's real ~/.granny stall state; without it they fail when granny is parked.",
+    "test": "tests/granny/test_e2e_dispatch_smoke.py::TestDispatchEnvelope::test_sprint_ticket_sends_dispatch_to_cc0",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/granny/test_e2e_dispatch_smoke.py::TestDispatchEnvelope::test_sprint_ticket_sends_dispatch_to_cc0",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________ TestDispatchEnvelope.test_sprint_ticket_sends_dispatch_to_cc0 _________\n\nself = <granny.test_e2e_dispatch_smoke.TestDispatchEnvelope object at 0x701081474080>\n\n    def test_sprint_ticket_sends_dispatch_to_cc0(self):\n        \"\"\"Granny puts a dispatch envelope in cc.0 for a sprint ticket.\"\"\"\n        imap = _StubIMAP()\n        _run(imap, [_ticket(\"T-e2e-001\")])\n    \n        envelopes = imap.envelopes_in(\"cc.0\")\n>       assert len(envelopes) == 1\nE       assert 0 == 1\nE        +  where 0 = len([])\n\ntests/granny/test_e2e_dispatch_smoke.py:122: AssertionError\n=========================== short test summary info ============================\nFAILED tests/granny/test_e2e_dispatch_smoke.py::TestDispatchEnvelope::test_sprint_ticket_sends_dispatch_to_cc0\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.09s"
+          }
+        }
+      }
+    ],
+    "commit": "cf2415d14dcefbe4b64c727c1fb3cadb00517c5a",
+    "impl_paths": [
+      "tests/granny/conftest.py"
+    ],
+    "ticket": "T-granny-dispatch-tests-preexisting-failures",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
