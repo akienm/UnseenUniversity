@@ -445,6 +445,25 @@ Add to the findings report: `Path-moves: clean | <N> non-canonical artifact(s)`
 
 ---
 
+## Step 18.9 — Consequence-ticket aging (the loop must fire in reality)
+
+A consequence gate mandates the ticket exists, but nothing makes it FIRE
+(gate-attack G7) — consequence tickets sat open past their gate dates, so the
+decision-falsifiability loop closed on paper. List consequence tickets whose gate
+has come due while the ticket is still open:
+
+```bash
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/consequence_aging.py
+```
+
+Zero-inference, read-only, never gates day-close (calm signal — a list, not an
+urgency flag). Output always prints the count line (`consequence overdue: N`); each
+overdue entry shows its age, and `≥7d` entries are marked `⚠ ESCALATE` — work or
+`/outcome` those, or escalate to Akien's inbox. Add to the findings report:
+`Consequence overdue: <N> (oldest: T-..., age Xd)`.
+
+---
+
 ## Step 19 — Evaluate findings + fix
 
 For each finding across Steps 1–18.6:
