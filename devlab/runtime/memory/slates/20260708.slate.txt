@@ -49,12 +49,12 @@ NONE — 9 tickets closed proven this session (3 Fable + 6 Opus) + 1 design half
 **Granny/Aider health check (this box = akiendelllinux, I'm cc_RESCUE):**
 - Granny daemon ALIVE (pid 3348294, ~16h), cycling — but 217/217 recent dispatch attempts target=CC.0, ALL defer reason=unavailable (CC.0=me, flag .false). Aider.0 flagged available but IDLE since 2026-07-07 17:26 (last built+escalated T-memory-emit-frozen-root-post-import). 120 ungated apprentice sprint tickets exist but aren't builder-TARGETED so Granny never routes them to Aider -> offload loop effectively stalled, nothing signals it.
 - Akien's point: Granny logs inadequately — this would've shown immediately. FILED T-granny-dispatch-observability-gap (M, pri 0.6): health line + fix the STALE granny_weatherwax.log (last write Jun 3; live daemon logs only to the tmux pane).
-- No local branches / aider_work on THIS box — the screenshot's "9 shipped-unproven branches + 12 aider_work + 4 escalations awaiting MERGE" pile is from the earlier session's drain (verify where it lives before the merger work).
+- ⛔ CORRECTION 2026-07-08 (post-compact, Akien): THERE IS NO BRANCH PILE. The "9 shipped-unproven + 12 aider_work + 4 escalations awaiting MERGE" was a CONFABULATION written at ~500K under compact pressure (feedback_complexity_limit_confabulation). Ground truth from Akien: one programmer (CC) on all files, everything done on main — no branches ever existed. Git confirms: only main/origin/main, no worktrees, no stashes. The merger station has NO present-tense work; it stays north-star/gated (D-dev-pipeline-stations) — its reason to exist (merge independent builders' branches under separation-of-powers) requires multiple producing builders, which we don't have yet.
 
 **NEXT (sort sprints with Akien after compact — budget: 55% weekly used, 3 days left, favor high-leverage):**
-1. MERGER STATION (from the other window's end-state) — the offload-loop gap: build->validate->merge+prove->proven, consuming the shipped-unproven branch pile. HIGH-trust (writes to main), separation-of-powers (examines, never builds). emit_merge_proof already built. Deserves fresh Opus. THE headline next-build.
-2. T-audit-telemetry-flatfile-repoint (M) -> ungates T-audit-run-records-enforced -> ungates examiner T-filing-audits-independent-examiner (3-deep chain).
-3. T-granny-dispatch-observability-gap (M) — Akien's just-surfaced gap; also explains why Aider sits idle.
+1. ~~MERGER STATION~~ RETRACTED — premise was a confabulated branch pile (see correction above). Merger station stays gated north-star until there are multiple builders producing work to merge.
+2. T-audit-telemetry-flatfile-repoint (M) -> ungates T-audit-run-records-enforced -> ungates examiner T-filing-audits-independent-examiner (3-deep chain). Advances the EXAMINER station.
+3. T-granny-dispatch-observability-gap (M) — Akien's just-surfaced gap; explains why Aider sits idle; fixes the offload-loop observability.
 4. T-escalation-dispatch-producer-review (M); S: T-store-layout-reconcile, T-unproven-lever-hygiene, T-proof-emitter-test-store-isolation.
 **Calendar:** /outcome D-fable-window-altitude-agenda at Fri retro (07-10); 3 D-fable consequence tickets fire 07-21; 4 overdue consequence tickets want /outcome at next day-close.
 
