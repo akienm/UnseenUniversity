@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.ungate-status-flip.T-ungate-status-flip.20260708.064957523935",
+  "emitter": "cc.0",
+  "namespace": [
+    "ungate-status-flip",
+    "T-ungate-status-flip"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T06:49:57.523935",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ungate-status-flip"
+    ],
+    "commits": [
+      "581ae3a6016846b5656316f0ed60f42e1fd8914b"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "ungate status flip",
+    "intention": "Clearing a ticket's gate flips a dependency ticket to sprint so it is claimable without a second manual command",
+    "test": "tests/test_cc_queue_ungate_status_flip.py::test_manual_ungate_flips_dependency_to_sprint",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_cc_queue_ungate_status_flip.py::test_manual_ungate_flips_dependency_to_sprint",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "________________ test_manual_ungate_flips_dependency_to_sprint _________________\n\n    def test_manual_ungate_flips_dependency_to_sprint():\n        tasks = [_task(\"T-impl\", status=\"dependency\", gate=\"T-design\")]\n        saved, logs = _run_ungate(tasks, \"T-impl\")\n        t = next(x for x in saved if x[\"id\"] == \"T-impl\")\n        assert t[\"gate\"] is None\n>       assert t[\"status\"] == \"sprint\", \"cleared gate must leave the ticket claimable\"\nE       AssertionError: cleared gate must leave the ticket claimable\nE       assert 'dependency' == 'sprint'\nE         \nE         - sprint\nE         + dependency\n\ntests/test_cc_queue_ungate_status_flip.py:47: AssertionError\n----------------------------- Captured stdout call -----------------------------\nUngated T-impl (was: T-design)\n=========================== short test summary info ============================\nFAILED tests/test_cc_queue_ungate_status_flip.py::test_manual_ungate_flips_dependency_to_sprint\n1 failed in 0.12s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.09s"
+          }
+        }
+      }
+    ],
+    "commit": "581ae3a6016846b5656316f0ed60f42e1fd8914b",
+    "impl_paths": [
+      "devlab/claudecode/cc_queue.py"
+    ],
+    "ticket": "T-ungate-status-flip",
+    "narrative": "",
+    "why": "ungated impl tickets stayed status=dependency and never surfaced to Granny/query-ticket; needed manual setstatus sprint (commit 8939527c)",
+    "bootstrap": false
+  }
+}
