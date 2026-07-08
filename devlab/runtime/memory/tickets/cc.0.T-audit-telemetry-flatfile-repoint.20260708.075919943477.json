@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-audit-telemetry-flatfile-repoint.20260708.075919943477",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-telemetry-flatfile-repoint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T13:59:19.943477+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-audit-telemetry-flatfile-repoint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-audit-telemetry-flatfile-repoint",
+    "title": "[sprint] audit_telemetry.py writes run-records to the RETIRED Postgres palace (memory_palace) — repoint to the flat-file store",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.55,
+    "tags": [
+      "Audits",
+      "Architecture",
+      "MemoryStore"
+    ],
+    "intention": "I intend that an audit run-record is a grep-able flat-file artifact in devlab/runtime/memory/, like every other dev-process record.",
+    "description": "Discovered 2026-07-08 while scoping T-audit-run-records-enforced: devlab/claudecode/audit_telemetry.py (emit_run_record / read_runs / emit_watch_next / read_watch_next) writes to the Postgres memory_palace table via psycopg2 + home_db_url(). memory_palace is the RETIRED palace — D-canonical-memory-consolidation-2026-06-23 made devlab/runtime/memory/ the ONE home, and context-load explicitly states 'no psql, no memory_palace'. So audit_telemetry is a surviving write-path to the dead store (the exact 'renamed store with surviving write-paths' drift CLAUDE.md warns about). read_runs('ticket') returns 0 today — nothing useful is stored, and it needs Postgres up (not boot-light/grep-able like the rest of the store).\n\n**Why this blocks T-audit-run-records-enforced:** that ticket's teeth gate on the presence of a run-record. Gating on a Postgres-palace record that isn't grep-able and requires the DB up is inconsistent with the FS-store world; the enforcement must gate on a flat-file record. So the repoint is a prerequisite.\n\n**Proposed shape:** repoint emit_run_record/read_runs/emit_watch_next/read_watch_next to write JSON under the flat-file store (new category 'audits' via memory_emit, path devlab/runtime/memory/audits/<level>/runs/ and /watch_next/, mirroring the palace path scheme unseenuniversity/audits/<level>/...). PRESERVE the public API signatures + AuditRunRecord (7 audit skills import them: audit-precode/ticket/day/expert/regression). TTL-90 for raw runs stays a read-time filter. No schema change to AuditRunRecord.\n\n**Affected files:** devlab/claudecode/audit_telemetry.py (swap Postgres backend -> flat-file), devlab/claudecode/memory_emit.py (add 'audits' category if that route chosen), tests/ (new hermetic round-trip against tmp store root).\n\n**Design rules:** canonical store one home; Postgres-or-flat-file but the dev-process memory home is flat-file (D-canonical-memory-consolidation); no new artifact TYPE (a category subdir is allowed per rules/memory); delete-after-successful-merge (drop the psycopg2 path once flat-file proven).\n\n**Scope boundary:** repoint the storage backend + preserve API ONLY; NO change to what audits emit or the enforcement teeth (that is T-audit-run-records-enforced); no migration of historical palace records (there are 0).\n\n**Test plan:** hermetic tmp-store round-trip: emit_run_record('ticket', rec) then read_runs('ticket', since_days=1) returns it; watch_next emit/read/TTL round-trips; UU_MEMORY_ROOT monkeypatched so nothing touches the real store or Postgres.\n\n**Completion criteria:** emit_run_record + read_runs round-trip through devlab/runtime/memory/audits/ with NO psycopg2 import; the 7 consuming skills' import surface unchanged; read_runs returns the just-emitted record.\n\n**Validation:** grep devlab/runtime/memory/audits/ shows the emitted YAML/JSON record; no psycopg2 in audit_telemetry.py.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T13:59:12.273092+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T13:59:12.322231+00:00"
+  }
+}
