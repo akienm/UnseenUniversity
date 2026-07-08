@@ -159,7 +159,16 @@ def _run_aider(workdir: Path, message: str, model: str, add_files, map_tokens: i
     Returns (wall_seconds, stdout_tail). --no-auto-commits: we own the commit so the
     gate runs on the working tree before anything lands on the branch."""
     env = dict(os.environ)
-    env["OLLAMA_API_BASE"] = HEX_OLLAMA
+    # Route through the inference proxy when configured (T-aider-through-inference-proxy):
+    # point OLLAMA_API_BASE at the proxy's Ollama door and name the TIER alias, so the
+    # proxy selects the model + source (cloud escalation) and measures real cost. When
+    # AIDER_PROXY_BASE is unset, fall back to the direct-Hex bringup path.
+    proxy_base = os.environ.get("AIDER_PROXY_BASE")
+    if proxy_base:
+        env["OLLAMA_API_BASE"] = proxy_base
+        model = "uu-builder"  # tier alias (aider_proxy.TIER_ALIAS); proxy routes by tier
+    else:
+        env["OLLAMA_API_BASE"] = HEX_OLLAMA
     cmd = [
         str(aider_bin()),
         *[str(f) for f in (add_files or [])],   # pre-added files (else aider uses repo map)

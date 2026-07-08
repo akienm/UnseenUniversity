@@ -146,6 +146,28 @@ class InferenceShim(BaseShim):
     def __init__(self, mode: str = _MODE) -> None:
         self._mode = mode
         self._process: subprocess.Popen | None = None
+        self._aider_proxy = None          # limited Ollama HTTP door for aider (opt-in)
+        self._proxy_device = None
+
+    def _maybe_start_aider_proxy(self) -> None:
+        """Launch the limited Ollama-compatible HTTP door for aider when AIDER_PROXY_PORT
+        is set (T-aider-through-inference-proxy). aider points OLLAMA_API_BASE here and
+        every call routes through InferenceDevice.dispatch — tier→source selection, cloud
+        escalation, budget-ledger cost, io_corpus. Opt-in so existing shim usage (which
+        does not want an HTTP listener) is unaffected. Fail-soft: a proxy failure must
+        never fail the shim's own start()."""
+        port = os.environ.get("AIDER_PROXY_PORT")
+        if not port or self._aider_proxy is not None:
+            return
+        try:
+            from unseen_university.devices.inference.device import InferenceDevice
+            from unseen_university.devices.inference.aider_proxy import AiderProxyServer
+            self._proxy_device = InferenceDevice(mode=self._mode)
+            self._aider_proxy = AiderProxyServer(self._proxy_device.dispatch, port=int(port))
+            self._aider_proxy.start()
+        except Exception as exc:
+            log.error("InferenceShim: aider proxy failed to start on port %s: %s", port, exc)
+            self._aider_proxy = None
 
     @property
     def device_id(self) -> str:
@@ -159,6 +181,7 @@ class InferenceShim(BaseShim):
                 )
                 return False
             log.info("Inference (openrouter): API key present")
+            self._maybe_start_aider_proxy()
             return True
 
         # Ollama mode
@@ -188,9 +211,13 @@ class InferenceShim(BaseShim):
             return False
 
         log.info("ollama started (pid=%d)", self._process.pid)
+        self._maybe_start_aider_proxy()
         return True
 
     def stop(self) -> bool:
+        if self._aider_proxy is not None:
+            self._aider_proxy.stop()
+            self._aider_proxy = None
         if self._mode == "openrouter":
             return True
         if self._process is None:
