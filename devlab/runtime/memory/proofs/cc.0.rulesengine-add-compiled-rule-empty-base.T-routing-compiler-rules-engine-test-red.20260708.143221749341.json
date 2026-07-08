@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.rulesengine-add-compiled-rule-empty-base.T-routing-compiler-rules-engine-test-red.20260708.143221749341",
+  "emitter": "cc.0",
+  "namespace": [
+    "rulesengine-add-compiled-rule-empty-base",
+    "T-routing-compiler-rules-engine-test-red"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T14:32:21.749341",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-routing-compiler-rules-engine-test-red"
+    ],
+    "commits": [
+      "64a90d6c23b45f5e9ea59a4afc0ce4fda255271d"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-routing-compiler-rules-engine-test-red",
+  "body": {
+    "thing": "RulesEngine.add_compiled_rule + empty-base routing",
+    "intention": "A compiled routing rule inserted via add_compiled_rule into an empty-base RulesEngine is honored by route() — returned as the analyst decision when it is the sole candidate.",
+    "test": "tests/scraps/test_routing_compiler.py::test_rules_engine_add_compiled_rule",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/scraps/test_routing_compiler.py::test_rules_engine_add_compiled_rule",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            priority=0,\n            task_class=\"analyst\",\n            model_id=\"deepseek/deepseek-v3\",\n            source_name=\"openrouter\",\n            label=\"compiled:Platform/S→analyst\",\n        )\n        engine.add_compiled_rule(compiled)\n    \n        decision = engine.route(\"analyst\")\n        assert decision is not None\n>       assert decision.rule_label == \"compiled:Platform/S→analyst\"\nE       AssertionError: assert 'analyst→deepseek-v4-flash/OR' == 'compiled:Platform/S→analyst'\nE         \nE         - compiled:Platform/S→analyst\nE         + analyst→deepseek-v4-flash/OR\n\ntests/scraps/test_routing_compiler.py:382: AssertionError\n=========================== short test summary info ============================\nFAILED tests/scraps/test_routing_compiler.py::test_rules_engine_add_compiled_rule\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "64a90d6c23b45f5e9ea59a4afc0ce4fda255271d",
+    "impl_paths": [
+      "unseen_university/devices/inference/rules_engine.py"
+    ],
+    "ticket": "T-routing-compiler-rules-engine-test-red",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
