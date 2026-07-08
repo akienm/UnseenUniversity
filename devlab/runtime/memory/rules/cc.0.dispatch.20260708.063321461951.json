@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.dispatch.20260708.063321461951",
+  "emitter": "cc.0",
+  "namespace": [
+    "dispatch"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:33:21.461951",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-builder-memory-repo-residency"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "dispatch",
+    "title": "The dispatch contract — handshake, roles, semaphores, concurrency; who may run what",
+    "statement": "Granny dispatches by HANDSHAKE, never by spawn or claim: a worker publishes an availability flag (~/.granny/available/<name>.available.true; .false wins), Granny routes the ticket over the bus to an available worker, the worker's SHIM picks it up and ACKs, and the worker finishes current work first. Granny may NEVER spawn a claude process (subprocess.Popen burned a 4h runaway on 2026-06-01); the only CC.0 path is tmux send-keys under the semaphore gates. Granny polls shims by ROLE (pull model); the shim owns device startup; Ground Loop stays passive. Routing is by ROLE (apprentice < builder < creator < master < guru) — NEVER set worker=claude/igor/akien on a ticket; worker is Granny's dispatch-time field. Igor is retired from coding; CC is the sole coder — 'owned by nobody' means CC started it without filing the ticket. A builder does ONE ticket itself start-to-finish, one at a time — it never sub-distributes across machines; scale = more boxes ('fan-out' is a banned frame). Addresses are INSTANCES, never classes (to=DS.0, not to=ds). Concurrency: CC.0 + at most ONE standing CC.1 builder on this box; any CC.n (n>=2) requires Akien's explicit approval; inline agents run strictly one at a time here (4-core/16GB). Inter-agent messages stay CALM — no urgency=high, no response_expected for automated events; the HALT/priority path is infrastructure only, wired to nothing. Restarting Granny after a code change is CC's job (tmux kill-session -t granny && ./granny --no-attach); her daemon otherwise loads via her shim, never manually.",
+    "why": "Every clause is a paid-for correction: the 2026-06-01 six-session runaway (~4h lost), the $80/day OR burn, the worker=igor mis-routing corrected 10+ times, the fan-out design rejected repeatedly, and the observed fact that both agents perform worse stressed. The handshake model is what makes a busy worker uninterruptible and a double-run impossible — dispatch state lives in the ticket and the flags, not in anyone's memory.",
+    "sources": [
+      "CLAUDE.md workflow section (Granny handshake)",
+      "builder feedback: granny-no-cc-spawn, cc-concurrency-hard-limit, second-cc-builder-gated, builder-never-sub-distributes, calm-signals, no-igor-tickets, cc-owns-all-work, priority-halt-usage, granny-shim-startup, granny-restart",
+      "project memory: dispatch-model, granny-pull-dispatch-and-alarm-model, role-hierarchy, worker-types, class-vs-instance-addressee",
+      "D-granny-worker-registry-2026-06-02, D-granny-sole-ticket-writer-2026-07-07"
+    ],
+    "consumed_by": [
+      "sprint-ticket",
+      "audit-design",
+      "any session touching Granny/builders"
+    ]
+  },
+  "produced_by": "T-builder-memory-repo-residency",
+  "validity_conditions": [
+    {
+      "type": "depends-on-path",
+      "target": "unseen_university/devices/granny"
+    },
+    {
+      "type": "depends-on-fact",
+      "target": "Igor is retired from authoring code tickets",
+      "note": "if Igor coding is re-approved, the sole-coder clause is stale"
+    }
+  ]
+}

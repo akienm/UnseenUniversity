@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.git-workflow.20260708.063321466397",
+  "emitter": "cc.0",
+  "namespace": [
+    "git-workflow"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:33:21.466397",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-builder-memory-repo-residency"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "git-workflow",
+    "title": "Git + test discipline — main-only, push-every-close, ticket↔commit linkage",
+    "statement": "Work directly on main — no feature branches while the repo is Akien+CC only (the harness 'branch first' default is wrong here). MAXIM: each commit carries its ticket id, and the ticket carries its final commit hash (overwritten per commit; red stub + green impl both carry the id, no squashing required). Push after EVERY ticket close with the full non-interactive guard: DISPLAY= SSH_ASKPASS_REQUIRE=never GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/true git push origin main — GIT_TERMINAL_PROMPT=0 alone is NOT enough; with DISPLAY set, a bad-auth push pops a GUI askpass dialog that hangs ~2min on Akien's screen. Only Claude edits this repo — every regression traces to a prior Claude commit; never hunt for human edits. TEST DISCIPLINE: targeted tests during sprints (changed files + affected tests); the full ~100s suite belongs at day-close or overnight, never repeatedly mid-session; ALWAYS re-run the relevant suite AFTER the final commit, before closing (a clobbered deliverable slips through as 'shipped' otherwise); a discovered pre-existing failure gets its own ticket immediately (priority 0.2 non-blocking, 0.7+ if it blocks). Stash and checkout hazards are law in unseenuniversity/rules/safeguards; mechanics in the builder-gotchas note.",
+    "why": "Unpushed work is invisible to Akien and to the other boxes — 56 commits once piled up locally and drew a sharp correction; the GUI-askpass hang happened twice in one day. The ticket↔hash link is how a closed ticket stays traceable to its code. A red suite has no clean baseline, so every unticketed pre-existing failure hides the next regression.",
+    "sources": [
+      "builder feedback: push-every-ticket (the maxim + guard), commit-to-main-directly, overnight-tests, ticket-preexisting-failures, git-checkout-clobbers-uncommitted (post-commit re-run)",
+      "project memory: only-claude-edits-repo"
+    ],
+    "consumed_by": [
+      "sprint-ticket",
+      "commit",
+      "day-close"
+    ]
+  },
+  "produced_by": "T-builder-memory-repo-residency"
+}

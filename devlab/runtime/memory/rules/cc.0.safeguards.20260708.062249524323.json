@@ -20,7 +20,7 @@
   "body": {
     "rule": "safeguards",
     "title": "Inertia tiers + the CP6 working safeguards — what a plan must check before touching files",
-    "statement": "Every planned edit is tiered by the blast radius of a wrong diff. HIGH-inertia: a wrong diff propagates system-wide or corrupts durable state — touching one requires inline Akien pre-approval BEFORE coding, stamped into the ticket body as 'pre-approved by Akien YYYY-MM-DD for touching <file>' ('the ticket said so' is not a reaffirmation); audit-precode escalates Haiku→Sonnet; the plan gets an ultrathink pass. MEDIUM-inertia: shared infrastructure consumed by multiple devices — proceed with tests plus interface-crossing logging, no pre-approval needed. LOW-inertia: leaf/device-local code — proceed. L/XL tickets get the ultrathink pass regardless of tier.",
+    "statement": "Every planned edit is tiered by the blast radius of a wrong diff. HIGH-inertia: a wrong diff propagates system-wide or corrupts durable state — touching one requires inline Akien pre-approval BEFORE coding, stamped into the ticket body as 'pre-approved by Akien YYYY-MM-DD for touching <file>' ('the ticket said so' is not a reaffirmation); audit-precode escalates Haiku→Sonnet; the plan gets an ultrathink pass. MEDIUM-inertia: shared infrastructure consumed by multiple devices — proceed with tests plus interface-crossing logging, no pre-approval needed. LOW-inertia: leaf/device-local code — proceed. L/XL tickets get the ultrathink pass regardless of tier. CONDITIONALITY (Akien, 2026-07-06): the HIGH-inertia pre-approval pause exists to protect LIVE cognition mid-operation — when Igor is NOT running (the common case during substrate work), there is no HIGH-inertia gate: make the correct fix and prove it. Check whether Igor is live before treating any file as gated.",
     "high_inertia": [
       {
         "path": "unseen_university/diagnostic_base/core_values.py",
@@ -72,7 +72,8 @@
       "skills/sprint-ticket/SKILL.md step 4 (this artifact is the authoritative list it reads)",
       "skills/audit-precode/SKILL.md Check 3",
       "CLAUDE.md CP6 + hard rules",
-      "builder feedback: stash/checkout hazards, exact-id pre-flight"
+      "builder feedback: stash/checkout hazards, exact-id pre-flight",
+      "builder feedback: no-high-inertia-when-igor-down (2026-07-06)"
     ],
     "consumed_by": [
       "sprint-ticket",

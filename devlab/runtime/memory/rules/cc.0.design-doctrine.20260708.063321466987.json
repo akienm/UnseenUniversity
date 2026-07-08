@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.design-doctrine.20260708.063321466987",
+  "emitter": "cc.0",
+  "namespace": [
+    "design-doctrine"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-08T06:33:21.466987",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-builder-memory-repo-residency"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "rule": "design-doctrine",
+    "title": "Design reflexes — cooperative, external-state, homogeneous, observable; the corrections that keep recurring",
+    "statement": "COOPERATIVE, NOT HIERARCHICAL: each component is responsible for ITSELF; there is no supervisor/coordinator/box-agent layer to add, ever — the resident primitives already exist (shims are up + Ground Loop is up; GL is passive: heartbeat + startup-error rescue only). New coordination = an existing primitive doing one more thing it's already shaped to do. EXTERNAL STATE: every device externalizes ALL runtime state so restart loses nothing — before adding an in-memory field ask 'what happens on restart?'. HOMOGENEITY OVER SPECIAL-CASE: one mechanism parameterized by addressee, never N near-identical per-device surfaces; a needed special case must justify itself. BUTTON PATTERN: shared counters/flags get a single atomic owner (UPDATE ... SET x=x+1 RETURNING x); callers press, never read-modify-write. SHAPE FIRST: when a new capability appears, ask 'what shape does this problem have?' and build the minimal lateral device — Igor is never the default home (Igor USES systems, does not contain them; export capability to the rack, don't extract). MIGRATIONS ARE TWO HALVES: copy-forward AND remove-behind, explicit in the plan — verify-merged, then delete, so exactly one home survives. VERIFY DIVERGENCE BEFORE COLLAPSING: an implementation difference may be an essential adaptation, not debt — find the discriminator before unifying (mocked tests pass a hollow collapse). OBSERVABILITY FIRST: visibility into structure is what enables diagnosis — prefer making state visible over adding capability; when live probing isn't converging, ADD LOGGING at the decision points instead of inferring from outside. EVERY POINT CARRIES ITS WHY (Theory of Operation): rules, nodes, skills, architecture — a point without a why gets 'simplified' away by the next reader. CREDENTIALS compose at CONNECT time, never into values that serialize/travel. DESIGN FOR CC'S MENTAL MODEL: named role-wrappers over parameterized abstractions when CC is the executor. CRAFTSMANSHIP: research project, no deadline — no shortcuts, one right solution over three quick ones; 'no rush' means thorough, not slow. WAIT FOR THE BETTER LEVER: known-but-deferred issues are held deliberately; when adjacent work surfaces one, capture it on its lever, don't scramble to fix. Skills single-source from repo skills/ via symlink — copy-sync is the drift disease.",
+    "why": "These are the reflexes Akien has corrected repeatedly — the supervisor reflex was re-committed one message after being named (2026-07-03); five copies of the decision corpus accumulated because migrations only ever ran their copy-forward half; a near-collapse of the minion tool-protocol would have shipped green on mocked tests. Each clause names the failure it prevents so a fresh builder inherits the correction, not the mistake (the whole point of repo residency).",
+    "sources": [
+      "builder feedback: cooperative-not-hierarchical, ground-loop-is-passive, external-state-principle, homogeneity-over-special-case, button-pattern, orchestration-insight, igor-uses-not-contains, export-not-copy, delete-after-successful-merge, verify-divergence-before-collapsing, observability-value, instrument-dont-probe, design-for-cc-mental-model, craftsmanship, wait-for-the-better-lever, no-skills-sync-symlink, ask-human-for-the-why",
+      "project memory: theory-of-operation",
+      "reference: compose-credentials-at-connect-time"
+    ],
+    "consumed_by": [
+      "audit-design",
+      "sprint-ticket plan review",
+      "any design session"
+    ]
+  },
+  "produced_by": "T-builder-memory-repo-residency"
+}

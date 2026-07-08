@@ -81,6 +81,16 @@
         "deprecated": "cc_queue.py next / cc_queue.py list to pick work",
         "preferred": "/query-ticket",
         "why": "the queue abstraction will switch to the ADC rack device; list also hides tickets"
+      },
+      {
+        "deprecated": "direct OpenRouter/Anthropic/Ollama calls from any device",
+        "preferred": "InferenceDevice.dispatch through the Inference Proxy (tier, not model)",
+        "why": "the Proxy is the chokepoint for rate limits, cost control, and tier routing; direct backend calls are architecture violations (D-single-central-inference-proxy)"
+      },
+      {
+        "deprecated": "copy-syncing skills between repo skills/ and ~/.claude/skills",
+        "preferred": "directory symlink — repo skills/ is the single canonical source",
+        "why": "copies drift (a stale local copy broke day-close 2026-06-25); links can't (T-skills-single-source-flip)"
       }
     ],
     "why": "Deprecated forms are how purged debt regrows: each pair pins the direction of a completed (or in-flight) migration so a fresh plan can't innocently propose the dead form. The registry is the machine-readable half of every 'X is retired' decision.",
