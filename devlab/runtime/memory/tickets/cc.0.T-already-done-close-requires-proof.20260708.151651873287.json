@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-already-done-close-requires-proof.20260708.151651873287",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-already-done-close-requires-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:16:51.873287+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-already-done-close-requires-proof"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-already-done-close-requires-proof",
+    "title": "[sprint] Extend proof-on-close to the 'already built / duplicate' disposition — no grep-verified cancels",
+    "size": "M",
+    "tags": [
+      "Process",
+      "ProofOnClose"
+    ],
+    "priority": 0.6,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "intention": "I intend that a ticket cannot be closed or cancelled as 'already built / already done / duplicate of existing code' on the strength of a grep or a read-assertion — the close must cite a runnable proof that is RED when the claimed capability is absent or hollow, exactly as a done-close must.",
+    "description": "Proof-on-close (D-proof-on-close-2026-06-20) gates a close that claims DONE: emit a red->green proof or close shipped-unproven naming the missing lever. But a close/cancel whose disposition is 'this is ALREADY BUILT / duplicate of existing code / won't-do-because-it-exists' slips the gate entirely — it is an unproven ASSERTION that the code already does the thing, and that assertion can be flat wrong.\n\nROOT INCIDENT: T-inference-policy-router was cancelled 2026-06-23 with the reason 'rules_engine.route() already does this.' The source decision's own note admits 'grep-not-read produced a wrong premise.' The pure-policy-router / stack decomposition was NEVER implemented; the fragile hardcoded-triple rules list survived posing as the finished design (see D-inference-router-stack-decomposition-2026-07-08, filed 2026-07-08, which is now rebuilding it). A grep said the symbol existed; nobody READ that it did the work. The whole 4-stack redesign is the cost of that ungated cancel.\n\nPROPOSED SHAPE: treat 'already-exists' as a proof-bearing disposition. To close/cancel a ticket claiming the work already exists, the close must cite a RUNNABLE existence-proof: a test that PASSES because the claimed capability is present AND is demonstrably RED when it is absent/hollow (the counterfactual — delete/stub the symbol, the test fails). Grep output and 'I read the code and it looks done' are explicitly insufficient. If such a proof cannot yet be produced, the honest path is close shipped-unproven naming the missing lever (mirroring the done-close rule) — never a bare 'already built' assertion.\n\n**Affected files:** devlab/claudecode/cc_queue.py (the close gate — cmd_close, and the cancel path via cmd_setstatus/block that reaches 'closed'/'cancelled'); the proof-gate logic it calls (proof_store.py / proof_emitter.py) — add or recognize an 'existence proof' mode where the counterfactual-absent run is the red form; the /sprint-ticket close-step doc + any close-disposition handling.\n**Design rules:** proof-on-close (extend, don't fork it); test-plan-or-why-not; CP1 epistemic-honesty (grep-not-read is exactly the confabulation CP1 fights); no-escape-hatches (an ungated disposition IS an escape hatch).\n**Scope boundary:** IN — the close/cancel gate for the 'already-exists / duplicate / already-built' disposition, plus an existence-proof mode so the counterfactual-absent run gives a real red. OUT — the done-close proof path (already gated); no new ticket statuses; not re-litigating already-closed tickets (forward-looking gate only).\n**Test plan:** (1) a close with an 'already-built' reason and NO runnable proof is REFUSED by the gate (red->green on the gate logic). (2) an existence-proof where the symbol is present passes, and the same proof with the symbol stubbed/removed goes RED (proves the counterfactual actually bites). (3) shipped-unproven remains available as the honest fallback when no existence-proof is producible.\n**Rollback:** the gate change is localized to the close path; revert the cc_queue close-gate commit to restore prior behavior. No data migration.\n**Logging:** log a refused already-built close at WARNING (a blocked state-change is a signal); log an accepted existence-proof close at INFO with the proof id.\n**Observability:** attempting `cc_queue.py close <id> --already-built` (or equivalent) without a bound existence-proof prints a refusal naming the missing proof; with one, the close records the proof id — both runtime-observable.\n**Depends on:** none (independent of the router build; this is the systemic guard so it can't recur).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:16:47.392347+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:16:47.440309+00:00"
+  }
+}
