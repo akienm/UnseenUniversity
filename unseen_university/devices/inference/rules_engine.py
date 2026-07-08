@@ -159,7 +159,12 @@ class RulesEngine:
     ) -> None:
         self._sources = sources
         self._models = models
-        self._rules = sorted(rules or _DEFAULT_RULES, key=lambda r: r.priority)
+        # `None` means "give me the default rule set"; an explicit `[]` means
+        # "start with no rules" (e.g. a caller that only adds compiled rules).
+        # `rules or _DEFAULT_RULES` conflated the two — an empty list is falsy, so
+        # it silently loaded ALL defaults, which is the opposite of the intent.
+        base_rules = _DEFAULT_RULES if rules is None else rules
+        self._rules = sorted(base_rules, key=lambda r: r.priority)
         self._session_map: dict[str, tuple[str, str]] = (
             {}
         )  # session_id → (model_id, source_name)

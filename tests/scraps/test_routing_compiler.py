@@ -329,7 +329,12 @@ def test_load_corpus_missing_file_returns_empty(compiler):
 
 
 def test_rules_engine_add_compiled_rule():
-    """add_compiled_rule prepends a new rule and it takes priority in routing."""
+    """add_compiled_rule inserts a rule that route() honors.
+
+    With an empty rule base the compiled rule is the sole analyst candidate, so
+    route() returns it. (This proves the rule is inserted and used — NOT that a
+    low priority beats a cheaper competitor: priority is only the cost tiebreak.)
+    """
     from unittest.mock import MagicMock
 
     from unseen_university.devices.inference.models_registry import ModelsRegistry, ModelSpec
@@ -340,6 +345,14 @@ def test_rules_engine_add_compiled_rule():
     src = MagicMock(spec=Source)
     src.name = "openrouter"
     src.available = True
+    # A MagicMock(spec=Source) knows the attribute *names* but not the dataclass
+    # field defaults, so time_bucket/cost_class return MagicMocks. The route()
+    # eligibility filter does TIME_BUCKETS.index(source.time_bucket): a non-str
+    # raises ValueError → the source is treated as the slowest bucket and the
+    # explicit compiled rule is filtered out (falling through to the tier fallback).
+    # Give the mock the real string values a live openrouter Source always carries.
+    src.time_bucket = "interactive"
+    src.cost_class = "token_direct"
     sources.register(src)
 
     models = ModelsRegistry()
