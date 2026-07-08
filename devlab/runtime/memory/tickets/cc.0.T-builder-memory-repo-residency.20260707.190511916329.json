@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-builder-memory-repo-residency",
-    "title": "[sprint] Builder process memory lives instance-local (~/.claude) — mirror load-bearing entries into the repo store",
+    "title": "[in_progress] Builder process memory lives instance-local (~/.claude) — mirror load-bearing entries into the repo store",
     "size": "M",
     "tags": [
       "Store",
@@ -29,7 +29,7 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.6,
-    "status": "sprint",
+    "status": "in_progress",
     "created_at": "2026-07-08T01:05:01.641411+00:00",
     "worker": null,
     "created_by": null,

@@ -1,0 +1,10 @@
+# Slate 2026-07-08
+
+## Planned
+- Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
+
+## Ad hoc
+- CLOSED T-rules-store-materialize (PROVEN, red=AssertionError green=passed @2950bebb): 14 rule artifacts in rules/ via memory_emit (statement+why, produced_by, validity_conditions where real); rules_citation_check.py citations=15 unresolved=0; cat rules/*safeguards* now returns the authoritative inertia list; proof pinned in tests/test_rules_citations_resolve.py. Q1 OPEN for Akien: confirm/amend the HIGH-inertia list in the safeguards artifact.
+
+## In-flight
+- T-builder-memory-repo-residency claimed (Fable block #2) — triage ~120 ~/.claude memories -> repo store; deliverable = triage table in notes/ + rules/notes artifacts for load-bearing entries; NO local deletions.
