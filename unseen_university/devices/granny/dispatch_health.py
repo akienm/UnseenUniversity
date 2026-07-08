@@ -88,6 +88,31 @@ def summarize_dispatch_health(
     idleness is expected and never warns (that's a separate concern). An idle builder
     with an empty backlog is healthy idle and stays a calm no-op.
     """
-    # STUB — returns an empty report so the proof's red run fails on an assert,
-    # not an ImportError. Real logic lands in the impl commit.
-    return HealthReport(info_line="", warns=[])
+    backlog = dispatchable_by_target + deferred_unavailable
+    available = [b for b in builders if b.available]
+
+    warns: list[str] = []
+    for b in available:
+        if (
+            b.last_dispatch_age_s is not None
+            and b.last_dispatch_age_s >= idle_threshold_s
+            and backlog > 0
+        ):
+            warns.append(
+                f"builder {b.name} idle {_fmt_age(b.last_dispatch_age_s)} while "
+                f"{backlog} ticket(s) wait "
+                f"(dispatchable_by_target={dispatchable_by_target}, "
+                f"deferred_unavailable={deferred_unavailable}) — "
+                f"work is not reaching an available builder"
+            )
+
+    per_builder = ", ".join(
+        f"{b.name}:{'avail' if b.available else 'unavail'}/idle={_fmt_age(b.last_dispatch_age_s)}"
+        for b in builders
+    )
+    info_line = (
+        f"granny health: available={len(available)}/{len(builders)} "
+        f"dispatchable_by_target={dispatchable_by_target} "
+        f"deferred_unavailable={deferred_unavailable} | {per_builder}"
+    )
+    return HealthReport(info_line=info_line, warns=warns)
