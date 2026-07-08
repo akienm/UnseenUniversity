@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.consequence-ticket-aging.T-consequence-ticket-aging-alarm.20260708.065607234233",
+  "emitter": "cc.0",
+  "namespace": [
+    "consequence-ticket-aging",
+    "T-consequence-ticket-aging-alarm"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T06:56:07.234233",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-consequence-ticket-aging-alarm"
+    ],
+    "commits": [
+      "698bda0879877146593b5624ba1eea38c9d58236"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "consequence ticket aging",
+    "intention": "A consequence check past its gate date is surfaced with its age until worked, so the falsifiability loop closes in reality",
+    "test": "tests/test_consequence_aging.py::test_overdue_consequence_is_surfaced_with_correct_age",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_consequence_aging.py::test_overdue_consequence_is_surfaced_with_correct_age",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____________ test_overdue_consequence_is_surfaced_with_correct_age _____________\n\n    def test_overdue_consequence_is_surfaced_with_correct_age():\n        tasks = [_t(\"T-consequence-foo\", gate=\"2026-07-01\")]\n        overdue = ca.overdue_consequences(tasks, today=_TODAY)\n>       assert len(overdue) == 1\nE       assert 0 == 1\nE        +  where 0 = len([])\n\ntests/test_consequence_aging.py:32: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_consequence_aging.py::test_overdue_consequence_is_surfaced_with_correct_age\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "698bda0879877146593b5624ba1eea38c9d58236",
+    "impl_paths": [
+      "devlab/claudecode/consequence_aging.py",
+      "skills/day-close-audit/SKILL.md"
+    ],
+    "ticket": "T-consequence-ticket-aging-alarm",
+    "narrative": "",
+    "why": "consequence gates mandate the ticket exists but nothing makes it fire — many T-consequence-* sat open past their gate dates (gate-attack G7)",
+    "bootstrap": false
+  }
+}
