@@ -20,6 +20,10 @@ log = logging.getLogger(__name__)
 
 _STATE = Path.home() / ".granny" / "stall_state.json"
 _MRU = Path.home() / ".granny" / "mru.json"
+# Per-worker last-dispatch TIMESTAMP (distinct from _MRU, which tracks order not
+# time). Feeds the dispatch-health idle-age signal (T-granny-dispatch-observability-gap);
+# kept in its own file so the MRU list format the dispatch path reads is untouched.
+_LAST_DISPATCH = Path.home() / ".granny" / "last_dispatch.json"
 
 
 def is_stalled() -> bool:
@@ -92,6 +96,49 @@ def record_dispatch(worker_id: str, now=None) -> None:
         log.debug("stall_state: recorded dispatch to %s", worker_id)
     except Exception as exc:
         log.error("stall_state: record_dispatch failed: %s", exc)
+
+
+def record_dispatch_time(worker_id: str, now=None) -> None:
+    """Record the wall-clock time of a dispatch to worker_id (fail-soft).
+
+    Writes ``{worker_id: <iso>}`` into _LAST_DISPATCH, merging with existing
+    entries. Called alongside record_dispatch at the dispatch-success point; a
+    pure observability side-effect (never gates a dispatch decision).
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+    try:
+        _LAST_DISPATCH.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            data = json.loads(_LAST_DISPATCH.read_text(encoding="utf-8"))
+            if not isinstance(data, dict):
+                data = {}
+        except (OSError, ValueError):
+            data = {}
+        data[worker_id] = now.isoformat()
+        _LAST_DISPATCH.write_text(json.dumps(data), encoding="utf-8")
+        log.debug("stall_state: recorded dispatch time for %s", worker_id)
+    except Exception as exc:
+        log.error("stall_state: record_dispatch_time failed: %s", exc)
+
+
+def last_dispatch_age_s(worker_id: str, now=None) -> float | None:
+    """Seconds since worker_id was last dispatched, or None if never recorded.
+
+    Fail-soft: missing/corrupt file or unparseable timestamp → None (treated by
+    the summariser as 'not known to be idle', never as idle).
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+    try:
+        data = json.loads(_LAST_DISPATCH.read_text(encoding="utf-8"))
+        iso = data.get(worker_id)
+        if not iso:
+            return None
+        ts = datetime.fromisoformat(iso)
+        return max(0.0, (now - ts).total_seconds())
+    except (OSError, ValueError, TypeError):
+        return None
 
 
 def mru_order(candidates: list[str]) -> list[str]:

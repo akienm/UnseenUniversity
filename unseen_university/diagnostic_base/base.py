@@ -151,6 +151,45 @@ def prune_json_logs(log_root: Path | str | None = None, days: int = 30) -> int:
     return deleted
 
 
+def configure_process_logging(
+    device_id: str, log_root: Path | str | None = None
+) -> None:
+    """Wire a STANDALONE daemon process's stdlib logging into the canonical JSON sink.
+
+    A standalone daemon (granny, scraps, ground_loop) runs its loop in ``__main__``
+    without instantiating its ``DiagnosticBase`` device, so the JSON sink and the
+    stdlib→loguru intercept are never installed and ``device_id`` is never stamped —
+    every record dies on the tmux pane instead of landing in a greppable file under
+    ``~/.unseen_university/logs/<device>/<stream>/``. That is the stale-``*.log`` bug
+    (T-granny-dispatch-observability-gap).
+
+    Call this ONCE at daemon startup INSTEAD of ``logging.basicConfig(...)``. It:
+      1. registers the JSON file sink (idempotent — shares ``_json_sink_id`` with
+         ``DiagnosticBase`` so a device booted later does not double-register);
+      2. installs the stdlib→loguru intercept (so ``logging.getLogger(...)`` records
+         flow into loguru — the daemon keeps its existing ``log.info(...)`` calls);
+      3. stamps every record in this process with ``device_id`` (and optional
+         ``log_root``) via loguru's default ``extra`` — the key the sink requires.
+
+    loguru's default stderr sink is left in place, so the tmux pane still shows
+    output; this ADDS the file sink, it does not replace the pane.
+    """
+    global _json_sink_id, _intercept_installed
+    if _json_sink_id is None:
+        _json_sink_id = _root_logger.add(
+            _json_file_sink, enqueue=False, backtrace=False, diagnose=False
+        )
+    if not _intercept_installed:
+        install_stdlib_intercept()
+        _intercept_installed = True
+    extra: dict[str, Any] = {"device_id": device_id}
+    if log_root is not None:
+        extra["log_root"] = str(log_root)
+    # Only ``extra`` is passed — handlers are NOT reset (loguru clears handlers only
+    # when ``handlers=`` is given), so the JSON sink + default stderr sink survive.
+    _root_logger.configure(extra=extra)
+
+
 class _SafeDict(dict):
     """dict subclass that leaves unknown keys un-substituted rather than raising."""
 

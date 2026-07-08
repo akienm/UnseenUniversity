@@ -62,6 +62,12 @@ _CONFIG_PATH = uu_config_dir() / "granny.yaml"
 _PID_FILE = _GRANNY_HOME / "daemon.pid"
 
 POLL_INTERVAL_S = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
+# Dispatch-health observability (T-granny-dispatch-observability-gap): emit a
+# glanceable health line every N cycles; WARN when an available builder idles past
+# this threshold while work waits. Observability only — never gates a dispatch.
+_HEALTH_EVERY_N = max(1, int(os.environ.get("GRANNY_HEALTH_EVERY_N", "10")))
+_BUILDER_IDLE_WARN_S = int(os.environ.get("GRANNY_BUILDER_IDLE_WARN_S", str(4 * 3600)))
+_daemon_start_ts = time.time()  # wall-clock floor for idle-age when a builder has no dispatch record
 _CIRCUIT_STATE_FILE = Path(
     os.environ.get("UU_CIRCUIT_STATE_FILE", str(Path.home() / ".unseen_university" / "circuit_state.json"))
 )
@@ -896,7 +902,8 @@ def run_once(config: dict, *, imap=None) -> None:
     (tmux_send_keys / set_worker) paths are used.
     """
     from unseen_university.devices.granny.availability import check_and_expire_cooldowns, is_available
-    from unseen_university.devices.granny.stall_state import is_stalled, set_stalled, record_dispatch
+    from unseen_university.devices.granny.stall_state import (
+        is_stalled, set_stalled, record_dispatch, record_dispatch_time)
 
     granny_mailbox = config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT)
 
@@ -1065,6 +1072,7 @@ def run_once(config: dict, *, imap=None) -> None:
             log.info("Granny: dispatch_ok|ticket=%s|target=%s|kind=%s", tid, target, dispatch_kind)
             dispatched_this_cycle.add(target)
             record_dispatch(target)
+            record_dispatch_time(target)  # observability: feeds the idle-age health signal
             # Cascade: update the ticket's worker field — prefer workers_cfg worker_name,
             # fall back to the legacy _WORKER_ID_TO_NAME dict.
             if is_cascade:
@@ -1097,6 +1105,57 @@ def run_once(config: dict, *, imap=None) -> None:
 
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
+
+
+def _emit_dispatch_health(config: dict) -> None:
+    """Read-only dispatch-health observer (T-granny-dispatch-observability-gap).
+
+    Assembles current builder availability + idle-age and the waiting-backlog split
+    (dispatchable-by-target vs deferred-to-unavailable), then logs one glanceable
+    health line and a WARN per available builder idle past ``_BUILDER_IDLE_WARN_S``
+    while work waits — the offload-loop-stalled signal Akien had to read the pane to
+    see. Purely observational: it resolves targets via ``match_rule`` read-only and
+    never dispatches, so it cannot perturb the dispatch cycle. Fail-soft (a broken
+    health emit must never take the daemon down)."""
+    try:
+        from unseen_university.devices.granny.availability import is_available
+        from unseen_university.devices.granny.stall_state import last_dispatch_age_s
+        from unseen_university.devices.granny.dispatch_health import (
+            BuilderState, count_backlog, summarize_dispatch_health)
+
+        workers_cfg = {**config.get("workers", {}), **_load_announced_workers()}
+        rules = config.get("rules", [])
+        tickets = _sprint_tickets() + _cleared_gated_tickets()
+
+        def target_of(t):
+            role_t = {**t, "role": "master"} if t.get("status") == "escalated" else t
+            return match_rule(role_t, rules, exact_match=False)
+
+        dispatchable, deferred = count_backlog(
+            tickets, target_of=target_of, is_available=is_available)
+
+        now = time.time()
+        builders = []
+        for name, wcfg in workers_cfg.items():
+            if not isinstance(wcfg, dict) or not _worker_is_builder(name, workers_cfg):
+                continue
+            age = last_dispatch_age_s(name)
+            if age is None:  # never dispatched on record — floor at daemon uptime
+                age = now - _daemon_start_ts
+            builders.append(BuilderState(
+                name=name, available=is_available(name), last_dispatch_age_s=age))
+
+        report = summarize_dispatch_health(
+            builders,
+            dispatchable_by_target=dispatchable,
+            deferred_unavailable=deferred,
+            idle_threshold_s=_BUILDER_IDLE_WARN_S,
+        )
+        log.info("Granny: %s", report.info_line)
+        for w in report.warns:
+            log.warning("Granny: health_warn|%s", w)
+    except Exception as exc:
+        log.warning("Granny: dispatch-health emit failed (non-fatal): %s", exc)
 
 
 def _make_imap_if_bus_configured(config: dict):
@@ -1146,14 +1205,18 @@ def run_loop() -> None:
             run_once(config, imap=imap)
         except Exception as e:
             log.error("Granny: poll cycle %d error: %s", cycle, e)
+        if cycle % _HEALTH_EVERY_N == 0:
+            _emit_dispatch_health(config)
         _wait_for_work(POLL_INTERVAL_S)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
+    # Route this standalone daemon process's stdlib logs into the canonical
+    # per-device JSON sink (~/.unseen_university/logs/granny/<stream>/) instead of
+    # only the tmux pane — the stale-log fix (T-granny-dispatch-observability-gap).
+    # Replaces logging.basicConfig; the loguru default stderr sink keeps the pane.
+    from unseen_university.diagnostic_base.base import configure_process_logging
+    configure_process_logging("granny")
     _GRANNY_HOME.mkdir(parents=True, exist_ok=True)
     _PID_FILE.write_text(str(os.getpid()))
 
