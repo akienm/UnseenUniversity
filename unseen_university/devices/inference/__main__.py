@@ -15,13 +15,15 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
+from unseen_university.devices.inference.device import InferenceDevice
 from unseen_university.devices.inference.shim import InferenceShim
 
 log = logging.getLogger(__name__)
 
 
 def main() -> None:
-    shim = InferenceShim()
+    device = InferenceDevice()
+    shim = InferenceShim(device=device)  # the shim runs the aider proxy off THIS device
     if not shim.start():
         log.error("inference shim failed to start")
         sys.exit(1)

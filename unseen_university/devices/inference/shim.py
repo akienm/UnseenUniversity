@@ -143,27 +143,31 @@ class InferenceShim(BaseShim):
     For Ollama: manages the `ollama serve` process lifecycle.
     """
 
-    def __init__(self, mode: str = _MODE) -> None:
+    def __init__(self, mode: str = _MODE, device=None) -> None:
         self._mode = mode
         self._process: subprocess.Popen | None = None
         self._aider_proxy = None          # limited Ollama HTTP door for aider (opt-in)
-        self._proxy_device = None
+        # The device this shim belongs to (parity with AiderShim(device=self)). The aider
+        # proxy runs off THIS device's dispatch — the shim never spawns its own device.
+        self._device = device
 
     def _maybe_start_aider_proxy(self) -> None:
         """Launch the limited Ollama-compatible HTTP door for aider when AIDER_PROXY_PORT
         is set (T-aider-through-inference-proxy). aider points OLLAMA_API_BASE here and
-        every call routes through InferenceDevice.dispatch — tier→source selection, cloud
-        escalation, budget-ledger cost, io_corpus. Opt-in so existing shim usage (which
-        does not want an HTTP listener) is unaffected. Fail-soft: a proxy failure must
-        never fail the shim's own start()."""
+        every call routes through this device's dispatch — tier→source selection, cloud
+        escalation, budget-ledger cost, io_corpus. Opt-in so existing shim usage (ollama
+        management only, no device) is unaffected. Fail-soft: a proxy failure must never
+        fail the shim's own start()."""
         port = os.environ.get("AIDER_PROXY_PORT")
         if not port or self._aider_proxy is not None:
             return
+        if self._device is None:
+            log.warning("InferenceShim: AIDER_PROXY_PORT set but shim has no device — "
+                        "construct InferenceShim(device=<InferenceDevice>); proxy not started")
+            return
         try:
-            from unseen_university.devices.inference.device import InferenceDevice
             from unseen_university.devices.inference.aider_proxy import AiderProxyServer
-            self._proxy_device = InferenceDevice(mode=self._mode)
-            self._aider_proxy = AiderProxyServer(self._proxy_device.dispatch, port=int(port))
+            self._aider_proxy = AiderProxyServer(self._device.dispatch, port=int(port))
             self._aider_proxy.start()
         except Exception as exc:
             log.error("InferenceShim: aider proxy failed to start on port %s: %s", port, exc)
