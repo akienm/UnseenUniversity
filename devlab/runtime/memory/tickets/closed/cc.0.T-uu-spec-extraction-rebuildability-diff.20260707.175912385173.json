@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-uu-spec-extraction-rebuildability-diff",
-    "title": "[sprint] Fable window: extract minimal generative spec; rebuildability diff = unwritten load-bearing knowledge",
+    "title": "Fable window: extract minimal generative spec; rebuildability diff = unwritten load-bearing knowledge",
     "size": "L",
     "tags": [
       "Architecture",
@@ -30,12 +30,12 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.7,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-07T23:59:05.841896+00:00",
     "created_by": null,
-    "result": null,
+    "result": "Generative spec (notes/generative-spec.20260707.md: L0 telos / L1 values+consumption / L2 13 invariants with whys / L3 rack / L4 process / L5 substrate, with validity-conditions header) + rebuildability diff (notes/rebuildability-diff.20260707.md: 12 findings, 0 naked — 4 NEW tickets: T-rules-store-materialize [CRITICAL: 86 skill refs to 14 phantom rules, rules/ has 1 file], T-builder-memory-repo-residency [CRITICAL: ~120 load-bearing memories instance-local], T-claude-md-stale-anchors, T-store-layout-reconcile; 8 findings mapped to existing tickets/decisions)",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T01:05:39.507423+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T23:59:05.841944+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "be4983e4-5ca3-495b-81a6-ebd9b6b0b5d6"
+    "inferred_intention_id": "be4983e4-5ca3-495b-81a6-ebd9b6b0b5d6",
+    "proven": false,
+    "unproven_reason": "regeneration-on-paper has no red->green form; candidate lever: an actual fresh-context rebuild drill scored against the spec (eval-run question or a sandboxed fresh-builder session)",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

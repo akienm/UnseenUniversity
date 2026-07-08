@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-claude-md-stale-anchors.20260707.190512048443",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-claude-md-stale-anchors"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:05:12.048443+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-claude-md-stale-anchors"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-claude-md-stale-anchors",
+    "title": "[sprint] CLAUDE.md stale anchors: core_values path (+ sweep for other dead pointers)",
+    "size": "S",
+    "tags": [
+      "Docs"
+    ],
+    "description": "intention: I intend that every path CLAUDE.md names resolves in the tree it bootstraps.\n\nrebuildability-diff.20260707.md F3: CLAUDE.md says canonical core values live at diagnostic_base/core_values.py; the file is at unseen_university/diagnostic_base/core_values.py post single-package reorg. Sweep CLAUDE.md for all named paths/symbols, verify each resolves, fix the stale ones (announce/listener.py reference also predates the aider worker_listener canonical example — verify which is intended).\n\n**Affected files:** CLAUDE.md\n\n**Design rules:** docs-live-in-code freshness; the core_values file wins over any doc\n\n**Scope boundary:** anchor fixes only — no rule-content changes, no restructuring.\n\n**Test plan:** verification script/one-liner — every path-shaped string in CLAUDE.md resolves (or is explicitly marked historical); output committed in the close message.\n\n**Completion criteria:** zero unresolved non-historical path anchors in CLAUDE.md.\n\n**Validation:** the resolution check output.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:05:05.366156+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every path CLAUDE.md names resolves in the tree it bootstraps.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:05:05.366200+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "db467ac9-352d-4d21-bb78-a8dfaf3ad887"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-builder-memory-repo-residency.20260707.190511916329",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-builder-memory-repo-residency"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:05:11.916329+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-builder-memory-repo-residency"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-builder-memory-repo-residency",
+    "title": "[sprint] Builder process memory lives instance-local (~/.claude) — mirror load-bearing entries into the repo store",
+    "size": "M",
+    "tags": [
+      "Store",
+      "Workflow"
+    ],
+    "description": "intention: I intend that a fresh builder on any box inherits the corrected working style from the repo, not from one instance's private memory dir.\n\nrebuildability-diff.20260707.md F2 (CRITICAL): ~120 auto-memory entries (proof gotchas, device roster, one-CC-at-a-time, Granny never-spawns, stash/checkout hazards, escalation-is-spec-quality-data, calm signals...) exist only in ~/.claude/projects/-home-akien-dev-src-UnseenUniversity/memory/ — outside the repo. Violates the external-state principle devices are held to. Shape: triage each entry — (a) already in a decision/rule -> skip; (b) load-bearing process feedback -> becomes/extends a rules/ artifact (with T-rules-store-materialize) or a note; (c) personal-to-Akien or ephemeral -> stays local. The local dir remains the working cache; the repo becomes the source of durable process feedback.\n\n**Affected files:** devlab/runtime/memory/rules/ + devlab/runtime/memory/notes/ (new artifacts); ~/.claude memory dir read-only for triage\n\n**Design rules:** export-not-copy (generalize into the shared substrate); one home; no duplication without a superseding pointer\n\n**Scope boundary:** triage + mirror of load-bearing entries only; NO deletion of local memories; no automation of future sync (that is a follow-on design question, noted in the close).\n\n**Test plan:** no code tests — content migration; spot-check list of migrated entry -> store artifact mappings committed as part of the note.\n\n**Completion criteria:** a triage table (entry -> disposition -> artifact id) exists in notes/; every category-(b) entry has a store artifact; fresh-builder check: the 10 most-cited feedback memories of this list are readable from the repo alone.\n\n**Validation:** the triage table artifact + resolvable artifact ids.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:05:01.641411+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that a fresh builder on any box inherits the corrected working style from the repo, not from one instance's private memory dir.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:05:01.641482+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b48a9b0d-71ef-4d7e-bef2-0cb87c7505da"
+  }
+}

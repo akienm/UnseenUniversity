@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-store-layout-reconcile.20260707.190512201097",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-store-layout-reconcile"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:05:12.201097+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-store-layout-reconcile"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-store-layout-reconcile",
+    "title": "[sprint] Store layout vs reality: design_patterns/ empty (inventory in docs/), sessions/ empty but referenced",
+    "size": "S",
+    "tags": [
+      "Store"
+    ],
+    "description": "intention: I intend that the declared store layout and the actual artifact homes agree, so the layout teaches a fresh builder the truth.\n\nrebuildability-diff.20260707.md F4: devlab/runtime/memory/design_patterns/ is empty while the live 22-pattern inventory sits at docs/design_patterns_inventory.md (a second home for a store-typed artifact — the drift the one-home rule prohibits); sessions/ is empty while /sorted references session records. Resolve each: either move the artifact into the store subdir (and repoint pre_inference_assemble.py's inventory path) or amend the canonical-layout decision to remove/rename the subdir. Do NOT leave a silent divergence.\n\n**Affected files:** devlab/runtime/memory/design_patterns/ or docs/design_patterns_inventory.md + devlab/claudecode/pre_inference_assemble.py (path repoint), skills/sorted/SKILL.md (session-record reference), possibly a layout-amendment note on D-canonical-memory-consolidation-2026-06-23\n\n**Design rules:** one home, no exceptions; delete old copies after successful merge\n\n**Scope boundary:** reconcile these two subdirs only; not a general store audit.\n\n**Test plan:** if inventory moves: pre_inference_assemble.py still matches patterns (run on a known ticket, non-empty MATCHED DESIGN PATTERNS); if layout amended: grep shows no skill references the removed subdir.\n\n**Completion criteria:** both subdirs either populated-and-referenced or removed-and-unreferenced; zero references to the losing path.\n\n**Validation:** the assemble-script run output or the zero-reference grep.\n\naudit-emphasis: none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:05:09.049023+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the declared store layout and the actual artifact homes agree, so the layout teaches a fresh builder the truth.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:05:09.049074+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9853eb77-931c-44f2-9e13-1d4b9e10fdfd"
+  }
+}

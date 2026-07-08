@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-rules-store-materialize.20260707.190511773511",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rules-store-materialize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:05:11.773511+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rules-store-materialize",
+    "title": "[sprint] Materialize the phantom rules namespace: 14 rule artifacts cited 86x by skills, rules/ has 1 file",
+    "size": "M",
+    "tags": [
+      "Store",
+      "Audits"
+    ],
+    "description": "intention: I intend that every rule the audit gates cite resolves to a readable JSON artifact in the canonical store.\n\nrebuildability-diff.20260707.md F1 (CRITICAL): skills reference unseenuniversity/rules/{approach-frame,database,coding,memory,safeguards,capability-protocol,inherit-base-class,docs-live-in-code,collaboration,igor-constraints,preferred,ticket,budget,metrics} 86 times; devlab/runtime/memory/rules/ contains only path_moves.json. Write each as rules/<name>.json (uniform envelope via memory_emit, category rules), content extracted from CLAUDE.md + owning decisions + the citing skills' implied semantics, each rule carrying its why (CP3) and validity_conditions once T-memory-validity-conditions-design lands. sprint-ticket's inertia check (cat rules/*safeguards*) must return the safeguards rule afterward.\n\n**Affected files:** devlab/runtime/memory/rules/ (14 new JSON artifacts via memory_emit); no skill edits (citations already point here)\n\n**Design rules:** canonical store one home; every rule carries its why; memory_emit is the write chokepoint\n\n**Scope boundary:** materialize the 14 cited rules ONLY; no new rules invented; no skill text changes; content questions that can't be answered from CLAUDE.md/decisions go to Akien as Q-numbered open questions on this ticket rather than guessed.\n\n**Test plan:** script check — every unseenuniversity/rules/<name> cited in skills/ resolves to a rules/*.json artifact; grep count of unresolved citations == 0.\n\n**Completion criteria:** unresolved-citation count 0 (from 14); cat rules/*safeguards* non-empty; each artifact has a why field.\n\n**Validation:** Observable via the citation-resolution script output committed with the change.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.65,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:04:53.852665+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every rule the audit gates cite resolves to a readable JSON artifact in the canonical store.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:04:53.901919+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "50dd3118-4f94-481d-b40f-a1d218652a99"
+  }
+}
