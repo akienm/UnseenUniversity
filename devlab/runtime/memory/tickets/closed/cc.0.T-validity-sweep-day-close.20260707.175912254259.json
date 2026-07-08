@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-validity-sweep-day-close",
-    "title": "[sprint] Day-close validity sweep: flag store entries whose named dependency changed",
+    "title": "Day-close validity sweep: flag store entries whose named dependency changed",
     "size": "M",
     "tags": [
       "Store",
@@ -29,13 +29,13 @@
     "decision_id": "D-memory-validity-conditions-2026-07-07",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-07T23:59:02.733459+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "new validity_sweep.py implements the contract's pull side: resolves depends-on-path (exists/symbol), depends-on-artifact (superseded/rejected -> broken, missing -> unresolvable meta-rot), depends-on-fact (grep probe; probeless -> unresolvable); annotates flagged entries with stale_flags IN PLACE (never deletes, CP2); >=2-sweep entries -> CURATE; path_moves consulted for rename drift; prints flagged/checked/unresolvable always. Wired as day-close Step 4.7; /sorted prompts for conditions at filing. LIVE dry-run: flagged=2 checked=7 unresolvable=2 (the 2 probeless fact conditions on rules/dispatch+collaboration correctly flagged not-machine-checkable). Proof red=AssertionError green=passed @ba8165fd; 5 hermetic tests. SCOPE NOTE: /note writes log-lines not envelopes, so validity_conditions attach via /sorted decisions not /note; no backfill of old entries (per scope boundary).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T13:56:01.919507+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T23:59:02.733521+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "f1e815d6-7d4f-40f6-90f3-016195cadf60"
+    "inferred_intention_id": "f1e815d6-7d4f-40f6-90f3-016195cadf60",
+    "proven": true,
+    "proof_id": "cc.0.validity-sweep-flags-stale-entries.T-validity-sweep-day-close.20260708.075550554925",
+    "proof_commit": "ba8165fd98deaca8d2c5ff6f89fc904abd0f93c4",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
