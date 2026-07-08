@@ -80,6 +80,24 @@ python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py
 
 Log the count from the output. No action needed when count is 0.
 
+### 4.7. Validity-conditions sweep (T-validity-sweep-day-close)
+
+Resolve every store entry's `validity_conditions` against the current world and
+FLAG (annotate, never delete — CP2) the ones whose named dependency changed. This
+is the rot-RATE fix: a stale entry is caught by the sweep instead of silently
+misleading a future session (the IMAP-claim failure mode).
+
+```bash
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/validity_sweep.py --apply
+```
+
+Always prints `validity sweep: flagged=<N> checked=<M> unresolvable=<K>` — log it
+even at all zeros. `--apply` appends `stale_flags` to flagged entries in place
+(reviewed clearing only — never auto-cleared). A `⚠ CURATE` mark means an entry
+was flagged across ≥2 sweeps — surface it for review. `unresolvable` counts
+conditions whose target can't be resolved (probeless facts, renamed artifacts) —
+a meta-rot signal worth a look when it climbs.
+
 ### 4.6. Stash hygiene — analyze + clear stale git stashes
 
 A lingering `git stash` is hidden divergent state. It survives across sessions

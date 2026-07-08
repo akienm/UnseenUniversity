@@ -216,6 +216,16 @@ artifact whose content caused it — an `intent:I-*` id when the decision realiz
 named intention, else `session:cc.0` (the honest default memory_emit stamps if you
 omit it). It answers "if this decision is wrong, what should be reviewed?".
 
+**Validity conditions (validity-conditions contract).** Before emitting, ask once:
+*"what must remain true for this decision to hold?"* — add 0–3
+`validity_conditions` to the body, each `{type, target, note?}`:
+`depends-on-path` (a repo path/`path::symbol`), `depends-on-artifact` (a `D-*/T-*`
+id whose supersession would falsify this), or `depends-on-fact` (a short fact,
+with an optional `probe` grep pattern so the day-close sweep can check it). Prefer
+resolvable types over factless facts. An honest **none** is accepted — do not
+invent conditions. The day-close `validity_sweep.py` resolves these and flags the
+entry when a dependency changes.
+
 The emit lands one file at
 `devlab/runtime/memory/decisions/cc.0.D-<id>.<stamp>.json` (unique microsecond
 stamp — collisions are effectively impossible). The decision auto-closes when
