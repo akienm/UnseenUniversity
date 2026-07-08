@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-routing-compiler-rules-engine-test-red.20260708.140717025598",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-routing-compiler-rules-engine-test-red"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T20:07:17.025598+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-routing-compiler-rules-engine-test-red"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-routing-compiler-rules-engine-test-red",
+    "title": "[sprint] scraps test_routing_compiler::test_rules_engine_add_compiled_rule red (inference rules engine)",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Test"
+    ],
+    "priority": 0.2,
+    "status": "sprint",
+    "role": "master",
+    "description": "tests/scraps/test_routing_compiler.py::test_rules_engine_add_compiled_rule fails at line 369 (AssertionError) both in-session and at HEAD (verified via clean worktree during T-collapse-daemons-to-ground-loop; NOT caused by it). Inference rules-engine crossing test with a MagicMock time_bucket + ollama-unavailable fallback — likely a hermetic-setup gap or an assertion drifted from the rules_engine output shape.\n\n**Affected files:** tests/scraps/test_routing_compiler.py; unseen_university/devices/inference/rules_engine.py (read to confirm expected shape).\n**Design rules:** inference-tier-not-model; test-plan-or-why-not.\n**Scope boundary:** only this one rules-engine test + its fixture; no routing logic change unless the test exposes a real bug.\n**Test plan:** the test goes green (or xfail/skip with a named reason) in-session.\n**Intention:** I intend the routing-compiler rules-engine test gives a trustworthy in-session signal.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T20:07:12.713036+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-08T20:07:12.759652+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "65c214ea-4293-4acc-bd22-e5548a2122d0"
+  }
+}

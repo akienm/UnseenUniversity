@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ground-loop-canonical-logging.20260708.140707869395",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ground-loop-canonical-logging"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T20:07:07.869395+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ground-loop-canonical-logging"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-ground-loop-canonical-logging",
+    "title": "[sprint] Ground Loop daemon should route its logs to the canonical per-device JSON sink",
+    "size": "S",
+    "tags": [
+      "GroundLoop",
+      "Observability"
+    ],
+    "priority": 0.3,
+    "status": "sprint",
+    "role": "master",
+    "description": "The Ground Loop is the ONE legitimate standalone daemon, but its main() uses logging.basicConfig — so its own logs never reach ~/.unseen_university/logs/ground_loop/<stream>/ (the same stale-log gap that hit Granny, T-granny-dispatch-observability-gap). configure_process_logging(device_id) in diagnostic_base/base.py was KEPT (not deleted in T-collapse-daemons-to-ground-loop) precisely so the GL daemon can adopt it. Wire it into ground_loop/daemon.py main() instead of basicConfig.\n\n**Affected files:** unseen_university/devices/ground_loop/daemon.py (main()); possibly a proof test.\n**Design rules:** per-device-log-hierarchy; log-every-crossing; test-plan-or-why-not.\n**Scope boundary:** only the GL daemon's own process logging; do NOT touch the plugin/runme hosting logic.\n**Test plan:** with UU_LOG_ROOT monkeypatched, a stdlib log from the GL process lands under logs/ground_loop/<stream>/ with device_id — red before the configure_process_logging swap, green after.\n**Intention:** I intend that the one legitimate daemon's own logs are greppable in the canonical per-device home, closing the last basicConfig-only gap.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T20:07:00.295046+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-08T20:07:00.351428+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "599f6542-70ac-4a3a-b1bb-7e8f616bdbb1"
+  }
+}
