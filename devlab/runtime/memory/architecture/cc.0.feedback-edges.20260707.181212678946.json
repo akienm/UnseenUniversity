@@ -1,0 +1,100 @@
+{
+  "id": "cc.0.feedback-edges.20260707.181212678946",
+  "emitter": "cc.0",
+  "namespace": [
+    "feedback-edges"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-07-07T18:12:12.678946",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "feedback-edges",
+    "kind": "contract",
+    "title": "Feedback edges — produced_by on every emission + ONE escalation verb + dispatch-to-producer; the backward half of the pipeline",
+    "summary": "Intention flows forward (intent -> design -> decision -> ticket -> build -> proof); this contract is the backward flow. Every emitted artifact carries produced_by — a single directed blame edge naming the artifact whose content caused this emission. There is exactly ONE escalation verb (the sole-writer builder result envelope with outcome=escalated, enriched) and exactly ONE dispatch rule (at Granny's reconcile): capability-shaped failures ride the existing tier ladder first; spec-shaped failures (or ladder exhaustion) resolve produced_by and land in the PRODUCER'S review surface — escalate-to-design, never the generic admin bucket. Like a compiler blaming the source line via provenance instead of reporting 'backend failed'. Forward edges are answers; backward edges are the questions a failure re-opens (graph-tree telos). Central simplification discovered at design time: the verb is payload-field enrichment of the existing result envelope (reply_to precedent) — NO bus-envelope change, so the HIGH-inertia bus touch flagged at ticket filing is NOT needed.",
+    "key_concepts": [
+      {
+        "name": "1. produced_by — the one backward edge",
+        "what": "A single top-level envelope field (sibling of emitter/kind/links), one string, stamped at emission time by the chokepoints (memory_emit envelope build; cc_queue add-path; proof emitter). Value grammar: a store artifact id (D-*/T-*/proof/note id) whenever one exists; else a typed address — session:<id>, skill:<name>@<date>, intent:I-*, human:akien. Semantics: the artifact whose CONTENT caused this emission — the answer to 'if this artifact is wrong, what should be reviewed?'. NOT the tool that wrote it (memory_emit is the pen) and NOT the emitting agent (cc.0 is the hand; that is `emitter`). Distinct from `links` (an associative bag, no direction). Additive: no reader may require it — legacy artifacts lack it. Typical values: ticket.produced_by = its decision_id (must agree when both present — audit-ticket tightening candidate); decision.produced_by = the intention or session record; proof.produced_by = its ticket; consequence-ticket.produced_by = its decision; note.produced_by = session.",
+        "why": "One uniform edge type is what makes ONE dispatch rule possible — per-artifact-type escalation paths were the special-case trap that made rebuild-from-scratch look necessary (D-feedback-edge-every-emission-2026-07-07, homogeneity over special-case)."
+      },
+      {
+        "name": "2. The ONE escalation verb — enrich the result envelope, don't invent a message",
+        "what": "No new message type. The builder result envelope from D-granny-sole-ticket-writer-2026-07-07 ({outcome, branch, changed_files, verdict, missing_lever_or_reason, notes} — live today in aider worker_listener result payload) gains, when outcome=escalated: failure_class: spec|capability|unknown (consumer proposes; default capability when unsure), failed_artifact: <id> (default: the dispatched ticket), how: <one paragraph — what was attempted, what broke>, evidence: [log paths / diagnostics / proof ids], chain: [<produced_by hops accumulated by the dispatcher>]. Fields ride the bus as PAYLOAD convention (same precedent as reply_to) — the bus envelope (from_device/to_device) is untouched.",
+        "why": "Reusing the report path means every station/builder already speaks the verb the moment it fills three extra fields; and no bus-envelope change means the HIGH-inertia gate flagged on T-escalation-dispatch-producer-review never fires."
+      },
+      {
+        "name": "3. The ONE dispatch rule — at Granny's reconcile",
+        "what": "Lands in granny/daemon.py _reconcile, replacing today's blanket outcome=='escalated' -> setstatus escalated (daemon.py ~570-581). Rule, zero-inference, mechanical from report fields: (a) failure_class=capability AND tier ladder not exhausted -> existing tier escalation, unchanged, runs FIRST; (b) failure_class=spec OR ladder exhausted -> resolve failed_artifact.produced_by = P and route to P's review surface (concept 4); (c) no resolvable produced_by (legacy artifact) -> fallback to admin 'escalated' + log.warning naming the missing edge — the nuisance stays visible (CP4) and its count is the hypothesis metric driving toward zero; (d) cycle guard: refuse + log.warning if P already appears in chain; (e) AR-009 log line at the dispatch point: log.info(\"escalation: artifact=<id> -> producer=<id> route=producer-review\").",
+        "why": "Granny is already the sole ticket writer and the routing owner — putting the rule in her reconcile adds NO new writer and no race surface. Zero-inference keeps dispatch on her no-LLM design line."
+      },
+      {
+        "name": "4. Review surfaces — 'producer review' is existing machinery, no new queue",
+        "what": "Decision producer: re-emit same-stamp (atomic overwrite, /outcome convention) with status -> open_questions and Q<n> appended to body.text per the existing Q/A numbering convention. Open-ticket producer: status -> triage with the failure attached as a note. Closed-ticket producer: do not reopen — recurse one hop to ITS produced_by (normally the owning decision). Session / skill / human producer: post to Akien's inbox (guru review). ",
+        "why": "Every one of these surfaces already exists and is already watched (context-load reads open_questions, triage, inbox). A new 'review queue' would be a second place to look — the drift disease."
+      },
+      {
+        "name": "5. Recursion + retired producers — one hop per review",
+        "what": "The reviewer at P decides: 'my content was wrong' (fix, re-emit downstream) OR 'my INPUT was wrong' (re-fire the same verb with failed_artifact=P) — the rule recurses by re-application, never by auto-walking the chain to the root in one dispatch. Retired producers route to the nearest LIVE reviewable ancestor: closed ticket -> its owning decision; ended session -> the decisions it emitted, else Akien; chain exhausted -> Akien inbox.",
+        "why": "Auto-walking would blame the root intention for every leaf failure and skip the judgment call at each level; one-hop keeps a mind (or gate) at every link, which is the whole point of escalate-to-design."
+      },
+      {
+        "name": "6. Tier reconciliation — capability miss vs spec miss",
+        "what": "Tier escalation (D-dicksimnel-escalation-chain-2026-06-10, T-inference-escalation-ladder-family-then-architect) = 'a stronger resolver might do this' -> ladder first, unchanged. produced_by dispatch = 'no resolver could — the input is under-specified/contradictory' -> producer review. One gate picks exactly one path: failure_class + ladder state. Consumer defaults to capability when unsure (trying a stronger tier is cheaper than interrupting design); ladder exhaustion auto-converts capability -> spec, so misclassification self-corrects at the top of the ladder.",
+        "why": "The two escalation systems never race and neither subsumes the other: tiers answer 'who can solve this', produced_by answers 'who mis-specified this'."
+      },
+      {
+        "name": "7. Stations + sole-writer integration — the station contract is two duties",
+        "what": "Every pipeline station (D-dev-pipeline-stations-2026-07-07: BUILD/TESTER/EXAMINER/PROVER/MERGER) consumes an input artifact and emits an output artifact. This contract adds exactly two duties per station: (1) stamp produced_by on every emission; (2) fire the one verb on its INPUT artifact when it cannot proceed. Backward paths for the whole pipeline fall out of the graph — zero per-station escalation code. All ticket mutations stay Granny's (sole writer, D-granny-sole-ticket-writer-2026-07-07); decision re-emits go through memory_emit same-stamp overwrite; nothing else writes.",
+        "why": "The station model gives the forward pipeline; this gives the backward one with no added coupling — a station only ever talks about its own input and output."
+      }
+    ],
+    "implementing_files": [
+      {
+        "path": "unseen_university/devices/granny/daemon.py",
+        "anchor": "_reconcile, outcome=='escalated' branch (~570-581)",
+        "status": "planned — T-escalation-dispatch-producer-review"
+      },
+      {
+        "path": "unseen_university/devices/aider/worker_listener.py",
+        "anchor": "result payload fields (~174): outcome/branch/changed_files/note/missing_lever/reason/analysis — gains failure_class/failed_artifact/how/evidence",
+        "status": "planned — T-escalation-dispatch-producer-review"
+      },
+      {
+        "path": "devlab/claudecode/memory_emit.py",
+        "anchor": "envelope build — stamp produced_by",
+        "status": "planned — T-produced-by-emission-sweep"
+      },
+      {
+        "path": "devlab/claudecode/cc_queue.py",
+        "anchor": "add-path — derive produced_by from decision_id; skills pass it explicitly",
+        "status": "planned — T-produced-by-emission-sweep"
+      },
+      {
+        "path": "devlab/claudecode/proof_emitter.py",
+        "anchor": "proof produced_by = ticket id",
+        "status": "planned — T-produced-by-emission-sweep"
+      }
+    ],
+    "reference_docs": [
+      "decisions/D-feedback-edge-every-emission-2026-07-07 (the decision this designs)",
+      "decisions/D-granny-sole-ticket-writer-2026-07-07 (result envelope + single writer)",
+      "decisions/D-dev-pipeline-stations-2026-07-07 (the forward pipeline this mirrors)",
+      "decisions/D-dicksimnel-escalation-chain-2026-06-10 (tier ladder, reconciled in concept 6)",
+      "decisions/D-intention-why-observation-2026-06-19 (the closed loop this generalizes)"
+    ],
+    "status_notes": "Design complete 2026-07-07 (Fable window). Impl gated behind this artifact: T-produced-by-emission-sweep (stamping), T-escalation-dispatch-producer-review (dispatch rule). HIGH-inertia resolution: NO bus-envelope change is required — the verb is payload-field enrichment (concept 2); the approval stamp requirement on the dispatch ticket is therefore moot unless impl deviates from this design. OPEN QUESTIONS the impl must NOT guess: (1) exact Q<n> append format for decision reopen — copy a live open_questions decision at impl time, don't invent; (2) chain lives in the escalation record only, NOT stamped onto reviewed artifacts (recommended; revisit only with a reason); (3) backfill of produced_by onto legacy artifacts is explicitly OUT of scope — the fallback WARN (concept 3c) covers them and measures the gap.",
+    "related": [
+      "T-feedback-edge-design",
+      "T-produced-by-emission-sweep",
+      "T-escalation-dispatch-producer-review",
+      "T-consequence-D-feedback-edge-every-emission"
+    ]
+  }
+}

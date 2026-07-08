@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-feedback-edge-design",
-    "title": "[sprint] Design: produced_by backward edge + ONE escalation verb + dispatch-to-producer rule",
+    "title": "Design: produced_by backward edge + ONE escalation verb + dispatch-to-producer rule",
     "size": "L",
     "tags": [
       "Workflow",
@@ -31,12 +31,12 @@
     "decision_id": "D-feedback-edge-every-emission-2026-07-07",
     "gate": null,
     "priority": 0.8,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-07T23:58:47.256875+00:00",
     "created_by": null,
-    "result": null,
+    "result": "Designed the feedback-edge contract: architecture/cc.0.feedback-edges.20260707.181212678946.json — 7 sections (produced_by semantics, verb=result-envelope enrichment, dispatch rule in Granny reconcile, review surfaces, one-hop recursion, tier reconciliation, station contract). Decision amended with pointer. Key resolution: NO bus-envelope change needed — HIGH-inertia gate on dispatch ticket is moot.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T00:13:01.647715+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T23:58:47.303519+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "06c5df6d-36b9-4769-8b55-b0e862034ef7"
+    "inferred_intention_id": "06c5df6d-36b9-4769-8b55-b0e862034ef7",
+    "proven": false,
+    "unproven_reason": "no design-artifact completeness harness — no checker exists that a hollow intention-point couldn't pass (candidate lever: schema+required-sections gate over architecture/*.json)",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
