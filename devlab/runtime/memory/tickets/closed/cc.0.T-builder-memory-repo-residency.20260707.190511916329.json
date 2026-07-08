@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-builder-memory-repo-residency",
-    "title": "[in_progress] Builder process memory lives instance-local (~/.claude) — mirror load-bearing entries into the repo store",
+    "title": "Builder process memory lives instance-local (~/.claude) — mirror load-bearing entries into the repo store",
     "size": "M",
     "tags": [
       "Store",
@@ -29,13 +29,13 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.6,
-    "status": "in_progress",
+    "status": "closed",
     "created_at": "2026-07-08T01:05:01.641411+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "146 local memories triaged whole-corpus (72 mirrored / 44 already-durable / 30 stay-local, table in notes/builder-memory-triage.20260708.md): 4 new rules (dispatch, autonomy, git-workflow, design-doctrine) + safeguards Igor-live conditionality + preferred_paths inference-proxy/skills-symlink entries + notes/builder-gotchas + notes/device-roster. Fresh-builder top-10 check passes from repo alone (pinned in tests/test_builder_memory_residency.py, 4 tests). No local deletions. Proof red=AssertionError green=passed @8ebe84c8. Follow-on design Q noted in the triage note: automation of future local-to-repo sync (out of scope).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T12:37:16.636462+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T01:05:01.641482+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "b48a9b0d-71ef-4d7e-bef2-0cb87c7505da"
+    "inferred_intention_id": "b48a9b0d-71ef-4d7e-bef2-0cb87c7505da",
+    "proven": true,
+    "proof_id": "cc.0.builder-memory-repo-residency.T-builder-memory-repo-residency.20260708.063705684366",
+    "proof_commit": "8ebe84c8a7d909ce1315ae00e4870abc1d068648",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
