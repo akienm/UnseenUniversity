@@ -33,7 +33,7 @@ decisions in `devlab/runtime/memory/decisions/`). Search it with `grep -r`.
 
 ## Core values — CP1–CP6 (the build process embodies these)
 
-Canonical source: `diagnostic_base/core_values.py` (frozen contract; `tests/test_core_values.py`
+Canonical source: `unseen_university/diagnostic_base/core_values.py` (frozen contract; `tests/test_core_values.py`
 pins the set and order). Every **device** inherits them via `CoreValuesMixin`. CC — the
 **builder** — is *not* a device, so they live here too: the dev process itself must embody the
 values it ships, or it violates them in the act of building. **If this list and `core_values.py`
