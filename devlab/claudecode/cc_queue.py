@@ -943,6 +943,24 @@ def _append_to_todays_slate(ticket: dict) -> None:
 # with queue_view.py. See T-gate-clear-source-consolidation.
 
 
+def _flip_ungated_to_sprint(t: dict) -> bool:
+    """A ticket whose gate just cleared but still reads `dependency` is invisible
+    to Granny/query-ticket — the gate is gone yet the status pins it out of the
+    claimable pile (observed 2026-07-07, commit 8939527c: three ungated impl
+    tickets needed a manual `setstatus sprint`). When the last named dependency is
+    gone (gate is None/empty) and the stored status is still `dependency`, flip it
+    to `sprint` so clearing the gate makes it dispatchable in one step.
+
+    `hold` (Akien-only) and every terminal status are left untouched — only the
+    derived `dependency` limbo is corrected. Returns True if it flipped (caller
+    logs the state change). Callers MUST clear the gate before calling.
+    """
+    if t.get("status") == "dependency" and not t.get("gate"):
+        t["status"] = "sprint"
+        return True
+    return False
+
+
 def _ungate_dependents(tasks: list, closed_id: str) -> int:
     """Clear `gate` on any pending task whose gate text references closed_id.
 
@@ -969,6 +987,10 @@ def _ungate_dependents(tasks: list, closed_id: str) -> int:
             t["gate"] = None
             ungated += 1
             print(f"  [ungate] {t['id']} (all predecessors terminal; gate was {gate!r})")
+            if _flip_ungated_to_sprint(t):
+                _log({"action": "ungate_status_flip", "id": t.get("id"),
+                      "from": "dependency", "to": "sprint", "trigger": "on_close"})
+                print(f"  [ungate] {t['id']} dependency->sprint (now claimable)")
         else:
             _log(
                 {
@@ -2290,13 +2312,19 @@ def cmd_ungate(args):
         sys.exit(1)
     prev = t.get("gate")
     t["gate"] = None
+    flipped = _flip_ungated_to_sprint(t)
     _save(tasks)
     _log({"action": "ungate", "id": tid, "prev_gate": prev, "reason_cleared": reason})
+    if flipped:
+        _log({"action": "ungate_status_flip", "id": tid,
+              "from": "dependency", "to": "sprint", "trigger": "manual"})
     msg = f"Ungated {tid}"
     if prev:
         msg += f" (was: {prev})"
     if reason:
         msg += f" — {reason}"
+    if flipped:
+        msg += " [dependency->sprint: now claimable]"
     print(msg)
 
 
