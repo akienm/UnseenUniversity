@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-validity-sweep-day-close.20260707.175912254259",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-validity-sweep-day-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:59:12.254259+00:00",
+  "links": {
+    "decisions": [
+      "D-memory-validity-conditions-2026-07-07"
+    ],
+    "tickets": [
+      "T-validity-sweep-day-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-validity-sweep-day-close",
+    "title": "[dependency] Day-close validity sweep: flag store entries whose named dependency changed",
+    "size": "M",
+    "tags": [
+      "Store",
+      "Workflow"
+    ],
+    "description": "intention: I intend that a changed dependency flags its dependent entries within one day-close instead of weeks of silent drift.\n\nPer T-memory-validity-conditions-design: implement the sweep that runs at day-close, checks validity_conditions across store entries (and auto-memory), and flags entries whose named dependency changed since last run. Flag = annotation on the entry + a day-close report line; never deletes. New entries filed via /sorted and /note get validity_conditions prompted at filing time.\n\n**Affected files:** per design artifact — expected: new sweep module under devlab/claudecode/, skills/day-close/SKILL.md (add sweep step), skills/sorted/SKILL.md + skills/note/SKILL.md (prompt for conditions at filing)\n\n**Design rules:** flat-file store, no DB dependency for the sweep; log every state change\n\n**Scope boundary:** sweep + filing-time prompt only; NO backfill of conditions onto old entries (separate ticket if wanted); no auto-deletion ever.\n\n**Test plan:** hermetic tmp-store test — entry with depends-on-artifact condition, supersede the artifact, run sweep, assert flag + report line; zero-flag run still prints the count line. Cleanup: tests confined to tmp store root; fixture teardown.\n\n**Completion criteria:** sweep runs inside /day-close and prints the count line even when zero; a seeded stale entry is flagged on the next run.\n\n**Validation:** Observable via: log.info(\"validity sweep: flagged=<N> checked=<M>\") at day-close — printed even when N=0.\n\n**Rollback:** git revert — sweep is read-annotate only; flags are additive annotations.\n\naudit-emphasis: none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-memory-validity-conditions-2026-07-07",
+    "gate": "T-memory-validity-conditions-design",
+    "priority": 0.5,
+    "status": "dependency",
+    "created_at": "2026-07-07T23:59:02.733459+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that a changed dependency flags its dependent entries within one day-close instead of weeks of silent drift.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T23:59:02.733521+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f1e815d6-7d4f-40f6-90f3-016195cadf60"
+  }
+}

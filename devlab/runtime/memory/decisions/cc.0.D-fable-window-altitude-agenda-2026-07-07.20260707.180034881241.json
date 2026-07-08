@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-fable-window-altitude-agenda-2026-07-07.20260707.180034881241",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-fable-window-altitude-agenda-2026-07-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-07T18:00:34.881241",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "title": "Remaining Fable window spent ONLY on altitude work: feedback-edge design, spec extraction + rebuildability diff, adversarial gate attack, validity-conditions design; rebuild-from-scratch REJECTED",
+    "status": "open",
+    "date": "2026-07-07",
+    "spawned_tickets": [
+      "T-uu-spec-extraction-rebuildability-diff",
+      "T-adversarial-gate-attack",
+      "T-consequence-D-fable-window-altitude-agenda"
+    ],
+    "text": "# D-fable-window-altitude-agenda-2026-07-07\n**title:** Remaining Fable window spent ONLY on altitude work; rebuild-from-scratch REJECTED\n**date:** 2026-07-07\n**status:** open\n**spawned_tickets:** T-uu-spec-extraction-rebuildability-diff, T-adversarial-gate-attack, T-consequence-D-fable-window-altitude-agenda\n\n## Decision narrative\nFable availability was extended by days, not weeks — the window goes to judgment-and-altitude work that is expensive to get wrong and impossible to buy after the window closes, NOT to builds (cheap later, any tier). Ranked agenda: (1) feedback-edge design (D-feedback-edge-every-emission-2026-07-07 / T-feedback-edge-design — cross-cutting, gets more expensive every week of new emission points); (2) spec extraction + rebuildability diff (T-uu-spec-extraction-rebuildability-diff — only a model that can hold the whole system can write the minimal generative spec; the diff names tacit load-bearing knowledge before it exists only in Akien's head); (3) adversarial gate attack (T-adversarial-gate-attack — Fable as the hollow-build adversary; every successful attack is a missing spec); (4) validity-conditions design (D-memory-validity-conditions-2026-07-07). Akien's directional add: he hated even going to Opus for design — the target is design runnable by the MINIMAL model, core questions over and over (D-organizing-question-cascade-2026-07-07), feedback loops on every emission. Window tickets outrank the queue (priority 0.7-0.8, worker CC.0, foreground).\n\n**Alternatives rejected:** (a) start over from scratch with stricter skills and no old memories — off-thesis (self-improvement is the founding property; a hand-rebuild admits the system can't regenerate itself), discards earned assets, fixes rot level not rot rate; the on-thesis version IS the rebuildability test. (b) audit-only of skills/workflows/memory — measures current state, not the rot rate; folded instead into the gate attack (simulation = attack, not reading). (c) spending the window on builds — any tier can build later.\n\n## Hypothesis\nThe Fable window yields (a) a generative spec + diff naming the load-bearing-but-unwritten knowledge, and (b) a gate-attack report where every hollow-pass becomes a filed missing-spec ticket — instead of being spent on builds a cheaper tier could do.\n\n## Measurement Signal\nArtifacts exist in the store (generative-spec + rebuildability-diff notes, gate-attack-report note) with a filed ticket per finding (grep: zero naked findings); a later eval-run question checks whether a design session runs on a smaller tier without quality loss.\n\n## Intention\nI intend that design itself compiles — the core questions (per D-organizing-question-cascade-2026-07-07) become structure a minimal-tier model can run, so the top-tier resolver is needed only for the genuinely novel.\n\n## Outcome check\n/outcome at Friday weekly-retro 2026-07-10 for window artifacts; smaller-tier eval-run question at the following retro. Consequence gate 2026-07-21 or window close, whichever first."
+  }
+}

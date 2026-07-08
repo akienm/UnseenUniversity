@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-escalation-dispatch-producer-review.20260707.175911983283",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalation-dispatch-producer-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:59:11.983283+00:00",
+  "links": {
+    "decisions": [
+      "D-feedback-edge-every-emission-2026-07-07"
+    ],
+    "tickets": [
+      "T-escalation-dispatch-producer-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-escalation-dispatch-producer-review",
+    "title": "[dependency] Implement the ONE escalation dispatch rule: failure routes to producer review, not admin",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Granny"
+    ],
+    "description": "intention: I intend that spec-shaped failures land in the producer's review queue with their produced_by chain attached, and zero land in the generic admin bucket.\n\nPer T-feedback-edge-design: implement the single dispatch rule. When a worker/station emits 'couldn't solve' (or any downstream failure on an artifact), resolve the artifact's produced_by chain and route the escalation to the producer's review (producing decision goes to review/open_questions), NOT to the generic admin/escalated bucket. Tier escalation (capability miss) stays untouched and runs first; produced_by dispatch fires for spec-shaped failures or top-tier exhaustion. All ticket-state mutations go through Granny's write-path (D-granny-sole-ticket-writer-2026-07-07). Cycle guard: dispatch refuses and logs WARN if the produced_by chain revisits an artifact.\n\n**Affected files:** per design artifact — expected: unseen_university/devices/granny/daemon.py escalation path, devlab/claudecode/cc_queue.py escalate path. If the design requires a bus-envelope change (unseen_university/devices/bus/ = HIGH-inertia): STOP — Akien pre-approval required BEFORE edit; stamp approval here.\n\n**Design rules:** log every state change + interface crossing (AR-009); Granny sole ticket writer; no per-artifact-type escalation paths.\n\n**Scope boundary:** dispatch rule + log lines only; no changes to tier-escalation ladder; no UI.\n\n**Test plan:** hermetic test — artifact with produced_by chain, fire failure, assert escalation record targets producer and admin bucket stays empty; cycle-guard test. Cleanup: tmp store root + mocked Granny write-path; fixture teardown.\n\n**Completion criteria:** test suite green including cycle guard; first real escalation post-ship logs route=producer-review; admin-bucket escalations from produced_by-carrying artifacts = 0.\n\n**Validation:** Observable via: log.info(\"escalation: artifact=<id> -> producer=<id> route=producer-review\") at the dispatch point; log.warning on cycle guard.\n\n**Rollback:** git revert restores prior admin-queue routing — rule is a routing layer, not a data migration.\n\naudit-emphasis: needs-deep-smell\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-feedback-edge-every-emission-2026-07-07",
+    "gate": "T-feedback-edge-design",
+    "priority": 0.5,
+    "status": "dependency",
+    "created_at": "2026-07-07T23:58:55.112545+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that spec-shaped failures land in the producer's review queue with the produced_by chain attached, and zero land in the generic admin bucket.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T23:58:55.112596+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d466ca34-4cab-479e-8424-6f8572209d77"
+  }
+}

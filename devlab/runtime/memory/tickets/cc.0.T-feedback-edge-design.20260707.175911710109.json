@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-feedback-edge-design.20260707.175911710109",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-feedback-edge-design"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:59:11.710109+00:00",
+  "links": {
+    "decisions": [
+      "D-feedback-edge-every-emission-2026-07-07"
+    ],
+    "tickets": [
+      "T-feedback-edge-design"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-feedback-edge-design",
+    "title": "[sprint] Design: produced_by backward edge + ONE escalation verb + dispatch-to-producer rule",
+    "size": "L",
+    "tags": [
+      "Workflow",
+      "Architecture",
+      "FableWindow"
+    ],
+    "worker": "CC.0",
+    "description": "intention: I intend that every emission carries a backward edge so failure escalates to its producer and the graph corrects itself.\n\nEvery emission (ticket, decision, proof, note, config, skill output) must carry a backward edge to its producer, and 'couldn't solve' must escalate to the PRODUCER'S review (escalate-to-design), not the admin queue. This ticket is the design: (1) produced_by field semantics on every store envelope (additive, one field, no per-type schemes); (2) the single escalation verb shape ('artifact failed downstream: how'); (3) the dispatch rule — failure routes to the producing artifact's review, recursively; (4) the retired-producer case (escalate to producer's producer / owning decision); (5) integration with D-dev-pipeline-stations-2026-07-07 stations; (6) reconciliation with tier escalation (D-dicksimnel-escalation-chain-2026-06-10, T-inference-escalation-ladder-family-then-architect): tier = capability miss, produced_by = spec miss; (7) Granny-sole-writer constraint (D-granny-sole-ticket-writer-2026-07-07): any ticket-state mutation goes through her write-path.\n\n**Affected files:** devlab/runtime/memory/architecture/feedback-edges.json (new; design artifact only — no code this ticket)\n\n**Design rules:** one mechanism parameterized by addressee (homogeneity over special-case); canonical-store-only home\n\n**Scope boundary:** design artifact ONLY; no code edits; implementation is T-produced-by-emission-sweep + T-escalation-dispatch-producer-review (gated on this). If design lands the escalation verb on the bus envelope (HIGH-inertia unseen_university/devices/bus/), STOP and get Akien pre-approval stamped into the impl ticket before any edit.\n\n**Test plan:** no code tests — design ticket. Proof-on-close has no red form for design artifacts; close shipped-unproven naming the lever (a design-artifact completeness checker) unless a machine check exists by then.\n\n**Completion criteria:** devlab/runtime/memory/architecture/feedback-edges.json exists and grep finds all 7 numbered sections above; decision D-feedback-edge-every-emission-2026-07-07 amended with a pointer to it.\n\n**Validation:** grep -l feedback-edges.json + section-count check.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-feedback-edge-every-emission-2026-07-07",
+    "gate": null,
+    "priority": 0.8,
+    "status": "sprint",
+    "created_at": "2026-07-07T23:58:47.256875+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every emission carries a backward edge so failure escalates to its producer and the graph corrects itself.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T23:58:47.303519+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "06c5df6d-36b9-4769-8b55-b0e862034ef7"
+  }
+}

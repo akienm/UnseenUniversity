@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-uu-spec-extraction-rebuildability-diff.20260707.175912385173",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-spec-extraction-rebuildability-diff"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:59:12.385173+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-uu-spec-extraction-rebuildability-diff"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-spec-extraction-rebuildability-diff",
+    "title": "[sprint] Fable window: extract minimal generative spec; rebuildability diff = unwritten load-bearing knowledge",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "FableWindow"
+    ],
+    "worker": "CC.0",
+    "description": "intention: I intend that the system's generative spec is written down and its gaps named, so design compiles toward minimal-tier resolvability.\n\nThe on-thesis version of 'rebuild from scratch': extract the minimal generative spec of the system (core values + structural rules with whys + decision corpus + organizing questions per D-organizing-question-cascade-2026-07-07), then attempt regeneration-on-paper and diff against reality. Every divergence or failure names knowledge that is load-bearing but unwritten (tacit, in Akien's head, or in dead transcripts). Each gap becomes a filed ticket or store note capturing it. Fable-altitude work — must run inside the window.\n\n**Affected files:** devlab/runtime/memory/notes/generative-spec.<date>.md (spec), devlab/runtime/memory/notes/rebuildability-diff.<date>.md (diff), tickets per finding\n\n**Design rules:** no recommendations in narrative — every finding lands as a ticket or store artifact; the diff only points\n\n**Scope boundary:** spec + diff + filed findings ONLY; no code changes; no actual rebuild. If findings exceed ~20 tickets, roll up into grouped tickets to avoid queue inflation.\n\n**Test plan:** no code tests — analysis ticket; close shipped-unproven naming the lever (regeneration can't red→green).\n\n**Completion criteria:** both artifacts exist in notes/; every diff finding line carries a filed T- or note id — grep finds zero naked findings.\n\n**Validation:** grep check over the diff artifact for finding lines without T-/note ids.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "created_at": "2026-07-07T23:59:05.841896+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that the system's generative spec is written down and its gaps named, so design compiles toward minimal-tier resolvability.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T23:59:05.841944+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "be4983e4-5ca3-495b-81a6-ebd9b6b0b5d6"
+  }
+}

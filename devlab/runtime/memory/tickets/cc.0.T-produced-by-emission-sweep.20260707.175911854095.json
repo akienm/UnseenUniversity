@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-produced-by-emission-sweep.20260707.175911854095",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-produced-by-emission-sweep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:59:11.854095+00:00",
+  "links": {
+    "decisions": [
+      "D-feedback-edge-every-emission-2026-07-07"
+    ],
+    "tickets": [
+      "T-produced-by-emission-sweep"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-produced-by-emission-sweep",
+    "title": "[dependency] Stamp produced_by at every emission chokepoint (memory_emit, cc_queue, proof_emitter, skills)",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Store"
+    ],
+    "description": "intention: I intend that every NEW store artifact carries its backward edge at emission time.\n\nPer T-feedback-edge-design's schema: add produced_by to every emission chokepoint. Chokepoints: devlab/claudecode/memory_emit.py (accept + stamp produced_by), devlab/claudecode/cc_queue.py add-path (tickets inherit decision_id-derived produced_by), proof emitter, and skill instruction files that emit (skills/sorted/, skills/note/, skills/ticket/, skills/outcome/) updated to pass it. Additive field — no reader may require it (old artifacts lack it).\n\n**Affected files:** devlab/claudecode/memory_emit.py, devlab/claudecode/cc_queue.py, proof emitter module (path per repo), skills/sorted/SKILL.md, skills/note/SKILL.md, skills/ticket/SKILL.md, skills/outcome/SKILL.md\n\n**Design rules:** canonical store one home; additive envelope change (no new artifact type)\n\n**Scope boundary:** stamping only — NO dispatch logic (that is T-escalation-dispatch-producer-review); no backfill of old artifacts.\n\n**Test plan:** hermetic test emits a decision+ticket into a tmp store root and asserts produced_by present and correctly valued; old-artifact read-path regression test (reader tolerates absence). Cleanup: tests write only to tmp store root (monkeypatched); nothing to clean in the real store.\n\n**Completion criteria:** a decision emitted via memory_emit.py and a ticket added via cc_queue.py both carry produced_by in their stored JSON; readers unchanged pass on produced_by-less legacy files.\n\n**Validation:** emit a real decision post-ship and grep its JSON for produced_by. Observable via: log.info(\"emit ... produced_by=...\") in memory_emit.py.\n\n**Rollback:** git revert of this ticket's commit — field is additive, no reader requires it.\n\naudit-emphasis: none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-feedback-edge-every-emission-2026-07-07",
+    "gate": "T-feedback-edge-design",
+    "priority": 0.5,
+    "status": "dependency",
+    "created_at": "2026-07-07T23:58:51.287345+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every NEW store artifact carries its backward edge (produced_by) at emission time.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T23:58:51.287407+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "26a5d66c-dae9-4017-b363-96e329603c04"
+  }
+}

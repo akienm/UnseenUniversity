@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-adversarial-gate-attack.20260707.175912522692",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adversarial-gate-attack"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:59:12.522692+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-adversarial-gate-attack"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adversarial-gate-attack",
+    "title": "[sprint] Fable window: adversarial hollow-artifact attack on every filing/close gate",
+    "size": "L",
+    "tags": [
+      "Audits",
+      "FableWindow"
+    ],
+    "worker": "CC.0",
+    "description": "intention: I intend that every gate is proven against the artifact that passes it while violating its intent, and every hole becomes a named missing-spec ticket.\n\nProof-on-close applied to the process: for each gate (audit-ticket, audit-design, audit-hypothesis, audit-precode, audit-smell, proof-on-close, consequence gate), construct the artifact that PASSES the gate while violating its intent (hollow ticket, vague-but-well-formed decision, confabulated proof). Every successful pass-through is a missing spec — file a ticket per hole naming the gap and the tightening. Simulation-only: attack artifacts are clearly marked and never filed into the live queue/store (scratch dir or tmp store; on-paper evaluation against gate checklists).\n\n**Affected files:** devlab/runtime/memory/notes/gate-attack-report.<date>.md + tickets per hole\n\n**Design rules:** attacks never touch the live queue — tmp store or on-paper evaluation only\n\n**Scope boundary:** attack + report + filed findings; NO gate fixes in this ticket (each hole is its own ticket). If holes exceed ~20, roll up grouped by gate.\n\n**Test plan:** no code tests — analysis ticket; close shipped-unproven naming the lever. Cleanup: any tmp-store attack artifacts deleted; report notes the scratch path used.\n\n**Completion criteria:** report exists in notes/ with one section per gate attacked; every hole line carries a filed T- id — grep finds zero naked holes; zero attack artifacts in the live store (grep for the attack marker).\n\n**Validation:** grep checks over the report + live store.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "created_at": "2026-07-07T23:59:08.319291+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every gate is proven against the artifact that passes it while violating its intent, and every hole becomes a named missing-spec ticket.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T23:59:08.319364+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6f4c07be-f73f-4504-bcba-4769d34aed81"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-memory-validity-conditions-design.20260707.175912121232",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-validity-conditions-design"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-07T23:59:12.121232+00:00",
+  "links": {
+    "decisions": [
+      "D-memory-validity-conditions-2026-07-07"
+    ],
+    "tickets": [
+      "T-memory-validity-conditions-design"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-validity-conditions-design",
+    "title": "[sprint] Design: validity_conditions on store entries — machine-checkable staleness",
+    "size": "M",
+    "tags": [
+      "Store",
+      "Architecture",
+      "FableWindow"
+    ],
+    "worker": "CC.0",
+    "description": "intention: I intend that stored knowledge carries its validity conditions so staleness is detectable by a sweep instead of archaeological.\n\nStale knowledge (IMAP-class incidents) misleads sessions because entries don't record what must remain true for them to hold. Design the validity_conditions field: named dependencies (a transport, a path, a tool, a decision) in machine-checkable form, on ALL store entry types + auto-memory files. EXTENDS D-decisions-as-guards-anchors-2026-06-25 from decisions to everything, and adds detection. Covers: condition vocabulary (depends-on-artifact, depends-on-path, depends-on-fact), how a dependency change is detected (superseding decision names what it invalidates vs sweep greps), meta-rot (conditions themselves going stale), and what 'flagged' means (annotation, not deletion — CP2: stale entries are data). Field/tag on existing envelopes, NOT a new artifact type (rules/memory).\n\n**Affected files:** devlab/runtime/memory/architecture/validity-conditions.json (new; design artifact only)\n\n**Design rules:** memory distinctions become tags not new types; canonical store one home\n\n**Scope boundary:** design artifact only; implementation is T-validity-sweep-day-close (gated).\n\n**Test plan:** no code tests — design ticket; close shipped-unproven naming the lever if no machine check exists.\n\n**Completion criteria:** architecture/validity-conditions.json exists with condition-vocabulary, detection, meta-rot, and flag-semantics sections; decision amended with pointer.\n\n**Validation:** grep section check on the artifact.\n\naudit-emphasis: doc-only\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-memory-validity-conditions-2026-07-07",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "created_at": "2026-07-07T23:58:58.817662+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that stored knowledge carries its validity conditions so staleness is detectable by a sweep instead of archaeological.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-07T23:58:58.817702+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dfb127bf-7bc9-495a-a062-4969efd8c6e0"
+  }
+}
