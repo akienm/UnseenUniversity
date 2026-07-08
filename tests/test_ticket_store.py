@@ -59,9 +59,12 @@ def test_envelope_schema_matches_memory_emit(_tmp_root):
     ts.write(_mk("T-env"))
     f = _files_for(_tmp_root, "T-env")[0]
     rec = json.loads(f.read_text())
-    # byte-compatible top-level envelope keys
+    # byte-compatible top-level envelope keys (produced_by added by the
+    # feedback-edges contract, T-produced-by-emission-sweep — present in both
+    # ticket_store._envelope and memory_emit.emit).
     assert set(rec) == {"id", "emitter", "namespace", "category", "kind",
-                        "emitted_at", "links", "body"}
+                        "emitted_at", "links", "produced_by", "body"}
+    assert rec["produced_by"]  # a ticket always carries its backward edge
     assert rec["category"] == "tickets"
     assert rec["kind"] == "ticket"
     assert rec["namespace"] == ["T-env"]
