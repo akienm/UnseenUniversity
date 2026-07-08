@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.model-provider-connections-stack.T-inference-connections-stack.20260708.152822118529",
+  "emitter": "cc.0",
+  "namespace": [
+    "model-provider-connections-stack",
+    "T-inference-connections-stack"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T15:28:22.118529",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-connections-stack"
+    ],
+    "commits": [
+      "62f3e26155d15b5ef309d46a0fd3d535810327c9"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-connections-stack",
+  "body": {
+    "thing": "model<->provider connections stack",
+    "intention": "seed_from_models mirrors current ModelSpec bindings 1:1 and ConnectionsRegistry supports N connections per model, queryable via by_model.",
+    "test": "tests/inference/test_connections_stack.py::test_seed_mirrors_current_model_bindings",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_connections_stack.py::test_seed_mirrors_current_model_bindings",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "___________________ test_seed_mirrors_current_model_bindings ___________________\n\n    def test_seed_mirrors_current_model_bindings():\n        \"\"\"seed_from_models produces exactly one connection per ModelSpec, same (model, source).\"\"\"\n        models = default_registry()\n        conns = seed_from_models(models)\n    \n        specs = models.all()\n        # One connection per model row — the faithful 1:1 snapshot.\n>       assert len(conns.all()) == len(specs)\nE       AssertionError: assert 0 == 22\nE        +  where 0 = len([])\nE        +    where [] = all()\nE        +      where all = <unseen_university.devices.inference.connections.ConnectionsRegistry object at 0x7ae6ec604ec0>.all\nE        +  and   22 = len([ModelSpec(model_id='qwen/qwen3.5-9b', source_name='openrouter', tier='minion', input_cost_per_1m=0.04, output_cost_pe...', created_at='2026-06-19T00:00:00Z', difficulty_capable='', features=[], domains=[], edit_format_conformance={}), ...])\n\ntests/inference/test_connections_stack.py:27: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_connections_stack.py::test_seed_mirrors_current_model_bindings\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "62f3e26155d15b5ef309d46a0fd3d535810327c9",
+    "impl_paths": [
+      "unseen_university/devices/inference/connections.py"
+    ],
+    "ticket": "T-inference-connections-stack",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
