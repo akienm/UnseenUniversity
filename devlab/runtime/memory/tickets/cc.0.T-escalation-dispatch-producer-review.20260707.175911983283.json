@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-escalation-dispatch-producer-review",
-    "title": "[dependency] Implement the ONE escalation dispatch rule: failure routes to producer review, not admin",
+    "title": "[sprint] Implement the ONE escalation dispatch rule: failure routes to producer review, not admin",
     "size": "M",
     "tags": [
       "Workflow",
@@ -29,7 +29,7 @@
     "decision_id": "D-feedback-edge-every-emission-2026-07-07",
     "gate": null,
     "priority": 0.5,
-    "status": "dependency",
+    "status": "sprint",
     "created_at": "2026-07-07T23:58:55.112545+00:00",
     "worker": null,
     "created_by": null,

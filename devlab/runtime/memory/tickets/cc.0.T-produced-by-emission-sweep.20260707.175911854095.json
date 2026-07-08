@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-produced-by-emission-sweep",
-    "title": "[dependency] Stamp produced_by at every emission chokepoint (memory_emit, cc_queue, proof_emitter, skills)",
+    "title": "[sprint] Stamp produced_by at every emission chokepoint (memory_emit, cc_queue, proof_emitter, skills)",
     "size": "M",
     "tags": [
       "Workflow",
@@ -29,7 +29,7 @@
     "decision_id": "D-feedback-edge-every-emission-2026-07-07",
     "gate": null,
     "priority": 0.5,
-    "status": "dependency",
+    "status": "sprint",
     "created_at": "2026-07-07T23:58:51.287345+00:00",
     "worker": null,
     "created_by": null,
