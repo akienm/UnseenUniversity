@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-consequence-ticket-aging-alarm",
-    "title": "[sprint] Consequence tickets never fire: overdue-gate aging alarm at day-close/Nanny",
+    "title": "Consequence tickets never fire: overdue-gate aging alarm at day-close/Nanny",
     "size": "S",
     "tags": [
       "Workflow",
@@ -29,13 +29,13 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-08T01:09:36.414309+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "new consequence_aging.py (zero-inference, over canonical gate_logic): lists T-consequence-* tickets whose gate has FULLY cleared (dates elapsed + predecessors terminal) but sit non-terminal, sorted by age, >=7d marked ESCALATE; count line always prints. Wired into day-close-audit Step 18.9 (calm signal — surfacing only, never auto-works/gates). Live run surfaced 4 genuinely-overdue (due 2026-07-07). Proof red=AssertionError green=passed @698bda08; 4 hermetic tests (closed/not-yet-due/non-consequence/still-blocked all excluded; escalation threshold).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T12:56:17.192496+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T01:09:36.414379+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "34dde4f5-30a4-4bfb-8143-3573f01173f7"
+    "inferred_intention_id": "34dde4f5-30a4-4bfb-8143-3573f01173f7",
+    "proven": true,
+    "proof_id": "cc.0.consequence-ticket-aging.T-consequence-ticket-aging-alarm.20260708.065607234233",
+    "proof_commit": "698bda0879877146593b5624ba1eea38c9d58236",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
