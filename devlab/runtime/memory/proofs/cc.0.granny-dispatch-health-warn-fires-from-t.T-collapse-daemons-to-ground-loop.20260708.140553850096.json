@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.granny-dispatch-health-warn-fires-from-t.T-collapse-daemons-to-ground-loop.20260708.140553850096",
+  "emitter": "cc.0",
+  "namespace": [
+    "granny-dispatch-health-warn-fires-from-t",
+    "T-collapse-daemons-to-ground-loop"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T14:05:53.850096",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-collapse-daemons-to-ground-loop"
+    ],
+    "commits": [
+      "9b59e9fce1de611effa9739970f554ddad4458f6"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-collapse-daemons-to-ground-loop",
+  "body": {
+    "thing": "Granny dispatch-health WARN fires from the shim-driven loop (on_cycle), not the deleted run_loop",
+    "intention": "GrannyShim's in-process dispatch loop invokes _emit_dispatch_health every N cycles via on_cycle",
+    "test": "tests/granny/test_daemon_collapse_proof.py::test_dispatch_health_fires_from_driven_path",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/granny/test_daemon_collapse_proof.py::test_dispatch_health_fires_from_driven_path",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        monkeypatch.setattr(\n            gd, \"_emit_dispatch_health\", lambda cfg: (calls.append(1), fired.set())\n        )\n        monkeypatch.setattr(gd, \"_HEALTH_EVERY_N\", 1)  # emit every cycle\n    \n        shim = GrannyShim()\n        shim._start_dispatch_loop()\n        try:\n>           assert fired.wait(2.0), (\n                \"dispatch-health emit never fired — it isn't wired into the shim-driven loop\"\n            )\nE           AssertionError: dispatch-health emit never fired — it isn't wired into the shim-driven loop\nE           assert False\nE            +  where False = wait(2.0)\nE            +    where wait = <threading.Event at 0x7fa9f933ae40: unset>.wait\n\ntests/granny/test_daemon_collapse_proof.py:94: AssertionError\n=========================== short test summary info ============================\nFAILED tests/granny/test_daemon_collapse_proof.py::test_dispatch_health_fires_from_driven_path\n1 failed in 2.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "9b59e9fce1de611effa9739970f554ddad4458f6",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.shimloopthread-stamps-device-id-so-loop.T-collapse-daemons-to-ground-loop.20260708.140512304940.json",
+      "unseen_university/devices/granny/shim.py",
+      "unseen_university/shim.py"
+    ],
+    "ticket": "T-collapse-daemons-to-ground-loop",
+    "narrative": "",
+    "why": "dispatch-health observability must survive the collapse — moved from run_loop every-N emit into the shim loop on_cycle",
+    "bootstrap": false
+  }
+}
