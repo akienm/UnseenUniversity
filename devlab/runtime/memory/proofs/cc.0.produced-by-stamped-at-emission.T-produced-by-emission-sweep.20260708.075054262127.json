@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.produced-by-stamped-at-emission.T-produced-by-emission-sweep.20260708.075054262127",
+  "emitter": "cc.0",
+  "namespace": [
+    "produced-by-stamped-at-emission",
+    "T-produced-by-emission-sweep"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T07:50:54.262127",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-produced-by-emission-sweep"
+    ],
+    "commits": [
+      "670b06fd5300b010e4a4c5f8b5ab176a289fa535"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-produced-by-emission-sweep",
+  "body": {
+    "thing": "produced_by stamped at emission",
+    "intention": "Every new store artifact carries its produced_by backward edge at emission time via the chokepoint",
+    "test": "tests/test_produced_by_emission.py::test_emit_defaults_to_session_fallback",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_produced_by_emission.py::test_emit_defaults_to_session_fallback",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "tmp_path = PosixPath('/tmp/pytest-of-akien/pytest-584/test_emit_defaults_to_session_0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f31b9af37a0>\n\n    def test_emit_defaults_to_session_fallback(tmp_path, monkeypatch):\n        monkeypatch.setenv(\"UU_MEMORY_ROOT\", str(tmp_path))\n        p = memory_emit.emit(\"notes\", \"cc.0\", {\"text\": \"n\"}, kind=\"note\")\n        # .get so a reverted (unstamped) chokepoint fails with AssertionError, not\n        # KeyError — the authentic-red form the proof gate requires.\n>       assert json.load(open(p)).get(\"produced_by\") == \"session:cc.0\"\nE       AssertionError: assert None == 'session:cc.0'\nE        +  where None = <built-in method get of dict object at 0x7f31b9b01cc0>('produced_by')\nE        +    where <built-in method get of dict object at 0x7f31b9b01cc0> = {'body': {'text': 'n'}, 'category': 'notes', 'emitted_at': '2026-07-08T07:50:54.070847', 'emitter': 'cc.0', ...}.get\nE        +      where {'body': {'text': 'n'}, 'category': 'notes', 'emitted_at': '2026-07-08T07:50:54.070847', 'emitter': 'cc.0', ...} = <function load at 0x7f31baa82e80>(<_io.TextIOWrapper name='/tmp/pytest-of-akien/pytest-584/test_emit_defaults_to_session_0/notes/cc.0.20260708.075054070847.json' mode='r' encoding='UTF-8'>)\nE        +        where <function load at 0x7f31baa82e80> = json.load\nE        +        and   <_io.TextIOWrapper name='/tmp/pytest-of-akien/pytest-584/test_emit_defaults_to_session_0/notes/cc.0.20260708.075054070847.json' mode='r' encoding='UTF-8'> = open('/tmp/pytest-of-akien/pytest-584/test_emit_defaults_to_session_0/notes/cc.0.20260708.075054070847.json')\n\ntests/test_produced_by_emission.py:36: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_produced_by_emission.py::test_emit_defaults_to_session_fallback\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "670b06fd5300b010e4a4c5f8b5ab176a289fa535",
+    "impl_paths": [
+      "devlab/claudecode/memory_emit.py",
+      "devlab/claudecode/proof_emitter.py",
+      "skills/sorted/SKILL.md",
+      "unseen_university/ticket_store.py"
+    ],
+    "ticket": "T-produced-by-emission-sweep",
+    "narrative": "",
+    "why": "backward edges (produced_by) let a failure re-open the artifact that caused it; without a chokepoint stamp, new artifacts ship without the edge (feedback-edges contract)",
+    "bootstrap": false
+  }
+}
