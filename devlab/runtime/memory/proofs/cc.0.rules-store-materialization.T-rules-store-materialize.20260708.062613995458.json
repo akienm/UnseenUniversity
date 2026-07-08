@@ -1,0 +1,69 @@
+{
+  "id": "cc.0.rules-store-materialization.T-rules-store-materialize.20260708.062613995458",
+  "emitter": "cc.0",
+  "namespace": [
+    "rules-store-materialization",
+    "T-rules-store-materialize"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T06:26:13.995458",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-rules-store-materialize"
+    ],
+    "commits": [
+      "2950bebb2f2bc6e6aa3b62f22978ea2a131024f4"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "rules-store materialization",
+    "intention": "Every unseenuniversity/rules/<name> citation in skills/ resolves to a readable rule artifact in devlab/runtime/memory/rules/",
+    "test": "tests/test_rules_citations_resolve.py::test_every_skill_citation_resolves_to_a_rule_artifact",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_rules_citations_resolve.py::test_every_skill_citation_resolves_to_a_rule_artifact",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____________ test_every_skill_citation_resolves_to_a_rule_artifact _____________\n\n    def test_every_skill_citation_resolves_to_a_rule_artifact():\n        \"\"\"The invariant: unresolved-citation count is 0 against the real store.\"\"\"\n        cites = rcc.collect_citations(str(_REPO / \"skills\"))\n        assert cites, \"citation scan found nothing — scanner regression, not a clean store\"\n        rules_root = str(_REPO / \"devlab\" / \"runtime\" / \"memory\" / \"rules\")\n        unresolved = {c for c in cites if not rcc.resolve(c, rules_root)[0]}\n>       assert not unresolved, f\"phantom rule citations: {sorted(unresolved)}\"\nE       AssertionError: phantom rule citations: ['approach-frame', 'budget', 'capability-protocol', 'capability-protocol/two-sided-build', 'coding', 'collaboration', 'database', 'docs-live-in-code', 'igor-constraints', 'inherit-base-class', 'memory', 'metrics', 'preferred_paths', 'safeguards', 'ticket_design_checks']\nE       assert not {'approach-frame', 'budget', 'capability-protocol', 'capability-protocol/two-sided-build', 'coding', 'collaboration', ...}\n\ntests/test_rules_citations_resolve.py:31: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_rules_citations_resolve.py::test_every_skill_citation_resolves_to_a_rule_artifact\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "2950bebb2f2bc6e6aa3b62f22978ea2a131024f4",
+    "impl_paths": [
+      "devlab/runtime/memory/rules/cc.0.approach-frame.20260708.062249514328.json",
+      "devlab/runtime/memory/rules/cc.0.budget.20260708.062249517997.json",
+      "devlab/runtime/memory/rules/cc.0.capability-protocol.20260708.062249518627.json",
+      "devlab/runtime/memory/rules/cc.0.coding.20260708.062249519315.json",
+      "devlab/runtime/memory/rules/cc.0.collaboration.20260708.062249519843.json",
+      "devlab/runtime/memory/rules/cc.0.database.20260708.062249520391.json",
+      "devlab/runtime/memory/rules/cc.0.docs-live-in-code.20260708.062249520933.json",
+      "devlab/runtime/memory/rules/cc.0.igor-constraints.20260708.062249521455.json",
+      "devlab/runtime/memory/rules/cc.0.inherit-base-class.20260708.062249521983.json",
+      "devlab/runtime/memory/rules/cc.0.memory.20260708.062249522505.json",
+      "devlab/runtime/memory/rules/cc.0.metrics.20260708.062249523024.json",
+      "devlab/runtime/memory/rules/cc.0.preferred_paths.20260708.062249523551.json",
+      "devlab/runtime/memory/rules/cc.0.safeguards.20260708.062249524323.json",
+      "devlab/runtime/memory/rules/cc.0.ticket_design_checks.20260708.062249524986.json"
+    ],
+    "ticket": "T-rules-store-materialize",
+    "narrative": "",
+    "why": "The audit gates cited 14 rules a fresh builder could not read (rebuildability-diff F1 CRITICAL); materialized law is the difference between enforced doctrine and folklore",
+    "bootstrap": false
+  }
+}
