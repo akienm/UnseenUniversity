@@ -45,5 +45,18 @@
       "target": "Igor is retired from authoring code tickets",
       "note": "if Igor coding is re-approved, the sole-coder clause is stale"
     }
+  ],
+  "stale_flags": [
+    {
+      "flagged_at": "daily",
+      "condition": {
+        "type": "depends-on-fact",
+        "target": "Igor is retired from authoring code tickets",
+        "note": "if Igor coding is re-approved, the sole-coder clause is stale"
+      },
+      "reason": "fact has no probe — not machine-checkable",
+      "state": "unresolvable",
+      "sweep_run": "daily"
+    }
   ]
 }

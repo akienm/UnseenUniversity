@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.day-20260708.20260708.091540143330",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260708"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-08T09:15:40.143330",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "text": "Day 2026-07-08 — Fable judgment block + Opus build-out. 9 tickets closed proven (rules-store-materialize, builder-memory-repo-residency, ungate-status-flip, claude-md-stale-anchors, consequence-ticket-aging-alarm, produced-by-emission-sweep, validity-sweep-day-close) + examiner-station design half + audit-run-records reframed (telemetry on retired palace -> filed T-audit-telemetry-flatfile-repoint). New tooling: rules_citation_check, claude_md_anchor_check, consequence_aging, validity_sweep, produced_by at 3 emission chokepoints. Filed T-proof-emitter-test-store-isolation. HIGH-inertia gate confirmed off while Igor iced."
+  }
+}

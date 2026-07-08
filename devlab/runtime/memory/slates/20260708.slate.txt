@@ -1,5 +1,18 @@
 # Slate 2026-07-08
 
+## Done today (9 closed proven + 1 design + 1 reframe)
+- T-rules-store-materialize @2950bebb — 14 rule artifacts materialized (rules_citation_check.py 15/15)
+- T-builder-memory-repo-residency @8ebe84c8 — 146 memories triaged, 72 mirrored to rules/+notes/
+- T-filing-audits-independent-examiner — DESIGN HALF @c4deb58f (architecture/examiner-station); build gated on T-audit-run-records-enforced
+- T-ungate-status-flip @581ae3a6 — ungate flips dependency->sprint
+- T-claude-md-stale-anchors @ec86eda8 — core_values anchor fixed + claude_md_anchor_check.py
+- T-consequence-ticket-aging-alarm @698bda08 — day-close overdue-consequence alarm
+- T-produced-by-emission-sweep @670b06fd — produced_by at the 3 emission chokepoints
+- T-validity-sweep-day-close @ba8165fd (+dedup fix) — day-close validity sweep, annotate-never-delete
+- T-audit-run-records-enforced — REFRAMED+GATED: found audit_telemetry on the retired Postgres palace; filed prerequisite T-audit-telemetry-flatfile-repoint
+- Filed follow-ups: T-audit-telemetry-flatfile-repoint (M), T-proof-emitter-test-store-isolation (S)
+- Day-close: gate sweep cleared 4 consequence gates; validity sweep flagged=2 (probeless facts); path-moves clean; collection clean (4490); critical suites 70 green. Full-suite infra errors = known T-test-suite-hermeticity-infra-deps.
+
 ## Planned
 - Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
 
@@ -29,3 +42,5 @@ NONE — 9 tickets closed proven this session (3 Fable + 6 Opus) + 1 design half
 **Next — FRESH OPUS SESSION:** (1) T-audit-telemetry-flatfile-repoint (M — the newly-found prerequisite; repoint audit_telemetry Postgres->flat-file, preserve API, 7 consuming skills) — this UNGATES T-audit-run-records-enforced which UNGATES the examiner T-filing-audits-independent-examiner (a 3-deep chain). (2) T-escalation-dispatch-producer-review (M). (3) S: T-store-layout-reconcile (move-vs-amend design call), T-unproven-lever-hygiene (cc_queue close-path soft-validation + day-close aggregation), T-proof-emitter-test-store-isolation (test hygiene). NOT buildable: T-aider-conformance-populate-from-replay (gated 2026-07-21).
 **Calendar:** /outcome D-fable-window-altitude-agenda at Friday retro (2026-07-10); 3 D-fable consequence tickets fire 2026-07-21. 4 overdue consequence tickets (now surfaced by day-close Step 18.9) want /outcome checks at next day-close.
 **HIGH-inertia:** Akien confirmed 2026-07-08 — no HIGH-inertia gate while Igor is down (he's on ice); rules/safeguards conditionality clause is confirmed-correct. Q1 (safeguards list) resolved.
+
+✅ CLOSED

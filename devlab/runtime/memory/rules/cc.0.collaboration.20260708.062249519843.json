@@ -38,5 +38,18 @@
       "target": "Igor is retired from authoring code tickets",
       "note": "if an Igor coding loop is re-approved, the routing half of this rule is stale"
     }
+  ],
+  "stale_flags": [
+    {
+      "flagged_at": "daily",
+      "condition": {
+        "type": "depends-on-fact",
+        "target": "Igor is retired from authoring code tickets",
+        "note": "if an Igor coding loop is re-approved, the routing half of this rule is stale"
+      },
+      "reason": "fact has no probe — not machine-checkable",
+      "state": "unresolvable",
+      "sweep_run": "daily"
+    }
   ]
 }
