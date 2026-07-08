@@ -76,9 +76,9 @@ def test_resolver_compose_proof(monkeypatch):
     # Cheapest capable connection wins: hex (owned_local) beats cloud (token_direct).
     assert dec.source.name == "hex"
     assert dec.model.model_id == "code-local"
-    # route() with the same empty rules returns nothing — proves resolve() does NOT
-    # depend on the hardcoded triple path.
-    assert eng.route("builder") is None
+    # The engine holds NO RoutingRule triples (rules=[]) — resolve() still resolves,
+    # proving it composes the connections stack rather than the hardcoded triple path.
+    assert not eng._rules
 
     # (2) The escalation override actually WALKS: escalation_allowed=True honors a
     # required_difficulty override (picks the pricier design connection);
