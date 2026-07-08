@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ungate-status-flip.20260707.191305569804",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ungate-status-flip"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T01:13:05.569804+00:00",
+  "links": {
+    "decisions": [
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-ungate-status-flip"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ungate-status-flip",
+    "title": "[sprint] cc_queue ungate clears the gate but leaves status=dependency — ticket stays invisible to dispatch",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Queue"
+    ],
+    "description": "intention: I intend that clearing a ticket's gate makes it dispatchable without a second manual step.\n\nObserved 2026-07-07: after `cc_queue.py ungate <id>`, the gate field clears but status stays `dependency`, so Granny/query-ticket never surface the ticket; three freshly-ungated impl tickets needed manual setstatus sprint (commit 8939527c). Decide + implement: ungate flips dependency->sprint when the cleared gate was the only named dependency (a ticket with OTHER remaining dependencies stays put).\n\n**Affected files:** devlab/claudecode/cc_queue.py (cmd ungate)\n\n**Design rules:** log every state change\n\n**Scope boundary:** the ungate path only; the automatic all-predecessors-terminal ungate path should get the same flip.\n\n**Test plan:** unit — ungate on a dependency ticket with cleared-gate-only flips to sprint and logs it; a hold ticket is untouched.\n\n**Completion criteria:** ungate on a gate-only dependency ticket leaves it claimable with no second command.\n\n**Validation:** Observable via log.info(\"ungate: <id> dependency->sprint\").\n\naudit-emphasis: none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
+    "gate": null,
+    "priority": 0.2,
+    "status": "sprint",
+    "created_at": "2026-07-08T01:13:01.257465+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that clearing a ticket's gate makes it dispatchable without a second manual step.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T01:13:01.306398+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7401ff8a-bdfe-4430-817e-2b5ad93184f2"
+  }
+}
