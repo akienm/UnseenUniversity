@@ -9,7 +9,6 @@ from unseen_university.devices.inference.version_checker import ModelVersionChec
 def _make_spec(model_id: str, created_at: str = "2026-06-01T00:00:00Z") -> ModelSpec:
     return ModelSpec(
         model_id=model_id,
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=0.07,
         output_cost_per_1m=0.28,

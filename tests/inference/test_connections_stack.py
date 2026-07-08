@@ -2,9 +2,8 @@
 
 The connections stack (stack 3 of 4, D-inference-router-stack-decomposition-2026-07-08)
 makes model<->provider reachability a first-class edge instead of the monolith's 1:1
-ModelSpec.source_name binding. These tests pin: (1) seed_from_models mirrors the current
-bindings exactly, (2) a model can carry N connections, (3) by_model isolates per model,
-and (4) a connection carries per-pairing cost.
+ModelSpec.source_name binding. These tests pin: a model can carry N connections,
+by_model isolates per model, and a connection carries per-pairing cost.
 """
 
 from __future__ import annotations
@@ -12,27 +11,12 @@ from __future__ import annotations
 from unseen_university.devices.inference.connections import (
     Connection,
     ConnectionsRegistry,
-    seed_from_models,
 )
-from unseen_university.devices.inference.models_registry import ModelSpec, default_registry
 
 
-def test_seed_mirrors_current_model_bindings():
-    """seed_from_models produces exactly one connection per ModelSpec, same (model, source)."""
-    models = default_registry()
-    conns = seed_from_models(models)
-
-    specs = models.all()
-    # One connection per model row — the faithful 1:1 snapshot.
-    assert len(conns.all()) == len(specs)
-
-    # Every ModelSpec's (model_id, source_name) is represented by a connection, and the
-    # per-connection cost equals the spec's dollars_per_unit.
-    seeded = {(c.model_id, c.source_name): c for c in conns.all()}
-    for spec in specs:
-        key = (spec.model_id, spec.source_name)
-        assert key in seeded, f"missing connection for {key}"
-        assert seeded[key].dollars_per_unit == spec.dollars_per_unit
+# seed_from_models is deleted at the router cutover — reachability now lives on the
+# authoritative default_connections table, not a 1:1 snapshot of the (also deleted)
+# ModelSpec.source_name binding, so its two tests are retired.
 
 
 def test_model_can_have_multiple_connections():
@@ -53,10 +37,9 @@ def test_by_model_returns_empty_for_unknown():
 
 
 def test_connection_carries_per_pairing_cost():
-    """Cost lives on the connection (per provider), not smeared onto the model."""
-    models = default_registry()
-    conns = seed_from_models(models)
-    spec = models.all()[0]
-    matches = [c for c in conns.by_model(spec.model_id) if c.source_name == spec.source_name]
-    assert matches, f"no connection for seeded model {spec.model_id}"
-    assert matches[0].dollars_per_unit == spec.dollars_per_unit
+    """Cost lives on the connection (per provider), explicitly set at registration."""
+    reg = ConnectionsRegistry()
+    reg.register(Connection("m", "openrouter", 0.5))
+    matches = reg.by_model("m")
+    assert matches, "no connection for registered model"
+    assert matches[0].dollars_per_unit == 0.5

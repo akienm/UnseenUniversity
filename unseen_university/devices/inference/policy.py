@@ -8,14 +8,15 @@ NEVER names a specific model_id or source_name. That anti-literal property is th
 point: it is what the monolith's (task_class, model_id, source_name) triples violated,
 and it is enforced by a runnable test (the router decomposition invariant).
 
-The resolver (T-inference-resolver-compose) calls build_envelope(req, policies) to turn a
+The resolver (rules_engine.resolve) calls build_envelope(req, policies) to turn a
 request into the capability envelope that the models + connections stacks are then
 filtered against. This module lives in its own file (not rules_engine.py) so the rules
-stack is a first-class stack like providers/models/connections, and so the monolith's
-_DEFAULT_RULES triples in rules_engine.py can be deleted cleanly at cutover without
+stack is a first-class stack like providers/models/connections; keeping it separate is
+what let the monolith's _DEFAULT_RULES triples be deleted cleanly at the cutover without
 touching the policy stack.
 
-ADDITIVE: nothing routes through this yet; route() and _DEFAULT_RULES are untouched.
+This stack is LIVE: every resolve() call composes it. The pre-cutover monolith (route()
+and _DEFAULT_RULES) has been deleted.
 """
 
 from __future__ import annotations

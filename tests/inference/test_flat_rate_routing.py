@@ -11,8 +11,6 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry, default_registry
-from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
 from unseen_university.devices.inference.sources import (
     OllamaCloudSource,
     OpenRouterSource,
@@ -110,88 +108,11 @@ def test_ollama_cloud_source_call_includes_tools():
 
 
 # ── RulesEngine flat-rate preference ─────────────────────────────────────────
-
-
-def _make_sources(flat_rate_available: bool, usage_available: bool) -> SourceRegistry:
-    reg = SourceRegistry()
-
-    # Migrated to the cost-optimizing selector (D-inference-cost-optimizing-router):
-    # the mocks now carry cost_class + time_bucket so they exercise the SELECTOR path,
-    # not the tier-fallback. ollama_cloud=subscription still beats openrouter=token_direct
-    # (the taxonomy fix preserves this winner), so the assertions below hold — now for
-    # the right reason.
-    flat_src = MagicMock(spec=Source)
-    flat_src.name = "ollama_cloud"
-    flat_src.available = flat_rate_available
-    flat_src.billing_type = "flat_rate"
-    flat_src.cost_class = "subscription"
-    flat_src.time_bucket = "interactive"
-    reg.register(flat_src)
-
-    usage_src = MagicMock(spec=Source)
-    usage_src.name = "openrouter"
-    usage_src.available = usage_available
-    usage_src.billing_type = "usage_based"
-    usage_src.cost_class = "token_direct"
-    usage_src.time_bucket = "interactive"
-    reg.register(usage_src)
-
-    return reg, flat_src, usage_src
-
-
-def _make_models() -> ModelsRegistry:
-    return ModelsRegistry([
-        ModelSpec("flat-model", "ollama_cloud", "worker", 0.0, 0.0, 8192),
-        ModelSpec("usage-model", "openrouter", "worker", 0.10, 0.40, 8192),
-    ])
-
-
-def _rules() -> list[RoutingRule]:
-    return [
-        # flat_rate rule has HIGHER priority number (lower priority) — but should still win
-        RoutingRule(10, "worker", "flat-model", "ollama_cloud", "worker→flat/ollama-pro"),
-        RoutingRule(2, "worker", "usage-model", "openrouter", "worker→usage/OR"),
-    ]
-
-
-def test_flat_rate_preferred_over_usage_based():
-    """flat_rate source wins over usage_based even with a higher priority number."""
-    sources, flat_src, _ = _make_sources(flat_rate_available=True, usage_available=True)
-    engine = RulesEngine(sources, _make_models(), _rules())
-    decision = engine.route("worker")
-    assert decision is not None
-    assert decision.source is flat_src
-    assert decision.model.model_id == "flat-model"
-
-
-def test_usage_based_wins_when_flat_rate_unavailable():
-    """Falls back to usage_based when flat_rate source is unavailable."""
-    sources, _, usage_src = _make_sources(flat_rate_available=False, usage_available=True)
-    engine = RulesEngine(sources, _make_models(), _rules())
-    decision = engine.route("worker")
-    assert decision is not None
-    assert decision.source is usage_src
-    assert decision.model.model_id == "usage-model"
-
-
-def test_no_candidates_returns_none():
-    """Returns None when no source is available for the task_class."""
-    sources, _, _ = _make_sources(flat_rate_available=False, usage_available=False)
-    engine = RulesEngine(sources, _make_models(), _rules())
-    decision = engine.route("worker")
-    assert decision is None
-
-
-def test_flat_rate_at_priority_99_beats_usage_at_priority_1():
-    """billing_type dominates over priority number."""
-    sources, flat_src, _ = _make_sources(flat_rate_available=True, usage_available=True)
-    rules = [
-        RoutingRule(99, "worker", "flat-model", "ollama_cloud", "flat-last"),
-        RoutingRule(1, "worker", "usage-model", "openrouter", "usage-first"),
-    ]
-    engine = RulesEngine(sources, _make_models(), rules)
-    decision = engine.route("worker")
-    assert decision.source is flat_src
+# The route()-based flat_rate-preference and priority-domination tests are retired:
+# route() is deleted at the router cutover and billing_type no longer drives selection
+# (resolve() sorts by cost_class then per-connection dollars — cost_class ordering, not
+# a flat_rate-vs-usage_based bias). Cheapest-capable selection and availability skip are
+# covered against resolve() in test_resolver_compose.py.
 
 
 # ── OpenRouterSource tools forwarding (incidental fix) ────────────────────────
@@ -281,98 +202,8 @@ def test_google_paid_source_billing_type_is_usage_based():
 
 
 # ── foreground=True routing ───────────────────────────────────────────────────
-
-
-def test_foreground_no_longer_inverts_cost():
-    """INTENTIONAL CHANGE (D-inference-cost-optimizing-router): foreground filters by TIME,
-    it no longer inverts cost to prefer cloud. With both sources interactive, foreground
-    grants nothing and argmin(cost) picks the cheaper cost_class (subscription < token_direct).
-    The old 'foreground prefers usage_based/OR' behaviour is gone — speed and capability are
-    now separate axes (TIME and DIFFICULTY), so latency no longer forces the pricier source.
-    """
-    sources, flat_src, usage_src = _make_sources(flat_rate_available=True, usage_available=True)
-    engine = RulesEngine(sources, _make_models(), _rules())
-    decision = engine.route("worker", foreground=True)
-    assert decision is not None
-    assert decision.source is flat_src, (
-        "foreground no longer inverts cost — cheapest capable source wins"
-    )
-
-
-def test_foreground_falls_back_to_flat_rate_when_cloud_unavailable():
-    """foreground=True still falls back to flat_rate when no cloud source is available."""
-    sources, flat_src, _ = _make_sources(flat_rate_available=True, usage_available=False)
-    engine = RulesEngine(sources, _make_models(), _rules())
-    decision = engine.route("worker", foreground=True)
-    assert decision is not None
-    assert decision.source is flat_src
-
-
-def test_foreground_false_still_prefers_flat_rate():
-    """foreground=False (default) preserves existing flat_rate-first behaviour."""
-    sources, flat_src, _ = _make_sources(flat_rate_available=True, usage_available=True)
-    engine = RulesEngine(sources, _make_models(), _rules())
-    decision = engine.route("worker", foreground=False)
-    assert decision is not None
-    assert decision.source is flat_src
-
-
-def test_worker_routes_to_google_free_when_ollama_cloud_unavailable():
-    """Production path: ollama_cloud unavailable (no key), google_free available → worker uses free tier.
-
-    This is the DickSimnel use case: OLLAMA_PRO_API_KEY unset, GOOGLE_STUDIO_API_KEY set.
-    Worker tasks must NOT fall through to paid OpenRouter.
-    """
-    import os
-    from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
-    from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
-    from unseen_university.devices.inference.sources import Source, SourceRegistry
-
-    # Simulate production: google_free available, ollama_cloud NOT available, OR available
-    reg = SourceRegistry()
-
-    google_src = MagicMock(spec=Source)
-    google_src.name = "google_free"
-    google_src.available = True
-    google_src.billing_type = "flat_rate"  # the fix
-    google_src.cost_class = "free_throttled"
-    google_src.time_bucket = "interactive"
-    reg.register(google_src)
-
-    ollama_src = MagicMock(spec=Source)
-    ollama_src.name = "ollama_cloud"
-    ollama_src.available = False  # no OLLAMA_PRO_API_KEY
-    ollama_src.billing_type = "flat_rate"
-    ollama_src.cost_class = "subscription"
-    ollama_src.time_bucket = "interactive"
-    reg.register(ollama_src)
-
-    or_src = MagicMock(spec=Source)
-    or_src.name = "openrouter"
-    or_src.available = True
-    or_src.billing_type = "usage_based"
-    or_src.cost_class = "token_direct"
-    or_src.time_bucket = "interactive"
-    reg.register(or_src)
-
-    models = ModelsRegistry([
-        ModelSpec("gemini-2.0-flash", "google_free", "worker", 0.0, 0.0, 1_048_576),
-        ModelSpec("qwen2.5-coder:32b", "ollama_cloud", "worker", 0.0, 0.0, 32768),
-        ModelSpec("qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker", 0.07, 0.28, 156_000),
-    ])
-
-    rules = [
-        RoutingRule(2, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder/OR"),
-        RoutingRule(3, "worker", "gemini-2.0-flash", "google_free", "worker→gemini-flash/google-free"),
-        RoutingRule(10, "worker", "qwen2.5-coder:32b", "ollama_cloud", "worker→qwen2.5/ollama-pro"),
-    ]
-
-    engine = RulesEngine(reg, models, rules)
-    decision = engine.route("worker")
-
-    assert decision is not None
-    assert decision.source is google_src, (
-        f"Expected google_free (flat_rate, free) but got {decision.source.name!r} — "
-        "worker tasks must prefer free providers over paid OR"
-    )
-    assert decision.model.model_id == "gemini-2.0-flash"
+# The foreground= parameter and its route()-based tests are deleted at the router
+# cutover: resolve() expresses speed as an urgency/time-eligibility filter (not a
+# foreground flag) and cost as cost_class ordering. The "worker prefers the free
+# provider over paid OR" outcome is now a cheapest-capable-connection result, covered
+# against resolve() in test_resolver_compose.py.

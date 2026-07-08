@@ -1,23 +1,26 @@
 """
-Tests for T-inference-resolver-compose (4/6 of D-inference-router-stack-decomposition):
+Tests for the dimensional resolver (D-inference-router-stack-decomposition):
 RulesEngine.resolve(RouteRequest) composes the 4 stacks — dimensions -> policy
 capability envelope -> candidate MODELS -> their CONNECTIONS filtered by provider
 availability + urgency/time eligibility -> the cost-optimizing selector picks the
 cheapest capable connection.
 
-resolve() is ADDITIVE and lives beside route(); nothing here touches route() or
-_DEFAULT_RULES. The escalation contract mirrors route()'s external driver
-(D-inference-domain-routing-2026-07-01): resolve() does ONE selection per call at a
-(possibly overridden) difficulty; the caller (DS._run_inference) owns the hop counter
-and re-calls with a bumped required_difficulty. escalation_allowed=False pins the pick
-to the seed for deterministic proofs; escalation_allowed=True + a no-capable-connection
-outcome fires the terminal system_alarm.
+Post-cutover (T-inference-migrate-consumers-cutover): there is no route()/_DEFAULT_RULES
+and ModelSpec carries no source_name. Reachability lives ONLY on the connections stack, so
+each synthetic rack here builds its ConnectionsRegistry EXPLICITLY (Connection edges), the
+pattern every resolver consumer now uses. The escalation contract mirrors the external
+driver (D-inference-domain-routing-2026-07-01): resolve() does ONE selection per call at a
+(possibly overridden) difficulty; the caller owns the hop counter and re-calls with a bumped
+required_difficulty. escalation_allowed=False pins the pick to the seed for deterministic
+proofs; escalation_allowed=True + a no-capable-connection outcome fires the terminal
+system_alarm.
 """
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
 from unseen_university.devices.inference.rules_engine import RulesEngine
@@ -34,26 +37,38 @@ def _src(name, cost_class, *, available=True, time_bucket="interactive"):
     return s
 
 
+def _conns(*edges) -> ConnectionsRegistry:
+    """Build a connections stack from (model_id, source_name, dollars_per_unit) edges."""
+    reg = ConnectionsRegistry()
+    for model_id, source_name, dollars in edges:
+        reg.register(Connection(model_id, source_name, dollars))
+    return reg
+
+
 def _coding_rack():
     """A minimal 2-connection coding rack: cheap owned-local code model + pricey
-    token-direct design model. Connections are seeded 1:1 from the models."""
+    token-direct design model, with an explicit connections stack."""
     sources = SourceRegistry()
     sources.register(_src("hex", "owned_local"))       # cheapest
     sources.register(_src("cloud", "token_direct"))    # dearest
     models = ModelsRegistry([
         ModelSpec(
-            "code-local", "hex", "worker", 0.0, 0.0, 8192,
+            "code-local", "worker", 0.0, 0.0, 8192,
             difficulty_capable="code", features=["tools"], domains=["coding"],
         ),
         ModelSpec(
-            "design-cloud", "cloud", "worker", 3.0, 15.0, 8192,
+            "design-cloud", "worker", 3.0, 15.0, 8192,
             difficulty_capable="design", features=["tools"], domains=["coding"],
         ),
     ])
+    conns = _conns(
+        ("code-local", "hex", 0.0),
+        ("design-cloud", "cloud", 18.0),
+    )
     # policies=[] → envelope is seed+domain only (no hidden feature floor) so these
     # tests isolate the dimension->connection->selector path; a separate test covers
     # policy tightening.
-    return RulesEngine(sources, models, rules=[], policies=[])
+    return RulesEngine(sources, models, connections=conns, policies=[])
 
 
 # ── The consolidated proof node (proof-on-close points here) ──────────────────
@@ -64,9 +79,7 @@ def test_resolver_compose_proof(monkeypatch):
     escalation override genuinely changes the pick, and no-capable-connection under
     escalation_allowed fires the terminal system_alarm."""
 
-    # (1) resolve returns a concrete (provider, model) with NO rule triple involved.
-    # The engine is built with rules=[] — route() would find nothing — yet resolve()
-    # still resolves, because it composes the connections stack, not _DEFAULT_RULES.
+    # (1) resolve returns a concrete (provider, model) from the connections stack.
     eng = _coding_rack()
     req = RouteRequest(
         ticket_tier="builder", builder_tier="builder", domain="coding", urgency="normal"
@@ -76,9 +89,6 @@ def test_resolver_compose_proof(monkeypatch):
     # Cheapest capable connection wins: hex (owned_local) beats cloud (token_direct).
     assert dec.source.name == "hex"
     assert dec.model.model_id == "code-local"
-    # The engine holds NO RoutingRule triples (rules=[]) — resolve() still resolves,
-    # proving it composes the connections stack rather than the hardcoded triple path.
-    assert not eng._rules
 
     # (2) The escalation override actually WALKS: escalation_allowed=True honors a
     # required_difficulty override (picks the pricier design connection);
@@ -115,10 +125,12 @@ def test_resolver_compose_proof(monkeypatch):
     sources = SourceRegistry()
     sources.register(_src("hex", "owned_local"))
     models = ModelsRegistry([
-        ModelSpec("code-only", "hex", "worker", 0.0, 0.0, 8192,
+        ModelSpec("code-only", "worker", 0.0, 0.0, 8192,
                   difficulty_capable="code", domains=["coding"]),
     ])
-    code_only = RulesEngine(sources, models, rules=[], policies=[])
+    code_only = RulesEngine(
+        sources, models, connections=_conns(("code-only", "hex", 0.0)), policies=[],
+    )
 
     alarm_req = RouteRequest(
         ticket_tier="builder", builder_tier="builder", domain="coding",
@@ -135,10 +147,12 @@ def test_resolver_compose_proof(monkeypatch):
     sources2 = SourceRegistry()
     sources2.register(_src("hex", "owned_local"))
     models2 = ModelsRegistry([
-        ModelSpec("prose-only", "hex", "worker", 0.0, 0.0, 8192,
+        ModelSpec("prose-only", "worker", 0.0, 0.0, 8192,
                   difficulty_capable="code", domains=["prose"]),
     ])
-    det = RulesEngine(sources2, models2, rules=[], policies=[])
+    det = RulesEngine(
+        sources2, models2, connections=_conns(("prose-only", "hex", 0.0)), policies=[],
+    )
     det_req = RouteRequest(
         ticket_tier="builder", builder_tier="builder", domain="coding",
         urgency="normal", escalation_allowed=False,
@@ -157,12 +171,13 @@ def test_unavailable_connection_is_skipped():
     sources.register(_src("hex", "owned_local", available=False))  # down
     sources.register(_src("cloud", "token_direct", available=True))
     models = ModelsRegistry([
-        ModelSpec("m-local", "hex", "worker", 0.0, 0.0, 8192,
+        ModelSpec("m-local", "worker", 0.0, 0.0, 8192,
                   difficulty_capable="code", domains=["coding"]),
-        ModelSpec("m-cloud", "cloud", "worker", 1.0, 1.0, 8192,
+        ModelSpec("m-cloud", "worker", 1.0, 1.0, 8192,
                   difficulty_capable="code", domains=["coding"]),
     ])
-    eng = RulesEngine(sources, models, rules=[], policies=[])
+    conns = _conns(("m-local", "hex", 0.0), ("m-cloud", "cloud", 2.0))
+    eng = RulesEngine(sources, models, connections=conns, policies=[])
     req = RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding")
     dec = eng.resolve(req)
     assert dec is not None
@@ -176,12 +191,13 @@ def test_urgency_filters_slow_connection():
     sources.register(_src("slow_cheap", "owned_local", time_bucket="overnight"))
     sources.register(_src("fast_dear", "token_direct", time_bucket="interactive"))
     models = ModelsRegistry([
-        ModelSpec("m-slow", "slow_cheap", "worker", 0.0, 0.0, 8192,
+        ModelSpec("m-slow", "worker", 0.0, 0.0, 8192,
                   difficulty_capable="code", domains=["coding"]),
-        ModelSpec("m-fast", "fast_dear", "worker", 1.0, 1.0, 8192,
+        ModelSpec("m-fast", "worker", 1.0, 1.0, 8192,
                   difficulty_capable="code", domains=["coding"]),
     ])
-    eng = RulesEngine(sources, models, rules=[], policies=[])
+    conns = _conns(("m-slow", "slow_cheap", 0.0), ("m-fast", "fast_dear", 2.0))
+    eng = RulesEngine(sources, models, connections=conns, policies=[])
     req = RouteRequest(
         ticket_tier="builder", builder_tier="builder", domain="coding",
         urgency="interactive",
@@ -198,29 +214,33 @@ def test_default_policy_tightens_envelope():
     sources.register(_src("hex", "owned_local"))
     sources.register(_src("cloud", "token_direct"))
     models = ModelsRegistry([
-        ModelSpec("no-tools", "hex", "worker", 0.0, 0.0, 8192,
+        ModelSpec("no-tools", "worker", 0.0, 0.0, 8192,
                   difficulty_capable="code", domains=["coding"]),           # no features
-        ModelSpec("has-tools", "cloud", "worker", 1.0, 1.0, 8192,
+        ModelSpec("has-tools", "worker", 1.0, 1.0, 8192,
                   difficulty_capable="code", features=["tools"], domains=["coding"]),
     ])
-    eng = RulesEngine(sources, models, rules=[])  # policies=None -> _DEFAULT_POLICIES
+    conns = _conns(("no-tools", "hex", 0.0), ("has-tools", "cloud", 2.0))
+    eng = RulesEngine(sources, models, connections=conns)  # policies=None -> _DEFAULT_POLICIES
     req = RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding")
     dec = eng.resolve(req)
     assert dec is not None
     assert dec.model.model_id == "has-tools"  # tool-less excluded by policy envelope
 
 
-def test_connections_are_lazily_seeded_from_models():
-    """No explicit ConnectionsRegistry -> resolve seeds a 1:1 snapshot from the model
-    source_name bindings, so it resolves out of the box before cutover."""
+def test_synthetic_model_needs_explicit_connection():
+    """Post-cutover reachability lives ONLY on the connections stack: with no explicit
+    connections, the lazy default (default_connections) knows only the real default-table
+    model_ids, so a SYNTHETIC model has no edge and resolves to None. This documents the
+    contract — a resolver consumer with custom models MUST supply its own connections."""
     sources = SourceRegistry()
     sources.register(_src("hex", "owned_local"))
     models = ModelsRegistry([
-        ModelSpec("m", "hex", "worker", 0.0, 0.0, 8192,
+        ModelSpec("synthetic-model-xyz", "worker", 0.0, 0.0, 8192,
                   difficulty_capable="code", domains=["coding"]),
     ])
-    eng = RulesEngine(sources, models, rules=[], policies=[])  # no connections passed
-    req = RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding")
-    dec = eng.resolve(req)
-    assert dec is not None
-    assert dec.source.name == "hex" and dec.model.model_id == "m"
+    eng = RulesEngine(sources, models, policies=[])  # no connections passed
+    req = RouteRequest(
+        ticket_tier="builder", builder_tier="builder", domain="coding",
+        escalation_allowed=False,
+    )
+    assert eng.resolve(req) is None  # no default-table edge for a synthetic model_id

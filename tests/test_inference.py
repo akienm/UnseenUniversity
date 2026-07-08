@@ -20,7 +20,6 @@ def _spec(model_id: str, cacheable: bool = False) -> ModelSpec:
     tags = ["cacheable"] if cacheable else []
     return ModelSpec(
         model_id=model_id,
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=0.1,
         output_cost_per_1m=0.4,

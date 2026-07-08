@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-preexisting-domain-prompt-sha.20260708.171217603807",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-preexisting-domain-prompt-sha"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T23:12:17.603807+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-preexisting-domain-prompt-sha"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-preexisting-domain-prompt-sha",
+    "title": "[sprint] test_coding_prompt_byte_identical red — coding prompt drifted from pinned SHA256",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.2,
+    "tags": [
+      "test",
+      "inference",
+      "preexisting"
+    ],
+    "description": "PRE-EXISTING failure (unrelated to the router cutover; found during T-inference-migrate-consumers-cutover). tests/inference/test_domain_prompts.py::test_coding_prompt_byte_identical_to_prior_ds_prompt asserts sha256(coding domain prompt) == _CODING_PROMPT_SHA256; the prompt text has drifted from the pinned constant. Decide: re-pin the SHA (accept the intentionally-updated prompt) or revert the prompt drift. Verify the change was intended before re-pinning.\n\n**Test plan:** tests/inference/test_domain_prompts.py::test_coding_prompt_byte_identical_to_prior_ds_prompt passes (SHA re-pinned to the intended prompt or prompt reverted).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T23:11:54.103278+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T23:11:54.103322+00:00",
+    "inferred_intention": "manage-test-assertions",
+    "inferred_intention_id": "bbe12133-519f-4ea3-ac45-ea8b51ec91fc"
+  }
+}

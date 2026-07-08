@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-preexisting-dicksimnel-done-prefix-close.20260708.174331013363",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-preexisting-dicksimnel-done-prefix-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T23:43:31.013363+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-preexisting-dicksimnel-done-prefix-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-preexisting-dicksimnel-done-prefix-close",
+    "title": "[sprint] test_done_prefix_closes_ticket red — DS close now appends --shipped-unproven args",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.2,
+    "tags": [
+      "test",
+      "dicksimnel",
+      "preexisting"
+    ],
+    "description": "PRE-EXISTING failure (unrelated to the router cutover; found during T-inference-migrate-consumers-cutover). tests/inference/test_dicksimnel.py::TestPostResultGuards::test_done_prefix_closes_ticket asserts _run_queue_cmd(close, T-x, msg) but the DickSimnel close path now also passes --shipped-unproven plus a branch-builder reason. Introduced by commit 1ac42077 (scaffold(builder-merge-proof): shared close mixin + merge-proof stub, T-builder-merge-time-proof) which is CLOSED but left this test red. Decide: update the test to expect the shipped-unproven close args (if the mixin behavior is intended) or fix the close path.\n\n**Test plan:** tests/inference/test_dicksimnel.py::TestPostResultGuards::test_done_prefix_closes_ticket passes.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T23:43:08.340844+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T23:43:08.410524+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "18929ac0-e12a-40ff-8d40-5491139eddf2"
+  }
+}

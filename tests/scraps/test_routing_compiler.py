@@ -326,57 +326,7 @@ def test_load_corpus_missing_file_returns_empty(compiler):
 
 
 # ── RulesEngine.add_compiled_rule integration ─────────────────────────────────
-
-
-def test_rules_engine_add_compiled_rule():
-    """add_compiled_rule inserts a rule that route() honors.
-
-    With an empty rule base the compiled rule is the sole analyst candidate, so
-    route() returns it. (This proves the rule is inserted and used — NOT that a
-    low priority beats a cheaper competitor: priority is only the cost tiebreak.)
-    """
-    from unittest.mock import MagicMock
-
-    from unseen_university.devices.inference.models_registry import ModelsRegistry, ModelSpec
-    from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
-    from unseen_university.devices.inference.sources import Source, SourceRegistry
-
-    sources = SourceRegistry()
-    src = MagicMock(spec=Source)
-    src.name = "openrouter"
-    src.available = True
-    # A MagicMock(spec=Source) knows the attribute *names* but not the dataclass
-    # field defaults, so time_bucket/cost_class return MagicMocks. The route()
-    # eligibility filter does TIME_BUCKETS.index(source.time_bucket): a non-str
-    # raises ValueError → the source is treated as the slowest bucket and the
-    # explicit compiled rule is filtered out (falling through to the tier fallback).
-    # Give the mock the real string values a live openrouter Source always carries.
-    src.time_bucket = "interactive"
-    src.cost_class = "token_direct"
-    sources.register(src)
-
-    models = ModelsRegistry()
-    spec = ModelSpec(
-        model_id="deepseek/deepseek-v3",
-        tier="analyst",
-        source_name="openrouter",
-        input_cost_per_1m=1.4,
-        output_cost_per_1m=2.8,
-        context_window=131072,
-    )
-    models.register(spec)
-
-    engine = RulesEngine(sources, models, rules=[])
-
-    compiled = RoutingRule(
-        priority=0,
-        task_class="analyst",
-        model_id="deepseek/deepseek-v3",
-        source_name="openrouter",
-        label="compiled:Platform/S→analyst",
-    )
-    engine.add_compiled_rule(compiled)
-
-    decision = engine.route("analyst")
-    assert decision is not None
-    assert decision.rule_label == "compiled:Platform/S→analyst"
+# Retired at the router cutover: add_compiled_rule, RoutingRule, and route() are all
+# deleted. The dimensional resolver composes a policy/connections stack rather than a
+# compiled RoutingRule table, so there is no engine-side compiled-rule insertion to
+# integration-test here. The compiler's own corpus-loading behavior is covered above.

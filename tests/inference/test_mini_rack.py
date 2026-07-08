@@ -19,7 +19,7 @@ from unseen_university.devices.inference.sources import (
     Source,
     SourceRegistry,
 )
-from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
+from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.health_monitor import HealthMonitor
 from unseen_university.devices.inference.shim import InferenceRequest
 
@@ -46,13 +46,11 @@ def test_registry_get_by_id():
     spec = reg.get("qwen/qwen3-coder-30b-a3b-instruct")
     assert spec is not None
     assert spec.tier == "worker"
-    assert spec.source_name == "openrouter"
 
 
 def test_registry_cost_estimate():
     spec = ModelSpec(
         model_id="test/model",
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=1.0,
         output_cost_per_1m=2.0,
@@ -89,136 +87,11 @@ def test_source_registry_all_available_filters():
     assert available[0].name == "up"
 
 
-# ── RulesEngine ────────────────────────────────────────────────────────────────
-
-
-def _make_engine(or_available=True, ollama_available=False):
-    sources = SourceRegistry()
-    or_src = MagicMock(spec=Source)
-    or_src.name = "openrouter"
-    or_src.available = or_available
-    sources.register(or_src)
-
-    ollama_src = MagicMock(spec=Source)
-    ollama_src.name = "ollama"
-    ollama_src.available = ollama_available
-    sources.register(ollama_src)
-
-    models = default_registry()
-    return RulesEngine(sources, models), or_src, ollama_src
-
-
-def test_rules_worker_routes_to_openrouter():
-    # Worker tier routes to Claude sonnet via OR (primary after haiku proved insufficient)
-    engine, or_src, _ = _make_engine(or_available=True)
-    decision = engine.route("worker")
-    assert decision is not None
-    assert decision.source is or_src
-    assert "sonnet" in decision.model.model_id
-
-
-def test_rules_minion_routes_to_cheapest():
-    engine, or_src, _ = _make_engine(or_available=True)
-    decision = engine.route("minion")
-    assert decision is not None
-    assert decision.model.tier == "minion"
-
-
-def test_rules_unavailable_source_skipped():
-    engine, _, _ = _make_engine(or_available=False, ollama_available=False)
-    decision = engine.route("worker")
-    assert decision is None
-
-
-def test_rules_session_affinity_reuses_model():
-    engine, or_src, _ = _make_engine(or_available=True)
-    d1 = engine.route("worker", session_id="sess-1")
-    d2 = engine.route("worker", session_id="sess-1")
-    assert d1 is not None and d2 is not None
-    assert d1.model.model_id == d2.model.model_id
-    assert d2.session_affinity
-
-
-def test_rules_designer_routes_to_openrouter():
-    sources = SourceRegistry()
-    or_src = MagicMock(spec=Source)
-    or_src.name = "openrouter"
-    or_src.available = True
-    sources.register(or_src)
-
-    models = default_registry()
-    engine = RulesEngine(sources, models)
-    decision = engine.route("designer")
-    assert decision is not None
-    assert decision.source is or_src
-    assert "gemini" in decision.model.model_id
-
-
-def test_rules_worker_prefers_ollama_cloud_over_or():
-    """Worker routes to ollama_cloud (flat_rate) over openrouter (usage_based) when both available."""
-    sources = SourceRegistry()
-    or_src = MagicMock(spec=Source)
-    or_src.name = "openrouter"
-    or_src.available = True
-    or_src.billing_type = "usage_based"
-    sources.register(or_src)
-
-    cloud_src = MagicMock(spec=Source)
-    cloud_src.name = "ollama_cloud"
-    cloud_src.available = True
-    cloud_src.billing_type = "flat_rate"
-    sources.register(cloud_src)
-
-    models = default_registry()
-    engine = RulesEngine(sources, models)
-    decision = engine.route("worker")
-    assert decision is not None
-    assert decision.source is cloud_src, "flat_rate ollama_cloud must be preferred over usage_based OR"
-
-
-def test_rules_batch_routes_to_local_ollama_at_night():
-    """Batch task class uses local_ollama during night hours (02:00)."""
-    sources = SourceRegistry()
-    local_src = MagicMock(spec=Source)
-    local_src.name = "local_ollama"
-    local_src.available = True
-    local_src.billing_type = "free"
-    sources.register(local_src)
-
-    or_src = MagicMock(spec=Source)
-    or_src.name = "openrouter"
-    or_src.available = True
-    or_src.billing_type = "usage_based"
-    sources.register(or_src)
-
-    models = default_registry()
-    engine = RulesEngine(sources, models)
-    decision = engine.route("batch", hour=2)  # 02:00 — night window
-    assert decision is not None
-    assert decision.source is local_src, "local_ollama must be used for batch at 02:00"
-
-
-def test_rules_batch_skips_local_ollama_during_day():
-    """Batch task class skips local_ollama outside the 00:00-06:00 window."""
-    sources = SourceRegistry()
-    local_src = MagicMock(spec=Source)
-    local_src.name = "local_ollama"
-    local_src.available = True
-    local_src.billing_type = "free"
-    sources.register(local_src)
-
-    cloud_src = MagicMock(spec=Source)
-    cloud_src.name = "ollama_cloud"
-    cloud_src.available = True
-    cloud_src.billing_type = "flat_rate"
-    sources.register(cloud_src)
-
-    models = default_registry()
-    engine = RulesEngine(sources, models)
-    decision = engine.route("batch", hour=14)  # 14:00 — daytime
-    assert decision is not None
-    assert decision.source is not local_src, "local_ollama must be skipped for batch at 14:00"
-    assert decision.source is cloud_src
+# ── RulesEngine route()/selector coverage moved to test_resolver_compose.py ──────
+# The route()-based selector tests (cheapest-capable, minion-cheapest, availability
+# skip, session affinity, designer pick, flat_rate preference, and batch night-mode)
+# are retired: route() and the night-mode gate are deleted at the router cutover, and
+# the equivalent selection coverage now lives against resolve() in test_resolver_compose.py.
 
 
 # ── HealthMonitor ──────────────────────────────────────────────────────────────

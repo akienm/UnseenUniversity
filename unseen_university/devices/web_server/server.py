@@ -3030,6 +3030,13 @@ async def _page_inference_models(request: Request):
         return HTMLResponse(_html_wrap("Inference Models", "<p>Inference device unavailable.</p>"))
 
     models = sorted(reg.all(), key=lambda m: (m.tier, m.input_cost_per_1m))
+    # Reachability lives on the connections stack (ModelSpec.source_name was removed at the
+    # router cutover) — build it once so each model can show its provider(s).
+    try:
+        from unseen_university.devices.inference.connections import default_connections
+        _conns = default_connections(reg)
+    except Exception:
+        _conns = None
     sections = []
     current_tier = None
     for spec in models:
@@ -3056,7 +3063,8 @@ async def _page_inference_models(request: Request):
             f"<div style='border:1px solid #333;border-radius:4px;padding:0.75rem;margin-bottom:0.5rem'>"
             f"<code style='color:#7ec8e3'>{spec.model_id}</code>"
             f" <span class='badge'>{spec.tier}</span>"
-            f" <span style='color:#888;font-size:0.85rem'>{spec.source_name}</span>"
+            f" <span style='color:#888;font-size:0.85rem'>"
+            f"{', '.join(c.source_name for c in _conns.by_model(spec.model_id)) if _conns else '?'}</span>"
             f" <span style='color:#888;font-size:0.85rem'>${spec.input_cost_per_1m}/1M in</span>"
             f"<br><span style='color:#aaa;font-size:0.85rem'>{spec.notes}</span>"
             + (f"<br><span style='color:#666;font-size:0.8rem'>added {spec.created_at}</span>" if spec.created_at else "")

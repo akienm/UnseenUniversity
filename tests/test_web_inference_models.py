@@ -16,7 +16,6 @@ def _make_app():
 def _reg_with_history() -> ModelsRegistry:
     spec = ModelSpec(
         model_id="test/model-v1",
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=0.07,
         output_cost_per_1m=0.28,
@@ -29,7 +28,6 @@ def _reg_with_history() -> ModelsRegistry:
         "test/model-v1",
         ModelSpec(
             model_id="test/model-v1",
-            source_name="openrouter",
             tier="worker",
             input_cost_per_1m=0.09,
             output_cost_per_1m=0.36,
@@ -64,7 +62,7 @@ class TestApiInferenceModelHistory:
     def test_empty_history_returns_empty_array(self):
         from starlette.testclient import TestClient
         reg = ModelsRegistry([ModelSpec(
-            model_id="fresh/model", source_name="or", tier="worker",
+            model_id="fresh/model", tier="worker",
             input_cost_per_1m=0.1, output_cost_per_1m=0.4, context_window=128_000,
             created_at="2026-06-01T00:00:00Z",
         )])

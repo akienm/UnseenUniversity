@@ -19,6 +19,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.device import InferenceDevice
 from unseen_university.devices.inference.models_registry import ModelSpec, default_registry
 from unseen_university.devices.inference.rules_engine import RulesEngine
@@ -66,10 +67,14 @@ def test_dispatch_captures_every_byte(device, tmp_path, monkeypatch):
 
     device._sources.register(_local_mock())
     device._models.register(
-        ModelSpec(model_id="local-test", source_name="ollama", tier="t2",
+        ModelSpec(model_id="local-test", tier="t2",
                   input_cost_per_1m=0.0, output_cost_per_1m=0.0, context_window=8192, tags=[])
     )
-    device._rules = RulesEngine(device._sources, device._models)
+    # Reachability lives on the connections stack now — wire the synthetic edge explicitly
+    # so the pinned dispatch can reach it (mirrors the device's connections+policies=[] build).
+    conns = ConnectionsRegistry()
+    conns.register(Connection("local-test", "ollama", 0.0))
+    device._rules = RulesEngine(device._sources, device._models, connections=conns, policies=[])
 
     device.dispatch(InferenceRequest(
         messages=[{"role": "user", "content": f"do the task {_REQ_TOKEN}"}],

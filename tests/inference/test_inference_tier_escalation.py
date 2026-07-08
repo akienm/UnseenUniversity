@@ -23,7 +23,10 @@ def _make_device():
     d._block_reason = ""
     d._mode = "openrouter"
     d._rules = MagicMock()
-    d._rules.route.return_value = None  # fall through to legacy mode
+    # resolve() is the resolver entry point post-cutover (route() is deleted); returning
+    # None makes the domain.select() path yield no decision so dispatch falls through to
+    # the legacy single-source mode these escalation-handoff tests exercise.
+    d._rules.resolve.return_value = None
     d._sources = {}
     d._models = default_registry()
     d._monitor = MagicMock()  # ResourceMonitor stub — dispatch records observed latency

@@ -12,12 +12,14 @@ from __future__ import annotations
 import logging
 from types import SimpleNamespace
 
+from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
+from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
 from unseen_university.devices.inference.resource_monitor import (
     ResourceMonitor,
     bucket_for_latency,
 )
-from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
+from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
 
@@ -101,17 +103,18 @@ def test_selector_reroutes_after_remeasure():
     reg.register(slow)
     reg.register(fast)
     models = ModelsRegistry([
-        ModelSpec("hex-m", "hex", "worker", 0.0, 0.0, 8192),
-        ModelSpec("cloud-m", "cloud", "worker", 1.0, 1.0, 8192),
+        ModelSpec("hex-m", "worker", 0.0, 0.0, 8192),
+        ModelSpec("cloud-m", "worker", 1.0, 1.0, 8192),
     ])
-    rules = [
-        RoutingRule(1, "worker", "hex-m", "hex", "hex"),
-        RoutingRule(2, "worker", "cloud-m", "cloud", "cloud"),
-    ]
-    engine = RulesEngine(reg, models, rules)
+    conns = ConnectionsRegistry()
+    conns.register(Connection("hex-m", "hex", 0.0))
+    conns.register(Connection("cloud-m", "cloud", 1.0))
+    engine = RulesEngine(reg, models, connections=conns, policies=[])
+    # interactive urgency drives the TIME-eligibility filter the promotion changes.
+    req = RouteRequest(ticket_tier="builder", builder_tier="builder", urgency="interactive")
 
     # Before re-measurement: hex is overnight → excluded from interactive → cloud wins.
-    assert engine.route("worker", foreground=True).source.name == "cloud"
+    assert engine.resolve(req).source.name == "cloud"
 
     # Re-measure hex as fast → promoted to interactive.
     mon = ResourceMonitor()
@@ -120,7 +123,7 @@ def test_selector_reroutes_after_remeasure():
     assert slow.time_bucket == "interactive"
 
     # After: hex is interactive AND cheaper (owned_local) → hex wins the same call.
-    assert engine.route("worker", foreground=True).source.name == "hex"
+    assert engine.resolve(req).source.name == "hex"
 
 
 # ── the device actually feeds the monitor on dispatch (wiring, not hollow) ────
@@ -143,11 +146,12 @@ def test_dispatch_feeds_the_monitor():
     }
     reg = SourceRegistry()
     reg.register(src)
-    models = ModelsRegistry([ModelSpec("devstral-small-2:24b", "ollama", "worker", 0.0, 0.0, 8192)])
-    rules = [RoutingRule(1, "worker", "devstral-small-2:24b", "ollama", "hex")]
+    models = ModelsRegistry([ModelSpec("devstral-small-2:24b", "worker", 0.0, 0.0, 8192)])
+    conns = ConnectionsRegistry()
+    conns.register(Connection("devstral-small-2:24b", "ollama", 0.0))
 
     dev = InferenceDevice(mode="ollama", sources=reg, models=models)
-    dev._rules = RulesEngine(reg, models, rules)
+    dev._rules = RulesEngine(reg, models, connections=conns, policies=[])
     try:
         with patch("unseen_university.devices.inference.pattern_intercept.try_intercept", return_value=None), \
              patch("unseen_university.devices.inference.budget_ledger.check_session_limit"), \

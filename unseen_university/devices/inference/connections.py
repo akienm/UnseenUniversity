@@ -15,12 +15,11 @@ Where the facts live in the 4-stack model:
   - connections stack (this file):     the model<->provider edge + that pairing's cost
   - rules stack:                        policy over dimensions -> capability envelope
 
-This stack is ADDITIVE. Nothing routes through it yet: route() and _DEFAULT_RULES are
-untouched, so live dispatch is unaffected. The resolver (T-inference-resolver-compose)
-will consume it; the cutover (T-inference-migrate-consumers-cutover) removes
-ModelSpec.source_name once connections are the authoritative home of reachability.
-seed_from_models() mirrors the current 1:1 bindings so the stack starts as a faithful
-snapshot of live reachability.
+This stack is LIVE: the dimensional resolver (rules_engine.resolve) composes it for every
+routing decision. The pre-cutover monolith — route() and _DEFAULT_RULES — has been deleted,
+and ModelSpec.source_name is gone, so this stack is now the AUTHORITATIVE (and sole) home of
+model<->provider reachability. default_connections() builds the authoritative edge table;
+it is self-contained (it does not read a source_name off the model, because there is none).
 """
 
 from __future__ import annotations
@@ -81,26 +80,68 @@ class ConnectionsRegistry:
         return [c for conns in self._by_model.values() for c in conns]
 
 
-def seed_from_models(models: ModelsRegistry) -> ConnectionsRegistry:
-    """Build a connections stack mirroring the current 1:1 ModelSpec.source_name bindings.
+# ── The authoritative connection table (D-inference-router-stack-decomposition) ──
+# After the cutover (T-inference-migrate-consumers-cutover) this is the SOLE home of
+# model<->provider reachability: ModelSpec.source_name is deleted, so nothing can derive
+# an edge from the model stack anymore. The table therefore carries the (model_id,
+# source_name) pairs EXPLICITLY — it must stay self-contained (no source_name read).
+#
+# It is the functional UNION of what the monolith smeared across TWO places: the 1:1
+# ModelSpec.source_name binding AND the (task_class, model_id, source_name) rule triples.
+# The triples carried reachability the source_name binding could not — a model reachable
+# on a SECOND provider. Two such edges (the Hex-owned-local twins of cloud models) existed
+# ONLY in the triples; seeding from source_name alone silently drops them (the landmine the
+# grep-proof cannot catch), so they are pinned here explicitly and marked:
+#   devstral-small-2:24b@ollama, qwen3-coder-next@ollama  (owned-local Hex; triple-only).
+# The phantom triple qwen/qwen3-30b-a3b-instruct@openrouter is intentionally ABSENT — it has
+# no ModelSpec (creator tier disabled), so resolve() (which iterates models.all()) could never
+# reach it; carrying it would be dead debt.
+_DEFAULT_CONNECTION_EDGES: list[tuple[str, str]] = [
+    ("anthropic/claude-haiku-4.5", "openrouter"),
+    ("anthropic/claude-opus-4.8", "openrouter"),
+    ("anthropic/claude-sonnet-4.6", "openrouter"),
+    ("claude-sonnet-4-6", "anthropic"),
+    ("deepseek-r1:14b", "ollama"),
+    ("deepseek-r1:32b", "ollama"),
+    ("deepseek-v3.1:671b-cloud", "ollama_cloud"),
+    ("deepseek-v4-flash", "ollama_cloud"),
+    ("deepseek/deepseek-v4-flash", "openrouter"),
+    ("devstral-small-2:24b", "ollama_cloud"),
+    ("devstral-small-2:24b", "ollama"),  # triple-only Hex edge — MUST survive the cutover
+    ("gemini-2.0-flash-paid", "google"),
+    ("gemini-2.5-flash", "google_free"),
+    ("google/gemini-2.0-flash", "openrouter"),
+    ("llama3.2:3b", "ollama"),
+    ("qwen/qwen3-235b-a22b-2507", "openrouter"),
+    ("qwen/qwen3-coder", "openrouter"),
+    ("qwen/qwen3-coder-30b-a3b-instruct", "openrouter"),
+    ("qwen/qwen3.5-9b", "openrouter"),
+    ("qwen2.5-coder:14b", "ollama"),
+    ("qwen3-coder-next", "ollama_cloud"),
+    ("qwen3-coder-next", "ollama"),  # triple-only Hex edge — MUST survive the cutover
+    ("qwen3-coder:30b", "ollama"),
+    ("qwen3-coder:480b-cloud", "ollama_cloud"),
+]
 
-    One connection per ModelSpec row (model_id -> its single source_name), carrying the
-    spec's dollars_per_unit. This is the faithful snapshot the additive stack starts
-    from; at cutover the source_name binding is removed and connections become the sole
-    home of model<->provider reachability.
+
+def default_connections(models: ModelsRegistry) -> ConnectionsRegistry:
+    """The authoritative connections stack: the explicit _DEFAULT_CONNECTION_EDGES table.
+
+    This is the SOLE home of reachability after the cutover. Each edge's marginal cost is
+    read from the model's `dollars_per_unit` at build time (dollars_per_unit stays on the
+    model stack for now — relocating economics fully onto the connection is a separate
+    concern; the source's cost_class already separates owned-local from cloud, the selector's
+    first sort key). A phantom edge whose model_id has no ModelSpec resolves to $0 and is
+    harmless — resolve() iterates models.all() and never reaches it — but the table carries
+    none by construction.
     """
     reg = ConnectionsRegistry()
-    for spec in models.all():
-        reg.register(
-            Connection(
-                model_id=spec.model_id,
-                source_name=spec.source_name,
-                dollars_per_unit=spec.dollars_per_unit,
-            )
-        )
+    for model_id, source_name in _DEFAULT_CONNECTION_EDGES:
+        spec = models.get(model_id)
+        dollars = spec.dollars_per_unit if spec is not None else 0.0
+        reg.register(Connection(model_id, source_name, dollars))
     log.info(
-        "connections: seeded %d connection(s) from %d model(s)",
+        "connections: built %d authoritative connection(s) from the default table",
         len(reg.all()),
-        len(models.all()),
     )
     return reg

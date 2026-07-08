@@ -327,50 +327,10 @@ class TestPostResultGuards:
 
 
 # ── OR cost gate ──────────────────────────────────────────────────────────────
-
-
-class TestORCostGate:
-    """OR balance floor check (in listener) and google_free worker routing rule."""
-
-    def test_worker_google_free_rule_exists(self):
-        """google_free source is in the worker routing rules."""
-        from unseen_university.devices.inference.rules_engine import _DEFAULT_RULES
-        worker_rules = [r for r in _DEFAULT_RULES if r.task_class == "worker"]
-        google_free_rules = [r for r in worker_rules if r.source_name == "google_free"]
-        assert google_free_rules, "expected a worker→google_free rule"
-        assert google_free_rules[0].model_id == "gemini-2.5-flash"
-
-    def test_worker_google_free_preferred_over_openrouter_when_available(self):
-        """google_free (flat_rate) sorts before openrouter (usage_based) for worker tier."""
-        from unseen_university.devices.inference.rules_engine import RulesEngine, _DEFAULT_RULES
-        from unseen_university.devices.inference.sources import GoogleSource, OpenRouterSource
-        from unittest.mock import MagicMock
-
-        google_src = MagicMock()
-        google_src.name = "google_free"
-        google_src.available = True
-        google_src.billing_type = "flat_rate"
-
-        or_src = MagicMock()
-        or_src.name = "openrouter"
-        or_src.available = True
-        or_src.billing_type = "usage_based"
-
-        fake_sources = {"google_free": google_src, "openrouter": or_src}
-        fake_models = MagicMock()
-        fake_model = MagicMock()
-        fake_models.get = lambda mid: fake_model
-        fake_models.by_tier = lambda t: []
-
-        engine = RulesEngine.__new__(RulesEngine)
-        engine._rules = _DEFAULT_RULES
-        engine._sources = fake_sources
-        engine._models = fake_models
-        engine._session_map = {}
-
-        decision = engine.route("worker")
-        assert decision is not None
-        assert decision.source.name == "google_free"
+# The google_free worker-routing-rule tests are retired: _DEFAULT_RULES, RoutingRule,
+# and route() are deleted at the router cutover. Worker→cheapest-capable selection is
+# covered against resolve() in test_resolver_compose.py; there are no routing rules to
+# assert the existence of anymore.
 
 
 # ── DickSimnelWorkerListener ──────────────────────────────────────────────────

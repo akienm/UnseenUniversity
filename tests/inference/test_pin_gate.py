@@ -9,8 +9,10 @@ from __future__ import annotations
 import pytest
 
 from unseen_university import system_alarms
+from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.device import InferenceDevice
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
+from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.shim import InferenceRequest
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
@@ -37,10 +39,17 @@ def _device_with(model_id: str, source_name: str) -> InferenceDevice:
     src = SourceRegistry()
     src.register(_FakeSource(source_name, available=True, text="DISPATCHED"))
     models = ModelsRegistry(seed=[ModelSpec(
-        model_id=model_id, source_name=source_name, tier="worker",
+        model_id=model_id, tier="worker",
         input_cost_per_1m=0.0, output_cost_per_1m=0.0, context_window=8192, tags=[],
     )])
-    return InferenceDevice(mode="ollama_cloud", endpoint=None, sources=src, models=models)
+    dev = InferenceDevice(mode="ollama_cloud", endpoint=None, sources=src, models=models)
+    # Reachability lives on the connections stack (ModelSpec.source_name is deleted): wire
+    # the synthetic model<->provider edge so both the pinned path (connections_for) and the
+    # unpinned resolve() path can reach it. Mirrors the device's connections+policies=[] build.
+    conns = ConnectionsRegistry()
+    conns.register(Connection(model_id, source_name, 0.0))
+    dev._rules = RulesEngine(src, models, connections=conns, policies=[])
+    return dev
 
 
 @pytest.fixture(autouse=True)

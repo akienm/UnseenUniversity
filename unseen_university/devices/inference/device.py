@@ -41,6 +41,7 @@ from unseen_university.devices.inference.models_registry import (
     ModelsRegistry,
     default_registry as _default_models,
 )
+from unseen_university.devices.inference.connections import default_connections
 from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.domains import resolve_domain
 from unseen_university.devices.inference.routing_buckets import (
@@ -109,7 +110,21 @@ class InferenceDevice(BaseDevice):
         # Mini-rack: sources + models + rules + health
         self._sources = sources or _default_sources()
         self._models = models or _default_models()
-        self._rules = RulesEngine(self._sources, self._models)
+        # The dimensional resolver is driven with BOTH stacks passed EXPLICITLY — the ctor
+        # defaults are traps at cutover: connections=None would seed only the 1:1 source_name
+        # bindings (silently dropping the two owned-local Hex edges the triples carried), and
+        # policies=None would apply _DEFAULT_POLICIES, whose coding-needs-tools floor
+        # false-halts the coding escalation ladder (no tool-tagged design-capable coding model
+        # is reachable locally). The authoritative 24-edge table is the sole home of
+        # reachability; policies=[] keeps selection to seed+domain (activating
+        # coding-needs-tools needs real model tool-capability data — T-inference-activate-
+        # coding-tools-policy).
+        self._rules = RulesEngine(
+            self._sources,
+            self._models,
+            connections=default_connections(self._models),
+            policies=[],
+        )
         self._health = HealthMonitor(self._sources)
         self._health.start()
         # Live re-measurement (T-router-live-resource-read): every dispatch feeds its
@@ -475,8 +490,15 @@ class InferenceDevice(BaseDevice):
         if request.model:
             spec = self._models.get(request.model)
             if spec is not None:
-                src = self._sources.get(spec.source_name)
-                if src is not None and src.available:
+                # Reachability lives on the connections stack now (not ModelSpec.source_name):
+                # a pinned model may have several provider edges — take the first AVAILABLE one.
+                src = None
+                for conn in self._rules.connections_for(request.model):
+                    cand = self._sources.get(conn.source_name)
+                    if cand is not None and cand.available:
+                        src = cand
+                        break
+                if src is not None:
                     source = src
                     provider_name = src.name
                     log.info(
@@ -486,8 +508,8 @@ class InferenceDevice(BaseDevice):
                     decision = None  # skip rules-engine path below
                 else:
                     log.warning(
-                        "dispatch: explicit model=%s source=%s unavailable — falling through to rules engine",
-                        request.model, spec.source_name,
+                        "dispatch: explicit model=%s — no available connection, falling through to rules engine",
+                        request.model,
                     )
                     request = InferenceRequest(
                         messages=request.messages, model="",

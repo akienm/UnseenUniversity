@@ -183,74 +183,44 @@ class TestGoogleSourceCall:
 
 class TestModelsRegistryGoogleModels:
     def test_google_free_model_present(self):
+        from unseen_university.devices.inference.connections import default_connections
         from unseen_university.devices.inference.models_registry import default_registry
-        spec = default_registry().get("gemini-2.5-flash")
+        reg = default_registry()
+        spec = reg.get("gemini-2.5-flash")
         assert spec is not None
-        assert spec.source_name == "google_free"
+        # Reachability moved off ModelSpec.source_name onto the connections stack.
+        srcs = {c.source_name for c in default_connections(reg).by_model("gemini-2.5-flash")}
+        assert "google_free" in srcs
         assert spec.input_cost_per_1m == 0.0
         assert "free-tier" in spec.tags
 
     def test_google_paid_model_present_and_cacheable(self):
+        from unseen_university.devices.inference.connections import default_connections
         from unseen_university.devices.inference.models_registry import default_registry
-        spec = default_registry().get("gemini-2.0-flash-paid")
+        reg = default_registry()
+        spec = reg.get("gemini-2.0-flash-paid")
         assert spec is not None
-        assert spec.source_name == "google"
+        srcs = {c.source_name for c in default_connections(reg).by_model("gemini-2.0-flash-paid")}
+        assert "google" in srcs
         assert spec.cacheable
 
     def test_or_gemini_still_present_as_fallback(self):
+        from unseen_university.devices.inference.connections import default_connections
         from unseen_university.devices.inference.models_registry import default_registry
-        spec = default_registry().get("google/gemini-2.0-flash")
+        reg = default_registry()
+        spec = reg.get("google/gemini-2.0-flash")
         assert spec is not None
-        assert spec.source_name == "openrouter"
+        srcs = {c.source_name for c in default_connections(reg).by_model("google/gemini-2.0-flash")}
+        assert "openrouter" in srcs
         assert "or-fallback" in spec.tags
 
 
 # ── Rules engine: designer cascade ───────────────────────────────────────────
-
-
-def _make_engine(available_source_names):
-    from unseen_university.devices.inference.models_registry import default_registry
-    from unseen_university.devices.inference.rules_engine import RulesEngine
-    from unseen_university.devices.inference.sources import Source, SourceRegistry
-
-    sreg = SourceRegistry()
-    for name in available_source_names:
-        s = Source(name=name)
-        s.available = True
-        sreg.register(s)
-
-    return RulesEngine(sources=sreg, models=default_registry())
-
-
-class TestDesignerCascade:
-    def test_prefers_google_free_first(self):
-        e = _make_engine(["google_free", "google", "openrouter", "anthropic"])
-        d = e.route("designer")
-        assert d is not None
-        assert d.source.name == "google_free"
-
-    def test_falls_to_google_paid_when_free_gone(self):
-        e = _make_engine(["google", "openrouter", "anthropic"])
-        d = e.route("designer")
-        assert d is not None
-        assert d.source.name == "google"
-
-    def test_falls_to_openrouter_when_google_gone(self):
-        e = _make_engine(["openrouter", "anthropic"])
-        d = e.route("designer")
-        assert d is not None
-        assert d.source.name == "openrouter"
-
-    def test_falls_to_anthropic_as_last_resort(self):
-        e = _make_engine(["anthropic"])
-        d = e.route("designer")
-        assert d is not None
-        assert d.source.name == "anthropic"
-
-    def test_no_available_source_returns_none(self):
-        e = _make_engine([])
-        d = e.route("designer")
-        assert d is None
+# The old designer cascade asserted a rule-PRIORITY order (google_free > google >
+# openrouter > anthropic). Priority ordering is deleted at the router cutover — the
+# resolver now picks by cost_class then per-connection dollars — so the priority-cascade
+# tests are retired. Cheapest-capable selection is covered against resolve() in
+# test_resolver_compose.py.
 
 
 # ── Source registry: Google sources present ──────────────────────────────────

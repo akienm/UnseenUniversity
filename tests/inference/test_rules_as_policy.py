@@ -9,6 +9,7 @@ invariant — no default policy contains a model_id or source_name literal.
 
 from __future__ import annotations
 
+from unseen_university.devices.inference.connections import default_connections
 from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.models_registry import default_registry
 from unseen_university.devices.inference.policy import (
@@ -59,7 +60,10 @@ def test_unknown_predicate_key_fails_safe():
 def test_no_model_or_provider_literals_in_default_policies():
     """THE invariant: no default policy names a model_id or source_name."""
     models = default_registry()
-    forbidden = {m.model_id for m in models.all()} | {m.source_name for m in models.all()}
+    # Provider literals now live on the connections stack (ModelSpec.source_name is deleted);
+    # the invariant is unchanged — no default policy may name a model or a provider.
+    conns = default_connections(models)
+    forbidden = {m.model_id for m in models.all()} | {c.source_name for c in conns.all()}
     for p in _DEFAULT_POLICIES:
         strings = {p.label, p.required_domain, *p.required_features}
         for allowed in p.when.values():

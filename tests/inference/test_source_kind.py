@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.device import InferenceDevice
 from unseen_university.devices.inference.models_registry import ModelSpec, default_registry
 from unseen_university.devices.inference.rules_engine import RulesEngine
@@ -65,11 +66,14 @@ def test_local_source_yields_source_kind_local(device):
     src = _mock_source("ollama", is_local=True)
     device._sources.register(src)
     device._models.register(
-        ModelSpec(model_id="local-test", source_name="ollama", tier="t2",
+        ModelSpec(model_id="local-test", tier="t2",
                   input_cost_per_1m=0.0, output_cost_per_1m=0.0,
                   context_window=8192, tags=[])
     )
-    device._rules = RulesEngine(device._sources, device._models)
+    # Reachability lives on the connections stack now — wire the synthetic edge explicitly.
+    conns = ConnectionsRegistry()
+    conns.register(Connection("local-test", "ollama", 0.0))
+    device._rules = RulesEngine(device._sources, device._models, connections=conns, policies=[])
     resp = device.dispatch(
         InferenceRequest(messages=[{"role": "user", "content": "hi"}],
                          model="local-test", task_class="worker",

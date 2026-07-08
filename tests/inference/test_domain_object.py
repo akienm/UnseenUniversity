@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
+from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.domain_prompts import domain_prompt
 from unseen_university.devices.inference.domains import (
     BaseDomain,
@@ -20,7 +22,7 @@ from unseen_university.devices.inference.domains import (
     resolve_domain,
 )
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
-from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
+from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
 
@@ -44,34 +46,36 @@ def _engine():
     reg.register(_src("cloud_code", "token_direct"))
     reg.register(_src("cloud_prose", "token_direct"))
     models = ModelsRegistry([
-        ModelSpec("code-m", "cloud_code", "worker", 0.05, 0.05, 8192, domains=["coding"]),
-        ModelSpec("prose-m", "cloud_prose", "worker", 0.01, 0.01, 8192, domains=["prose"]),
+        ModelSpec("code-m", "worker", 0.05, 0.05, 8192, domains=["coding"]),
+        ModelSpec("prose-m", "worker", 0.01, 0.01, 8192, domains=["prose"]),
     ])
-    rules = [
-        # prose-m is cheaper — it would win if the domain filter did NOT flow through.
-        RoutingRule(1, "worker", "prose-m", "cloud_prose", "prose"),
-        RoutingRule(2, "worker", "code-m", "cloud_code", "code"),
-    ]
-    return RulesEngine(reg, models, rules)
+    # prose-m is cheaper (0.02 < 0.10) — it would win generalist if the domain filter did
+    # NOT flow through. policies=[] isolates the domain filter from the coding-needs-tools
+    # policy (these synthetic models carry no 'tools' feature).
+    conns = ConnectionsRegistry()
+    conns.register(Connection("code-m", "cloud_code", 0.10))
+    conns.register(Connection("prose-m", "cloud_prose", 0.02))
+    return RulesEngine(reg, models, connections=conns, policies=[])
 
 
-# ── select() reproduces route(domain=...) ─────────────────────────────────────
+# ── select() composes the dimensional resolver (domain filter) ────────────────
 
 
-def test_coding_domain_select_matches_route_for_coding():
-    """CodingDomain.select() picks exactly what route(domain='coding') picks today."""
+def test_coding_domain_select_picks_the_coding_model():
+    """CodingDomain.select() resolves to the coding-tagged model via the resolver."""
     engine = _engine()
     via_domain = CodingDomain().select(engine, task_class="worker")
-    via_route = _engine().route(task_class="worker", domain="coding")
     assert via_domain is not None
-    assert via_domain.model.model_id == via_route.model.model_id == "code-m"
-    assert via_domain.source.name == via_route.source.name == "cloud_code"
+    assert via_domain.model.model_id == "code-m"
+    assert via_domain.source.name == "cloud_code"
 
 
 def test_select_domain_filter_flows_through():
     """The domain filter is real: coding excludes the cheaper prose-only model."""
     # A generalist request would take the cheaper prose-m; the coding domain must not.
-    generalist = _engine().route(task_class="worker", domain="")
+    generalist = _engine().resolve(
+        RouteRequest(ticket_tier="builder", builder_tier="builder", domain="")
+    )
     assert generalist.model.model_id == "prose-m"  # cheapest wins with no domain filter
     coding = CodingDomain().select(_engine(), task_class="worker")
     assert coding.model.model_id == "code-m"  # domain filter excludes prose-m
@@ -95,19 +99,22 @@ def test_resolve_registered_domain_is_specialized_subclass():
     assert d.name == "coding"
 
 
-def test_resolve_unknown_domain_is_generalist_base_no_crash():
+def test_resolve_unknown_domain_is_generalist_base_no_crash(monkeypatch):
     """An unknown name resolves to a BaseDomain carrying that name — empty prompt, no crash."""
+    import unseen_university.system_alarms as sa
+    # select() passes escalation_allowed=True; an unknown domain has no eligible model,
+    # so resolve() would fire the terminal system_alarm (a filesystem drop). Stub it — the
+    # assertion here is about the domain object, not the alarm path.
+    monkeypatch.setattr(sa, "raise_alarm", lambda **kw: None)
+
     d = resolve_domain("no-such-domain")
     assert isinstance(d, BaseDomain) and not isinstance(d, CodingDomain)
     assert d.name == "no-such-domain"  # name passed through, NOT collapsed to ''
     assert d.prompts.system == ""  # no specialized prompt
-    # select must not crash and must delegate with the passed-through name.
+    # select must not crash and must delegate with the passed-through name. The synthetic
+    # rack has only coding/prose models, so an unknown domain matches nothing → None.
     result = d.select(_engine(), task_class="worker")
-    expected = _engine().route(task_class="worker", domain="no-such-domain")
-    # Both see domain='no-such-domain' → identical selection (behavior-preserving).
-    assert (result is None) == (expected is None)
-    if result is not None:
-        assert result.model.model_id == expected.model.model_id
+    assert result is None
 
 
 def test_resolve_empty_domain_is_generalist_base():

@@ -111,7 +111,6 @@ class ModelVersionChecker:
             if or_epoch > reg_epoch:
                 new_spec = ModelSpec(
                     model_id=spec.model_id,
-                    source_name=spec.source_name,
                     tier=spec.tier,
                     input_cost_per_1m=spec.input_cost_per_1m,
                     output_cost_per_1m=spec.output_cost_per_1m,

@@ -23,8 +23,9 @@ The vocabulary is defined LOCALLY here rather than imported from granny — infe
 not depend on granny (independent deployability); this is the router's own dimension
 vocab that happens to align with the role hierarchy.
 
-This module is ADDITIVE: route() and _DEFAULT_RULES are untouched. The resolver will
-consume RouteRequest; nothing dispatches through it yet.
+RouteRequest is the LIVE entry contract: the resolver (rules_engine.resolve) consumes it for
+every routing decision, and live dispatch composes it via the coding domain's select(). The
+pre-cutover monolith (route() and _DEFAULT_RULES) has been deleted.
 """
 
 from __future__ import annotations

@@ -11,8 +11,10 @@ import logging
 import pytest
 
 from unseen_university import system_alarms
+from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.device import InferenceDevice
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
+from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.shim import InferenceRequest
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
@@ -38,10 +40,17 @@ def _device(available: bool = True) -> InferenceDevice:
     src = SourceRegistry()
     src.register(_FakeSource("test_src", available=available))
     models = ModelsRegistry(seed=[ModelSpec(
-        model_id="m", source_name="test_src", tier="worker",
+        model_id="m", tier="worker",
         input_cost_per_1m=1.0, output_cost_per_1m=1.0, context_window=8192, tags=[],
     )])
-    return InferenceDevice(mode="ollama_cloud", endpoint=None, sources=src, models=models)
+    dev = InferenceDevice(mode="ollama_cloud", endpoint=None, sources=src, models=models)
+    # Reachability moved off ModelSpec.source_name onto the connections stack; the synthetic
+    # 'm' is not in the authoritative default table, so wire its connection explicitly
+    # (mirrors the device's own connections+policies=[] engine build).
+    conns = ConnectionsRegistry()
+    conns.register(Connection("m", "test_src", 2.0))
+    dev._rules = RulesEngine(src, models, connections=conns, policies=[])
+    return dev
 
 
 @pytest.fixture(autouse=True)

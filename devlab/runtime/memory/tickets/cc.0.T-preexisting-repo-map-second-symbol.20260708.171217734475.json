@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-preexisting-repo-map-second-symbol.20260708.171217734475",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-preexisting-repo-map-second-symbol"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T23:12:17.734475+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-preexisting-repo-map-second-symbol"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-preexisting-repo-map-second-symbol",
+    "title": "[sprint] test_signature_map_surfaces_multiple_symbols red — repo-map drops a file's 2nd symbol",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.2,
+    "tags": [
+      "test",
+      "inference",
+      "repo-map",
+      "preexisting"
+    ],
+    "description": "PRE-EXISTING failure (unrelated to the router cutover; found during T-inference-migrate-consumers-cutover). tests/inference/test_repo_map_orientation.py::test_signature_map_surfaces_multiple_symbols_per_file asserts the signature map surfaces a file's SECOND matching symbol (helper_fn); the bare one-symbol-per-file list drops it. Fix the signature-map rendering to surface multiple symbols per file, or update the test if the behavior is intended.\n\n**Test plan:** tests/inference/test_repo_map_orientation.py::test_signature_map_surfaces_multiple_symbols_per_file passes.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T23:12:03.697572+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T23:12:03.697618+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a3843ff2-3d11-4902-835c-5357db2b6a2e"
+  }
+}

@@ -24,7 +24,6 @@ from unseen_university.devices.inference.routing_buckets import (
     task_class_to_difficulty,
     urgency_time_eligible,
 )
-from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
 from unseen_university.devices.inference.sources import (
     OllamaCloudSource,
     OllamaSource,
@@ -75,15 +74,15 @@ def test_time_bucket_is_mutable_for_live_remeasure():
 
 
 def test_modelspec_positional_construction_still_works():
-    """Existing positional callers (6 args) must keep working — new fields default."""
-    m = ModelSpec("m", "src", "worker", 0.1, 0.4, 8192)
+    """Existing positional callers (5 args, source_name deleted) must keep working — new fields default."""
+    m = ModelSpec("m", "worker", 0.1, 0.4, 8192)
     assert m.difficulty_capable == ""
     assert m.features == []
 
 
 def test_modelspec_round_trips_difficulty_and_features():
     m = ModelSpec(
-        "m", "ollama", "worker", 0.0, 0.0, 128_000,
+        "m", "worker", 0.0, 0.0, 128_000,
         difficulty_capable="code", features=["tools", "json_mode"],
     )
     assert m.difficulty_capable == "code"
@@ -91,23 +90,23 @@ def test_modelspec_round_trips_difficulty_and_features():
 
 
 def test_difficulty_bucket_explicit_wins():
-    m = ModelSpec("m", "s", "minion", 0.0, 0.0, 8192, difficulty_capable="design")
+    m = ModelSpec("m", "minion", 0.0, 0.0, 8192, difficulty_capable="design")
     assert m.difficulty_bucket == "design"
 
 
 def test_difficulty_bucket_falls_back_to_tier():
-    assert ModelSpec("m", "s", "minion", 0.0, 0.0, 8192).difficulty_bucket == "classify"
-    assert ModelSpec("m", "s", "worker", 0.0, 0.0, 8192).difficulty_bucket == "code"
-    assert ModelSpec("m", "s", "analyst", 0.0, 0.0, 8192).difficulty_bucket == "code"
-    assert ModelSpec("m", "s", "designer", 0.0, 0.0, 8192).difficulty_bucket == "design"
+    assert ModelSpec("m", "minion", 0.0, 0.0, 8192).difficulty_bucket == "classify"
+    assert ModelSpec("m", "worker", 0.0, 0.0, 8192).difficulty_bucket == "code"
+    assert ModelSpec("m", "analyst", 0.0, 0.0, 8192).difficulty_bucket == "code"
+    assert ModelSpec("m", "designer", 0.0, 0.0, 8192).difficulty_bucket == "design"
 
 
 def test_dollars_per_unit_zero_for_owned_local():
-    assert ModelSpec("m", "ollama", "worker", 0.0, 0.0, 128_000).dollars_per_unit == 0.0
+    assert ModelSpec("m", "worker", 0.0, 0.0, 128_000).dollars_per_unit == 0.0
 
 
 def test_dollars_per_unit_sums_token_costs():
-    assert ModelSpec("m", "openrouter", "worker", 0.10, 0.40, 8192).dollars_per_unit == 0.50
+    assert ModelSpec("m", "worker", 0.10, 0.40, 8192).dollars_per_unit == 0.50
 
 
 # ── task_class_to_difficulty ──────────────────────────────────────────────────
@@ -179,7 +178,7 @@ def test_cost_class_rank_unknown_is_most_expensive():
 
 def test_crossing_record_has_all_five_fields():
     src = OllamaSource()
-    model = ModelSpec("devstral", "ollama", "worker", 0.0, 0.0, 128_000)
+    model = ModelSpec("devstral", "worker", 0.0, 0.0, 128_000)
     rec = routing_crossing_record(src, model, "worker")
     assert set(rec) >= {"source", "model", "time_bucket", "difficulty_bucket", "dollars"}
     assert rec["source"] == "ollama"
@@ -195,46 +194,8 @@ def test_crossing_record_never_raises_on_incomplete_objects():
     assert rec["model"] == "?"
 
 
-# ── Criterion 4: the candidate sort is UNCHANGED ──────────────────────────────
-
-
-def _sources():
-    reg = SourceRegistry()
-    flat = MagicMock(spec=Source)
-    flat.name = "ollama_cloud"
-    flat.available = True
-    flat.billing_type = "flat_rate"
-    reg.register(flat)
-    usage = MagicMock(spec=Source)
-    usage.name = "openrouter"
-    usage.available = True
-    usage.billing_type = "usage_based"
-    reg.register(usage)
-    return reg, flat
-
-
-def test_flat_rate_still_preferred_after_schema_change():
-    """The billing_type sort still drives selection — increment 1 did not touch it."""
-    sources, flat = _sources()
-    models = ModelsRegistry([
-        ModelSpec("flat-model", "ollama_cloud", "worker", 0.0, 0.0, 8192),
-        ModelSpec("usage-model", "openrouter", "worker", 0.10, 0.40, 8192),
-    ])
-    rules = [
-        RoutingRule(10, "worker", "flat-model", "ollama_cloud", "flat"),
-        RoutingRule(2, "worker", "usage-model", "openrouter", "usage"),
-    ]
-    decision = RulesEngine(sources, models, rules).route("worker")
-    assert decision is not None
-    assert decision.source is flat
-
-
-def test_route_emits_crossing_record(caplog):
-    """route() logs the structured crossing at the decision point (measurement signal)."""
-    import logging
-    sources, _ = _sources()
-    models = ModelsRegistry([ModelSpec("flat-model", "ollama_cloud", "worker", 0.0, 0.0, 8192)])
-    rules = [RoutingRule(1, "worker", "flat-model", "ollama_cloud", "flat")]
-    with caplog.at_level(logging.INFO, logger="unseen_university.devices.inference.rules_engine"):
-        RulesEngine(sources, models, rules).route("worker")
-    assert any("crossing" in r.message for r in caplog.records)
+# ── Criterion 4: the candidate sort ──────────────────────────────────────────
+# The route()-based flat_rate-preference and crossing-record-emission tests are
+# retired: route() is deleted at the router cutover and billing_type no longer
+# drives selection (resolve() sorts by cost_class then per-connection dollars).
+# resolve()'s selection + crossing-record coverage lives in test_resolver_compose.py.

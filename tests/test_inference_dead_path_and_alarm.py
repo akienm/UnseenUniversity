@@ -42,7 +42,7 @@ class _FakeSource(Source):
 def _analyst_models() -> ModelsRegistry:
     # The analyst tier carries a rule deepseek-v4-flash → ollama_cloud (rules_engine).
     return ModelsRegistry(seed=[ModelSpec(
-        model_id="deepseek-v4-flash", source_name="ollama_cloud", tier="analyst",
+        model_id="deepseek-v4-flash", tier="analyst",
         input_cost_per_1m=0.0, output_cost_per_1m=0.0, context_window=128_000, tags=[],
     )])
 

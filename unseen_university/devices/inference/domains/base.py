@@ -11,8 +11,8 @@ loop) prompt text, resolved from the domain-prompt data store.
 This ticket (T-domain-object-base) is behavior-preserving: the object wraps existing
 selection + prompt behavior, relocated, with no change to what gets chosen. The agentic
 loop + the single escalation owner move here in T-domain-owns-loop-and-escalation — that
-ticket also revisits select()'s return shape (today a single RoutingDecision, matching
-RulesEngine.route()).
+ticket also revisits select()'s return shape (today a single RoutingDecision, as returned
+by rules_engine.resolve()).
 """
 
 from __future__ import annotations
@@ -29,10 +29,28 @@ from unseen_university.devices.inference.agentic_loop import (
     LoopResult,
     NativeToolCodec,
 )
+from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.domain_prompts import domain_prompt
 from unseen_university.devices.inference.rules_engine import RoutingDecision, RulesEngine
 
 log = logging.getLogger(__name__)
+
+#: The mechanical task_class (the caller's task vocabulary) -> ticket_tier (role) bridge for
+#: the dimensional resolver. Both vocabularies collapse to the same 3 difficulty buckets, and
+#: this mapping is verified to preserve device.py's a-priori difficulty seed for every
+#: task_class (minion→classify, worker/analyst/batch→code, designer→design). ticket_tier is
+#: a SEED hint only (D-inference-router-stack-decomposition: "tiers seed where resolution
+#: starts; hints, not authority") — the external escalation walk still drives difficulty via
+#: required_difficulty. designer→master (NOT guru) so the guru-work-is-design policy floor is
+#: not spuriously imposed. Unknown task_class → builder (the code-difficulty default).
+_TASK_CLASS_TO_TIER: dict[str, str] = {
+    "minion": "apprentice",
+    "worker": "builder",
+    "analyst": "builder",
+    "batch": "builder",
+    "creator": "creator",
+    "designer": "master",
+}
 
 
 @dataclass(frozen=True)
@@ -51,8 +69,9 @@ class BaseDomain:
     """A task domain: owns model selection + prompts for one KIND of task.
 
     The base is the generalist / unspecialized domain. `name` is passed through to the
-    selector's domain filter and to the prompt resolver, so an unregistered domain name
-    behaves exactly as passing that name to RulesEngine.route today: a generalist request
+    resolver's domain filter (via the RouteRequest select() builds) and to the prompt
+    resolver, so an unregistered domain name behaves exactly as passing that name to
+    rules_engine.resolve: a generalist request
     ('') matches any model; an unknown non-empty name resolves to no specialized prompt
     ('') and to whatever the domain-eligibility filter yields — no crash, no name
     collapse. Specialization is a registered subclass (see CodingDomain), not a name
@@ -106,21 +125,28 @@ class BaseDomain:
     ) -> RoutingDecision | None:
         """Choose the Source+ModelSpec for this domain — cost-optimizing, availability-aware.
 
-        Delegates to the existing RulesEngine selector, supplying this domain's `name` as
-        the domain filter; the domain OWNS the call. Behavior-preserving: identical to
-        calling rules_engine.route(..., domain=self.name) directly. Returns a single
-        RoutingDecision (or None if nothing is available) — the ordered-candidates form
-        arrives with the escalation-owner ticket (T-domain-owns-loop-and-escalation).
+        Composes the dimensional resolver (D-inference-router-stack-decomposition): builds a
+        RouteRequest from the caller's dimensions (task_class bridged to a ticket_tier SEED,
+        this domain's `name`, urgency derived from foreground) and delegates to
+        rules_engine.resolve(). The domain OWNS the call. The external escalation walk still
+        drives difficulty via `required_difficulty` (resolve honors it exactly as route did);
+        `session_id` carries affinity for multi-call consumers. Returns a single
+        RoutingDecision (or None if nothing serves).
+
+        `hour`/`required_features` are accepted for signature compatibility but no longer
+        steer selection: the night-mode batch gate has no live batch dispatch (deferred,
+        T-inference-batch-nightgate-in-resolver) and required_features is now expressed as
+        policy on the rules stack, not a per-call argument.
         """
-        return rules_engine.route(
-            task_class=task_class,
-            session_id=session_id,
-            hour=hour,
-            foreground=foreground,
-            urgency=urgency,
-            required_features=required_features,
+        req = RouteRequest(
+            ticket_tier=_TASK_CLASS_TO_TIER.get(task_class, "builder"),
+            builder_tier="builder",
             domain=self.name,
-            required_difficulty=required_difficulty,
+            urgency=urgency or ("interactive" if foreground else "normal"),
+            escalation_allowed=True,
+        )
+        return rules_engine.resolve(
+            req, required_difficulty=required_difficulty, session_id=session_id
         )
 
     # ── The escalation walk: this domain is the SINGLE escalation owner ────────

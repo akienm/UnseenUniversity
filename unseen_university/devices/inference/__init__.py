@@ -14,11 +14,10 @@ Public interface:
 """
 
 from .device import InferenceDevice
-from .rules_engine import RulesEngine, RoutingRule, RoutingDecision
+from .rules_engine import RulesEngine, RoutingDecision
 
 __all__ = [
     "InferenceDevice",
     "RulesEngine",
-    "RoutingRule",
     "RoutingDecision",
 ]

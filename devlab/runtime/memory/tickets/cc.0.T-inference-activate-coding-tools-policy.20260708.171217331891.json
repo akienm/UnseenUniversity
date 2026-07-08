@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-activate-coding-tools-policy.20260708.171217331891",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-activate-coding-tools-policy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T23:12:17.331891+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-activate-coding-tools-policy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-activate-coding-tools-policy",
+    "title": "[sprint] Activate coding-needs-tools policy once agentic coders carry real tool-capability tags",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.5,
+    "tags": [
+      "inference",
+      "router",
+      "policy"
+    ],
+    "description": "Follow-on from T-inference-migrate-consumers-cutover. The cutover shipped device.py with policies=[] (no feature floor) because the coding-needs-tools default policy would FALSE-HALT the coding escalation ladder: no tool-tagged, design-capable coding model is reachable locally, so resolve(worker/coding, required_difficulty=design) returns None+system_alarm. Also the agentic coders devstral-small-2:24b and qwen3-coder-next carry features=[] (NOT ['tools']), so activating the policy would exclude the intended coding floor and let the reasoning model deepseek-r1:14b (generalist, code-difficulty, owned-local) win worker/coding at hop-0 (the authorized-but-suboptimal divergence; live smoke test showed deepseek returns JSON-wrapped output vs devstral plain). WORK: (1) establish REAL tool-capability per model (native tool-call support and/or edit_format_conformance data) — do NOT tag to fit routing; (2) tag the genuinely tool-using coders features=['tools']; (3) ensure a design-capable tool-tagged coding model is reachable locally so the escalation ladder does not false-halt; (4) then wire device.py policies to activate coding-needs-tools; (5) prove worker/coding hop-0 picks the agentic coder (devstral) and the design rung still serves. Proof: red->green on the hop-0 pick + ladder-preserved.\n\n**Test plan:** red->green: with device policies activating coding-needs-tools and agentic coders tool-tagged, resolve(worker/coding) hop-0 picks devstral (not deepseek-r1:14b) AND resolve(worker/coding, required_difficulty=design) still serves a design-capable model (no false-halt).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T23:11:16.747873+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T23:11:16.797014+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "afa2f852-f261-4f6b-8e2c-f7fb5a4b44ce"
+  }
+}

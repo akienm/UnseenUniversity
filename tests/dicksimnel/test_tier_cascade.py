@@ -20,39 +20,13 @@ from unseen_university.devices.inference.agentic_loop import (
     LOOP_ESCALATE,
     LoopResult,
 )
-from unseen_university.devices.inference.rules_engine import _DEFAULT_RULES
 
 
-# ── 1. rules_engine has creator-tier rules ────────────────────────────────────
-
-
-class TestCreatorTierRulesExist:
-    def test_creator_rules_present(self):
-        creator_rules = [r for r in _DEFAULT_RULES if r.task_class == "creator"]
-        assert len(creator_rules) >= 1, "No creator-tier rules found in _DEFAULT_RULES"
-
-    def test_creator_primary_rule_label(self):
-        creator_rules = [r for r in _DEFAULT_RULES if r.task_class == "creator"]
-        labels = [r.label for r in creator_rules]
-        assert any("creator" in lbl for lbl in labels)
-
-    def test_creator_rules_have_openrouter_source(self):
-        creator_rules = [r for r in _DEFAULT_RULES if r.task_class == "creator"]
-        sources = {r.source_name for r in creator_rules}
-        assert "openrouter" in sources
-
-    def test_creator_rule_priorities_are_ordered(self):
-        creator_rules = sorted(
-            [r for r in _DEFAULT_RULES if r.task_class == "creator"],
-            key=lambda r: r.priority,
-        )
-        assert creator_rules[0].priority < creator_rules[-1].priority
-
-    def test_creator_tier_distinct_from_worker(self):
-        creator_model_ids = {r.model_id for r in _DEFAULT_RULES if r.task_class == "creator"}
-        worker_model_ids = {r.model_id for r in _DEFAULT_RULES if r.task_class == "worker"}
-        assert creator_model_ids
-        assert creator_model_ids != worker_model_ids
+# ── 1. creator-tier routing rules ─────────────────────────────────────────────
+# TestCreatorTierRulesExist is retired at the router cutover: it asserted the shape of
+# _DEFAULT_RULES creator-tier RoutingRule triples (task_class/source_name/priority), all
+# of which are deleted. Creator tier now seeds difficulty via the resolver (ticket_tier),
+# not a per-task_class rule pool — there is no rules table to assert the existence of.
 
 
 # ── 2. The difficulty walk (now CodingDomain.run) ─────────────────────────────

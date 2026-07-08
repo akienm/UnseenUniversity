@@ -1057,8 +1057,9 @@ def default_registry() -> SourceRegistry:
       5. openrouter   — cloud fallback for non-Google models
       6. anthropic    — registered DEFUNCT (zero balance, browser-auth) — visible but never selected
 
-    Routing prefers flat_rate sources (ollama_cloud) over usage_based within
-    the same tier — see RulesEngine.route().
+    The resolver (rules_engine.resolve) picks the cheapest capable connection by
+    cost_class rank then per-connection dollars — it orders by cost_class, not a
+    flat_rate-vs-usage_based bias (route() and its billing_type sort are deleted).
     """
     reg = SourceRegistry()
     reg.register(OllamaCloudSource())

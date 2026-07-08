@@ -1,9 +1,10 @@
 """
 models_registry.py — Model catalog for the inference proxy mini-rack.
 
-Each ModelSpec records: model_id (as OR/Ollama expects it), source_name,
-tier, and pricing. The tier determines which models the RulesEngine considers
-for a given task_class.
+Each ModelSpec records: model_id (as OR/Ollama expects it), tier, and pricing.
+The tier seeds the a-priori difficulty the resolver filters candidates by.
+Model<->provider reachability is NOT on the ModelSpec (source_name is deleted at
+the router cutover) — it lives on the connections stack (connections.py).
 
 Tiers:
   minion   — cheapest, fast, simple transforms and boilerplate
@@ -38,7 +39,6 @@ def _now_iso() -> str:
 @dataclass
 class ModelSpec:
     model_id: str
-    source_name: str
     tier: str
     input_cost_per_1m: float
     output_cost_per_1m: float
@@ -107,7 +107,6 @@ _SEED: list[ModelSpec] = [
     # Minion tier — trivial tasks, boilerplate, simple transforms
     ModelSpec(
         model_id="qwen/qwen3.5-9b",
-        source_name="openrouter",
         tier="minion",
         input_cost_per_1m=0.04,
         output_cost_per_1m=0.15,
@@ -120,7 +119,6 @@ _SEED: list[ModelSpec] = [
     # Worker tier — dedicated coding model, MoE architecture, very cheap
     ModelSpec(
         model_id="qwen/qwen3-coder-30b-a3b-instruct",
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=0.07,
         output_cost_per_1m=0.28,
@@ -133,7 +131,6 @@ _SEED: list[ModelSpec] = [
     # Worker tier — large all-rounder fallback; strong tool-calling
     ModelSpec(
         model_id="qwen/qwen3-235b-a22b-2507",
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=0.071,
         output_cost_per_1m=0.284,
@@ -145,7 +142,6 @@ _SEED: list[ModelSpec] = [
     # Analyst tier — DeepSeek V4 Flash: 1M context, cheapest strong coding model
     ModelSpec(
         model_id="deepseek/deepseek-v4-flash",
-        source_name="openrouter",
         tier="analyst",
         input_cost_per_1m=0.098,
         output_cost_per_1m=0.392,
@@ -157,7 +153,6 @@ _SEED: list[ModelSpec] = [
     # Analyst tier — Qwen3 Coder main; 1M context, competitive with V4 Flash
     ModelSpec(
         model_id="qwen/qwen3-coder",
-        source_name="openrouter",
         tier="analyst",
         input_cost_per_1m=0.22,
         output_cost_per_1m=0.88,
@@ -171,7 +166,6 @@ _SEED: list[ModelSpec] = [
     # Boilerplate cleanup, public-repo tasks, log transforms → cost: $0.
     ModelSpec(
         model_id="gemini-2.5-flash",
-        source_name="google_free",
         tier="designer",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -185,7 +179,6 @@ _SEED: list[ModelSpec] = [
     # Routes through google source directly — NOT OpenRouter (would lose caching discount).
     ModelSpec(
         model_id="gemini-2.0-flash-paid",
-        source_name="google",
         tier="designer",
         input_cost_per_1m=0.10,
         output_cost_per_1m=0.40,
@@ -198,7 +191,6 @@ _SEED: list[ModelSpec] = [
     # Designer tier — Gemini Flash via OpenRouter (fallback only — no caching benefit)
     ModelSpec(
         model_id="google/gemini-2.0-flash",
-        source_name="openrouter",
         tier="designer",
         input_cost_per_1m=0.10,
         output_cost_per_1m=0.40,
@@ -212,7 +204,6 @@ _SEED: list[ModelSpec] = [
     # Set OLLAMA_PRO_API_KEY to enable. Model IDs match ollama.com library names.
     ModelSpec(
         model_id="devstral-small-2:24b",
-        source_name="ollama_cloud",
         tier="worker",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -224,7 +215,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="qwen3-coder-next",
-        source_name="ollama_cloud",
         tier="worker",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -237,7 +227,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="deepseek-v4-flash",
-        source_name="ollama_cloud",
         tier="analyst",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -252,11 +241,11 @@ _SEED: list[ModelSpec] = [
     # /api/tags. Source 'ollama' is cost_class=owned_local + time_bucket=interactive, so
     # the cost-optimizing selector prefers these over every cloud source when Hex is up.
     # dollars=0 (owned hardware); difficulty_capable set explicitly per model. devstral
-    # is NOT re-registered here — its existing spec is reused by a source='ollama' rule
-    # (route pairs model_id with source_name independently).
+    # is NOT re-registered here — its existing spec is reused, and its reachability on the
+    # 'ollama' provider is carried by a connection edge in connections.default_connections
+    # (a model_id may be reachable on several providers independently of its ModelSpec).
     ModelSpec(
         model_id="llama3.2:3b",
-        source_name="ollama",
         tier="minion",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -268,7 +257,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="qwen2.5-coder:14b",
-        source_name="ollama",
         tier="worker",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -282,7 +270,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="deepseek-r1:14b",
-        source_name="ollama",
         tier="analyst",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -300,7 +287,6 @@ _SEED: list[ModelSpec] = [
     # Google belongs on this domain's ladder — pure Ollama, local then cloud-subscription.
     ModelSpec(
         model_id="qwen3-coder:30b",
-        source_name="ollama",
         tier="worker",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -314,7 +300,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="deepseek-r1:32b",
-        source_name="ollama",
         tier="analyst",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -329,7 +314,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="qwen3-coder:480b-cloud",
-        source_name="ollama_cloud",
         tier="worker",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -344,7 +328,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="deepseek-v3.1:671b-cloud",
-        source_name="ollama_cloud",
         tier="analyst",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
@@ -358,7 +341,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="anthropic/claude-haiku-4.5",
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=0.80,
         output_cost_per_1m=4.00,
@@ -369,7 +351,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="anthropic/claude-sonnet-4.6",
-        source_name="openrouter",
         tier="worker",
         input_cost_per_1m=3.00,
         output_cost_per_1m=15.00,
@@ -380,7 +361,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="anthropic/claude-opus-4.8",
-        source_name="openrouter",
         tier="designer",
         input_cost_per_1m=15.00,
         output_cost_per_1m=75.00,
@@ -391,7 +371,6 @@ _SEED: list[ModelSpec] = [
     ),
     ModelSpec(
         model_id="claude-sonnet-4-6",
-        source_name="anthropic",
         tier="designer",
         input_cost_per_1m=3.00,
         output_cost_per_1m=15.00,
@@ -429,9 +408,6 @@ class ModelsRegistry:
             [m for m in self._models.values() if m.tier == tier],
             key=lambda m: m.input_cost_per_1m,
         )
-
-    def by_source(self, source_name: str) -> list[ModelSpec]:
-        return [m for m in self._models.values() if m.source_name == source_name]
 
     def cheapest_in_tier(self, tier: str) -> ModelSpec | None:
         candidates = self.by_tier(tier)
