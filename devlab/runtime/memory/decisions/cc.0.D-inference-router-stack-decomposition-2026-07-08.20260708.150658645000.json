@@ -1,0 +1,64 @@
+{
+  "id": "cc.0.D-inference-router-stack-decomposition-2026-07-08.20260708.150658645000",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-inference-router-stack-decomposition-2026-07-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-08T15:06:58.645000",
+  "links": {
+    "decisions": [
+      "D-inference-provider-router-redesign-2026-06-23",
+      "D-inference-domain-routing-2026-07-01",
+      "D-system-alarms-and-tier-requests-2026-06-23",
+      "D-single-central-inference-proxy-2026-07-07",
+      "D-inference-cost-optimizing-router"
+    ],
+    "tickets": [
+      "T-inference-connections-stack",
+      "T-inference-dimensions-contract",
+      "T-inference-rules-as-policy",
+      "T-inference-resolver-compose",
+      "T-inference-migrate-consumers-cutover",
+      "T-inference-router-decomposition-invariant-proof",
+      "T-granny-router-collapse-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "human:akien",
+  "body": {
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "title": "Rebuild the inference router as 4 composable stacks (providers | models | model-provider connections | rules) resolved by dimensions (ticket_tier + builder_tier + domain + urgency); retire hardcoded (tier->model->provider) rule triples",
+    "status": "open",
+    "date": "2026-07-08",
+    "spawned_tickets": [
+      "T-inference-connections-stack",
+      "T-inference-dimensions-contract",
+      "T-inference-rules-as-policy",
+      "T-inference-resolver-compose",
+      "T-inference-migrate-consumers-cutover",
+      "T-inference-router-decomposition-invariant-proof",
+      "T-granny-router-collapse-check"
+    ],
+    "validity_conditions": [
+      {
+        "type": "supersedes-disposition",
+        "target": "T-inference-policy-router",
+        "note": "T-inference-policy-router was CANCELLED 2026-06-23 as 'rules_engine.route() already does this' -- a grep-not-read conclusion the source decision itself flags. The pure policy router / stack decomposition was NEVER built; the hardcoded-triple rules list survived. This decision supersedes that cancellation disposition; the work resumes here decomposed across 4 stacks (wider scope than the original single 'policy router' ticket, so new tickets rather than a reopen)."
+      },
+      {
+        "type": "reconciles",
+        "target": "D-inference-domain-routing-2026-07-01",
+        "note": "That open decision says the caller gives {domain, urgency} only, with difficulty discovered by a within-domain escalation walk. Reconciled here (Akien, 2026-07-08): the caller MAY supply ticket_tier + builder_tier as A-PRIORI SEEDS for where resolution starts; they are hints, not authority. The within-domain escalation walk still overrides -- it bumps difficulty up on capability failure, ending in system_alarm. Domain remains the container. A new escalation_allowed flag (default True) gates the walk so tests/proofs can pin it False for determinism."
+      },
+      {
+        "type": "depends-on-artifact",
+        "target": "D-system-alarms-and-tier-requests-2026-06-23",
+        "note": "'requests become tiers; the proxy gets a mouth' -- the escalation walk terminates in the system_alarms primitive this decision established."
+      }
+    ],
+    "text": "# D-inference-router-stack-decomposition-2026-07-08\n**title:** Rebuild the inference router as 4 composable stacks resolved by dimensions; retire hardcoded (tier->model->provider) rule triples\n**date:** 2026-07-08\n**status:** open\n**author:** CC.0 (design intake with Akien; advisor-reviewed)\n\n## The divergence (what is, vs. what was intended)\nThe recorded intention (D-inference-provider-router-redesign-2026-06-23: 'billing-type providers + a PURE POLICY ROUTER ... no provider/model forced in rules'; D-inference-domain-routing-2026-07-01: 'DOMAIN is the container; caller gives dimensions') is a RELATIONAL router: separate normalized stacks composed by dimensions.\n\nThe code is a MONOLITH:\n  - `ModelSpec` binds a model 1:1 to a single provider (`model_id` + `source_name` in one row) -- so the model<->provider CONNECTIONS stack does not exist; a model-on-a-provider is the atom.\n  - `_DEFAULT_RULES` is a flat list where every row hardcodes `(task_class, model_id, source_name)` -- tier + model + provider baked into one step. This is exactly the 'provider/model forced in rules' that the 2026-06-23 measurement signal said `git grep` must NOT find.\n  - Two distinct dimensions -- TICKET tier (how hard the work is) and BUILDER tier (worker capability) -- are collapsed into one `task_class`.\n  - `scraps/jobs/routing_compiler.py` compiles escalation data INTO more hardcoded triples (`compiled_routing_rules.json`), and `RulesEngine.add_compiled_rule` appends them to the flat list. The 'compile cognition into structure' path feeds the monolith, not the stacks.\n\n## Root cause (how it got here)\n`T-inference-policy-router` was CANCELLED on 2026-06-23 with the reason 'rules_engine.route() already does this.' The source decision's own note admits 'grep-not-read produced a wrong premise.' The pure policy router was declared already-built from a grep; the stack decomposition was never implemented, and the fragile hardcoded-triple list survived posing as the finished design. Everything downstream (Igor cognition dispatch, DS/aider builders, the compiled-inference residue path) rests on this router -- so the collapse is load-bearing debt.\n\n## Target (Akien-confirmed 2026-07-08)\nDIMENSIONS the caller supplies: `ticket_tier` (difficulty of the work), `builder_tier` (capability of the requesting worker), `domain` (coding/prose/...), `urgency` (time eligibility). Plus `escalation_allowed` (default True).\n\nFOUR normalized stacks:\n  1. providers      -- the sources (openrouter, ollama, google, ...); billing_type / cost_class / time_bucket live here. (sources.py -- already a stack; KEEP.)\n  2. models         -- capability facts about a model: difficulty ceiling, domains, features, pricing. NO provider binding. (models_registry.py -- KEEP the registry, REMOVE the `source_name` binding.)\n  3. connections    -- NEW. A model<->provider edge: 'model M is reachable on provider P at cost C / latency L.' A model has N connections. This is the stack the monolith smeared across ModelSpec.source_name AND the rules list.\n  4. rules          -- policy expressed over DIMENSIONS -> capability constraints (min difficulty, required domain, required features, tier gating). A rule NEVER names a specific model or provider.\n\nRESOLVE pipeline: dimensions -> rules narrow to a capability envelope -> candidate models meeting it -> their connections filtered by provider availability + urgency/time eligibility -> the EXISTING cost-optimizing selector (cost_class, marginal dollars, priority) picks. The cost-optimizing selector (D-inference-cost-optimizing-router) is GOOD and is reused unchanged; only its INPUT changes from hardcoded-triple candidates to connection candidates.\n\nTIER semantics: ticket_tier + builder_tier SEED where resolution starts (the a-priori difficulty envelope). They are hints, not authority. The within-domain escalation walk (D-inference-domain-routing / D-system-alarms-and-tier-requests) bumps difficulty UP one rung per capability failure and terminates in a system_alarm past the top rung. `escalation_allowed=False` pins the walk off for deterministic tests/proofs.\n\n## Migration constraint (additive-then-cutover -- NEVER break live dispatch)\nThe proxy is load-bearing; Igor cognition consumes it. The new connections stack + new resolver stand up ALONGSIDE the working `route()`. The old triple-rules keep serving until consumers cut over (T-inference-migrate-consumers-cutover). Only after cutover are the triples and the `ModelSpec.source_name` binding deleted. There is no window where dispatch is down.\n\n## Hypothesis\nWith the router decomposed into 4 stacks resolved by dimensions, (a) adding a new provider-connection for an existing model requires ZERO rule edits and dispatch resolves to it, (b) a caller specifies only {ticket_tier, builder_tier, domain, urgency, escalation_allowed} and never a model/provider, (c) `git grep` finds no `(task_class, model_id, source_name)` triple in the rules stack, and (d) live dispatch and an Igor round-trip keep working through the migration.\n\n## Measurement signal\n  - RUNNABLE INVARIANT (the proof the original rot would have failed): add a connection for an existing model to the connections stack, touch NO rule, and a resolve for that model's dimensions returns the new connection (red before the stack exists / green after). This is T-inference-router-decomposition-invariant-proof.\n  - `git grep` in the rules stack finds no literal model_id or source_name.\n  - The caller API accepts {ticket_tier, builder_tier, domain, urgency, escalation_allowed} and rejects/ignores a caller-passed model/provider.\n  - escalation_allowed=False makes a resolve deterministic (no walk); =True reproduces the escalation-to-system_alarm behavior.\n  - Full inference + granny suites stay green through each ticket's cutover.\n\n## Ticket decomposition (each closes PROVEN; additive order)\n  1. T-inference-connections-stack -- introduce the connections stack additively (model<->provider edges w/ cost/latency); seed it from current ModelSpec.source_name WITHOUT removing that field yet.\n  2. T-inference-dimensions-contract -- define the caller contract {ticket_tier, builder_tier, domain, urgency, escalation_allowed}; the dimension vocabularies; how tiers seed the difficulty envelope. Additive (new entry point; route() untouched).\n  3. T-inference-rules-as-policy -- express rules as dimension->capability-envelope policy (no model/provider literals); build alongside _DEFAULT_RULES.\n  4. T-inference-resolver-compose -- the new resolve pipeline composing the 4 stacks + reusing the cost-optimizing selector + the escalation walk gated by escalation_allowed. Alongside route().\n  5. T-inference-migrate-consumers-cutover -- migrate device.py + Igor/DS/aider callers to the dimensional API; repoint routing_compiler + add_compiled_rule to emit dimensional policy, not triples; THEN delete the triples and ModelSpec.source_name.\n  6. T-inference-router-decomposition-invariant-proof -- the cross-cutting runnable invariant (add-connection-zero-rule-edits) as a red->green proof, so the stacks cannot silently re-collapse.\n  7. T-granny-router-collapse-check -- NEXT PHASE (after inference): granny's `role_in -> route_to` config is plausibly the same class of collapse; investigate and, if so, apply the same decomposition. Filed now so it is not lost; not worked this session.\n\n## Why (CP3)\nThe monolith is fragile precisely because it fuses independent axes: to add one provider for an existing model you must edit rules; to change a model's provider you edit two places that can disagree. Decomposition makes each fact live in exactly one stack, so a change touches one place and the resolver composes the current truth. The runnable invariant is the structural guarantee that a future grep-not-read cannot re-declare it 'already built.'\n\n## Alternatives considered\n  1. Patch the flat rules list in place (fix the failing test, keep (task_class, model_id, source_name) triples and the 1:1 ModelSpec.source_name binding). REJECTED: this is what happened last time -- it re-collapses; adding a provider for an existing model still requires editing rules, and the two places that name a model's provider can drift. It also leaves the compiled-inference path feeding the monolith.\n  2. Reopen the single 'policy router' ticket (T-inference-policy-router) and build just that. REJECTED: the intended scope is 4 stacks + a dimensional contract + an escalation-gated resolver, not one 'router' unit. A single ticket would recreate the too-coarse scope that made the original grep-not-read cancellation look defensible.\n  3. Full rip-and-replace of route() in one ticket. REJECTED: the proxy is load-bearing (Igor cognition, DS, aider consume it) -- a single-shot replacement has a window where dispatch is down. Chosen path is additive-then-cutover across ordered tickets so live dispatch never breaks.\nCHOSEN: 4-stack decomposition resolved by dimensions, built additively alongside the working route() and cut over last, because it is the only option that both matches the recorded intention AND keeps dispatch live throughout, and it carries a runnable invariant that prevents silent re-collapse.\n\n## Executor + inertia (Check 9)\nAll implementation tickets are HIGH-inertia (unseen_university/devices/inference/ -- the load-bearing proxy) and are authored by CC.0 (role=master). T-granny-router-collapse-check is a later-phase investigation, also CC.0."
+  }
+}

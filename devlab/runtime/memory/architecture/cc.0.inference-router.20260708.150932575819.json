@@ -1,0 +1,91 @@
+{
+  "id": "cc.0.inference-router.20260708.150932575819",
+  "emitter": "cc.0",
+  "namespace": [
+    "inference-router"
+  ],
+  "category": "architecture",
+  "kind": "architecture",
+  "emitted_at": "2026-07-08T15:09:32.575819",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "decision:D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "subsystem": "inference-router",
+    "kind": "policy",
+    "title": "Inference router — 4 composable stacks resolved by dimensions (TARGET; in-flight redesign per D-inference-router-stack-decomposition-2026-07-08)",
+    "summary": "The router turns a caller's DIMENSIONS into a concrete (provider, model) dispatch by composing FOUR normalized stacks — it never stores a hardcoded (tier->model->provider) triple. Caller supplies {ticket_tier, builder_tier, domain, urgency, escalation_allowed(default True)}; the caller never names a model or provider. RESOLVE: dimensions -> rules narrow to a capability envelope (min difficulty, required domain/features, tier gating) -> candidate MODELS meeting the envelope -> their CONNECTIONS filtered by PROVIDER availability + urgency/time eligibility -> the existing cost-optimizing selector (cost_class, marginal dollars, priority) picks the cheapest capable connection. Tiers SEED where resolution starts; they are hints, not authority — the within-domain escalation walk bumps difficulty up one rung per capability failure (ending in a system_alarm past the top rung), and escalation_allowed=False pins the walk off for deterministic tests/proofs. This REPLACES the monolithic _DEFAULT_RULES flat list (every row hardcoded task_class+model_id+source_name) and the 1:1 ModelSpec.source_name binding, built additive-then-cutover so live dispatch never breaks.",
+    "key_concepts": [
+      {
+        "name": "providers stack",
+        "what": "sources.py — Source registry; billing_type / cost_class / time_bucket / availability live here. Already a stack; KEEP unchanged."
+      },
+      {
+        "name": "models stack",
+        "what": "models_registry.py — capability facts (difficulty ceiling, domains, features, pricing). KEEP the registry; REMOVE the source_name provider binding at cutover."
+      },
+      {
+        "name": "connections stack",
+        "what": "NEW — model<->provider edges: 'model M reachable on provider P at cost/latency'. A model has N connections. This is what the monolith smeared across ModelSpec.source_name AND the rules list. Cost data can be informed by capability_graph.py's (task,model) eval results; NOT the same as model_alternatives.py (a reactive not-found fallback classifier)."
+      },
+      {
+        "name": "rules stack",
+        "what": "policy over DIMENSIONS -> capability envelope. A rule NEVER names a specific model or provider (the runnable invariant enforces this). Replaces _DEFAULT_RULES triples."
+      },
+      {
+        "name": "dimensions (caller contract)",
+        "what": "ticket_tier (work difficulty), builder_tier (requesting worker capability), domain (coding/prose/...), urgency (time eligibility), escalation_allowed (default True; False for deterministic proofs). Tiers are a-priori seeds, not authority."
+      },
+      {
+        "name": "escalation walk",
+        "what": "within-domain difficulty bump per capability failure, terminating in system_alarm (D-inference-domain-routing / D-system-alarms-and-tier-requests). Gated by escalation_allowed."
+      },
+      {
+        "name": "cost-optimizing selector",
+        "what": "routing_buckets.py + the eligible.sort in route() — REUSED unchanged; only its INPUT changes from hardcoded-triple candidates to connection candidates (D-inference-cost-optimizing-router)."
+      },
+      {
+        "name": "runnable decomposition invariant",
+        "what": "add a connection for an existing model, touch NO rule, and resolve returns it (red->green). The structural guarantee the stacks are truly decomposed and cannot silently re-collapse — the test the original rot would have failed."
+      }
+    ],
+    "implementing_files": [
+      "devices/inference/sources.py (providers stack — keep)",
+      "devices/inference/models_registry.py (models stack — keep; drop source_name at cutover)",
+      "devices/inference/rules_engine.py (rules + resolve; being decomposed)",
+      "devices/inference/routing_buckets.py (eligibility filters + cost-optimizing selector — reused)",
+      "devices/inference/device.py (proxy entry point — migrated to dimensional contract)",
+      "devices/inference/capability_graph.py (eval results; candidate cost-data source for connections)",
+      "devices/scraps/jobs/routing_compiler.py (repointed to emit dimensional policy, not triples)",
+      "(NEW) devices/inference/connections.py or equivalent — the connections stack"
+    ],
+    "reference_docs": [
+      "decision:D-inference-router-stack-decomposition-2026-07-08 (this redesign)",
+      "decision:D-inference-provider-router-redesign-2026-06-23 (original 'pure policy router' intent; grep-not-read cancelled T-inference-policy-router)",
+      "decision:D-inference-domain-routing-2026-07-01 (domain as container; caller gives dimensions)",
+      "decision:D-system-alarms-and-tier-requests-2026-06-23 (requests become tiers; escalation ends in system_alarm)",
+      "decision:D-inference-cost-optimizing-router (the selector reused unchanged)"
+    ],
+    "related": [
+      "inference"
+    ],
+    "status_notes": "IN-FLIGHT REDESIGN (opened 2026-07-08). The live code is still the monolith (flat _DEFAULT_RULES triples + 1:1 ModelSpec.source_name); this intention-point describes the TARGET. Spawned tickets: T-inference-connections-stack, T-inference-dimensions-contract, T-inference-rules-as-policy, T-inference-resolver-compose, T-inference-migrate-consumers-cutover, T-inference-router-decomposition-invariant-proof (each closes proven, additive order), + T-granny-router-collapse-check (next phase). Root cause of the divergence: T-inference-policy-router cancelled via grep-not-read 2026-06-23.",
+    "provenance": "CC.0 design intake with Akien 2026-07-08 (advisor-reviewed); the divergence surfaced while fixing T-routing-compiler-rules-engine-test-red.",
+    "owns": [
+      "dimension->dispatch resolution",
+      "the 4 routing stacks",
+      "the escalation walk gate"
+    ],
+    "delegates_to": [
+      "cost-optimizing selection (routing_buckets)",
+      "budget gating (budget_gate/budget_ledger)",
+      "provider health (provider_health)"
+    ]
+  }
+}
