@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-ungate-status-flip",
-    "title": "[sprint] cc_queue ungate clears the gate but leaves status=dependency — ticket stays invisible to dispatch",
+    "title": "cc_queue ungate clears the gate but leaves status=dependency — ticket stays invisible to dispatch",
     "size": "S",
     "tags": [
       "Workflow",
@@ -29,13 +29,13 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.2,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-08T01:13:01.257465+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "ungate (manual cmd_ungate + on-close _ungate_dependents) now flips dependency->sprint via _flip_ungated_to_sprint when the last named dependency clears; hold + multi-predecessor gates untouched; state change logged (ungate_status_flip). Proof red=AssertionError green=passed @581ae3a6; 4 tests incl multi-predecessor-stays-put and hold-untouched; adjacent cc_queue suites green (32).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T12:50:08.401542+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T01:13:01.306398+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "7401ff8a-bdfe-4430-817e-2b5ad93184f2"
+    "inferred_intention_id": "7401ff8a-bdfe-4430-817e-2b5ad93184f2",
+    "proven": true,
+    "proof_id": "cc.0.ungate-status-flip.T-ungate-status-flip.20260708.064957523935",
+    "proof_commit": "581ae3a6016846b5656316f0ed60f42e1fd8914b",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
