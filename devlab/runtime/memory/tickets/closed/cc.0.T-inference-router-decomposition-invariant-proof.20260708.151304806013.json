@@ -20,7 +20,7 @@
   "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
   "body": {
     "id": "T-inference-router-decomposition-invariant-proof",
-    "title": "[sprint] Inference router: runnable decomposition invariant — add a connection, zero rule edits, resolve returns it",
+    "title": "Inference router: runnable decomposition invariant — add a connection, zero rule edits, resolve returns it",
     "size": "S",
     "tags": [
       "Inference",
@@ -28,7 +28,7 @@
       "Test"
     ],
     "priority": 0.75,
-    "status": "sprint",
+    "status": "closed",
     "role": "master",
     "target_difficulty": 4,
     "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
@@ -37,13 +37,20 @@
     "created_at": "2026-07-08T21:12:53.832737+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "CLOSED PROVEN (proof cc.0.the-router-decomposition-invariant-addin @240ad99f, red=AssertionError -> green=passed). The runnable invariant: registering ONE Connection for an existing model on a provider no rule ever named makes it dispatchable through the REAL dispatch path (BaseDomain.select) with zero rule edits and no ModelSpec touched. Red on the monolith (dispatch read the triples, so a Connection was inert -> select() returned None); green on the dimensional resolver. Test drives select() (not resolve() directly) because that seam is where a re-collapse would reappear, and constructs no ModelSpec / imports no post-cutover-only symbol so its red on the pre-cutover tree is a real AssertionError, not a collection error. Plus an anti-collapse guard: the rules stack names no model/provider literal (_DEFAULT_RULES/RoutingRule/route gone; _DEFAULT_POLICIES contains no known model_id).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T23:46:59.071357+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-08T21:12:53.832779+00:00"
+    "scraps_validated": "2026-07-08T21:12:53.832779+00:00",
+    "proven": true,
+    "proof_id": "cc.0.the-router-decomposition-invariant-addin.T-inference-router-decomposition-invariant-proof.20260708.174648175143",
+    "proof_commit": "240ad99f5daea41f083753427c54443c276afae6",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

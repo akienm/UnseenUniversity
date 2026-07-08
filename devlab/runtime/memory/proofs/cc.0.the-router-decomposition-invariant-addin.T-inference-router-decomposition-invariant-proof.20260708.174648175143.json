@@ -1,0 +1,101 @@
+{
+  "id": "cc.0.the-router-decomposition-invariant-addin.T-inference-router-decomposition-invariant-proof.20260708.174648175143",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-router-decomposition-invariant-addin",
+    "T-inference-router-decomposition-invariant-proof"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T17:46:48.175143",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-router-decomposition-invariant-proof"
+    ],
+    "commits": [
+      "240ad99f5daea41f083753427c54443c276afae6"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-router-decomposition-invariant-proof",
+  "body": {
+    "thing": "the router decomposition invariant: adding a model<->provider connection requires ZERO rule edits and dispatch resolves to it",
+    "intention": "I intend that registering one Connection for an existing model, on a provider no rule ever named, makes that model dispatchable through the real dispatch path (domain.select) with no rule written and no ModelSpec touched — so the four stacks cannot silently re-collapse into a monolith",
+    "test": "tests/inference/test_router_decomposition_invariant.py::test_new_connection_needs_zero_rule_edits",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_router_decomposition_invariant.py::test_new_connection_needs_zero_rule_edits",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        engine._resolve_connections().register(\n            Connection(EXISTING_MODEL, NEW_PROVIDER, 0.0)\n        )\n    \n        decision = coding.select(engine, task_class=\"worker\")\n    \n>       assert decision is not None, (\n            \"adding a connection for an existing model must make it dispatchable with ZERO rule \"\n            \"edits — a None here means dispatch is still reading a rule stack that names models\"\n        )\nE       AssertionError: adding a connection for an existing model must make it dispatchable with ZERO rule edits — a None here means dispatch is still reading a rule stack that names models\nE       assert None is not None\n\ntests/inference/test_router_decomposition_invariant.py:81: AssertionError\n------------------------------ Captured log call -------------------------------\nERROR    unseen_university.devices.inference.rules_engine:rules_engine.py:351 rules: no available source for task_class='worker'\nERROR    unseen_university.devices.inference.rules_engine:rules_engine.py:351 rules: no available source for task_class='worker'\n=========================== short test summary info ============================\nFAILED tests/inference/test_router_decomposition_invariant.py::test_new_connection_needs_zero_rule_edits\n1 failed in 0.19s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "240ad99f5daea41f083753427c54443c276afae6",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.inference-router-cutover-every-consumer.T-inference-migrate-consumers-cutover.20260708.174409121535.json",
+      "devlab/runtime/memory/slates/20260708.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-activate-coding-tools-policy.20260708.171217331891.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-batch-nightgate-in-resolver.20260708.171217475676.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-migrate-consumers-cutover.20260708.151304665350.json",
+      "devlab/runtime/memory/tickets/cc.0.T-preexisting-dicksimnel-done-prefix-close.20260708.174331013363.json",
+      "devlab/runtime/memory/tickets/cc.0.T-preexisting-domain-prompt-sha.20260708.171217603807.json",
+      "devlab/runtime/memory/tickets/cc.0.T-preexisting-repo-map-second-symbol.20260708.171217734475.json",
+      "devlab/runtime/memory/tickets/closed/cc.0.T-inference-migrate-consumers-cutover.20260708.151304665350.json",
+      "tests/dicksimnel/test_tier_cascade.py",
+      "tests/inference/test_connections_stack.py",
+      "tests/inference/test_consumers_cutover.py",
+      "tests/inference/test_cost_record.py",
+      "tests/inference/test_dicksimnel.py",
+      "tests/inference/test_domain_object.py",
+      "tests/inference/test_flat_rate_routing.py",
+      "tests/inference/test_google_source.py",
+      "tests/inference/test_hex_registration.py",
+      "tests/inference/test_inference_tier_escalation.py",
+      "tests/inference/test_io_corpus.py",
+      "tests/inference/test_mini_rack.py",
+      "tests/inference/test_models_versioned.py",
+      "tests/inference/test_pin_gate.py",
+      "tests/inference/test_resolver_compose.py",
+      "tests/inference/test_resource_monitor.py",
+      "tests/inference/test_router_schema.py",
+      "tests/inference/test_router_selector.py",
+      "tests/inference/test_rules_as_policy.py",
+      "tests/inference/test_source_kind.py",
+      "tests/inference/test_version_checker.py",
+      "tests/scraps/test_routing_compiler.py",
+      "tests/test_inference.py",
+      "tests/test_inference_dead_path_and_alarm.py",
+      "tests/test_web_inference_models.py",
+      "unseen_university/devices/inference/__init__.py",
+      "unseen_university/devices/inference/connections.py",
+      "unseen_university/devices/inference/device.py",
+      "unseen_university/devices/inference/dimensions.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/models_registry.py",
+      "unseen_university/devices/inference/policy.py",
+      "unseen_university/devices/inference/rules_engine.py",
+      "unseen_university/devices/inference/sources.py",
+      "unseen_university/devices/inference/version_checker.py",
+      "unseen_university/devices/web_server/server.py"
+    ],
+    "ticket": "T-inference-router-decomposition-invariant-proof",
+    "narrative": "",
+    "why": "In the monolith, reachability was smeared across ModelSpec.source_name AND the (task_class, model_id, source_name) rule triples, so making an existing model reachable on a new provider meant EDITING RULES — a registered Connection was inert because dispatch never read the connections stack. This invariant is the runnable guard the original rot would have failed.",
+    "bootstrap": false
+  }
+}

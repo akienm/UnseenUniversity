@@ -22,6 +22,7 @@
 - T-inference-rules-as-policy — Inference router: express rules as dimension->capability-envelope policy (no model/provider literals) (Added the rules-as-policy stack (stack 4 of 4). PolicyRule matches dimension predicates (domain/ticket_tier/builder_tier)
 - T-inference-resolver-compose — Inference router: compose the 4 stacks into a dimensional resolver (alongside route()) (CLOSED PROVEN (proof eafe7d79, red=AssertionError->green=passed). resolve(RouteRequest) composes the 4 stacks beside rou)
 - T-inference-migrate-consumers-cutover — Inference router: migrate consumers to resolve(); retire (tier->model->provider) triples + ModelSpec.source_name (CLOSED PROVEN (proof cc.0.inference-router-cutover-every-consumer @441076bf, red=AssertionError -> green=passed). Every )
+- T-inference-router-decomposition-invariant-proof — Inference router: runnable decomposition invariant — add a connection, zero rule edits, resolve returns it (CLOSED PROVEN (proof cc.0.the-router-decomposition-invariant-addin @240ad99f, red=AssertionError -> green=passed). The r)
 ## Planned
 - Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
 
