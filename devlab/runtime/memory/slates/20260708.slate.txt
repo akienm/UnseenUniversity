@@ -18,6 +18,7 @@
 - T-routing-compiler-rules-engine-test-red — scraps test_routing_compiler::test_rules_engine_add_compiled_rule red (inference rules engine) (Fixed the red test. Root cause was two-fold: (1) RulesEngine.__init__ used 'rules or _DEFAULT_RULES' so an explicit empt)
 - T-granny-dispatch-tests-preexisting-failures — Pre-existing granny dispatch/cascade/e2e test failures (env-dependent) (Fixed all 13 env-dependent granny dispatch reds with a shared autouse tests/granny/conftest.py fixture. TICKET ROOT-CAUS)
 - T-inference-connections-stack — Inference router: introduce the model<->provider connections stack (additive) (Added the model<->provider connections stack (stack 3 of 4, D-inference-router-stack-decomposition-2026-07-08). Connecti)
+- T-inference-dimensions-contract — Inference router: define the caller dimension contract {ticket_tier, builder_tier, domain, urgency, escalation_allowed} (Added the dimensional caller contract: RouteRequest {ticket_tier, builder_tier, domain, urgency, escalation_allowed=defa)
 ## Planned
 - Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
 
@@ -105,3 +106,5 @@ Next: Restart requested (session loaded during Anthropic status-board failures, 
 - T-ticket-as-chart-provenance-ledger: ticket becomes a chart (per-station declared-vs-actual) [triage — confirm chart shape]
 
 ## In-flight: ROUTER BUILD: ticket 1/6 T-inference-connections-stack CLOSED PROVEN @62f3e261 (stub-first red=AssertionError->green; additive connections stack, 22 seeded, nothing routes through it yet). NEXT: ticket 2/6 T-inference-dimensions-contract (RouteRequest {ticket_tier,builder_tier,domain,urgency,escalation_allowed default True}; tiers seed, escalation overrides). Igor DOWN = no HIGH-inertia gate; build straight through incl cutover. Also filed T-testing-rack-device-container (triage, vision: hex builder + containerized test device). Prevention thread (3 tickets) done.
+
+## In-flight: ROUTER BUILD 2/6 done: T-inference-dimensions-contract CLOSED PROVEN @f6db2251 (RouteRequest + difficulty_seed; ticket_tier->difficulty seed, builder_tier orthogonal, escalation_allowed default True). 1/6 connections-stack @62f3e261. NEXT 3/6: T-inference-rules-as-policy (PolicyRule: dims->capability envelope, no model/provider literals; depends dimensions-contract=done). Then 4 resolver-compose, 5 cutover, 6 invariant-proof. Igor down=no HIGH-inertia gate. Stub-first pattern REQUIRED for each net-new module proof.
