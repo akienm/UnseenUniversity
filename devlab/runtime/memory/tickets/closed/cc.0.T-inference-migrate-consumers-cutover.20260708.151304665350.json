@@ -20,14 +20,14 @@
   "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
   "body": {
     "id": "T-inference-migrate-consumers-cutover",
-    "title": "[sprint] Inference router: migrate consumers to resolve(); retire (tier->model->provider) triples + ModelSpec.source_name",
+    "title": "Inference router: migrate consumers to resolve(); retire (tier->model->provider) triples + ModelSpec.source_name",
     "size": "L",
     "tags": [
       "Inference",
       "Router"
     ],
     "priority": 0.75,
-    "status": "sprint",
+    "status": "closed",
     "role": "master",
     "target_difficulty": 4,
     "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
@@ -36,13 +36,20 @@
     "created_at": "2026-07-08T21:12:48.349126+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "CLOSED PROVEN (proof cc.0.inference-router-cutover-every-consumer @441076bf, red=AssertionError -> green=passed). Every consumer dispatches through the dimensional resolver; _DEFAULT_RULES triples + RoutingRule + route() + add_compiled_rule + _is_night_mode + by_source + seed_from_models + ModelSpec.source_name all DELETED. connections.py holds the authoritative 24-edge table (sole home of reachability, self-contained) = union of the 22 source_name bindings + the 2 triple-only owned-local Hex edges (devstral-small-2:24b@ollama, qwen3-coder-next@ollama) that seeding from source_name alone would have silently dropped; phantom qwen/qwen3-30b-a3b-instruct@openrouter dropped (no ModelSpec). select() bridges task_class->ticket_tier and calls resolve(); resolve() gained session affinity (evaluator/minion pass real session_ids). device.py wires connections + policies=[] EXPLICITLY: policies=None false-halts the coding escalation ladder (verified: resolve(worker/coding, required_difficulty=design) -> deepseek-r1:32b@ollama under policies=[] matching old route(), vs None+system_alarm under policies=None). Hop-0 divergence (worker/coding -> deepseek-r1:14b not devstral) is the decision's AUTHORIZED 'tiers are hints' behavior; restoring the agentic-coder floor needs real tool-capability data -> T-inference-activate-coding-tools-policy. Night-gate deferred -> T-inference-batch-nightgate-in-resolver. Inference suite 433 passed; 3 pre-existing failures ticketed.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T23:44:26.027207+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-08T21:12:48.349192+00:00"
+    "scraps_validated": "2026-07-08T21:12:48.349192+00:00",
+    "proven": true,
+    "proof_id": "cc.0.inference-router-cutover-every-consumer.T-inference-migrate-consumers-cutover.20260708.174409121535",
+    "proof_commit": "441076bf309a6c7bd0c013f595802d53d57d1f10",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
