@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-dimensions-contract.20260708.151304243255",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-dimensions-contract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:13:04.243255+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [
+      "T-inference-dimensions-contract"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "id": "T-inference-dimensions-contract",
+    "title": "[sprint] Inference router: define the caller dimension contract {ticket_tier, builder_tier, domain, urgency, escalation_allowed}",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router"
+    ],
+    "priority": 0.85,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "intention": "I intend that callers specify inference intent as DIMENSIONS (ticket_tier, builder_tier, domain, urgency, escalation_allowed), never a model or provider.",
+    "description": "Define the caller contract (the dimensions half of D-inference-router-stack-decomposition-2026-07-08). A RouteRequest carries: ticket_tier (work difficulty), builder_tier (requesting worker capability), domain (coding/prose/...), urgency (time eligibility), escalation_allowed (default True). Tiers are A-PRIORI SEEDS for the difficulty envelope, NOT authority.\n\n**Affected files:** unseen_university/devices/inference/rules_engine.py (a RouteRequest dataclass + a tier->difficulty-envelope seed mapping) OR a new small module if cleaner; routing_buckets.py (READ — reuse task_class_to_difficulty / DIFFICULTY_BUCKETS); tests/inference/test_dimensions_contract.py.\n**Design rules:** inference-tier-not-model; docs-live-in-code; test-plan-or-why-not.\n**Scope boundary:** define the contract + the seed mapping ONLY. New entry surface; route() and _DEFAULT_RULES untouched. Additive.\n**Test plan:** RouteRequest accepts the 5 dimensions with escalation_allowed defaulting True; the tier->difficulty-envelope mapping is deterministic (ticket_tier + builder_tier -> a required-difficulty seed); a caller-supplied model/provider is rejected or ignored (contract forbids it). Red before the dataclass exists -> green after.\n**Rollback:** remove the dataclass + mapping + test; route() is untouched so live dispatch is unaffected.\n**Logging:** log a rejected caller-supplied-model attempt at WARNING (contract violation is a state event).\n**Depends on:** none (may run parallel to connections-stack).\n**Observability:** a test asserts escalation_allowed=False is honored (pins the walk off) — the determinism lever for later proofs.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:12:30.670966+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:12:30.671032+00:00"
+  }
+}

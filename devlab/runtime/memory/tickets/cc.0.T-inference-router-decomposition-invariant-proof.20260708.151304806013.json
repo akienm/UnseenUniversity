@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-router-decomposition-invariant-proof.20260708.151304806013",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-router-decomposition-invariant-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:13:04.806013+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [
+      "T-inference-router-decomposition-invariant-proof"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "id": "T-inference-router-decomposition-invariant-proof",
+    "title": "[sprint] Inference router: runnable decomposition invariant — add a connection, zero rule edits, resolve returns it",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Router",
+      "Test"
+    ],
+    "priority": 0.75,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "intention": "I intend that adding a provider-connection for an existing model requires ZERO rule edits and dispatch resolves to it — the structural guarantee the stacks cannot silently re-collapse.",
+    "description": "The cross-cutting runnable invariant of D-inference-router-stack-decomposition-2026-07-08 — the single test the original grep-not-read rot would have failed. Elevates the anti-triple guarantee from a `git grep` to a red->green behavioral proof.\n\n**Affected files:** tests/inference/test_router_decomposition_invariant.py (new).\n**Design rules:** test-plan-or-why-not; docs-live-in-code.\n**Scope boundary:** the invariant test ONLY — no production change.\n**Test plan:** with the resolver live, register a NEW provider-connection for an EXISTING model in the connections stack, touch NO rule/policy, and assert resolve() for that model's dimensions can return the new connection (e.g. when it is the cheapest capable). Contrast: assert the resolver contains no code path that maps a dimension directly to a hardcoded model_id/source_name. Red if the connection can't be reached without a rule edit -> green when stacks are truly decomposed.\n**Rollback:** delete the test.\n**Logging:** n/a (test).\n**Depends on:** T-inference-resolver-compose (ideally run after T-inference-migrate-consumers-cutover so it guards the shipped state).\n**Observability:** this IS the observability — a standing regression guard against re-collapse.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:12:53.832737+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:12:53.832779+00:00"
+  }
+}

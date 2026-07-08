@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-connections-stack.20260708.151304080900",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-connections-stack"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:13:04.080900+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [
+      "T-inference-connections-stack"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "id": "T-inference-connections-stack",
+    "title": "[sprint] Inference router: introduce the model<->provider connections stack (additive)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router"
+    ],
+    "priority": 0.85,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "intention": "I intend that a model<->provider connection is a first-class queryable stack, decoupled from ModelSpec's 1:1 source_name binding, so a model can be reached on N providers at different cost/latency.",
+    "description": "Introduce the CONNECTIONS stack (stack 3 of 4) from D-inference-router-stack-decomposition-2026-07-08. Today a model is bound 1:1 to one provider via ModelSpec.source_name; a model-on-a-provider is the atom. A connection is a first-class edge: (model_id, provider/source_name, cost, latency/time_bucket). A model has N connections.\n\n**Affected files:** NEW unseen_university/devices/inference/connections.py (a ConnectionsRegistry alongside SourceRegistry/ModelsRegistry); tests/inference/test_connections_stack.py. READ (do not modify yet): models_registry.py, sources.py, capability_graph.py (its (task,model) eval results are a candidate cost-data source — reuse, don't reinvent).\n**Design rules:** inference-tier-not-model; docs-live-in-code; test-plan-or-why-not; OOP-first (registry class).\n**Scope boundary:** ADD the connections stack ONLY. Seed it from the current ModelSpec.source_name bindings WITHOUT removing that field (removal is the cutover ticket). Do NOT touch route() or _DEFAULT_RULES. Additive — no behavior change to live dispatch.\n**Test plan:** a ConnectionsRegistry holds edges; a model_id can have >1 connection; query_by_model(model_id) returns all its connections; the seeded set exactly matches the current ModelSpec source_name bindings. Red before connections.py exists -> green after.\n**Rollback:** delete connections.py + its test; nothing else consumes it yet (additive), so removal is clean.\n**Logging:** log connection registration + query at DEBUG (high-frequency); registry build at INFO.\n**Depends on:** none (foundational).\n**Observability:** the seeded connection count is logged at build; a test asserts it equals the ModelSpec binding count.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:12:22.792073+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:12:22.839739+00:00"
+  }
+}

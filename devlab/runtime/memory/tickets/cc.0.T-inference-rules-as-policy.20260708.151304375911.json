@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-rules-as-policy.20260708.151304375911",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-rules-as-policy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:13:04.375911+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [
+      "T-inference-rules-as-policy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "id": "T-inference-rules-as-policy",
+    "title": "[sprint] Inference router: express rules as dimension->capability-envelope policy (no model/provider literals)",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Router"
+    ],
+    "priority": 0.8,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "intention": "I intend that a routing rule expresses policy over dimensions and emits a capability envelope, never naming a specific model or provider.",
+    "description": "Replace the rule SHAPE (stack 4 of 4) per D-inference-router-stack-decomposition-2026-07-08. Today RoutingRule hardcodes (task_class, model_id, source_name). A PolicyRule instead maps dimension predicates -> a capability envelope: min difficulty, required domain, required features, tier gating. It NEVER names a model_id or source_name.\n\n**Affected files:** unseen_university/devices/inference/rules_engine.py (a PolicyRule dataclass + a default policy set, built ALONGSIDE the existing RoutingRule/_DEFAULT_RULES); tests/inference/test_rules_as_policy.py.\n**Design rules:** inference-tier-not-model; docs-live-in-code; test-plan-or-why-not.\n**Scope boundary:** add the PolicyRule shape + default policies ONLY, alongside the existing triples. Do NOT delete _DEFAULT_RULES or change route() (that is the cutover ticket). Additive.\n**Test plan:** a PolicyRule narrows a RouteRequest's dimensions to a capability envelope; a `git grep` over the new default policy set finds NO model_id or source_name literal (the anti-triple invariant, at the rules layer). Red before PolicyRule exists -> green after.\n**Rollback:** remove PolicyRule + default policies + test; the legacy triples still serve.\n**Logging:** log policy-match (dims -> envelope) at DEBUG.\n**Depends on:** T-inference-dimensions-contract (needs RouteRequest).\n**Observability:** the no-literal grep assertion is the runtime-observable guarantee that rules carry no provider/model.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:12:36.617047+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:12:36.617107+00:00"
+  }
+}

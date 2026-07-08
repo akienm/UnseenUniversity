@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-migrate-consumers-cutover.20260708.151304665350",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-migrate-consumers-cutover"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:13:04.665350+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [
+      "T-inference-migrate-consumers-cutover"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "id": "T-inference-migrate-consumers-cutover",
+    "title": "[sprint] Inference router: migrate consumers to resolve(); retire (tier->model->provider) triples + ModelSpec.source_name",
+    "size": "L",
+    "tags": [
+      "Inference",
+      "Router"
+    ],
+    "priority": 0.75,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "intention": "I intend that every inference consumer dispatches through the dimensional resolver and no hardcoded (task_class, model_id, source_name) triple or 1:1 ModelSpec.source_name binding remains.",
+    "description": "The CUTOVER (do LAST, after resolver-compose is green) of D-inference-router-stack-decomposition-2026-07-08. Additive-then-cutover: only now do we switch consumers and delete the monolith.\n\n**Affected files:** unseen_university/devices/inference/device.py (proxy entry -> resolve()); unseen_university/devices/igor/cognition/{consolidation,distillation}.py + tools/after_action_reviewer.py (any direct route() callers -> dimensional API); unseen_university/devices/scraps/jobs/routing_compiler.py (emit dimensional POLICY, not triples) + its add_compiled_rule counterpart in rules_engine.py; rules_engine.py (remove _DEFAULT_RULES triples + the triple form of add_compiled_rule); models_registry.py (remove the source_name binding); tests updated across tests/inference/.\n**Design rules:** inference-proxy-only; inference-tier-not-model; docs-live-in-code; test-plan-or-why-not.\n**Scope boundary:** repoint consumers + compiler to the dimensional API, THEN delete triples + source_name. HIGH-INERTIA (device.py, load-bearing proxy Igor consumes) — pause for Akien inline pre-approval before editing device.py; stamp approval into this ticket.\n**Test plan:** device.py dispatch resolves via resolve() end-to-end; a live dispatch returns text (proxy up throughout); `git grep` finds NO (task_class, model_id, source_name) triple in the rules stack and no ModelSpec.source_name; full tests/inference/ + tests/granny/ green. Red (triples still present) -> green (removed, resolver serving).\n**Rollback:** revert the cutover commit — the additive resolver + stacks remain; route()+triples were only deleted in this ticket, so revert restores the working monolith. No dispatch-down window.\n**Logging:** log each consumer cutover crossing at INFO; log triple-removal as a state change.\n**Depends on:** T-inference-resolver-compose.\n**Observability:** a live dispatch returning text + the no-triple grep are the runtime signals the cutover shipped.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:12:48.349126+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:12:48.349192+00:00"
+  }
+}

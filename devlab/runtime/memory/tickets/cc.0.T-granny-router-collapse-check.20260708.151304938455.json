@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-granny-router-collapse-check.20260708.151304938455",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-router-collapse-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:13:04.938455+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [
+      "T-granny-router-collapse-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "id": "T-granny-router-collapse-check",
+    "title": "[triage] Granny dispatch: check whether role_in->route_to rules are the same monolith collapse (NEXT PHASE)",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Router"
+    ],
+    "priority": 0.3,
+    "status": "triage",
+    "role": "master",
+    "target_difficulty": 4,
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "intention": "I intend to determine whether granny's dispatch rules suffer the same stack-collapse as the inference router, and if so decompose them the same way.",
+    "description": "NEXT PHASE — do NOT work until the inference router redesign (T-inference-* above) is complete. Akien flagged (2026-07-08) that granny's dispatch routing 'is prolly borked the same way.' Granny's match_rule consumes config rules shaped {when:{role_in:[...]}, route_to:<worker>} — a role->worker mapping that may hardcode the same way the inference triples did (worker identity baked into the rule instead of composed from a capability/availability stack).\n\n**Affected files:** READ FIRST — unseen_university/devices/granny/daemon.py (match_rule, run_once, _select_builder, _cascade_active_workers); the granny config schema; tests/granny/.\n**Design rules:** cooperative-not-hierarchical; homogeneity-over-special-case; test-plan-or-why-not.\n**Scope boundary:** INVESTIGATE and report first (is it the same collapse? where?). Only propose/apply a decomposition if the investigation confirms it — file follow-up tickets rather than expanding this one.\n**Test plan:** the investigation output names concretely whether granny routing hardcodes worker identity vs. composes from stacks; if a fix is warranted, it is captured as its own proven ticket(s).\n**Rollback:** n/a (investigation).\n**Depends on:** the inference router redesign shipping first (T-inference-migrate-consumers-cutover).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:12:58.097491+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:12:58.097536+00:00"
+  }
+}

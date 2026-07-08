@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-resolver-compose.20260708.151304526752",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-resolver-compose"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:13:04.526752+00:00",
+  "links": {
+    "decisions": [
+      "D-inference-router-stack-decomposition-2026-07-08"
+    ],
+    "tickets": [
+      "T-inference-resolver-compose"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
+  "body": {
+    "id": "T-inference-resolver-compose",
+    "title": "[sprint] Inference router: compose the 4 stacks into a dimensional resolver (alongside route())",
+    "size": "L",
+    "tags": [
+      "Inference",
+      "Router"
+    ],
+    "priority": 0.8,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
+    "intention": "I intend that resolve(RouteRequest) turns dimensions into a concrete (provider, model) by composing the 4 stacks, reusing the existing cost-optimizing selector, with the escalation walk gated by escalation_allowed.",
+    "description": "Compose the resolver (the pipeline of D-inference-router-stack-decomposition-2026-07-08), built ALONGSIDE the working route(). resolve(RouteRequest): dimensions -> policy rules narrow to a capability envelope -> candidate MODELS meeting it -> their CONNECTIONS filtered by provider availability + urgency/time eligibility -> the EXISTING cost-optimizing selector (cost_class, marginal dollars, priority) picks the cheapest capable connection. The within-domain escalation walk bumps difficulty up one rung per capability failure, ending in a system_alarm past the top rung; escalation_allowed=False pins the walk off.\n\n**Affected files:** unseen_university/devices/inference/rules_engine.py (a resolve() method beside route()); routing_buckets.py (REUSE the eligibility filters + cost-optimizing sort unchanged); tests/inference/test_resolver_compose.py. READ: connections.py, models_registry.py, sources.py.\n**Design rules:** inference-tier-not-model; inference-cost-optimizing-router (reuse, don't reimplement the selector); docs-live-in-code; test-plan-or-why-not.\n**Scope boundary:** add resolve() ALONGSIDE route(); do NOT modify or delete route()/_DEFAULT_RULES yet. Additive. Reuse the cost-optimizing selector verbatim — only its INPUT changes (connection candidates, not hardcoded triples).\n**Test plan:** resolve(RouteRequest) returns a (provider, model) for given dimensions with NO hardcoded triple involved; escalation_allowed=False yields a deterministic single pick; escalation_allowed=True reproduces the difficulty-bump walk terminating in system_alarm when no capable connection exists. Red before resolve() exists -> green after.\n**Rollback:** remove resolve() + test; route() still serves all live dispatch.\n**Logging:** log the resolve crossing (dims -> chosen provider/model) at INFO; each escalation bump at INFO; the terminal system_alarm at WARNING.\n**Depends on:** T-inference-connections-stack, T-inference-dimensions-contract, T-inference-rules-as-policy.\n**Observability:** the resolve crossing log line shows the full dims->pick path; escalation bumps are individually logged.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:12:42.524726+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:12:42.524783+00:00"
+  }
+}
