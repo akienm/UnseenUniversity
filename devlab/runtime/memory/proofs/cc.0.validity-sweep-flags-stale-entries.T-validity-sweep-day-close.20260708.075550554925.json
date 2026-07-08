@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.validity-sweep-flags-stale-entries.T-validity-sweep-day-close.20260708.075550554925",
+  "emitter": "cc.0",
+  "namespace": [
+    "validity-sweep-flags-stale-entries",
+    "T-validity-sweep-day-close"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T07:55:50.554925",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-validity-sweep-day-close"
+    ],
+    "commits": [
+      "ba8165fd98deaca8d2c5ff6f89fc904abd0f93c4"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-validity-sweep-day-close",
+  "body": {
+    "thing": "validity sweep flags stale entries",
+    "intention": "The day-close sweep flags a store entry whose named dependency changed, annotating not deleting, within one run",
+    "test": "tests/test_validity_sweep.py::test_broken_path_and_superseded_artifact_flag_but_live_path_clears",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_validity_sweep.py::test_broken_path_and_superseded_artifact_flag_but_live_path_clears",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\n    def test_broken_path_and_superseded_artifact_flag_but_live_path_clears(tmp_path, monkeypatch):\n        monkeypatch.setenv(\"UU_MEMORY_ROOT\", str(tmp_path))\n        # A path that exists in the repo (this test file itself) -> clears.\n        live = \"tests/test_validity_sweep.py\"\n        _entry(tmp_path, \"rules\", \"r-live\", [{\"type\": \"depends-on-path\", \"target\": live}])\n        _entry(tmp_path, \"rules\", \"r-gone\",\n               [{\"type\": \"depends-on-path\", \"target\": \"no/such/file_xyz.py\"}])\n        _entry(tmp_path, \"decisions\", \"d-dep\",\n               [{\"type\": \"depends-on-artifact\", \"target\": \"D-old\"}])\n        _artifact(tmp_path, \"decisions\", \"D-old\", \"superseded-by-D-new\")\n    \n        result = vs.sweep(str(tmp_path), apply=True, sweep_run=\"run1\")\n>       assert result[\"checked\"] == 3\nE       assert 0 == 3\n\ntests/test_validity_sweep.py:55: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_validity_sweep.py::test_broken_path_and_superseded_artifact_flag_but_live_path_clears\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "ba8165fd98deaca8d2c5ff6f89fc904abd0f93c4",
+    "impl_paths": [
+      "devlab/claudecode/validity_sweep.py",
+      "skills/day-close/SKILL.md",
+      "skills/sorted/SKILL.md"
+    ],
+    "ticket": "T-validity-sweep-day-close",
+    "narrative": "",
+    "why": "stale-memory incidents (IMAP claim, dead write-path) shared one root cause: no recorded validity conditions, so nothing flagged them when the world changed",
+    "bootstrap": false
+  }
+}
