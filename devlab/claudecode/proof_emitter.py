@@ -375,8 +375,11 @@ def _run_proof(*, thing: str, intention: str, test: str,
     if ticket:
         links["tickets"] = [ticket]
     namespace = [_slug(thing)] + ([ticket] if ticket else [])
+    # produced_by (feedback-edges): a proof's backward edge is the ticket whose
+    # intention it discharges — if the proof is wrong, review that ticket.
     path = memory_emit.emit("proofs", emitter, body, kind="proof",
-                            namespace=namespace, links=links)
+                            namespace=namespace, links=links,
+                            produced_by=ticket if ticket else None)
     return {"path": path, "commit": commit, "red": red.as_evidence(),
             "green": green.as_evidence()}
 

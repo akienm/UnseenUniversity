@@ -125,7 +125,7 @@ def parse_filename(fname: str) -> dict:
 
 
 def emit(category, emitter, body, *, kind=None, namespace=None, links=None,
-         stamp=None, emitted_at=None) -> str:
+         stamp=None, emitted_at=None, produced_by=None) -> str:
     """Write one emission. Returns the path written.
 
     category   one of CATEGORIES (the folder).
@@ -137,6 +137,14 @@ def emit(category, emitter, body, *, kind=None, namespace=None, links=None,
                commit sha, why id). Links use semantic ids, not filenames.
     stamp      'yyyymmdd.hhmmssuuuuuu'. Pass the record's ORIGINAL time when
                migrating (idempotent). Defaults to now for live hook writes.
+    produced_by  the ONE backward edge (feedback-edges contract): the artifact
+               whose CONTENT caused this emission — 'if this is wrong, what should
+               be reviewed?'. A store id (D-*/T-*/proof) when one exists, else a
+               typed address (session:<id>, skill:<name>@<date>, intent:I-*,
+               human:akien). Distinct from `emitter` (the hand) and `links` (an
+               undirected bag). When None the chokepoint stamps the honest
+               fallback `session:<emitter>` so every NEW artifact carries an edge;
+               additive — no reader may require it (legacy artifacts lack it).
     """
     if category not in CATEGORIES:
         raise ValueError(f"unknown category {category!r}; known: {sorted(CATEGORIES)}")
@@ -160,6 +168,7 @@ def emit(category, emitter, body, *, kind=None, namespace=None, links=None,
         "kind": kind,
         "emitted_at": emitted_at or _emitted_at_from_stamp(stamp),
         "links": merged,
+        "produced_by": produced_by or f"session:{emitter}",
         "body": body,
     }
     out_dir = os.path.join(_memory_root(), *category.split("/"))
@@ -187,6 +196,9 @@ def _main(argv=None):
     g.add_argument("--body-file", help="path to a JSON body file")
     ap.add_argument("--body-text", help="plain text body (wrapped as {\"text\": ...})")
     ap.add_argument("--links", default=None, help="JSON dict of semantic-id links")
+    ap.add_argument("--produced-by", default=None,
+                    help="the backward edge: the artifact whose content caused this "
+                         "emission (D-*/T-*/proof id, or session:/skill:/intent:/human: address)")
     args = ap.parse_args(argv)
 
     if args.body_file:
@@ -205,7 +217,8 @@ def _main(argv=None):
     links = json.loads(args.links) if args.links else None
 
     path = emit(args.category, args.emitter, body, kind=args.kind,
-                namespace=ns, links=links, stamp=args.stamp)
+                namespace=ns, links=links, stamp=args.stamp,
+                produced_by=args.produced_by)
     print(path)
 
 

@@ -161,6 +161,10 @@ def _envelope(body: dict) -> dict:
     links["tickets"] = [tid]
     if body.get("decision_id"):
         links["decisions"] = [body["decision_id"]]
+    # produced_by (feedback-edges contract): a ticket's backward edge is the
+    # decision that produced it; absent a decision, the honest session fallback.
+    # Additive — no reader may require it; legacy envelopes lack it.
+    produced_by = body.get("decision_id") or f"session:{emitter}"
     return {
         "id": stem,
         "emitter": emitter,
@@ -169,6 +173,7 @@ def _envelope(body: dict) -> dict:
         "kind": "ticket",
         "emitted_at": now.astimezone(timezone.utc).isoformat(),
         "links": links,
+        "produced_by": produced_by,
         "body": body,
     }
 

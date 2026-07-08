@@ -207,8 +207,14 @@ cat > /tmp/decision_body_<id>.json <<'JSON'
 JSON
 python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/memory_emit.py" \
   --category decisions --emitter cc.0 --kind decision \
-  --namespace D-<id> --body-file /tmp/decision_body_<id>.json
+  --namespace D-<id> --body-file /tmp/decision_body_<id>.json \
+  --produced-by "<the intention or session that produced this decision>"
 ```
+
+`--produced-by` is the decision's backward edge (feedback-edges contract): the
+artifact whose content caused it — an `intent:I-*` id when the decision realizes a
+named intention, else `session:cc.0` (the honest default memory_emit stamps if you
+omit it). It answers "if this decision is wrong, what should be reviewed?".
 
 The emit lands one file at
 `devlab/runtime/memory/decisions/cc.0.D-<id>.<stamp>.json` (unique microsecond
