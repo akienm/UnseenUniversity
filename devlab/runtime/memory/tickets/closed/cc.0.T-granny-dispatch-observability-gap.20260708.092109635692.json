@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-granny-dispatch-observability-gap",
-    "title": "[sprint] Granny dispatch health is invisible — a drained/idle builder + all-defer cycles surface nothing an operator would notice",
+    "title": "Granny dispatch health is invisible — a drained/idle builder + all-defer cycles surface nothing an operator would notice",
     "size": "M",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.6,
     "role": "master",
     "tags": [
@@ -33,15 +33,22 @@
     "created_at": "2026-07-08T15:21:01.439446+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "--reason",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T18:01:08.757787+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "decision_id": null,
     "gate": null,
     "target_difficulty": 1,
-    "scraps_validated": "2026-07-08T15:21:01.503789+00:00"
+    "scraps_validated": "2026-07-08T15:21:01.503789+00:00",
+    "proven": true,
+    "proof_id": "cc.0.granny-dispatch-health-warn-available-bu.T-granny-dispatch-observability-gap.20260708.120056657852",
+    "proof_commit": "5868ac32cf234d8963b1d5abb713e63c6c8c3f2b",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

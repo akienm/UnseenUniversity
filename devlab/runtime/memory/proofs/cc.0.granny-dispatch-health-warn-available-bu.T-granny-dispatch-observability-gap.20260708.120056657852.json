@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.granny-dispatch-health-warn-available-bu.T-granny-dispatch-observability-gap.20260708.120056657852",
+  "emitter": "cc.0",
+  "namespace": [
+    "granny-dispatch-health-warn-available-bu",
+    "T-granny-dispatch-observability-gap"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T12:00:56.657852",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-dispatch-observability-gap"
+    ],
+    "commits": [
+      "5868ac32cf234d8963b1d5abb713e63c6c8c3f2b"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-granny-dispatch-observability-gap",
+  "body": {
+    "thing": "Granny dispatch-health WARN (available builder idle past threshold while a backlog waits)",
+    "intention": "An available builder idle past threshold while work waits surfaces a WARN operators can see, instead of Granny cycling silently for 16h",
+    "test": "tests/test_granny_dispatch_health.py::test_idle_builder_with_deferred_work_warns",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_granny_dispatch_health.py::test_idle_builder_with_deferred_work_warns",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\n    def test_idle_builder_with_deferred_work_warns():\n        \"\"\"The observed stall: Aider.0 available + idle 16h, 217 tickets deferred to an\n        unavailable CC.0, 0 targeted at Aider. Work waits; it isn't reaching the idle\n        builder. That MUST surface as a WARN — this is the whole point of the ticket.\"\"\"\n        report = summarize_dispatch_health(\n            [BuilderState(name=\"Aider.0\", available=True, last_dispatch_age_s=_16H)],\n            dispatchable_by_target=0,\n            deferred_unavailable=217,\n            idle_threshold_s=_IDLE_THRESHOLD,\n        )\n>       assert report.warns, \"an available builder idle 16h with 217 tickets waiting must WARN\"\nE       AssertionError: an available builder idle 16h with 217 tickets waiting must WARN\nE       assert []\nE        +  where [] = HealthReport(info_line='', warns=[]).warns\n\ntests/test_granny_dispatch_health.py:41: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_granny_dispatch_health.py::test_idle_builder_with_deferred_work_warns\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "5868ac32cf234d8963b1d5abb713e63c6c8c3f2b",
+    "impl_paths": [
+      "CLAUDE.md",
+      "devlab/runtime/memory/tickets/cc.0.T-black-format-repo.20260708.115906033219.json",
+      "devlab/runtime/memory/tickets/cc.0.T-collapse-daemons-to-ground-loop.20260708.115906213588.json",
+      "unseen_university/devices/granny/dispatch_health.py"
+    ],
+    "ticket": "T-granny-dispatch-observability-gap",
+    "narrative": "",
+    "why": "Granny ran 16h with Aider.0 idle and 217 tickets deferred and nothing signalled it (Akien had to read the tmux pane); the idle-builder WARN is the missing glanceable signal.",
+    "bootstrap": false
+  }
+}

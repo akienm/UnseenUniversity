@@ -13,6 +13,7 @@
 - Filed follow-ups: T-audit-telemetry-flatfile-repoint (M), T-proof-emitter-test-store-isolation (S)
 - Day-close: gate sweep cleared 4 consequence gates; validity sweep flagged=2 (probeless facts); path-moves clean; collection clean (4490); critical suites 70 green. Full-suite infra errors = known T-test-suite-hermeticity-infra-deps.
 
+- T-granny-dispatch-observability-gap — Granny dispatch health is invisible — a drained/idle builder + all-defer cycles surface nothing an operator would notice (--reason)
 ## Planned
 - Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
 
