@@ -183,12 +183,22 @@ def sweep(memory_root: str | None = None, *, repo: str | None = None,
             if prior_runs and sweep_run not in prior_runs:
                 curate_candidates.append(eid)
             if apply:
-                rec["stale_flags"] = existing + new_flags
-                tmp = fp + ".tmp"
-                with open(tmp, "w", encoding="utf-8") as f:
-                    json.dump(rec, f, indent=2, ensure_ascii=False)
-                    f.write("\n")
-                os.replace(tmp, fp)
+                # Dedup: a persistently-broken/unresolvable condition must not
+                # append a fresh flag every sweep (unbounded file growth on the
+                # same finding). Key on (condition, state) — only genuinely NEW
+                # findings annotate; a re-confirmed one is silent.
+                seen = {(json.dumps(f["condition"], sort_keys=True), f["state"])
+                        for f in existing}
+                fresh = [f for f in new_flags
+                         if (json.dumps(f["condition"], sort_keys=True), f["state"])
+                         not in seen]
+                if fresh:
+                    rec["stale_flags"] = existing + fresh
+                    tmp = fp + ".tmp"
+                    with open(tmp, "w", encoding="utf-8") as f:
+                        json.dump(rec, f, indent=2, ensure_ascii=False)
+                        f.write("\n")
+                    os.replace(tmp, fp)
 
     return {
         "checked": checked,

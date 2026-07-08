@@ -100,3 +100,16 @@ def test_zero_flag_run_still_reports_count_line(tmp_path, monkeypatch):
     assert result["flagged"] == 0
     assert vs.format_summary(result) == \
         "validity sweep: flagged=0 checked=1 unresolvable=0"
+
+
+def test_apply_is_idempotent_no_duplicate_flags(tmp_path, monkeypatch):
+    """A persistently-broken condition must not append a fresh flag every sweep."""
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+    _entry(tmp_path, "rules", "r-gone",
+           [{"type": "depends-on-path", "target": "no/such/file_xyz.py"}])
+    fp = tmp_path / "rules" / "cc.0.r-gone.20260101.000000000000.json"
+    vs.sweep(str(tmp_path), apply=True, sweep_run="run1")
+    vs.sweep(str(tmp_path), apply=True, sweep_run="run2")
+    vs.sweep(str(tmp_path), apply=True, sweep_run="run3")
+    flags = json.loads(fp.read_text())["stale_flags"]
+    assert len(flags) == 1, "same finding must annotate once, not once per sweep"
