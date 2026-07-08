@@ -34,7 +34,9 @@ Granny is transport-agnostic: she sends bus envelopes and sets worker fields.
 All tmux/session knowledge lives in the worker's shim (e.g. CCWorkerListener),
 not here. See devices/granny/cc_worker_listener.py for CC delivery.
 
-Run as: python -m unseen_university.devices.granny.daemon
+The poll loop is NOT run from here — it is an in-process shim-owned thread
+(``GrannyDispatchLoop`` in shim.py) started on demand off the queue. Bring Granny up
+with: ``python -m unseen_university.devices.granny`` (see ``__main__.py``).
 """
 
 from __future__ import annotations
@@ -45,7 +47,6 @@ from unseen_university.system_alarms import raise_alarm
 import json
 import logging
 import os
-import signal
 import subprocess
 import sys
 import time
@@ -57,9 +58,7 @@ log = logging.getLogger(__name__)
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
 _PYTHON = sys.executable
-_GRANNY_HOME = Path.home() / ".granny"
 _CONFIG_PATH = uu_config_dir() / "granny.yaml"
-_PID_FILE = _GRANNY_HOME / "daemon.pid"
 
 POLL_INTERVAL_S = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))
 # Dispatch-health observability (T-granny-dispatch-observability-gap): emit a
@@ -789,24 +788,6 @@ def _reset_stale_inprogress() -> int:
     return count
 
 
-class _DaemonStatus:
-    """Lightweight daemon status object returned by get_daemon()."""
-
-    def is_running(self) -> bool:
-        pid_file = Path.home() / ".granny" / "daemon.pid"
-        try:
-            pid = int(pid_file.read_text().strip())
-            os.kill(pid, 0)
-            return True
-        except Exception:
-            return False
-
-
-def get_daemon() -> _DaemonStatus:
-    """Return a status object for the Granny daemon (checks PID file)."""
-    return _DaemonStatus()
-
-
 def _dicksimnel_available() -> bool:
     """Return True if DickSimnel's .true flag exists and .false flag does not."""
     try:
@@ -1174,61 +1155,10 @@ def _make_imap_if_bus_configured(config: dict):
         return None
 
 
-def _wait_for_work(timeout: float) -> None:
-    """Sleep until the next poll cycle.
-
-    The daemon reads ticket state from the filesystem store (the cutover
-    authority, D-build-queue-filesystem-first), so the wakeup is pure interval
-    polling — no Postgres LISTEN/NOTIFY. Restoring instant wake via a filesystem
-    signal (so a newly-filed ticket dispatches without waiting out the poll
-    interval) is a follow-up: T-granny-fs-wake-signal.
-    """
-    time.sleep(timeout)
-
-
-def run_loop() -> None:
-    log.info("Granny: rules-engine daemon starting (poll=%ds)", POLL_INTERVAL_S)
-    _GRANNY_HOME.mkdir(parents=True, exist_ok=True)
-    cycle = 0
-
-    config = _load_config()
-    imap = _make_imap_if_bus_configured(config)
-    if imap is not None:
-        log.info("Granny: bus dispatch enabled (reply mailbox=%s)",
-                 config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT))
-
-    while True:
-        cycle += 1
-        config = _load_config()
-        log.debug("Granny: poll cycle %d", cycle)
-        try:
-            run_once(config, imap=imap)
-        except Exception as e:
-            log.error("Granny: poll cycle %d error: %s", cycle, e)
-        if cycle % _HEALTH_EVERY_N == 0:
-            _emit_dispatch_health(config)
-        _wait_for_work(POLL_INTERVAL_S)
-
-
-if __name__ == "__main__":
-    # Route this standalone daemon process's stdlib logs into the canonical
-    # per-device JSON sink (~/.unseen_university/logs/granny/<stream>/) instead of
-    # only the tmux pane — the stale-log fix (T-granny-dispatch-observability-gap).
-    # Replaces logging.basicConfig; the loguru default stderr sink keeps the pane.
-    from unseen_university.diagnostic_base.base import configure_process_logging
-    configure_process_logging("granny")
-    _GRANNY_HOME.mkdir(parents=True, exist_ok=True)
-    _PID_FILE.write_text(str(os.getpid()))
-
-    def _handle_sig(sig, _frame):
-        log.info("Granny: signal %s — exiting", sig)
-        _PID_FILE.unlink(missing_ok=True)
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, _handle_sig)
-    signal.signal(signal.SIGINT, _handle_sig)
-
-    try:
-        run_loop()
-    finally:
-        _PID_FILE.unlink(missing_ok=True)
+# NOTE: the poll loop that drove run_once (the old ``run_loop`` + ``__main__`` +
+# PID file + signal handlers + ``configure_process_logging`` bridge) is RETIRED.
+# ONE daemon structure (T-collapse-daemons-to-ground-loop): Granny's loop is now an
+# in-process shim-owned thread (``GrannyDispatchLoop`` in shim.py, started on demand
+# off the queue). This module keeps only the per-tick body (``run_once``), config
+# loading, the bus-handle builder, and the dispatch-health emitter — all called by
+# the shim thread. Entry point is ``python -m unseen_university.devices.granny``.

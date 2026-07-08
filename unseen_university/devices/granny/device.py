@@ -34,6 +34,13 @@ class GrannyWeatherwaxDevice(BaseDevice):
     def __init__(self) -> None:
         super().__init__(device_id=self.DEVICE_ID)
         self._errors: list[str] = []
+        # Wire the shim (aider pattern) — the shim owns Granny's demand-started,
+        # in-process dispatch loop. Nothing wired the shim before the daemon
+        # collapse, so the shim-owns-startup model was never actually live
+        # (T-collapse-daemons-to-ground-loop).
+        from unseen_university.devices.granny.shim import GrannyShim
+
+        self._shim = GrannyShim()
 
     def who_am_i(self) -> dict:
         return {
@@ -91,7 +98,7 @@ class GrannyWeatherwaxDevice(BaseDevice):
         return {
             "host": os.uname().nodename,
             "pid": os.getpid(),
-            "launch_command": "python -m unseen_university.devices.granny.daemon",
+            "launch_command": "python -m unseen_university.devices.granny",
         }
 
     def restart(self) -> None:

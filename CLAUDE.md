@@ -77,13 +77,19 @@ ever differ, the file wins — fix this shim.**
 - **⛔ ONE daemon structure — the Ground Loop. No device runs its own daemon. PERIOD.** The whole
   reason the Ground Loop exists is to be the single daemon structure; a device's periodic work runs
   as a **shim-started component/thread** driven by it, never as a standalone `if __name__ ==
-  "__main__"` + `while True` process. *(Currently VIOLATED by `devices/granny/daemon.py` and
-  `devices/scraps/daemon.py`, each of which hand-rolls its own `run_loop`; being collapsed under
-  T-collapse-daemons-to-ground-loop.)* *Why: a device that spins its own daemon reimplements
-  start/stop/restart/heartbeat/logging outside the design center, so lifecycle management stops
-  being uniform and each daemon rots independently — the Granny standalone daemon logged only to
-  its tmux pane for weeks because it never wired the base JSON sink (T-granny-dispatch-observability-gap).
-  The Ground Loop stays passive (heartbeat + startup-error→rescue); the shim owns startup.*
+  "__main__"` + `while True` process. The canonical shim-owned loop primitive is
+  `unseen_university.shim.ShimLoopThread` (a daemon thread whose body is wrapped in
+  `logger.contextualize(device_id=…)` so its records reach the per-device JSON sink). Granny and
+  Scraps were collapsed onto it (T-collapse-daemons-to-ground-loop): `GrannyShim` owns an
+  in-process dispatch loop demand-started off the queue; `ScrapsShim` owns the job-runner loop;
+  both are brought up with `python -m unseen_university.devices.<granny|scraps>` (aider pattern —
+  device→`shim.start()`→`signal.pause()`, no `__main__` run_loop, no PID, no tmux). *Why: a device
+  that spins its own daemon reimplements start/stop/restart/heartbeat/logging outside the design
+  center, so lifecycle management stops being uniform and each daemon rots independently — the
+  Granny standalone daemon logged only to its tmux pane for weeks because it never wired the base
+  JSON sink (T-granny-dispatch-observability-gap), and `GrannyShim` was never even instantiated in
+  a live process, so its shim-owns-startup watchdog was dead code. The Ground Loop stays passive
+  (heartbeat + startup-error→rescue); the shim owns startup.*
 - **Single import root.** All code ships under one package, `unseen_university/`, discovered by
   pyproject `include = ["unseen_university*"]`. There is exactly one heart; no co-equal top-level
   `bus`/`skeleton`/`devices`/`diagnostic_base`/`config` trees. `bus` and `skeleton` are **devices**

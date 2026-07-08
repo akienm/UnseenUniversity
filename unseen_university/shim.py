@@ -54,6 +54,66 @@ class AgentContext:
     token: object = field(default=None)
 
 
+class ShimLoopThread:
+    """A shim-owned background poll loop — the ONE way a device runs periodic work.
+
+    ONE daemon structure (T-collapse-daemons-to-ground-loop): no device runs its own
+    ``__main__`` + ``while True`` daemon. A device's periodic work is a daemon thread
+    its SHIM owns (the aider pattern, generalized). Each cycle calls ``tick()``; the
+    thread body is wrapped in ``logger.contextualize(device_id=...)`` so stdlib records
+    emitted from ``tick`` carry ``device_id`` and reach the canonical per-device JSON
+    sink (``~/.unseen_university/logs/<device>/<stream>/``) — threads start with an
+    empty contextvars context, so the wrap MUST be inside the thread body, not around
+    ``Thread(...)``. Run first, then wait (parity with the old ``run_loop`` cadence).
+
+    ``tick`` and ``on_cycle`` exceptions are logged, never fatal — one bad cycle must
+    not kill the loop.
+    """
+
+    def __init__(self, device_id, tick, interval, *, on_cycle=None, name=None):
+        self._device_id = device_id
+        self._tick = tick
+        self._interval = interval
+        self._on_cycle = on_cycle  # optional callable(cycle_number) after each tick
+        self._stop = threading.Event()
+        self._thread: "threading.Thread | None" = None
+        self._name = name or f"{device_id}-loop"
+
+    def is_alive(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def start(self) -> None:
+        """Idempotent — a watchdog may call this repeatedly; only one thread runs."""
+        if self.is_alive():
+            return
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._run, daemon=True, name=self._name)
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=5)
+
+    def _run(self) -> None:
+        from loguru import logger as _loguru_logger
+
+        with _loguru_logger.contextualize():  # STUB: device_id stamp not yet wired
+            cycle = 0
+            while not self._stop.is_set():
+                cycle += 1
+                try:
+                    self._tick()
+                except Exception as exc:
+                    log.error("%s: tick cycle %d error: %s", self._name, cycle, exc)
+                if self._on_cycle is not None:
+                    try:
+                        self._on_cycle(cycle)
+                    except Exception as exc:
+                        log.warning("%s: on_cycle %d error: %s", self._name, cycle, exc)
+                self._stop.wait(self._interval)
+
+
 class PolicyDeniedError(Exception):
     """Raised by dispatch() when the policy gate denies a tool call.
 

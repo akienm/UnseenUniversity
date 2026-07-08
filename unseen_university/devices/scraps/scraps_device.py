@@ -87,6 +87,12 @@ class ScrapsDevice(BaseDevice):
         self._startup_errors: list[str] = []
         self._blocked: bool = False
         self._block_reason: str = ""
+        # Wire the shim (aider pattern) — the shim owns Scraps's in-process job-runner
+        # loop. The retired scraps.yaml PluginDaemon subprocess no longer runs it
+        # (T-collapse-daemons-to-ground-loop).
+        from unseen_university.devices.scraps.shim import ScrapsShim
+
+        self._shim = ScrapsShim()
 
     # ── Primary API ──────────────────────────────────────────────────────────
 

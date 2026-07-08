@@ -183,13 +183,19 @@ class TestGrannyShimHealthSurface:
         assert h["relaunch_count"] == "0"
 
     def test_contains_daemon_field(self):
+        """daemon field reflects the in-process dispatch loop thread liveness (no PID)."""
         from unseen_university.devices.granny.shim import GrannyShim
-        from unittest.mock import MagicMock
 
         shim = GrannyShim()
-        mock_daemon = MagicMock()
-        mock_daemon.is_running.return_value = True
-        with patch("unseen_university.devices.granny.daemon.get_daemon", return_value=mock_daemon):
-            h = shim.health_surface()
+        # No loop yet → stopped.
+        assert shim.health_surface()["daemon"] == "stopped"
+
+        # Inject a live loop → running.
+        class _Loop:
+            def is_alive(self):
+                return True
+
+        shim._loop = _Loop()
+        h = shim.health_surface()
         assert "daemon" in h
         assert h["daemon"] == "running"

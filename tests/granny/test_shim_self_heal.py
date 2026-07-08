@@ -1,160 +1,114 @@
-"""Tests for GrannyShim self-heal watchdog — dead daemon + pending tickets → restart."""
+"""Tests for GrannyShim — in-process dispatch loop, demand-started off the queue.
+
+ONE daemon structure (T-collapse-daemons-to-ground-loop): the shim no longer watches a
+PID file or relaunches a tmux subprocess. Its watchdog demand-starts an in-process
+``ShimLoopThread`` when sprint work is pending; ``self_test`` reports that thread's
+liveness.
+"""
 
 from __future__ import annotations
 
-import threading
-import time
-from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import patch
+
+
+class _FakeLoop:
+    """Stand-in for ShimLoopThread with a settable liveness."""
+
+    def __init__(self, alive: bool = False):
+        self._alive = alive
+        self.stopped = False
+
+    def is_alive(self) -> bool:
+        return self._alive
+
+    def stop(self) -> None:
+        self.stopped = True
+        self._alive = False
 
 
 class TestSelfTest:
-    def test_no_pid_file_returns_not_passed(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
+    def test_no_loop_returns_not_passed(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
         result = shim.self_test()
         assert result["passed"] is False
-        assert "no pid file" in result["details"]
+        assert "not running" in result["details"]
 
-    def test_live_pid_returns_passed(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        import os
-
-        pid_file = tmp_path / "daemon.pid"
-        pid_file.write_text(str(os.getpid()))  # current process — definitely alive
-
+    def test_live_loop_returns_passed(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
+        shim._loop = _FakeLoop(alive=True)
         result = shim.self_test()
         assert result["passed"] is True
+        assert "running" in result["details"]
 
-    def test_stale_pid_returns_not_passed(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        pid_file = tmp_path / "daemon.pid"
-        pid_file.write_text("999999999")  # PID that will never exist
-
+    def test_dead_loop_returns_not_passed(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
+        shim._loop = _FakeLoop(alive=False)
         result = shim.self_test()
         assert result["passed"] is False
-        assert "stale" in result["details"]
 
 
-class TestWatchdogSelfHeal:
-    def test_dead_daemon_with_tickets_triggers_restart(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        # Stale PID file
-        (tmp_path / "daemon.pid").write_text("999999999")
-
-        monkeypatch.setenv("GRANNY_SHIM_WATCHDOG_INTERVAL", "0")
-        monkeypatch.setattr("unseen_university.devices.granny.shim._WATCHDOG_INTERVAL_SEC", 0)
-
+class TestWatchdogDemandStart:
+    def test_pending_work_with_no_loop_starts_it(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
-        restart_called = threading.Event()
-
-        def _mock_restart():
-            restart_called.set()
-
-        shim._restart_daemon = _mock_restart
+        started = []
+        shim._start_dispatch_loop = lambda: started.append(True) or setattr(
+            shim, "_loop", _FakeLoop(alive=True)
+        )
         shim._has_pending_tickets = lambda: True
 
-        # Run one watchdog iteration directly (not via thread) for determinism
         shim._watchdog_loop_once()
-        assert restart_called.is_set(), "expected _restart_daemon to be called"
+        assert started, "expected the dispatch loop to be demand-started"
+        assert shim._relaunch_count == 1
 
-    def test_dead_daemon_no_tickets_does_not_restart(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        (tmp_path / "daemon.pid").write_text("999999999")
-
+    def test_no_pending_work_does_not_start(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
-        restart_called = []
-        shim._restart_daemon = lambda: restart_called.append(True)
+        started = []
+        shim._start_dispatch_loop = lambda: started.append(True)
         shim._has_pending_tickets = lambda: False
 
         shim._watchdog_loop_once()
-        assert not restart_called, "expected no restart with no pending tickets"
+        assert not started, "expected no start with no pending tickets"
+        assert shim._relaunch_count == 0
 
-    def test_no_pid_file_does_not_restart(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        # No pid file at all — Granny was never started on this host
-
+    def test_live_loop_does_not_restart(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
-        restart_called = []
-        shim._restart_daemon = lambda: restart_called.append(True)
+        shim._loop = _FakeLoop(alive=True)
+        started = []
+        shim._start_dispatch_loop = lambda: started.append(True)
         shim._has_pending_tickets = lambda: True
 
         shim._watchdog_loop_once()
-        assert not restart_called, "expected no restart when Granny was never started"
+        assert not started, "expected no restart when the loop is already alive"
 
-    def test_live_daemon_does_not_restart(self, tmp_path, monkeypatch):
-        import os
-
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        (tmp_path / "daemon.pid").write_text(str(os.getpid()))  # live PID
-
+    def test_dead_loop_with_pending_work_restarts(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
-        restart_called = []
-        shim._restart_daemon = lambda: restart_called.append(True)
+        shim._loop = _FakeLoop(alive=False)  # started once, then died
+        started = []
+        shim._start_dispatch_loop = lambda: started.append(True) or setattr(
+            shim, "_loop", _FakeLoop(alive=True)
+        )
         shim._has_pending_tickets = lambda: True
 
         shim._watchdog_loop_once()
-        assert not restart_called, "expected no restart when daemon is alive"
-
-
-class TestRestartDaemon:
-    def test_restart_kills_session_and_starts_fresh(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        monkeypatch.setattr("unseen_university.devices.granny.shim._UU_ROOT", tmp_path)
-
-        venv_python = tmp_path / ".venv" / "bin" / "python"
-        venv_python.parent.mkdir(parents=True)
-        venv_python.touch()
-
-        from unseen_university.devices.granny.shim import GrannyShim
-
-        shim = GrannyShim()
-        calls = []
-
-        def mock_run(cmd, **kwargs):
-            calls.append(cmd)
-            return MagicMock(returncode=0)
-
-        with patch("unseen_university.devices.granny.shim._session_exists", return_value=True), \
-             patch("unseen_university.devices.granny.shim.subprocess.run", side_effect=mock_run):
-            shim._restart_daemon()
-
-        session_cmds = [c for c in calls if "tmux" in c[0]]
-        assert any("kill-session" in c for c in session_cmds), "expected kill-session call"
-        assert any("new-session" in c for c in session_cmds), "expected new-session call"
+        assert started, "expected a restart when the loop died with work pending"
         assert shim._relaunch_count == 1
 
-    def test_restart_increments_relaunch_count(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("unseen_university.devices.granny.shim._GRANNY_HOME", tmp_path)
-        monkeypatch.setattr("unseen_university.devices.granny.shim._UU_ROOT", tmp_path)
 
-        from unseen_university.devices.granny.shim import GrannyShim
-
-        shim = GrannyShim()
-        with patch("unseen_university.devices.granny.shim._session_exists", return_value=False), \
-             patch("unseen_university.devices.granny.shim.subprocess.run", return_value=MagicMock(returncode=0)):
-            shim._restart_daemon()
-            shim._restart_daemon()
-        assert shim._relaunch_count == 2
-
-
-class TestStartStopWatchdog:
+class TestStartStop:
     def test_start_launches_watchdog_thread(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
@@ -175,13 +129,13 @@ class TestStartStopWatchdog:
         assert shim._watchdog_thread is thread1
         shim._watchdog_stop.set()
 
-    def test_stop_sets_watchdog_stop_event(self):
+    def test_stop_sets_event_and_stops_loop(self):
         from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
         shim.start()
+        shim._loop = _FakeLoop(alive=True)
         assert not shim._watchdog_stop.is_set()
-        with patch("unseen_university.devices.granny.shim.os.kill"), \
-             patch("pathlib.Path.exists", return_value=False):
-            shim.stop()
+        shim.stop()
         assert shim._watchdog_stop.is_set()
+        assert shim._loop.stopped is True
