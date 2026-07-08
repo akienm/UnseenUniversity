@@ -18,22 +18,22 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-routing-compiler-rules-engine-test-red",
-    "title": "[sprint] scraps test_routing_compiler::test_rules_engine_add_compiled_rule red (inference rules engine)",
+    "title": "scraps test_routing_compiler::test_rules_engine_add_compiled_rule red (inference rules engine)",
     "size": "S",
     "tags": [
       "Inference",
       "Test"
     ],
     "priority": 0.2,
-    "status": "sprint",
+    "status": "closed",
     "role": "master",
     "description": "tests/scraps/test_routing_compiler.py::test_rules_engine_add_compiled_rule fails at line 369 (AssertionError) both in-session and at HEAD (verified via clean worktree during T-collapse-daemons-to-ground-loop; NOT caused by it). Inference rules-engine crossing test with a MagicMock time_bucket + ollama-unavailable fallback — likely a hermetic-setup gap or an assertion drifted from the rules_engine output shape.\n\n**Affected files:** tests/scraps/test_routing_compiler.py; unseen_university/devices/inference/rules_engine.py (read to confirm expected shape).\n**Design rules:** inference-tier-not-model; test-plan-or-why-not.\n**Scope boundary:** only this one rules-engine test + its fixture; no routing logic change unless the test exposes a real bug.\n**Test plan:** the test goes green (or xfail/skip with a named reason) in-session.\n**Intention:** I intend the routing-compiler rules-engine test gives a trustworthy in-session signal.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-07-08T20:07:12.713036+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Fixed the red test. Root cause was two-fold: (1) RulesEngine.__init__ used 'rules or _DEFAULT_RULES' so an explicit empty list silently loaded all defaults — fixed to honor '[]' as no-rules ('None' remains the defaults sentinel); (2) the test's MagicMock(spec=Source) never set time_bucket/cost_class, so route()'s eligibility filter treated it as slowest-bucket and dropped the sole compiled rule to the tier fallback — fixed the fixture. Docstring tightened (CP3). Proof 64a90d6c red=AssertionError->green. Blast-radius: tests/inference/ full run has no new failures (7 pre-existing baseline reds confirmed identical on clean HEAD 927abd49).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T20:32:35.861461+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -43,6 +43,13 @@
     "target_difficulty": 1,
     "scraps_validated": "2026-07-08T20:07:12.759652+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "65c214ea-4293-4acc-bd22-e5548a2122d0"
+    "inferred_intention_id": "65c214ea-4293-4acc-bd22-e5548a2122d0",
+    "proven": true,
+    "proof_id": "cc.0.rulesengine-add-compiled-rule-empty-base.T-routing-compiler-rules-engine-test-red.20260708.143221749341",
+    "proof_commit": "64a90d6c23b45f5e9ea59a4afc0ce4fda255271d",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
