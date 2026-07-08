@@ -1,0 +1,77 @@
+{
+  "id": "cc.0.examiner-station.20260708.063926739676",
+  "emitter": "cc.0",
+  "namespace": [
+    "examiner-station"
+  ],
+  "category": "architecture",
+  "kind": "design",
+  "emitted_at": "2026-07-08T06:39:26.739676",
+  "links": {
+    "decisions": [
+      "D-dev-pipeline-stations-2026-07-07",
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ],
+    "tickets": [
+      "T-filing-audits-independent-examiner",
+      "T-audit-run-records-enforced"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "examiner-station",
+    "kind": "design",
+    "title": "Independent examiner — filing-time audits + proof-test review dispatched off the authoring instance",
+    "produced_for": "T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)",
+    "summary": "gate-attack G2/G3/G6a: audit-hypothesis/design/ticket are executed by the SAME instance that drafted the artifacts, and proof-on-close cannot distinguish intent-tests from echo-tests — presence-checks pass template-dressed vagueness, and the author grades its own narrative. This design routes filing-time audits and proof-test review to an INDEPENDENT examiner: the authoring session assembles a packet (draft + checklist + minimal context) and RELAYS; an instance that did not write the artifact returns the verdict. Separation of powers at filing time, matching D-dev-pipeline-stations' invariant at build time (builder never grades own work). The audit CHECKLISTS are unchanged — what changes is WHO executes them, and that the execution leaves a run-record instead of a free claim.",
+    "key_concepts": [
+      {
+        "name": "1. The examine verb — one interface, evaluator-hosted",
+        "what": "EvaluatorDevice (the existing 3-voter judge panel, devices/evaluator/) gains one capability: examine(artifact, checklist, context) -> verdict. Reached like any station: bus envelope to the evaluator's mailbox, or an Inference Proxy tier call (tier-not-model; default worker/analyst tier on Hex, $0). The authoring session builds the packet and consumes the verdict — it never runs the checklist itself. No new device: the examiner is the evaluator wearing the audit checklist, per homogeneity-over-special-case.",
+        "why": "The judge-panel machinery (EvaluatorCore.evaluate, optimism dial, majority verdict) already exists and is exactly the shape needed; a new examiner device would duplicate it. Tier-not-model keeps examination cheap enough to run on every filing."
+      },
+      {
+        "name": "2. Verdict envelope — identity-stamped, run-recorded",
+        "what": "Verdict = {verdict: PASS|AMEND|SPLIT|DISCARD (existing audit vocabulary), findings: [per-check results with the discriminating reason], examiner_identity: {instance, model, tier}, examined_at, artifact_ref, checklist_ref}. Emitted to the store (produced_by = the examiner, so feedback-edges point at the actual grader) AND recorded as an audit run-record per T-audit-run-records-enforced. HARD CHECK: examiner_identity.instance != the authoring session id — a verdict carrying the author's own identity is invalid on its face.",
+        "why": "G4's hole is that a gate whose execution is a free claim is CP1's exact failure surface; the identity stamp is what makes 'independently examined' checkable rather than asserted. This is also why the BUILD is gated on run-records: a verdict nobody can audit reproduces the hole one layer up."
+      },
+      {
+        "name": "3. Scope — what routes through the examiner",
+        "what": "(a) Filing-time audits: audit-hypothesis, audit-design, audit-ticket — /sorted and /ticket dispatch the draft + checklist instead of self-running; the checklist TEXT in the skills is unchanged. (b) Proof-test review at close: the examiner receives the ticket's intention + the proof test source and judges INTENT-test vs ECHO-test (does the test assert the intended observable, or merely re-assert what the implementation happens to do?). (c) G3d constraint curation: the packet includes constraint_decorator's auto-stamped constraints; the examiner returns the discriminating SUBSET, each kept constraint with its why — indiscriminate 51-constraint stamping stops reading as coverage. Scraps stays upstream as the cheap FORM gate (G8: it enforces form reliably, content not at all) so examiner inference is spent on content only.",
+        "why": "These are precisely the surfaces the gate-attack showed only an independent reader can hold: template-dressed vagueness (G2), hollow content behind well-formed sections (G3), echo-tests (G6a). Everything else (smell, precode, debris) has mechanical detectors and separate tightening tickets."
+      },
+      {
+        "name": "4. Adversarial framing + panel escalation",
+        "what": "The examiner prompt is REFUTATION-framed: attack the artifact per checklist (find the observable that would falsify each claimed property), not confirm its presence. Default = ONE skeptical examiner (EvaluatorCore optimism dial at the critical end). Escalate to the full 3-voter panel for HIGH-inertia decisions and L/XL tickets, where a single examiner's miss is expensive.",
+        "why": "The attack report's core finding is that presence-checks pass dressed-up emptiness; refutation-framing is what gives an examiner teeth. Single-by-default keeps per-filing cost near zero on Hex; the panel is reserved for the artifacts whose blast radius justifies 3x inference."
+      },
+      {
+        "name": "5. UNEXAMINED fallback — loud, never silent self-audit",
+        "what": "Examiner unreachable (evaluator down, no inference) -> the artifact files WITH a loud UNEXAMINED mark: a field on the ticket/decision body plus an UNEXAMINED run-record naming the failure. Filing is never blocked (capture-first). UNEXAMINED artifacts are a sweepable class: day-close lists them; the examiner path re-runs them when reachable and replaces the mark with a verdict. The authoring session NEVER falls back to running the checklist itself.",
+        "why": "Fail-closed would block capture on an infrastructure hiccup (the store must always accept the decision — capture-first); fail-open-silent recreates author-as-judge invisibly. Loud-open is the only shape that keeps both CP1 (the gap is visible) and CP4 (no capture friction)."
+      },
+      {
+        "name": "6. Separation of powers — examiner returns verdicts, never writes",
+        "what": "The examiner NEVER mutates the queue or the store's tickets: it returns the verdict to the requesting session; the authoring session applies AMENDs and re-submits. Granny stays the sole ticket writer (D-granny-sole-ticket-writer). The examiner's only emissions are its verdict records.",
+        "why": "Grading power and writing power in one component recreates the single-instance hazard this design removes; keeping the examiner write-free means a compromised/hallucinating examiner can at worst mis-grade — visibly — never corrupt state."
+      },
+      {
+        "name": "7. Build order (when T-audit-run-records-enforced ungates)",
+        "what": "(1) run-record emit ships (the gating ticket); (2) evaluator examine verb + verdict envelope + identity check; (3) /sorted + audit-ticket/design/hypothesis flip from self-run to dispatch, UNEXAMINED fallback wired; (4) proof-test review joins the close path (cc_queue close consults the verdict alongside the proof); (5) constraint curation folds into the ticket verdict. Hermetic test plan per the ticket: draft + checklist dispatched -> verdict consumed; fallback marks UNEXAMINED; the author-instance verdict path is REMOVED from the skills (not deprecated-in-place).",
+        "why": "Run-records first because verdicts without auditable records reproduce G4; skills flip only after the verb exists so there is never a window where audits neither self-run nor dispatch."
+      }
+    ],
+    "open_questions": [
+      "Q1: does the proof-test review verdict BLOCK close (gate) or annotate (warn + sweepable)? Recommend annotate-first for one calibration window, then flip to gate once examiner false-positive rate is known — mirrors the warn->enforce path run-records take."
+    ],
+    "sources": [
+      "notes/gate-attack-report.20260707.md (G2, G3, G6a, G8)",
+      "D-dev-pipeline-stations-2026-07-07 (separation-of-powers invariant, EXAMINER station)",
+      "D-granny-sole-ticket-writer-2026-07-07",
+      "unseen_university/devices/evaluator/ (EvaluatorCore judge panel)",
+      "D-fable-window-altitude-agenda-2026-07-07"
+    ]
+  },
+  "produced_by": "T-filing-audits-independent-examiner"
+}
