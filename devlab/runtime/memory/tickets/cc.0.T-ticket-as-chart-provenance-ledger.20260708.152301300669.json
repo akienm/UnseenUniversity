@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ticket-as-chart-provenance-ledger.20260708.152301300669",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-as-chart-provenance-ledger"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:23:01.300669+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ticket-as-chart-provenance-ledger"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-ticket-as-chart-provenance-ledger",
+    "title": "[triage] Ticket becomes a chart: each pipeline station appends declared-vs-actual so later stations can reconcile",
+    "size": "L",
+    "tags": [
+      "Process",
+      "Pipeline",
+      "Tickets"
+    ],
+    "priority": 0.55,
+    "status": "triage",
+    "role": "master",
+    "target_difficulty": 4,
+    "intention": "I intend that a ticket carries a longitudinal record — the hospital patient-chart model — where every pipeline station appends what it DECLARED and what it ACTUALLY did, so a downstream station (running in a different agent with no shared context) can reconcile against upstream declarations.",
+    "description": "As the dev process pipelines into independent STATIONS / agents (D-dev-pipeline-stations; examiner-station), a late step (e.g. the post-build reconciliation, T-post-build-diff-reconciles-declared) no longer has the earlier steps' declarations in its context — they ran in another agent. The data has to travel WITH the work. Akien's framing: the ticket becomes what a hospital calls the record that tracks everything done with a patient along the way — a CHART (patient record / EHR). Each station writes its entry.\n\nShape: add a structured `chart` (a.k.a. provenance ledger) to the ticket body — an append-only list of station entries, each ~{station, at, declared: {...}, actual: {...}}. Examples: the pre-code/plan station writes declared Affected-files + intended behavior; the build station writes the actual staged diff (changed files, commit sha); the proof station writes the proof id; the close station writes the disposition. Downstream stations READ prior entries to reconcile (declared-vs-actual) instead of re-deriving from a context they don't have.\n\n**Affected files:** unseen_university/ticket_store.py (the `chart` field on the body + append helper — envelope, edit body.*); the station skills that should write entries (/sprint-ticket plan+build+proof+close, the audits) — wire each to append; a reader helper for the reconciliation check.\n**Design rules:** external-state-principle (state lives on the ticket, not in an agent's head — the KnightlyBuilder principle); homogeneity-over-special-case (one chart shape, every station writes the same way); docs-live-in-code; no-sqlite (flat-file ticket store only).\n**Scope boundary:** IN — the chart data structure on the ticket + the append/read helpers + wiring the EXISTING close/build/audit stations to write entries. OUT — building new pipeline stations (that's the dev-pipeline work); not a schema migration of closed tickets (forward-looking; new/in-flight tickets grow a chart).\n**Test plan:** after a claim -> build -> audit -> close cycle on a synthetic ticket, its chart has one entry per station with declared+actual populated; a reconciliation reader can retrieve the plan station's declared Affected-files from the chart without any live context. Round-trip through ticket_store preserves the chart (append-only, no clobber).\n**Rollback:** the chart is an additive optional body field; readers tolerate its absence (fail-soft). Remove the field + append calls to revert.\n**Logging:** log each chart append (station + entry keys) at INFO — it IS an interface crossing (station boundary).\n**Observability:** `cc_queue.py show <id>` surfaces the chart; the running record of declared-vs-actual per station is greppable on the ticket file.\n**Depends on:** relates D-dev-pipeline-stations + examiner-station; unblocks the pipelined (cross-agent) form of T-post-build-diff-reconciles-declared. Left triage pending Akien's confirmation of the chart shape before build.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:22:56.627999+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:22:56.628066+00:00"
+  }
+}

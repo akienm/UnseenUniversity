@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-post-build-diff-reconciles-declared.20260708.152301146987",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-post-build-diff-reconciles-declared"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T21:23:01.146987+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-post-build-diff-reconciles-declared"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-post-build-diff-reconciles-declared",
+    "title": "[sprint] Post-build audit: reconcile the commit diff against the ticket's declared Affected files",
+    "size": "M",
+    "tags": [
+      "Process",
+      "Audit",
+      "Pipeline"
+    ],
+    "priority": 0.6,
+    "status": "sprint",
+    "role": "master",
+    "target_difficulty": 4,
+    "intention": "I intend that the post-build audit compares what the commit ACTUALLY changed against what the earlier pipeline steps DECLARED it would change — catching a no-op close posing as work, scope drift into undeclared files, and declared files left untouched.",
+    "description": "The post-build / pre-commit audit (audit-debris — it already operates on the staged diff) today only hunts DEBRIS (prints, temp files, doc rot, file placement, subsystem_index drift). It never asks the reconciliation question Akien named: 'did it change anything? what's in that commit? did it change the files the before-steps said it would?' Add that check.\n\nThis is the diff-based guard against the grep-not-read / hollow-build / drift failure class (root incident: T-inference-policy-router cancelled as 'already built' with a diff that would have shown NOTHING was built — see D-inference-router-stack-decomposition-2026-07-08). Where T-already-done-close-requires-proof gates the CLOSE with a runnable proof, this gates the COMMIT by diffing declared-vs-actual.\n\nThe check compares `git diff --staged --name-only` against the ticket's declared Affected files (from the ticket body; when pipelined, from the ticket chart — see T-ticket-as-chart-provenance-ledger) and flags:\n  (a) EMPTY diff on a close that claims work was done -> a no-op posing as done;\n  (b) changed files NOT in the declared set -> scope drift / helpful-refactor;\n  (c) declared files left UNTOUCHED -> the plan said X and X didn't happen.\nAll three are AMEND (surface for reconciliation), not silent.\n\n**Affected files:** ~/.claude/skills/audit-debris/SKILL.md (add the reconciliation check) + its canonical repo copy under skills/; a small helper (devlab/claudecode/) that parses the ticket's declared Affected-files and intersects with `git diff --staged --name-only`; the /sprint-ticket + /commit close paths that invoke the post-build audit.\n**Design rules:** external-state-principle (compare against the ticket's recorded declaration, not the agent's memory); test-plan-or-why-not; docs-live-in-code.\n**Scope boundary:** IN — the changed-files-vs-declared reconciliation check + its wiring into the post-build audit. OUT — the debris checks (unchanged); the runnable-proof close gate (that is T-already-done-close-requires-proof, complementary); NOT a hard commit block yet (AMEND/surface, so it can't wedge a legitimate diff).\n**Test plan:** given a ticket declaring [A,B] and a staged diff touching [A,C]: the check flags C as undeclared AND B as untouched. A diff touching exactly [A,B]: passes. An empty staged diff on a done-claiming close: flags no-op. (Fixtures with a synthetic ticket + a temp git index — hermetic.)\n**Rollback:** the check is additive to audit-debris; remove it to revert. Non-blocking (AMEND), so no wedge risk.\n**Logging:** log each reconciliation verdict (matched / undeclared-files / untouched-declared / no-op) at INFO on the audit run-record.\n**Observability:** the audit run-record shows the declared set, the actual set, and the diff between them — the reconciliation is greppable after the fact.\n**Depends on:** benefits from T-ticket-as-chart-provenance-ledger for pipelined (cross-agent) data, but can ship first reading Affected-files straight from the ticket body.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T21:22:49.723039+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-08T21:22:49.769912+00:00"
+  }
+}
