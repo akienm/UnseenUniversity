@@ -98,7 +98,7 @@ class ShimLoopThread:
     def _run(self) -> None:
         from loguru import logger as _loguru_logger
 
-        with _loguru_logger.contextualize():  # STUB: device_id stamp not yet wired
+        with _loguru_logger.contextualize(device_id=self._device_id):
             cycle = 0
             while not self._stop.is_set():
                 cycle += 1

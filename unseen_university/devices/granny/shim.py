@@ -128,8 +128,8 @@ class GrannyShim(BaseShim):
                 _emit_dispatch_health(getattr(self, "_last_config", None) or _load_config())
 
         self._loop = ShimLoopThread(
-            "granny", _tick, POLL_INTERVAL_S, name="granny-dispatch"
-        )  # STUB: on_cycle=_on_cycle (dispatch-health emit) not yet wired
+            "granny", _tick, POLL_INTERVAL_S, on_cycle=_on_cycle, name="granny-dispatch"
+        )
         self._loop.start()
         log.info("GrannyDispatchLoop: started (poll=%ds)", POLL_INTERVAL_S)
 
