@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.D-branching-model-2026-07-08.20260708.113042199646",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-branching-model-2026-07-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-08T11:30:42.199646",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "decision_id": "D-branching-model-2026-07-08",
+    "title": "Per-ticket, builder-namespaced branches (<ticket>.<builder>); branches + merger station are a matched pair, triggered by the 2nd live builder; retires CC-straight-to-main",
+    "status": "open",
+    "date": "2026-07-08",
+    "spawned_tickets": [
+      "T-consequence-D-branching-model"
+    ],
+    "validity_conditions": [
+      {
+        "type": "depends-on-artifact",
+        "target": "D-dev-pipeline-stations-2026-07-07",
+        "note": "the merger station is this model's consumer; if the pipeline decision is superseded the matched-pair premise changes"
+      }
+    ],
+    "text": "# D-branching-model-2026-07-08\n**title:** Per-ticket, builder-namespaced branches; branches + merger station a matched pair; retires CC-straight-to-main\n**date:** 2026-07-08\n**status:** open\n**spawned_tickets:** T-consequence-D-branching-model\n\n## Decision narrative\nNow that development can have more than one builder (CC + Aider + DS via D-dev-pipeline-stations), the single-writer 'everyone commits to main' model breaks: concurrent writers collide, and — worse — an unexamined builder's code landing on main violates separation-of-powers (the builder grading itself into trunk, CP6). Builder output must be QUARANTINED until an independent station validates it. A branch (or diff) is that quarantine.\n\n**Granularity — per-ticket, NOT per-builder.** The ticket is already our atom of proof (proof binds to the impl commit), blame (produced_by is per-ticket), and dispatch — the branch is the same atom. A per-ticket branch lets the merger validate+land ONE ticket's diff atomically; a failed exam rejects exactly one ticket, contaminating nothing; short-lived branches barely drift. Per-BUILDER long-lived branches were REJECTED: they serialize a builder's tickets onto one branch (ticket B builds on ticket A's unvalidated work), muddy blame, and drift from main.\n\n**Naming vs isolation are orthogonal.** Naming = `<ticket-id>.<builder>` (Akien's ordering: ticket first as the atom, builder a suffix-qualifier), a FLAT dot-namespace (a `/` would create a refs/heads subdir; `.` keeps it flat + greppable), short-lived — created at build-start, deleted at merge. Isolation = each concurrent builder in its own git WORKTREE so checkouts don't stomp. Examples: `T-granny-dispatch-observability-gap.aider`, `T-foo.ds`, `T-bar.cc`. No practical name-length limit (git bound is ~255 bytes/component; longest realistic name ~41 chars); the constraints are character rules (no space, no `~^:?*[\\`, no `..`, no trailing `.lock`).\n\n**MATCHED PAIR — the timing invariant.** Per-ticket branches with no merger station to land them = an accumulating off-main pile (the exact 'pile' a prior session confabulated). So branches and the merger station SHIP TOGETHER, triggered by the same event: the SECOND concurrent builder going live and producing mergeable work (Aider revived / DS on free inference). Until that trigger, stay MAIN-ONLY — per-ticket branches for a single writer are pure ceremony with zero isolation payoff.\n\n**Transition retires 'CC commits straight to main.'** By homogeneity (feedback_homogeneity_over_special_case), once multi-builder is live EVERY builder — including CC — goes branch -> tester -> examiner -> merger -> main. If Aider branches but CC keeps committing to main, CC self-grades and the separation-of-powers invariant breaks for CC's own work. feedback_commit_to_main_directly already encodes 'main while single-writer'; this decision NAMES that rule's exit condition.\n\n**Implementation:** no immediate build ticket — the model's implementation IS the gated merger/tester pipeline (D-dev-pipeline-stations; T-tester-rackmount is its first build). This decision is the governing record that pipeline design cites for branch naming + isolation.\n\n## Hypothesis\nWhen the second concurrent builder goes live, every ticket builds on a `<ticket>.<builder>` branch in an isolated worktree and lands on main only through the merger station, with zero direct-to-main builder commits — so no builder, including CC, grades its own work into trunk.\n\n## Measurement Signal\nAt the trigger: `git branch` shows per-ticket `<ticket>.<builder>` branches during active builds and none linger post-merge; every non-design commit on main carries a merger-emitted merge-proof; zero builder commits straight to main while multi-builder is active. vs today: single writer commits straight to main after every ticket.\n\n## Intention\nI intend that every builder's output is quarantined on its own per-ticket branch and reaches main only through independent validation, so no builder — including CC — grades its own work into trunk."
+  }
+}

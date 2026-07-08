@@ -59,3 +59,4 @@ NONE — 9 tickets closed proven this session (3 Fable + 6 Opus) + 1 design half
 **Calendar:** /outcome D-fable-window-altitude-agenda at Fri retro (07-10); 3 D-fable consequence tickets fire 07-21; 4 overdue consequence tickets want /outcome at next day-close.
 
 ✅ CLOSED
+- D-branching-model-2026-07-08: per-ticket <ticket>.<builder> branches, matched-pair with merger station (triggered by 2nd live builder), retires CC-straight-to-main — T-consequence-D-branching-model

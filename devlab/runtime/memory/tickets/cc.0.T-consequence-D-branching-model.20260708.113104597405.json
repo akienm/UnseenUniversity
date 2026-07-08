@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-D-branching-model.20260708.113104597405",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-branching-model"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T17:31:04.597405+00:00",
+  "links": {
+    "decisions": [
+      "D-branching-model-2026-07-08"
+    ],
+    "tickets": [
+      "T-consequence-D-branching-model"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "D-branching-model-2026-07-08",
+  "body": {
+    "id": "T-consequence-D-branching-model",
+    "title": "[sprint] Consequence check: per-ticket branches + retire CC-straight-to-main",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** Multi-builder work moves to per-ticket `<ticket>.<builder>` branches landed via the merger station; CC's straight-to-main path retires at the 2nd-builder trigger.\n**Predicted unintended effects:** (1) HIGHEST — CC keeps committing straight to main out of habit after the trigger, silently bypassing the stations for its own tickets (the exact self-grading hazard this decision closes). (2) Branch sprawl: branches not deleted at merge accumulate (the confabulated 'pile' made real) if the merger's delete step is missing/fails. (3) Drift/rebase pain if a ticket branch outlives its build (stalled builder) despite the short-lived intent. (4) `.` separator collision with tooling that parses branch names by dot. (5) Stale `git worktree` debris if a builder crashes mid-ticket.\n**Signals to watch:** direct-to-main commits by a builder while multi-builder is active (grep author != merger on non-design commits); `git branch` count trending up or merged branches lingering; stale entries in `git worktree list`; branch-name parse errors in dispatch/merger tooling.\n**Gate condition:** Check when the second concurrent builder goes live / T-tester-rackmount ships — i.e., when branches actually go into use. Annotate occurred / clear / partial and close.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects at the trigger; annotate outcome and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-branching-model-2026-07-08",
+    "gate": "T-tester-rackmount",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-07-08T17:30:57.063413+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-08T17:30:57.121424+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "591565eb-c4ea-4be1-8261-25bc3a104ef8"
+  }
+}
