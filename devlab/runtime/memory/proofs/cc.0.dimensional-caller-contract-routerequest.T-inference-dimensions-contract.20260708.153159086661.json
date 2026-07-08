@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.dimensional-caller-contract-routerequest.T-inference-dimensions-contract.20260708.153159086661",
+  "emitter": "cc.0",
+  "namespace": [
+    "dimensional-caller-contract-routerequest",
+    "T-inference-dimensions-contract"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T15:31:59.086661",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-dimensions-contract"
+    ],
+    "commits": [
+      "f6db2251f989c3f26f0556870bdc40819b048c1c"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-dimensions-contract",
+  "body": {
+    "thing": "dimensional caller contract (RouteRequest + difficulty_seed)",
+    "intention": "difficulty_seed maps a ticket_tier to its a-priori difficulty bucket deterministically (apprentice=classify, builder/creator=code, master/guru=design), driven by the work tier alone.",
+    "test": "tests/inference/test_dimensions_contract.py::test_difficulty_seed_is_deterministic_and_tier_driven",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_dimensions_contract.py::test_difficulty_seed_is_deterministic_and_tier_driven",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____________ test_difficulty_seed_is_deterministic_and_tier_driven _____________\n\n    def test_difficulty_seed_is_deterministic_and_tier_driven():\n        \"\"\"difficulty_seed maps ticket_tier -> a difficulty bucket, driven by the WORK tier.\"\"\"\n        assert difficulty_seed(\"apprentice\") == \"classify\"\n>       assert difficulty_seed(\"builder\") == \"code\"\nE       AssertionError: assert 'classify' == 'code'\nE         \nE         - code\nE         + classify\n\ntests/inference/test_dimensions_contract.py:40: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_dimensions_contract.py::test_difficulty_seed_is_deterministic_and_tier_driven\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "f6db2251f989c3f26f0556870bdc40819b048c1c",
+    "impl_paths": [
+      "unseen_university/devices/inference/dimensions.py"
+    ],
+    "ticket": "T-inference-dimensions-contract",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
