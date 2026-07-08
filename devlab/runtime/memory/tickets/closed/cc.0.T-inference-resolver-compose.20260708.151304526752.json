@@ -20,14 +20,14 @@
   "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
   "body": {
     "id": "T-inference-resolver-compose",
-    "title": "[sprint] Inference router: compose the 4 stacks into a dimensional resolver (alongside route())",
+    "title": "Inference router: compose the 4 stacks into a dimensional resolver (alongside route())",
     "size": "L",
     "tags": [
       "Inference",
       "Router"
     ],
     "priority": 0.8,
-    "status": "sprint",
+    "status": "closed",
     "role": "master",
     "target_difficulty": 4,
     "decision_id": "D-inference-router-stack-decomposition-2026-07-08",
@@ -36,13 +36,20 @@
     "created_at": "2026-07-08T21:12:42.524726+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "CLOSED PROVEN (proof eafe7d79, red=AssertionError->green=passed). resolve(RouteRequest) composes the 4 stacks beside route() (untouched): build_envelope -> candidate models meeting the capability envelope -> their connections filtered by provider availability + urgency/time eligibility -> cost-optimizing selector (routing_buckets primitives reused) picks cheapest capable connection; NO hardcoded triple consulted (proven via rules=[]). Escalation = ONE selection per call honoring external required_difficulty override (device.py owns the hop, per D-inference-domain-routing): escalation_allowed=True walks the floor up (different, pricier pick), =False pins to seed (deterministic); no-capable-connection under escalation_allowed=True fires terminal system_alarm(WARNING); availability failure != escalation. ADVISOR CATCH: original internal-loop design was wrong (would strand device.py's external escalation_hop driver at cutover) — corrected to one-step-per-call mirroring route(). NOTE for 5/6 cutover parity: connections carry no rule.priority, so resolve()'s final tiebreak is (model_id, source_name) not (...,priority) — the ONE intended divergence from route().",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T21:53:12.485280+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "gate": null,
-    "scraps_validated": "2026-07-08T21:12:42.524783+00:00"
+    "scraps_validated": "2026-07-08T21:12:42.524783+00:00",
+    "proven": true,
+    "proof_id": "cc.0.rulesengine-resolve-dimensional-resolver.T-inference-resolver-compose.20260708.155255787717",
+    "proof_commit": "eafe7d79aac981f3b5f1f827eeffa563ab5122b5",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

@@ -20,6 +20,7 @@
 - T-inference-connections-stack — Inference router: introduce the model<->provider connections stack (additive) (Added the model<->provider connections stack (stack 3 of 4, D-inference-router-stack-decomposition-2026-07-08). Connecti)
 - T-inference-dimensions-contract — Inference router: define the caller dimension contract {ticket_tier, builder_tier, domain, urgency, escalation_allowed} (Added the dimensional caller contract: RouteRequest {ticket_tier, builder_tier, domain, urgency, escalation_allowed=defa)
 - T-inference-rules-as-policy — Inference router: express rules as dimension->capability-envelope policy (no model/provider literals) (Added the rules-as-policy stack (stack 4 of 4). PolicyRule matches dimension predicates (domain/ticket_tier/builder_tier)
+- T-inference-resolver-compose — Inference router: compose the 4 stacks into a dimensional resolver (alongside route()) (CLOSED PROVEN (proof eafe7d79, red=AssertionError->green=passed). resolve(RouteRequest) composes the 4 stacks beside rou)
 ## Planned
 - Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
 
