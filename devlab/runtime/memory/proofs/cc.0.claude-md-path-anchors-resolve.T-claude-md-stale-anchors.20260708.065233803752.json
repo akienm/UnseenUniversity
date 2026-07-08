@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.claude-md-path-anchors-resolve.T-claude-md-stale-anchors.20260708.065233803752",
+  "emitter": "cc.0",
+  "namespace": [
+    "claude-md-path-anchors-resolve",
+    "T-claude-md-stale-anchors"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T06:52:33.803752",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-claude-md-stale-anchors"
+    ],
+    "commits": [
+      "ec86eda8a283d12941f570332be3a060becde79f"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "CLAUDE.md path anchors resolve",
+    "intention": "Every file-path anchor CLAUDE.md names resolves in the tree it bootstraps",
+    "test": "tests/test_claude_md_anchors.py::test_claude_md_has_no_stale_path_anchors",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_claude_md_anchors.py::test_claude_md_has_no_stale_path_anchors",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________________ test_claude_md_has_no_stale_path_anchors ___________________\n\n    def test_claude_md_has_no_stale_path_anchors():\n        anchors = amc.collect_anchors(os.path.join(_REPO, \"CLAUDE.md\"))\n        assert anchors, \"anchor scan found nothing — scanner regression, not a clean doc\"\n        stale = [(ln, p) for ln, p in anchors if not os.path.exists(os.path.join(_REPO, p))]\n>       assert not stale, f\"stale CLAUDE.md path anchors: {stale}\"\nE       AssertionError: stale CLAUDE.md path anchors: [(36, 'diagnostic_base/core_values.py')]\nE       assert not [(36, 'diagnostic_base/core_values.py')]\n\ntests/test_claude_md_anchors.py:27: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_claude_md_anchors.py::test_claude_md_has_no_stale_path_anchors\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "ec86eda8a283d12941f570332be3a060becde79f",
+    "impl_paths": [
+      "CLAUDE.md"
+    ],
+    "ticket": "T-claude-md-stale-anchors",
+    "narrative": "",
+    "why": "CLAUDE.md pointed at diagnostic_base/core_values.py after the reorg moved it under unseen_university/ — a fresh builder reads a path that doesn't resolve (rebuildability-diff F3)",
+    "bootstrap": false
+  }
+}
