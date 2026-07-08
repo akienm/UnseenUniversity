@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.shimloopthread-stamps-device-id-so-loop.T-collapse-daemons-to-ground-loop.20260708.140512304940",
+  "emitter": "cc.0",
+  "namespace": [
+    "shimloopthread-stamps-device-id-so-loop",
+    "T-collapse-daemons-to-ground-loop"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T14:05:12.304940",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-collapse-daemons-to-ground-loop"
+    ],
+    "commits": [
+      "3925debf86b7c9d030658a078310a086849e8b90"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-collapse-daemons-to-ground-loop",
+  "body": {
+    "thing": "ShimLoopThread stamps device_id so loop-thread logs reach the per-device JSON sink",
+    "intention": "A stdlib log emitted from a ShimLoopThread body lands as a JSON record under logs/<device>/info/ with device_id set",
+    "test": "tests/granny/test_daemon_collapse_proof.py::test_loop_thread_logs_land_with_device_id",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/granny/test_daemon_collapse_proof.py::test_loop_thread_logs_land_with_device_id",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "2026-07-08 14:05:11.996 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.006 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.017 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.027 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.037 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.047 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.058 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.068 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.078 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.089 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.099 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.110 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.120 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.130 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.141 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.151 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n2026-07-08 14:05:12.162 | INFO     | logging:callHandlers:1762 - collapse-proof probe record\n=========================== short test summary info ============================\nFAILED tests/granny/test_daemon_collapse_proof.py::test_loop_thread_logs_land_with_device_id\n1 failed in 2.25s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "3925debf86b7c9d030658a078310a086849e8b90",
+    "impl_paths": [
+      "unseen_university/devices/granny/shim.py",
+      "unseen_university/shim.py"
+    ],
+    "ticket": "T-collapse-daemons-to-ground-loop",
+    "narrative": "",
+    "why": "DiagnosticBase installs the JSON sink but does not stamp device_id process-wide; without the contextualize wrap in the thread body, every dispatch/health record is silently dropped (the stale-log failure this lineage keeps hitting)",
+    "bootstrap": false
+  }
+}
