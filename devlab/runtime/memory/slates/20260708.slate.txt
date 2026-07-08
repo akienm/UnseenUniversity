@@ -63,3 +63,13 @@ NONE — 9 tickets closed proven this session (3 Fable + 6 Opus) + 1 design half
 - D-branching-model-2026-07-08: per-ticket <ticket>.<builder> branches, matched-pair with merger station (triggered by 2nd live builder), retires CC-straight-to-main — T-consequence-D-branching-model
 
 ## In-flight: IN-FLIGHT: none mid-build (tree clean, all pushed @5e4a732a). NEXT (Akien-directed): T-collapse-daemons-to-ground-loop (L) — collapse granny+scraps standalone run_loop/__main__ into shim-started components under the SINGLE Ground Loop (new HARD RULE in CLAUDE.md: one daemon structure, PERIOD). This SUPERSEDES the transitional configure_process_logging bridge from the just-closed T-granny-dispatch-observability-gap (PROVEN @5868ac32) — relocate the dispatch-health _emit into the driven tick, delete the __main__ blocks. Also open: T-black-format-repo (M, black OFF until deliberate repo-wide pass; hook made graceful). Granny NOT restarted (running 16h-old code) — chose the real collapse fix over a restart on the bridge.
+
+## ⭐ RESUME POST-COMPACT — build T-collapse-daemons-to-ground-loop (L)
+Full design + architecture map in: notes/cc.0.ground-loop-collapse-design.20260708.*.json (grep "ground-loop-collapse-design").
+FIRST STEP post-compact: advisor-check the approach, THEN build. Do NOT re-map — the note has it.
+Chosen approach = Option B (in-process runme plugin) for BOTH granny + scraps:
+- Add devices/{granny,scraps}/groundloop/runme.py (start()/stop() + _stop_event, `while not stop.wait(interval): run_once(...)`), run as GL threads by RunmeSupervisor.
+- DELETE run_loop/__main__/PID/signals/_wait_for_work from both daemon.py; KEEP run_once/_load_config/(granny)_make_imap_if_bus_configured.
+- Granny: bus(imap) handle + config reload move into runme.start(); relocate dispatch-health emit into the runme loop; drop tmux watchdog in shim; retire ./granny launcher; update device.py:94 launch_command.
+- REMOVE transitional configure_process_logging bridge (base.py) once GL-thread logging confirmed to reach canonical sink (verify device_id stamping for runme threads — the ONE piece to adapt).
+- Scope: collapse STRUCTURE only, NOT run_once dispatch/scrap logic. Verify descriptor-path drift + runme logging (caveats in the note).
