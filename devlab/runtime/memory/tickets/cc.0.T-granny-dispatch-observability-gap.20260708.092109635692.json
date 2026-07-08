@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-dispatch-observability-gap.20260708.092109635692",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-dispatch-observability-gap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-08T15:21:09.635692+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-granny-dispatch-observability-gap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-granny-dispatch-observability-gap",
+    "title": "[sprint] Granny dispatch health is invisible — a drained/idle builder + all-defer cycles surface nothing an operator would notice",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.6,
+    "role": "master",
+    "tags": [
+      "Granny",
+      "Observability",
+      "Dispatch"
+    ],
+    "intention": "I intend that a stalled or one-sided dispatch loop is visible at a glance, not only by hand-reading the tmux pane.",
+    "description": "Akien's observation 2026-07-08: if Granny logged adequately, the state below would show up immediately instead of needing a manual pane read. EVIDENCE (this session, akiendelllinux): Granny daemon alive+cycling 16h, but the live pane shows 217/217 recent dispatch attempts target=CC.0, ALL deferring reason=unavailable (CC.0 = the interactive session). Aider.0 is flagged available but has been IDLE since 2026-07-07 17:26 (last built+escalated T-memory-emit-frozen-root-post-import) — Granny never routes to it because the queued work is CC.0-targeted or untargeted apprentice-role (120 ungated apprentice sprint tickets that don't match the builder-target dispatch gate). Net: the offload loop is effectively stalled and nothing signals it.\n\n**Shape:** (1) a periodic Granny HEALTH line (INFO, every N cycles): available builders, per-builder last-dispatch age, count of dispatchable-by-target vs deferred-unavailable, and a 'builder idle >Xh while dispatchable work exists' WARN; (2) surface it via `uu` view / channel / system_alarm (calm signal, not urgency) so an operator sees 'Aider.0 idle 16h, 0 builder-targeted tickets' without reading the pane; (3) the granny_weatherwax.log file is STALE (last write Jun 3) — the live daemon logs only to the tmux pane/stdout; reconcile so the canonical per-device log actually captures dispatch decisions (relates to the log-every-crossing rule + the instrument-dont-probe principle).\n\n**Affected files:** unseen_university/devices/granny/daemon.py (health emit + fix log sink), possibly a `uu granny health` view.\n\n**Design rules:** log every state change + interface crossing; calm signals (no urgency flags); cooperative (the shim/daemon reports its own health).\n\n**Scope boundary:** observability + log-sink fix ONLY; does NOT change dispatch/targeting logic (that's the separate question of why apprentice tickets aren't builder-targeted — see T-escalation-dispatch-producer-review / the merger-station work).\n\n**Test plan:** hermetic — feed the health-summariser a fixture (1 available builder, last-dispatch 16h ago, N dispatchable-by-target=0, N deferred=217) and assert it emits the idle-builder WARN line; assert granny_weatherwax.log receives a dispatch-decision record.\n\n**Completion criteria:** a single glance (log line or uu view) shows builder idle-age + dispatchable-vs-deferred, and the WARN fires on the observed 16h-idle-with-deferred-work condition.\n\n**Validation:** the WARN/health line in the canonical granny log (not just the pane).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-08T15:21:01.439446+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-08T15:21:01.503789+00:00"
+  }
+}
