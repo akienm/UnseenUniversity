@@ -1,0 +1,99 @@
+{
+  "id": "cc.0.validity-conditions.20260707.191117757722",
+  "emitter": "cc.0",
+  "namespace": [
+    "validity-conditions"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-07-07T19:11:17.757722",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "validity-conditions",
+    "kind": "contract",
+    "title": "validity_conditions — machine-checkable staleness on all stored knowledge; the rot-rate fix",
+    "summary": "Every documented stale-memory incident (IMAP transport claim, dead /sorted write-path, lab/ surviving as a target) shares one root cause: the entry recorded nothing about what must remain true for it to hold, so nothing could flag it when the world changed. This contract adds validity_conditions — a small list of named, preferably machine-resolvable dependencies — to store envelopes and auto-memory files, plus a day-close sweep that FLAGS (never deletes — CP2) entries whose conditions no longer hold. Complements feedback-edges: produced_by says WHO to review when an artifact fails; validity_conditions says WHEN to doubt an artifact that hasn't failed yet. Extends D-decisions-as-guards-anchors-2026-06-25 from decisions to all entry types, and adds detection. Field on existing envelopes, never a new artifact type (rules/memory). Design: T-memory-validity-conditions-design; impl: T-validity-sweep-day-close (ungated by this artifact).",
+    "key_concepts": [
+      {
+        "name": "1. Condition vocabulary — three types, machine-first",
+        "what": "validity_conditions: [ {type, target, note?} ] with exactly three types. depends-on-artifact: target is a store id (D-*/T-*/architecture namespace); condition BREAKS when that artifact is superseded/closed-rejected/carries a later same-namespace emission that names this entry in invalidates. depends-on-path: target is a repo-relative path (or path::symbol); BREAKS when it no longer resolves at sweep time. depends-on-fact: target is a short free-text fact with an OPTIONAL probe (a grep pattern or command whose non-match breaks the condition); factless probes are allowed but land in the weakest detection class. Prefer artifact/path over fact — the meta-rot mitigation is choosing resolvable types.",
+        "why": "The IMAP incident is type-1 ('true while transport is IMAP' = depends-on-artifact D-bus-postgres-transport-2026-06-10 NOT existing); the core_values path drift found by the rebuildability diff is type-2. Two of the three documented rot classes are fully machine-checkable."
+      },
+      {
+        "name": "2. Placement — a field, not a type",
+        "what": "Store entries: top-level envelope field validity_conditions (sibling of produced_by), stamped via memory_emit like any envelope field; same-stamp re-emit updates it. Auto-memory .md files: a frontmatter key of the same shape. Absence means UNSTATED (unchecked), never invalid — legacy artifacts stay readable. Backfill is explicitly out of scope (a later sweep-driven prompt may propose conditions for high-traffic entries).",
+        "why": "rules/memory: distinctions become tags/fields, never new artifact types; absence-tolerant rollout is the same additive contract as produced_by."
+      },
+      {
+        "name": "3. Detection — push (invalidates) + pull (sweep)",
+        "what": "PUSH: a superseding decision MAY carry invalidates: [ids or condition-targets]; /sorted prompts for it at filing ('does this decision make any stored claim false?'). Push hits land immediately at filing time. PULL: the day-close sweep (T-validity-sweep-day-close) resolves every stated condition: artifact targets against the store's current state, path targets against the tree, fact probes by running them. Sweep output: validity sweep: flagged=<N> checked=<M> unresolvable=<K> — printed even when all zeros.",
+        "why": "Push catches what the decider knows they broke; pull catches what nobody realized. Either alone repeats the IMAP pattern (the bus decision KNEW it obsoleted the IMAP claims — push was missing; the path drift was known to nobody — pull was missing)."
+      },
+      {
+        "name": "4. Flag semantics — annotate, never delete",
+        "what": "A broken condition appends to the entry's envelope: stale_flags: [{flagged_at, condition, reason, sweep_run}] and the entry stays in place. Readers (context-load, recall, grep-consumers via a convention note) treat a flagged entry as 'true-then, doubted-now' — CP2: stale entries are data about what changed. Clearing a flag is a human/reviewed act (re-emit with the condition updated or removed), not automatic. Repeated flags on one entry (>=2 sweeps) escalate to the day-close report as CURATE candidates.",
+        "why": "Deletion destroys the falsified-hypothesis record that makes the corpus an earned asset; annotation preserves it while removing its power to mislead."
+      },
+      {
+        "name": "5. Meta-rot — conditions going stale",
+        "what": "A condition naming a renamed artifact/path silently never fires — the failure mode of the fix itself. Mitigations, in order: (a) vocabulary bias toward resolvable types (concept 1); (b) the sweep's unresolvable=<K> class — a condition whose TARGET cannot be resolved at all is flagged as unresolvable-condition (distinct from broken), surfacing rename drift; (c) path_moves.json (the one live rules/ artifact) is consulted to auto-follow known moves before declaring unresolvable.",
+        "why": "A staleness detector that itself rots silently is worse than none — it manufactures false confidence (named as predicted-effect #1 on T-consequence-D-memory-validity-conditions)."
+      },
+      {
+        "name": "6. Filing-time prompt — friction budget",
+        "what": "/sorted (decisions) and /note (notes) prompt once: 'what must remain true for this to hold?' — 0-3 conditions, and an explicit none-stated is accepted without nagging. Vacuous conditions ('depends on nothing') are rejected by the same soft-validation style as the unproven-lever check. Tickets DON'T get prompted (they are short-lived; their decision carries the conditions).",
+        "why": "The consequence ticket's predicted effect #1 is vacuous-condition theater; capping at 3 and accepting honest absence keeps the field meaningful. Short-lived artifacts inherit validity from their producer via produced_by."
+      },
+      {
+        "name": "7. Relationship to feedback-edges",
+        "what": "Orthogonal, composable: produced_by = the backward BLAME edge (who reviews when this artifact FAILS downstream); validity_conditions = the forward DOUBT predicate (when to stop trusting an artifact that hasn't failed). A flagged entry whose producer is live is a natural producer-review candidate — the sweep MAY post a failed_downstream escalation for CRITICAL flagged entries (rules, architecture contracts), reusing the one verb; ordinary flagged notes just wait in the day-close report.",
+        "why": "One escalation mechanism (feedback-edges concept 2) serves both — no second dispatch path; homogeneity over special-case."
+      }
+    ],
+    "implementing_files": [
+      {
+        "path": "devlab/claudecode/memory_emit.py",
+        "anchor": "envelope field validity_conditions (with produced_by, T-produced-by-emission-sweep)",
+        "status": "planned — T-validity-sweep-day-close"
+      },
+      {
+        "path": "devlab/claudecode/",
+        "anchor": "new sweep module (validity_sweep)",
+        "status": "planned — T-validity-sweep-day-close"
+      },
+      {
+        "path": "skills/day-close/SKILL.md",
+        "anchor": "sweep step + report line",
+        "status": "planned — T-validity-sweep-day-close"
+      },
+      {
+        "path": "skills/sorted/SKILL.md + skills/note/SKILL.md",
+        "anchor": "filing-time conditions + invalidates prompt",
+        "status": "planned — T-validity-sweep-day-close"
+      },
+      {
+        "path": "devlab/runtime/memory/rules/path_moves.json",
+        "anchor": "consulted for rename-following (concept 5c)",
+        "status": "live"
+      }
+    ],
+    "reference_docs": [
+      "decisions/D-memory-validity-conditions-2026-07-07 (the decision this designs)",
+      "decisions/D-decisions-as-guards-anchors-2026-06-25 (extended by this contract)",
+      "architecture/cc.0.feedback-edges.20260707.181212678946.json (orthogonal complement — concept 7)",
+      "notes/rebuildability-diff.20260707.md F8 (the regeneration evidence)"
+    ],
+    "status_notes": "Design complete 2026-07-07 (Fable window, 4/4). Impl: T-validity-sweep-day-close (ungate on this close). OPEN QUESTIONS impl must NOT guess: (1) exact reader convention for displaying stale_flags in context-load/recall — propose during impl, small; (2) whether CRITICAL-class auto-escalation (concept 7) ships in v1 or waits for T-escalation-dispatch-producer-review — recommend waiting (sweep report only in v1); (3) probe execution sandboxing for depends-on-fact commands — v1 restricts probes to grep patterns, no arbitrary commands (CP6).",
+    "related": [
+      "T-memory-validity-conditions-design",
+      "T-validity-sweep-day-close",
+      "T-consequence-D-memory-validity-conditions",
+      "T-builder-memory-repo-residency"
+    ]
+  }
+}

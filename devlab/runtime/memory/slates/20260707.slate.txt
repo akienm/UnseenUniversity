@@ -137,3 +137,4 @@ Next: T-aider-swarm-deployment (deploy AiderDevice across 4 boxes, CPU-gated, Gr
 - T-uu-spec-extraction-rebuildability-diff claimed (Fable window #2)
 - CLOSED T-uu-spec-extraction-rebuildability-diff (shipped-unproven: no rebuild-drill harness) -> notes/generative-spec.20260707.md + notes/rebuildability-diff.20260707.md; 12 findings; NEW: T-rules-store-materialize(CRIT) T-builder-memory-repo-residency(CRIT) T-claude-md-stale-anchors T-store-layout-reconcile
 - CLOSED T-adversarial-gate-attack (shipped-unproven: no attack-regression harness) -> notes/gate-attack-report.20260707.md; 8 gates; SYSTEMIC: audits self-attested + author-as-judge; 6 new tickets
+- CLOSED T-memory-validity-conditions-design (shipped-unproven: design-artifact completeness harness — SECOND naming of this lever) -> architecture/cc.0.validity-conditions.20260707.191117757722.json; ungated T-validity-sweep-day-close. FABLE WINDOW 4/4 DONE.

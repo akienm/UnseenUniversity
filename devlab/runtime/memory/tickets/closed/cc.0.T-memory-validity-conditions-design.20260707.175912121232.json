@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-memory-validity-conditions-design",
-    "title": "[sprint] Design: validity_conditions on store entries — machine-checkable staleness",
+    "title": "Design: validity_conditions on store entries — machine-checkable staleness",
     "size": "M",
     "tags": [
       "Store",
@@ -31,12 +31,12 @@
     "decision_id": "D-memory-validity-conditions-2026-07-07",
     "gate": null,
     "priority": 0.7,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-07T23:58:58.817662+00:00",
     "created_by": null,
-    "result": null,
+    "result": "Contract designed: architecture/cc.0.validity-conditions.20260707.191117757722.json — 3-type condition vocabulary (artifact/path/fact, machine-first), push+pull detection (invalidates: at filing + day-close sweep), annotate-never-delete flag semantics, unresolvable-condition class for meta-rot, filing friction capped (0-3 conditions, honest absence accepted), orthogonal composition with feedback-edges (one escalation verb serves both). Decision amended with pointer. Ungating T-validity-sweep-day-close.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-08T01:11:35.620224+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-07T23:58:58.817702+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "dfb127bf-7bc9-495a-a062-4969efd8c6e0"
+    "inferred_intention_id": "dfb127bf-7bc9-495a-a062-4969efd8c6e0",
+    "proven": false,
+    "unproven_reason": "same lever as T-feedback-edge-design: no design-artifact completeness harness (schema+required-sections gate over architecture/*.json) — second naming of this lever; recurrence per T-unproven-lever-hygiene would now auto-draft it",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
