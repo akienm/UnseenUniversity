@@ -15,6 +15,7 @@
 
 - T-granny-dispatch-observability-gap — Granny dispatch health is invisible — a drained/idle builder + all-defer cycles surface nothing an operator would notice (--reason)
 - T-collapse-daemons-to-ground-loop — One daemon structure (Ground Loop) — collapse standalone granny/scraps daemons; no device runs its own __main__ loop (Collapsed granny+scraps standalone daemons onto shim-owned in-process loop threads. No device runs its own __main__+whil)
+- T-routing-compiler-rules-engine-test-red — scraps test_routing_compiler::test_rules_engine_add_compiled_rule red (inference rules engine) (Fixed the red test. Root cause was two-fold: (1) RulesEngine.__init__ used 'rules or _DEFAULT_RULES' so an explicit empt)
 ## Planned
 - Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
 
@@ -91,3 +92,5 @@ Done: T-collapse-daemons-to-ground-loop CLOSED PROVEN (2 proof_emitter proofs, a
 Next: Restart requested (session loaded during Anthropic status-board failures, model not at best). On resume: /context-load, then pick a follow-up ticket or /query-ticket. Slate's Next line is authority.
 
 ## In-flight: Session ending for a clean restart (model degraded — context loaded during Anthropic status-board incident, not context-length rot; tree clean, all work pushed). T-collapse-daemons-to-ground-loop is CLOSED PROVEN @5e3f45f1. Nothing mid-build. Resume with /context-load; the slate Next line points to the follow-up tickets or /query-ticket.
+
+## In-flight: T-routing-compiler-rules-engine-test-red CLOSED PROVEN (proof 64a90d6c, red=AssertionError->green, pushed @4403afd1). Fixed: RulesEngine.__init__ '[]' now means no-rules (was silently loading defaults via 'or'); test mock now sets time_bucket/cost_class. Next in the test-red pair: T-granny-dispatch-tests-preexisting-failures (13 tests; root-cause already split — caplog handler killed by logging.basicConfig(force=True) for cascade/exact_match; genuine mock gap for e2e_dispatch_smoke).
