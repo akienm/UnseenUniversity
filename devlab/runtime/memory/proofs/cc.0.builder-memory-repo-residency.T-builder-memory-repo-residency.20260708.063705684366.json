@@ -1,0 +1,66 @@
+{
+  "id": "cc.0.builder-memory-repo-residency.T-builder-memory-repo-residency.20260708.063705684366",
+  "emitter": "cc.0",
+  "namespace": [
+    "builder-memory-repo-residency",
+    "T-builder-memory-repo-residency"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T06:37:05.684366",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-builder-memory-repo-residency"
+    ],
+    "commits": [
+      "8ebe84c8a7d909ce1315ae00e4870abc1d068648"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "builder-memory repo residency",
+    "intention": "A fresh builder inherits the corrected working style from the repo alone: the load-bearing instance-local memories resolve to store artifacts",
+    "test": "tests/test_builder_memory_residency.py::test_top_ten_feedback_memories_readable_from_repo_alone",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_builder_memory_residency.py::test_top_ten_feedback_memories_readable_from_repo_alone",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________ test_top_ten_feedback_memories_readable_from_repo_alone ____________\n\n    def test_top_ten_feedback_memories_readable_from_repo_alone():\n        \"\"\"Fresh-builder check: the load-bearing corrections resolve to repo artifacts.\"\"\"\n        for name in _MIRRORED_RULES + [\"safeguards\", \"preferred_paths\"]:\n>           assert _rule_files(name), f\"rules/{name} missing\"\nE           AssertionError: rules/dispatch missing\nE           assert []\nE            +  where [] = _rule_files('dispatch')\n\ntests/test_builder_memory_residency.py:59: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_builder_memory_residency.py::test_top_ten_feedback_memories_readable_from_repo_alone\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "8ebe84c8a7d909ce1315ae00e4870abc1d068648",
+    "impl_paths": [
+      "devlab/runtime/memory/notes/builder-gotchas.20260708.md",
+      "devlab/runtime/memory/notes/builder-memory-triage.20260708.md",
+      "devlab/runtime/memory/notes/device-roster.20260708.md",
+      "devlab/runtime/memory/rules/cc.0.autonomy.20260708.063321465784.json",
+      "devlab/runtime/memory/rules/cc.0.design-doctrine.20260708.063321466987.json",
+      "devlab/runtime/memory/rules/cc.0.dispatch.20260708.063321461951.json",
+      "devlab/runtime/memory/rules/cc.0.git-workflow.20260708.063321466397.json",
+      "devlab/runtime/memory/rules/cc.0.preferred_paths.20260708.062249523551.json",
+      "devlab/runtime/memory/rules/cc.0.safeguards.20260708.062249524323.json",
+      "devlab/runtime/memory/slates/20260708.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-builder-memory-repo-residency.20260707.190511916329.json"
+    ],
+    "ticket": "T-builder-memory-repo-residency",
+    "narrative": "",
+    "why": "~120 corrections lived only in one instance's ~/.claude dir (rebuildability-diff F2 CRITICAL) — violating the external-state principle devices are held to",
+    "bootstrap": false
+  }
+}
