@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.escalation-handoff-does-not-leak-the-wea.T-escalation-handoff-transmits-the-confabulation.20260709.093200108501",
+  "emitter": "cc.0",
+  "namespace": [
+    "escalation-handoff-does-not-leak-the-wea",
+    "T-escalation-handoff-transmits-the-confabulation"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T09:32:00.108501",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-escalation-handoff-transmits-the-confabulation"
+    ],
+    "commits": [
+      "9f4ac0b0820903a074e37b6a6fa10de6f438e383"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-escalation-handoff-transmits-the-confabulation",
+  "body": {
+    "thing": "escalation handoff does not leak the weak model's reasoning",
+    "intention": "The prior-attempt handoff dispatched at hop 1 carries the failed attempt's CONCLUSION, explicitly marked failed, and never its <think> scratchpad.",
+    "test": "tests/inference/test_escalation_handoff.py::test_the_handoff_does_not_leak_the_weak_models_reasoning",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_escalation_handoff.py::test_the_handoff_does_not_leak_the_weak_models_reasoning",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    def test_the_handoff_does_not_leak_the_weak_models_reasoning():\n        \"\"\"THE test. A confident partial derivation is what the stronger model follows.\"\"\"\n        prior = _run().seen[1].prior_attempt\n>       assert RAMBLE_FRAGMENT not in prior, (\n            \"the handoff leaked the weak model's <think> scratchpad. Measured live: this makes \"\n            \"deepseek-r1:32b abandon its own correct answer and adopt deepseek-r1:14b's wrong one.\"\n        )\nE       AssertionError: the handoff leaked the weak model's <think> scratchpad. Measured live: this makes deepseek-r1:32b abandon its own correct answer and adopt deepseek-r1:14b's wrong one.\nE       assert 'cannot cont...ls are wrong' not in '<think>\\nTh...oxes must th'\nE         \nE         'cannot contain bot...ll labels are wrong' is contained here:\nE           <think>\nE         ?                         ^\nE           The box labelled 'both' cannot contain both fruits since all labels are wrong. Drawing an apple means it contains only apples. The remaining boxes must then contain the other two types: one has only oranges, and the other has both. Since The box labelled 'both' cannot contain both fruits since all labels are wrong. Drawing an apple means it contains only apples. The remaining boxes must th\nE         ?                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/inference/test_escalation_handoff.py:102: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_escalation_handoff.py::test_the_handoff_does_not_leak_the_weak_models_reasoning\n1 failed in 0.16s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "9f4ac0b0820903a074e37b6a6fa10de6f438e383",
+    "impl_paths": [
+      "unseen_university/devices/inference/domains/base.py"
+    ],
+    "ticket": "T-escalation-handoff-transmits-the-confabulation",
+    "narrative": "",
+    "why": "Measured live with one variable isolated: deepseek-r1:32b answers b4-boxes correctly on its own, adopts deepseek-r1:14b's wrong answer when handed its unmarked scratchpad, and recovers when handed only the conclusion marked failed. Escalation was transmitting the confabulation upward, on the shared path every domain uses.",
+    "bootstrap": false
+  }
+}
