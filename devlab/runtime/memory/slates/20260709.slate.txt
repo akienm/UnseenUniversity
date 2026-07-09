@@ -1,11 +1,52 @@
 # Slate 2026-07-09
 
 ## Notes
+STANDING DIRECTIVE (Akien, 2026-07-08): "Everything else stops until inference works right every time."
+Read D-domains-general-with-device-owned-specializations-2026-07-08 (+2 amendments) before touching inference.
+
+Two hard-won rules from yesterday, both now memories:
+- Run the consumer PAST the first assertion. An early assertion on the return ENVELOPE can hide that the consumer
+  never did the work. Yesterday a model claimed "wrote smoke file" and wrote nothing; the test died on
+  `.startswith("DONE:")` before ever reaching `smoke_file.exists()`.
+- NEVER build a live device inside a proof node. A proof whose ctor probes real providers passes on the weather.
+  Smell test: would this proof give the same verdict with the network unplugged?
 
 ## In-flight
-NONE
+NONE — 2026-07-08 closed clean. Tree clean, all pushed (HEAD 1b8eee39).
 
-## Planned
+## Planned — inference, in dependency order (nothing else until these land)
+1. ⛔ T-inference-tier-ladder-real (0.95, sprint) — BLOCKS EVERYTHING. The rungs are FAKE, verified:
+     ticket_tier=builder -> devstral-small-2:24b@ollama
+     ticket_tier=creator -> devstral-small-2:24b@ollama   (IDENTICAL)
+     ticket_tier=master  -> None
+   Five role rungs collapse into 3 difficulty buckets (builder+creator both -> 'code'); NO model is creator-tier;
+   the registry vocabulary (minion/worker/analyst/designer) shares not one word with the role ladder
+   (apprentice/builder/creator/master/guru). A model must declare WHICH RUNG'S STACK it can stand in. Do NOT paper
+   over by re-adding curated triples — that curation is exactly the compensation we folded back unproven.
+2. T-inference-typed-no-path-result (0.9, sprint) — resolve() returns NoCapableModel vs NoAvailableProvider.
+   Today both collapse to None, so the domain GUESSES: it re-reads a capability ceiling as an availability outage,
+   retries, then halts announcing "no live source". Fixes the CP3 bug + the triple-alarm at the root.
+3. T-inference-escalation-policy-object (dep) — escalation becomes DATA: ladder + bump rule + terminal.
+   DEFAULT lives on the GENERAL DOMAIN (not the proxy). escalation_allowed -> NoEscalation; harvest_mode -> Harvest.
+   Proxy REPORTS, domain DECIDES.
+
+Structure track (parallel-safe):
+4. T-domains-global-package (0.8) — unseen_university/domains/; rename BaseDomain -> GeneralDomain (it is CONCRETE
+   and IS the default). It owns: default EscalationPolicy + the COMPLETION CONTRACT + _run_attempt = ONE DISPATCH.
+   Retire resolve_domain() (capabilities/base.py is its only caller left).
+5. T-agentic-primitives-package (0.75) — unseen_university/agentic/. NOTE from audit: clone_commit.py and
+   verdict_gate.py are imported ONLY by domains/architect_editor.py — they must follow the loop.
+6. T-ds-coding-domain-specialization / T-aider-coding-domain-specialization (dep)
+7. T-route-all-inference-through-a-domain (dep) — ~10 devices call InferenceDevice().dispatch directly today and
+   therefore get ZERO escalation. Invariant: nothing reaches the proxy except through a domain.
+8. T-compensation-record-and-graduation (dep) — AUDIT FINDING: the graduation apparatus is DEAD CODE.
+   prereg.py and eval_slice.py have ZERO importers; corpus_verdict.py is imported only by orphaned prereg.py.
+   That is the mechanical reason fold-back never happened automatically. Do not assume they work — they have no
+   callers and therefore no evidence.
+
+Also open: T-inference-single-device-instance-no-thread-per-call (0.85) — every InferenceDevice() spawns a probing
+HealthMonitor thread; 18 construction sites; agentic_loop + architect_editor construct one PER CALL (5 -> 5 threads).
+This is also how yesterday's proof passed on environment luck.
 
 ## Ad hoc
 
