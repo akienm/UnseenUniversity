@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-truncation-vs-degeneracy-third-outcome.20260709.133617000513",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-truncation-vs-degeneracy-third-outcome"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T19:36:17.000513+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-truncation-vs-degeneracy-third-outcome"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-truncation-vs-degeneracy-third-outcome",
+    "title": "[triage] TRUNC conflates 'ran out of room' with 'degenerate repetition loop' — the second must never trigger a retry",
+    "size": "M",
+    "status": "triage",
+    "priority": 0.75,
+    "tags": [
+      "inference",
+      "escalation",
+      "eval",
+      "observability",
+      "correctness"
+    ],
+    "description": "Raised by Akien 2026-07-09: 'do they really sometimes just get hung up on a problem or do they all come back eventually... my notion of models and neural networks means it kinda has to be some part outside the actual NN.'\n\nThat framing is correct and it exposes a gap. A transformer forward pass is fixed compute — no input-dependent loops, always halts, always returns a distribution. Non-termination lives in the AUTOREGRESSIVE LOOP around the network (sample, append, call again, stop on EOS or max_tokens). Mechanism outside; cause inside (the distribution keeps favouring more text).\n\nTHE CONFLATION. Two states produce an IDENTICAL signal (finish_reason='length'/'max_tokens', or an unclosed <think>):\n  (a) SLOW-BUT-CONVERGENT — the model is working and would answer given room. Measured: deepseek-r1:14b TRUNCs b5-frobenius at 8192 and PASSES it cleanly (2/2) at 32768.\n  (b) DEGENERATE — self-reinforcing repetition; the model attends to its own repeated text and raises its probability. No budget suffices. This is the 'spambot spewing garbage' state: not a crash, an attractor in the decoding loop.\n\nFor (a) the fix is a larger budget. For (b) a larger budget spends more money to hit the same wall. Today both are scored TRUNC, so the runtime cannot tell them apart.\n\nTHIS SUPERSEDES PART OF T-escalation-truncation-misclassified-as-capability, which proposes a single BUDGET outcome class beside CAPABILITY. There are THREE outcomes: CAPABILITY (bump a tier), BUDGET (retry SAME rung, larger budget, bounded), DEGENERACY (never retry; do not spend up; record and fail the cell). A BUDGET-only design will retry degenerate loops at ever-larger budgets — the most expensive possible response to the cheapest possible diagnosis.\n\nSHARP IRONY, worth pinning: we sample at temperature 0 for reproducibility. Greedy decoding is the regime MOST prone to degenerate repetition (nucleus sampling was introduced largely to escape it — Holtzman et al., neural text degeneration). The choice that makes our measurements reproducible maximises the rate of the failure mode we cannot currently detect. Do not 'fix' this by raising temperature; that trades a detectable failure for an irreproducible one. Detect it instead.\n\nOBSERVABILITY GAP FOUND WHILE RAISING THIS: no note in the store has ever captured a truncated reply. escalation_matrix stored verdicts and dropped the text (and now keeps only a 300-char tail — likely too short to see an n-gram cycle). We discarded exactly the evidence needed to answer Akien's question. Capture MORE tail on TRUNC than on PASS.\n\nNOTE: a real crash (OOM, KV-cache exhaustion, dropped connection) is a THIRD thing again, already handled — it arrives as finish_reason='error' and scores ERR, never a wrong answer.\n\n**Affected files:** devlab/claudecode/escalation_matrix.py, unseen_university/devices/inference/domains/base.py (_classify / LoopResult), unseen_university/devices/inference/domains/reply_text.py\n**Design rules:** measure-dont-declare (a degeneracy verdict must be MEASURED from the reply, never inferred from finish_reason alone); epistemology-experiment-only (record the detector's conditions)\n**Scope boundary:** IN — a degeneracy detector over a truncated reply's tail, a third LoopResult outcome, and the routing rule that DEGENERACY never spends up. OUT — changing sampling temperature; OUT — the budget-ceiling measurement itself (T-capability-measured-at-a-budget-ceiling).\n**Test plan:** hermetic, red->green. Construct three synthetic replies: (1) a coherent derivation cut off mid-sentence, (2) a reply whose tail is a repeating n-gram cycle, (3) a clean terminated answer. RED: the classifier scores (1) and (2) identically as TRUNC/BUDGET. GREEN: (1) -> BUDGET, (2) -> DEGENERACY, (3) -> its real verdict; and a routing test asserts DEGENERACY performs no same-rung retry and no tier bump. THE DISCRIMINATOR: the detector must not simply key on finish_reason — assert it separates (1) from (2) when BOTH carry finish_reason='length'.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T19:35:29.629481+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T19:35:29.677777+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6e2ec007-76ca-4b20-801c-6e6a78d2ce00"
+  }
+}
