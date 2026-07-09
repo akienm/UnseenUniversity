@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-domains-global-package.20260708.210104799822",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-domains-global-package"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T03:01:04.799822+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-domains-global-package"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-domains-global-package",
+    "title": "[sprint] Create unseen_university/domains/ — the global, shared domains; retire resolve_domain()",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.8,
+    "tags": [
+      "domains",
+      "architecture"
+    ],
+    "description": "Global domains are shared and say what a KIND of work MEANS. Move BaseDomain + CodingDomain to unseen_university/domains/ (top-level non-device package; precedent: unseen_university/capabilities/ already is one, so the single-import-root rule holds). devices/inference/domains/ was a WAYPOINT from T-inference-move-agentic-loop-to-domain, not the destination.\n\nANTI-CEREMONY: the global base must hold only what EVERY coding consumer shares — (a) the domain tag as a routing dimension, (b) the COMPLETION CONTRACT (what counts as DONE for coding), (c) the core coding prompt. critic_enabled, aci_mode, the architect/editor split, harvest_mode and the stuck ladder DESCEND to DS's specialization; aider wants none of them.\n\nretire resolve_domain(name) and CapabilityMixin.capability_domain:str — a name lookup cannot return DS's specialization AND aider's. device.py no longer calls resolve_domain (the cycle fix removed it), so capabilities/base.py is its ONLY remaining caller. An agent holds its own domain INSTANCE.\n\n**Test plan:** red->green: the global CodingDomain has no _run_attempt implementation and carries no critic/aci/architect-editor; resolve_domain no longer exists; an agent's capability returns the agent's own domain instance.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T03:00:00.835749+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T03:00:00.835809+00:00",
+    "inferred_intention": "code-organization",
+    "inferred_intention_id": "79a7d0db-38fa-4bba-8dd8-6ee086fd9d3f"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-typed-no-path-result.20260708.210104535767",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-typed-no-path-result"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T03:01:04.535767+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-typed-no-path-result"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-typed-no-path-result",
+    "title": "[sprint] resolve() must return a TYPED no-path result: NoCapableModel vs NoAvailableProvider",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.9,
+    "tags": [
+      "inference",
+      "routing",
+      "CP3"
+    ],
+    "description": "Today 'no capable model at this rung' and 'a capable model exists but its providers are down' BOTH collapse to None. That is precisely why the domain guesses — and guesses wrong: it re-reads a capability ceiling as an availability outage, retries as if a source were down, then halts announcing 'no live source' when the truth is nothing capable exists (the CP3 bug, T-inference-capability-ceiling-misclassified-as-availability).\n\nUnder the escalation-policy design, the PROXY runs a default walk, so it needs the distinction itself: capability -> advance a rung (spend up); availability -> retry the same rung (do not spend). The signal ownership table in the decision depends on this being typed.\n\nWORK: resolve() returns a typed result (a path, or NoCapableModel, or NoAvailableProvider). Update device.dispatch + the domain walk to read the type instead of inferring from None. Fires ONE alarm at one owner (retires the triple-alarm: resolve()'s own system_alarm + device.py's chokepoint + domains/base's availability-exhausted).\n\n**Test plan:** red->green: a rack whose only capable model sits on a DOWN provider yields NoAvailableProvider (walk retries, does not spend); a rack with all providers up but no capable model yields NoCapableModel (walk advances a rung); exactly one system_alarm fires per walk.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T02:59:34.563039+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T02:59:34.563125+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1d93c901-ee70-4912-89c7-ce3c44ae26c9"
+  }
+}

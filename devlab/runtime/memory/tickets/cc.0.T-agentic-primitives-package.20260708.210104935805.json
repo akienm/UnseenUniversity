@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-agentic-primitives-package.20260708.210104935805",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agentic-primitives-package"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T03:01:04.935805+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-agentic-primitives-package"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-agentic-primitives-package",
+    "title": "[sprint] Create unseen_university/agentic/ — shared execution primitives (loop, codecs, editor, block_apply, edit_format)",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.75,
+    "tags": [
+      "agentic",
+      "architecture"
+    ],
+    "description": "Confirmed by Akien. AgenticLoop cannot be DS-private: minion/tool_loop.py imports it too. It is a shared execution PRIMITIVE that a domain specialization CONSUMES; it is neither a domain nor part of the proxy. Move AgenticLoop + tool codecs + ArchitectEditor + block_apply + edit_format to unseen_university/agentic/ (top-level, peer to capabilities/ and domains/).\n\nThe fold-back apparatus (eval_slice, io_corpus, corpus_verdict, prereg, verdict_gate) currently sits in the routing proxy and has no business there either — it is the machinery that decides GRADUATION. Classify and relocate it with this ticket or file a follow-on.\n\n**Test plan:** red->green: the inference proxy package contains no execution primitive; minion and DS both import them from unseen_university.agentic; suites green.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T03:00:13.870738+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T03:00:13.870796+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5febc759-1bae-4800-8fa0-ae8c2e733644"
+  }
+}

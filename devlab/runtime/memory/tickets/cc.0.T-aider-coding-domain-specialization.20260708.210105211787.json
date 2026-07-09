@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-aider-coding-domain-specialization.20260708.210105211787",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-coding-domain-specialization"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T03:01:05.211787+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-coding-domain-specialization"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-aider-coding-domain-specialization",
+    "title": "[dependency] AiderCodingDomain lives in devices/aider — aider is a single attempt; it does not own tier escalation",
+    "size": "M",
+    "status": "dependency",
+    "priority": 0.6,
+    "tags": [
+      "aider",
+      "domains"
+    ],
+    "description": "AiderCodingDomain(CodingDomain) lives in devices/aider/ and overrides _run_attempt() to hand the ticket to aider. Per the signal-ownership table, aider is a SINGLE attempt at the rung it was given: aider's internal loop is about applying edits, not choosing tiers. Tier escalation stays with the one ladder (proxy default or the domain's policy), so one failure never bumps two rungs.\n\naider_proxy.py currently lives in the inference proxy package and should move to the aider device. GATED on T-domains-global-package + T-agentic-primitives-package.\n\n**Test plan:** red->green: an aider coding attempt runs at exactly the rung it was given, and a capability wall advances exactly one rung on the single ladder (no double-spend).\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T03:00:38.333097+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T03:00:38.333142+00:00",
+    "inferred_intention": "execute tests/builds in isolated container for safe execution",
+    "inferred_intention_id": "36fc6483-94a0-4e20-9457-6a5dd3678aea"
+  }
+}
