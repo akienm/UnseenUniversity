@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-links-intentions-edge-kind.20260709.175057669339",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-links-intentions-edge-kind"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T23:50:57.669339+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-links-intentions-edge-kind"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-links-intentions-edge-kind",
+    "title": "[sprint] Restore the intention edge: add `intentions` to LINK_KINDS / _LINK_KEYS",
+    "status": "sprint",
+    "priority": 0.9,
+    "size": "S",
+    "worker": "claude",
+    "tags": [
+      "architecture",
+      "memory",
+      "intentions"
+    ],
+    "intention": "I intend that a ticket or decision can point at the intention record it serves, so a build can be checked against the intention it claims to satisfy instead of against a prose sentence that dies with the ticket.",
+    "description": "On 2026-06-26 goals were retired in favour of intentions (T-skills-goals-to-intentions, closed shipped-unproven). That ticket removed `goals` from `LINK_KINDS` (memory_emit.py) and `_LINK_KEYS` (ticket_store.py) and reframed /sorted's 'Which goal' question to 'Which intention'. It never added the replacement edge. Today LINK_KINDS = (decisions, tickets, commits, whys) — there is NO `intentions` edge kind, so nothing can point at an intention record.\n\nMeasured consequence: the intentions store holds 2 records, while 444 tickets carry a free-text `intention:` prose string and 215 carry `intention: null`. Intentions were captured 444 times in a shape that cannot be pointed at, deduped, or proven. T-reorg-parents-path-sweep — the ticket the aider gate closed PASS on three 0-byte files — carried `intention: null`; the gate had nothing to check the build against.\n\n**Affected files:** devlab/claudecode/memory_emit.py (LINK_KINDS), unseen_university/ticket_store.py (_LINK_KEYS), the schema-parity test that pins the two together.\n**Design rules:** canonical memory home devlab/runtime/memory/; memory_emit.py is the single write chokepoint; JSON flat-file; NO SQLITE.\n**Scope boundary:** IN — add `intentions` as an edge kind in both places, keep the schema-parity test green, prove a ticket emitted with links.intentions=[\"I-...\"] round-trips and is grep-able by intention id. OUT — the intention envelope schema + validation + context-load surfacing (T-intentions-store); backfilling the 444 prose intentions (T-extract-intentions-from-chatlogs); /sorted intention-mapping (T-sorted-intention-open-then-map); the intent extractor (T-intent-extractor-agent).\n**Test plan:** extend the existing schema-parity node (test_envelope_schema_matches_memory_emit) — it already proves the two key tuples must match; T-skills-goals-to-intentions' close note confirms re-adding a kind to only one side makes it fail. Red form: assert 'intentions' in LINK_KINDS fails at HEAD; green after. Plus a round-trip: emit a ticket with links.intentions, read it back, assert the edge survives.\n**Completion criteria:** `intentions` present in both LINK_KINDS and _LINK_KEYS; schema-parity test green; round-trip test green; `grep -rl I-self-improving-process devlab/runtime/memory/tickets/` can find a ticket by its intention.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "intentions in LINK_KINDS and _LINK_KEYS; schema-parity test green; links.intentions round-trips through ticket_store; a ticket is findable by intention id via grep.",
+    "created_at": "2026-07-09T23:50:32.041152+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-09T23:50:32.094241+00:00"
+  }
+}

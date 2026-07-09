@@ -412,3 +412,4 @@ Note: notes/capability-ceiling-sweep (REBUILT from io_corpus — see below).
 
 Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0.95).
       3. T-reorg-parents-sweep-still-live (0.8). 4. T-io-corpus-text-drops-reasoning (0.8).
+- T-links-intentions-edge-kind: Restore the intention edge (LINK_KINDS lost goals 2026-06-26, never got intentions)
