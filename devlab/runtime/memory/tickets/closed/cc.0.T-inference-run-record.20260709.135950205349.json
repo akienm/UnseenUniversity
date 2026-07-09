@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-run-record",
-    "title": "[sprint] An inference request is its own JSON ticket — the whole escalation, readable at a glance",
+    "title": "An inference request is its own JSON ticket — the whole escalation, readable at a glance",
     "size": "M",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.9,
     "tags": [
       "inference",
@@ -32,9 +32,9 @@
     "created_at": "2026-07-09T19:59:18.908197+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "PROVEN (spine). Every inference request now leaves one JSON run ticket under uu_home()/inference_corpus/runs/<yyyymmdd>/run_<uuid>.json — the whole escalation readable at a glance: which rung, which model, what it claimed, why the walk moved on, and how it ended. BaseDomain.run is now a thin recorder around _escalation_walk, writing in a finally so a HALT, an exhausted walk, a cost cap, a harvest wall, or an unexpected raise all leave a record; all six exits name their resolution. _decorate_record is the specialty hook ('implement it in the base domain, then add to it as we grow specialties'). LoopResult gained model/source_kind so the record answers 'who answered?' without joining the corpus. Payloads are REFERENCED not duplicated: question excerpted to 500 chars, hop carries the extracted CLAIM (never the reasoning), bytes stay in io_corpus. 30-day expires_at stamped at write. Proof: tests/inference/test_run_record.py::test_an_escalated_request_leaves_one_run_record_naming_every_hop, red=AssertionError -> green=passed, commit 14ed9c35 (stub b0f3f33f). Discriminators in the same file: a HALTED walk must also leave a record (resolution=capability_ceiling, not done), and an availability failure must never appear as a capability failure that spent up a tier. Verified past the assertion by reading a produced record end to end. Suite: 497 passed.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T20:17:42.103348+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T19:59:18.953913+00:00",
     "inferred_intention": "replace rule shape with policy-based routing",
-    "inferred_intention_id": "9b61b2bb-c0d4-4fdf-8eb7-23b67cdb237b"
+    "inferred_intention_id": "9b61b2bb-c0d4-4fdf-8eb7-23b67cdb237b",
+    "proven": false,
+    "unproven_reason": "SPINE ONLY — three named gaps, each ticketed or scoped: (1) THE io JOIN IS NOT BUILT. The record has no run_id stamped onto the io_corpus records, so 'show me the payloads for this run' is still a grep. Increment 2: add run_id to InferenceRequest (a sibling of ticket_id, which already threads through) and stamp it in io_corpus; then run_id+escalation_hop selects a hop's calls. Not done here because one hop is not one dispatch — CodingDomain's architect/editor split makes several — so a single io_ref per hop is wrong by construction, and threading a list up through LoopResult is the invasive change. (2) CodingDomain hops carry model='' because only GeneralDomain._run_attempt populates it; agentic_loop does not. The glance-view is therefore degraded for the coding domain, which is the domain the background-builder milestone actually needs. (3) NO SWEEPER: expires_at is stamped but nothing prunes it; the 30-day lifespan is declared, not enforced. Filing follow-ups.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

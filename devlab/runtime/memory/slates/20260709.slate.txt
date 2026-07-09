@@ -74,6 +74,7 @@ This is also how yesterday's proof passed on environment luck.
 - T-preexisting-repo-map-second-symbol — test_signature_map_surfaces_multiple_symbols red — repo-map drops a file's 2nd symbol (PROVEN, and the original red was a dead fixture rather than a regression. The old node patched psycopg2.connect and asse)
 - T-graph-map-ingests-venvs — Repo graph map walked virtualenvs as first-party source — vendored code outranked the task's files (PROVEN. Virtualenvs detected by mechanism (pyvenv.cfg), not by name; site-packages/dist-packages skipped wherever an env)
 - T-preexisting-dicksimnel-done-prefix-close — test_done_prefix_closes_ticket red — DS close now appends --shipped-unproven args (Test was stale, implementation was right. DS closes shipped-unproven with a named lever because it is a branch-builder: )
+- T-inference-run-record — An inference request is its own JSON ticket — the whole escalation, readable at a glance (PROVEN (spine). Every inference request now leaves one JSON run ticket under uu_home()/inference_corpus/runs/<yyyymmdd>/)
 ## ⭐ LIVE ESCALATION WORKS (first time, unpinned, on the box)
     hop 0 -> deepseek-r1:14b   check FAILED -> capability -> escalate
     hop 1 -> deepseek-r1:32b   check PASSED -> done

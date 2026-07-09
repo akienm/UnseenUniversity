@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.inference-run-record.T-inference-run-record.20260709.141723049237",
+  "emitter": "cc.0",
+  "namespace": [
+    "inference-run-record",
+    "T-inference-run-record"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T14:17:23.049237",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-run-record"
+    ],
+    "commits": [
+      "14ed9c35f4412fc7e99a5c7c71c204220aa38a59"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-run-record",
+  "body": {
+    "thing": "inference run record",
+    "intention": "Every inference request leaves exactly one JSON record naming each escalation hop, which model served it, and what it claimed — including when the walk HALTS, and without duplicating the payloads it references.",
+    "test": "tests/inference/test_run_record.py::test_an_escalated_request_leaves_one_run_record_naming_every_hop",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_run_record.py::test_an_escalated_request_leaves_one_run_record_naming_every_hop",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n        This is the whole point — the escalation read at a glance, without grepping NDJSON.\n        \"\"\"\n        wrong = _StubResponse(text=f\"{REASONING}\\nANSWER: 41\")\n        right = _StubResponse(text=f\"{REASONING}\\nANSWER: 43\", model=\"stub-bigger\")\n        domain = _domain({0: wrong, 1: right}, answer_check=lambda t: \"43\" in t)\n    \n        answer = domain.ask(\"largest number of units you cannot buy?\", query_id=\"T-frob\")\n        assert answer is not None, \"the stub's hop-1 reply satisfies the check; the walk must finish\"\n    \n        records = _records()\n>       assert len(records) == 1, f\"exactly one run record per request; got {len(records)}\"\nE       AssertionError: exactly one run record per request; got 0\nE       assert 0 == 1\nE        +  where 0 = len([])\n\ntests/inference/test_run_record.py:114: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_run_record.py::test_an_escalated_request_leaves_one_run_record_naming_every_hop\n1 failed in 0.16s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.21s"
+          }
+        }
+      }
+    ],
+    "commit": "14ed9c35f4412fc7e99a5c7c71c204220aa38a59",
+    "impl_paths": [
+      "unseen_university/devices/inference/domains/agentic_loop.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/domains/general.py"
+    ],
+    "ticket": "T-inference-run-record",
+    "narrative": "",
+    "why": "io_corpus captured every byte of all 1948 calls, but nothing represented a REQUEST. CC searched for a truncated reply, looked in the wrong store, and filed a ticket asserting the data did not exist while 19216 chars of it sat on disk. The capture was never the problem — findability was. A builder you cannot read is a builder you cannot let run unattended, which is why this gates the background-builder milestone.",
+    "bootstrap": false
+  }
+}
