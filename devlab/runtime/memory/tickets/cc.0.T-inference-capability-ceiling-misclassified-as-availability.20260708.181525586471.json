@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-capability-ceiling-misclassified-as-availability.20260708.181525586471",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-capability-ceiling-misclassified-as-availability"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T00:15:25.586471+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-capability-ceiling-misclassified-as-availability"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-capability-ceiling-misclassified-as-availability",
+    "title": "[sprint] Capability ceiling (no-capable-connection) is misclassified as an availability failure — the halt lies about its cause",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.7,
+    "tags": [
+      "inference",
+      "domain",
+      "escalation",
+      "CP3"
+    ],
+    "description": "Found while proving T-inference-migrate-consumers-cutover (live run on Hex). When resolve() returns None because NO CAPABLE connection serves the request (a real capability ceiling — e.g. coding bumped to design difficulty, where no tool-capable design-level coder is reachable locally), device.dispatch turns it into an error response that the agentic loop maps to LOOP_AVAILABILITY. BaseDomain._classify then calls it an availability failure, so the walk performs bounded same-difficulty retries and finally halts with system_alarm signature inference-availability-exhausted (\"no live source\") — which NAMES THE WRONG CAUSE. Observed live: hop=0 devstral capability-escalate -> hop=1 design -> resolve None + inference-no-capable-connection alarm -> classified availability -> retry 1/2, 2/2 -> availability-exhausted-halt. Three alarms fire for one event (no-capable-connection, no-provider:worker, availability-exhausted). CP3 violation: the operator is told a source is down when the truth is nothing capable exists. ALSO reconcile the double/triple alarm so ONE alarm fires at one owner. Cutover-EXPOSED, not cutover-caused (pre-cutover route() rarely returned None). Lives in the domain walk (domains/base.py _classify + the dispatch error signaling), not the resolver.\n\n**Test plan:** red->green — a resolve that returns None for no-capable-connection must classify as CAPABILITY (honest ceiling halt naming capability), not availability; exactly one system_alarm fires; no same-difficulty retries occur.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T00:14:39.605126+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T00:14:39.651891+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bc5fd369-2a38-4891-aace-cfd09485621a"
+  }
+}

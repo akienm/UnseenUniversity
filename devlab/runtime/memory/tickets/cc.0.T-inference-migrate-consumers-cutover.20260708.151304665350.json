@@ -20,14 +20,14 @@
   "produced_by": "D-inference-router-stack-decomposition-2026-07-08",
   "body": {
     "id": "T-inference-migrate-consumers-cutover",
-    "title": "Inference router: migrate consumers to resolve(); retire (tier->model->provider) triples + ModelSpec.source_name",
+    "title": "[in_progress] Inference router: migrate consumers to resolve(); retire (tier->model->provider) triples + ModelSpec.source_name",
     "size": "L",
     "tags": [
       "Inference",
       "Router"
     ],
     "priority": 0.75,
-    "status": "closed",
+    "status": "in_progress",
     "role": "master",
     "target_difficulty": 4,
     "decision_id": "D-inference-router-stack-decomposition-2026-07-08",

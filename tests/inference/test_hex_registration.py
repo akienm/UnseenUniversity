@@ -205,6 +205,11 @@ def test_design_difficulty_coding_request_routes_to_hex_first():
     # coding-needs-tools feature policy: the design-capable coding models carry no 'tools'
     # feature, so under _DEFAULT_POLICIES a design+coding request is a no-capable-connection
     # (a separate policy/data concern, not the ladder ordering under test here).
+    # NOTE: policies=[] here is TEST ISOLATION, not the production config — device.py wires
+    # policies=None (_DEFAULT_POLICIES) so coding requires a tool-capable model. The design
+    # rung genuinely has no tool-capable coder locally: that honest ceiling is asserted in
+    # test_consumers_cutover.py, and the walk's misclassification of it is tracked in
+    # T-inference-capability-ceiling-misclassified-as-availability.
     engine = RulesEngine(_hex_sources(), default_registry(), policies=[])
     decision = _resolve(engine, "worker", domain="coding", required_difficulty="design")
     assert decision is not None
