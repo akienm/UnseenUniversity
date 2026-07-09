@@ -223,3 +223,69 @@ EPISTEMOLOGY (Akien, 2026-07-09, now in CC memory as `epistemology-experiment-on
   not reproducible. A capability label read off a budget-bound run is noise. This is exactly
   Akien's point: measure capability at a ceiling where nothing truncates, THEN walk the budget
   down. It also means the b5-frobenius "failures" must all be re-taken at the ceiling.
+
+## Session close: 2026-07-09 (afternoon) — capability is not a ladder; the corpus does not discriminate
+
+### Done (all committed + pushed)
+
+TEST DEBT — the four standing reds are gone. Two were REAL BUGS, not stale tests.
+- T-graph-map-ingests-venvs (NEW, filed+closed PROVEN, 5fc62692): `repo_graph_map._gather_py_files`
+  skipped dirs by NAME while its docstring promised it skipped "hidden/venv/site dirs". This repo's
+  gitignored venv is `test_env/` — 2173 .py files — so EVERY DickSimnel orientation packet led with
+  pip's vendored typing_extensions, ranked above the task's own files. Fix: detect a venv by the
+  `pyvenv.cfg` the interpreter writes, not by guessing its name; skip site-packages/dist-packages;
+  match relative to repo_root (the old skip matched the ABSOLUTE path, so a checkout under any dir
+  named build/dist/venv would have blanked its whole map). Live map now leads with bus/envelope.py.
+- T-preexisting-repo-map-second-symbol (closed PROVEN, same commit): the old proof node COULD NOT be
+  made green honestly. It patched psycopg2 and asserted a fabricated symbol `helper_fn` came back
+  from the symbols table, but build_signature_map now calls build_graph_map FIRST and returns early;
+  the fake cursor was never consulted. Its red meant "the fixture no longer reaches the code".
+- T-repin-coding-prompt-sha256 + duplicate T-preexisting-domain-prompt-sha (closed shipped-unproven,
+  e2eb667f): stale SHA pin. Verified BEFORE re-pinning — 124553ee (Akien's own path-strip fix) is the
+  only content change; ea74a6a0 was a 0-insertion rename. Added the property test the hash cannot
+  make: the prompt must never hand DS an absolute path (measured: 6 hits on pre-fix text, 0 on HEAD).
+- T-preexisting-dicksimnel-done-prefix-close (closed shipped-unproven, 9fdfad27): test was stale, impl
+  right (DS closes shipped-unproven because a branch-builder cannot emit a HEAD-valid proof; verified
+  emit_merge_proof exists). Removed a HOLLOW assertion: `assert_called_once_with(..., mock_cmd.call_args[0][2])`
+  read the expected note out of the actual call and could never fail.
+- T-proof-form-for-repinned-tests (NEW, triage): the SAME missing lever named twice in one session —
+  a test re-pinned onto intended behaviour has no red form a hollow re-pin would fail. Lever 3
+  (property-first pinning) looks strongest.
+
+T-inference-run-record (Akien's ask; closed shipped-unproven — SPINE proven, 14ed9c35 / stub b0f3f33f)
+- "an inference request is its own kind of json ticket ... the whole conversation of the escalation
+  you can read at a glance." Built: unseen_university/devices/inference/run_record.py; BaseDomain.run
+  is now a thin recorder around _escalation_walk, writing in a `finally` so a halt / cost cap / harvest
+  wall / unexpected raise ALL leave a record (the failures are the runs worth reading). All six exits
+  name their resolution. `_decorate_record` is the specialty hook. LoopResult gained model/source_kind.
+  Payloads REFERENCED not duplicated (question excerpted 500ch; hop carries the extracted CLAIM, never
+  the reasoning). 30-day expires_at stamped. Location approved by Akien: uu_home()/inference_corpus/runs/.
+- Proof: tests/inference/test_run_record.py, red=AssertionError -> green=passed. Discriminators: a HALTED
+  walk must also leave a record; an availability failure must never look like a capability failure.
+- NAMED GAPS -> T-run-record-io-join (run_id stamped on io records; one hop is NOT one dispatch, so a
+  single io_ref per hop is wrong by construction), T-run-record-coding-domain-model-blank (CodingDomain
+  hops carry model='' — blind exactly where the background-builder milestone needs sight),
+  T-run-record-retention-sweeper (expires_at is a field nothing reads).
+
+THE OBSERVABILITY LEVER (Akien: "the fact it didn't show up when you were looking is an important lever")
+- CC claimed "we have no captured truncated replies" and FILED A TICKET on it. FALSE. io_corpus had
+  captured every byte of all 1948 calls in ~/.unseen_university/inference_corpus/. CC searched the memory
+  store. The capture was never the problem; FINDABILITY was.
+- Surfaced T-io-corpus-text-drops-reasoning (0.8): ollama returns deepseek-r1's reasoning in
+  `message.thinking`, not `message.content`. `response.text` normalises from content only, so 19216 chars
+  of reasoning are invisible to every consumer, and `_unclosed_think(text)` CAN NEVER FIRE — truncation
+  detection has rested on finish_reason alone, by luck.
+- NOT a 30%-broken-records bug (CC's first read): 1355 ok calls / 186 error calls (raw-only, legitimately
+  empty) / 373 NON-CALL side events sharing schema `inference.io.v1` with no `kind` field.
+
+DEGENERACY: MEASURED, NOT BUILT (note: degeneracy-not-observed-20260709)
+- Akien asked whether models truly hang; correctly reasoned a hang must live OUTSIDE the NN (the forward
+  pass is fixed compute and always halts; non-termination lives in the autoregressive loop).
+- 226 reasoning traces, 6-gram tail unique-ratio: truncated (n=21) min 0.965; completed (n=205) min 0.653.
+  Repetition does NOT track truncation. The MOST repetitive trace COMPLETED. ZERO degenerate cases.
+- So the proposed DEGENERACY outcome class has no positive instance to calibrate against. Narrowed
+  T-truncation-vs-degeneracy-third-outcome to INSTRUMENTATION (record the ratio; recognise a positive
+  when it appears). Strengthened by temperature 0 being the regime where degeneracy is MOST likely.
+- Worked example: 14b on b5-frobenius @8192 spends all 8192 tokens inside `thinking`, content empty,
+  tail ratio 0.972, cut off mid-sentence at "c=1:" while enumerating 52, 53... At 32768 it answers 43.
+
