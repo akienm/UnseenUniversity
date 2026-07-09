@@ -69,6 +69,8 @@ This is also how yesterday's proof passed on environment luck.
 
 - T-escalation-corpus-frontier-band — Corpus saturates at deepseek-r1:32b — add a frontier band, or capability rank has no evidence above the local box (b5_frontier added: 4 queries, every ground truth brute-forced before entering the corpus. Proven: proofs/cc.0.frontier-b)
 - T-inference-cost-first-sort-strands-cloud-fleet — Cost-first sort makes 19/22 models unreachable — escalation can never leave the local box (Escalation can leave the local box. 'frontier' is the capability rung the box does not hold; claiming it requires capabi)
+- T-repin-coding-prompt-sha256 — Repin coding-prompt SHA256 (stale since coding-prompt path fix 124553ee) (Re-pinned _CODING_PROMPT_SHA256 to 0e044ff7 (the intended post-124553ee text). Verified BEFORE re-pinning: 124553ee (Aki)
+- T-preexisting-domain-prompt-sha — test_coding_prompt_byte_identical red — coding prompt drifted from pinned SHA256 (DUPLICATE of T-repin-coding-prompt-sha256 — same failing node (test_domain_prompts.py, the coding-prompt SHA pin), same )
 ## ⭐ LIVE ESCALATION WORKS (first time, unpinned, on the box)
     hop 0 -> deepseek-r1:14b   check FAILED -> capability -> escalate
     hop 1 -> deepseek-r1:32b   check PASSED -> done

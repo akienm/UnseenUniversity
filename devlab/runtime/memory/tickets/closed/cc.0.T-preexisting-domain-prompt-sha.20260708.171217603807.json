@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-preexisting-domain-prompt-sha",
-    "title": "[sprint] test_coding_prompt_byte_identical red — coding prompt drifted from pinned SHA256",
+    "title": "test_coding_prompt_byte_identical red — coding prompt drifted from pinned SHA256",
     "size": "S",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.2,
     "tags": [
       "test",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-08T23:11:54.103278+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "DUPLICATE of T-repin-coding-prompt-sha256 — same failing node (test_domain_prompts.py, the coding-prompt SHA pin), same cause (the pin went stale when 124553ee intentionally stripped six hardcoded ~/dev/src/UnseenUniversity paths). Resolved there: verified the drift was that commit alone, re-pinned, renamed the node to say what it guards, and added the discriminating no-absolute-paths property test. Commits 87720b30 -> e2eb667f. Two tickets for one red is itself the finding — the second was filed a day later without a duplicate check.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T18:38:29.434182+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T23:11:54.103322+00:00",
     "inferred_intention": "manage-test-assertions",
-    "inferred_intention_id": "bbe12133-519f-4ea3-ac45-ea8b51ec91fc"
+    "inferred_intention_id": "bbe12133-519f-4ea3-ac45-ea8b51ec91fc",
+    "proven": false,
+    "unproven_reason": "Closed as a duplicate, so it carries the proof status of T-repin-coding-prompt-sha256 (shipped-unproven: a test-only hash re-pin has no implementation delta and thus no red form a hollow re-pin would fail).",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
