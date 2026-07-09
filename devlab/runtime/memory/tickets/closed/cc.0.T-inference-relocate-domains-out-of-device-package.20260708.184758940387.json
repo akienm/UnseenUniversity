@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-relocate-domains-out-of-device-package",
-    "title": "[dependency] Move domains/ out of devices/inference/ — a domain is not part of the proxy device",
+    "title": "Move domains/ out of devices/inference/ — a domain is not part of the proxy device",
     "size": "S",
-    "status": "dependency",
+    "status": "closed",
     "priority": 0.6,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T00:47:44.785743+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "SUPERSEDED by D-domains-general-with-device-owned-specializations-2026-07-08. The destination question this ticket existed to ask is now answered: global domains -> unseen_university/domains/ (T-domains-global-package); shared execution primitives -> unseen_university/agentic/ (T-agentic-primitives-package, confirmed by Akien); specializations -> their own devices (T-ds-coding-domain-specialization, T-aider-coding-domain-specialization). devices/inference/domains/ was a waypoint from T-inference-move-agentic-loop-to-domain, not a destination.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T03:02:22.820148+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T00:47:44.785800+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "a7d68859-9dca-422f-a2f8-88795722136b"
+    "inferred_intention_id": "a7d68859-9dca-422f-a2f8-88795722136b",
+    "proven": false,
+    "unproven_reason": "No code change to prove: this ticket is a pure scoping/retarget artifact, superseded before any move happened. The proof-lever we lack is a way to prove a RETARGET — proof_emitter has no red form for 'this ticket's question was answered elsewhere and its work redistributed to 4 successor tickets'. The real proofs land on the successors (each is a red->green relocation/structure proof).",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

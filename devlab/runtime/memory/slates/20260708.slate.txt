@@ -25,6 +25,7 @@
 - T-inference-router-decomposition-invariant-proof — Inference router: runnable decomposition invariant — add a connection, zero rule edits, resolve returns it (CLOSED PROVEN (proof cc.0.the-router-decomposition-invariant-addin @240ad99f, red=AssertionError -> green=passed). The r)
 - T-inference-break-proxy-domain-cycle — Break the proxy<->domain circular dependency: device builds RouteRequest, delete BaseDomain.select() (CLOSED PROVEN (proof cc.0.the-inference-proxy-is-a-leaf-the-routin @343c20f3, red=AssertionError -> green=passed). devic)
 - T-inference-move-agentic-loop-to-domain — The agentic loop belongs to the domain object, not the proxy — relocate loop/editor/edit machinery out of inference/ (CLOSED PROVEN (proof cc.0.the-inference-proxy-contains-no-agentic @ea74a6a0, red=AssertionError -> green=passed). Moved )
+- T-inference-relocate-domains-out-of-device-package — Move domains/ out of devices/inference/ — a domain is not part of the proxy device (SUPERSEDED by D-domains-general-with-device-owned-specializations-2026-07-08. The destination question this ticket exist)
 ## Planned
 - Fable judgment block (per 07-07 hand-off): T-rules-store-materialize, T-builder-memory-repo-residency, T-filing-audits-independent-examiner (design half; build gated on T-audit-run-records-enforced)
 
