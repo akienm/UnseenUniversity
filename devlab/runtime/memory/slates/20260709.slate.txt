@@ -51,3 +51,5 @@ This is also how yesterday's proof passed on environment luck.
 ## Ad hoc
 
 ## Done today
+- T-inference-escalation-eval-corpus — Escalation eval corpus — graduated queries with ground-truth verifiers; measures each model's real rung (12 graduated queries in 4 structural bands, each with a deterministic verifier and the plausible confabulation it must r)
+- T-general-domain-chat-prototype — GeneralDomain — the prototype chatbot: concrete default domain, one dispatch per attempt (GeneralDomain is the concrete default domain ('' registered, not a fallback special-case); one attempt = ONE dispatch, n)
