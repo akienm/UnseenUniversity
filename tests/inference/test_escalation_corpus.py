@@ -55,6 +55,28 @@ def test_every_verifier_accepts_its_ground_truth():
         assert q.verify(f"Reasoning here.\nANSWER: {q.answer}"), f"{q.id} rejects its own answer"
 
 
+def test_every_verifier_accepts_the_phrasings_a_correct_model_actually_emits():
+    """The OTHER side of the classifier. Rejecting a right answer is as fatal as accepting a wrong one.
+
+    T-escalation-corpus-false-negatives. The first live matrix reported deepseek-r1:32b as LESS
+    capable than deepseek-r1:14b. It was not: it answered 'ANSWER: 100 litres' where ground truth
+    was '100', and 'ANSWER: both apples and oranges' where ground truth was 'both'. Exact string
+    equality scored both as wrong. An instrument that under-reports capability pushes every model
+    onto a lower rung — and the tier ladder is about to be rebuilt on exactly this measurement.
+
+    The prior proof (rejects-its-confabulation) constrained only FALSE POSITIVES. A one-sided
+    proof on a classifier proves one side.
+    """
+    assert CORPUS, "empty corpus — this test would pass vacuously"
+    for q in CORPUS:
+        assert q.accepts, f"{q.id} declares no accepted phrasings"
+        for phrasing in q.accepts:
+            assert q.verify(f"Working through it.\nANSWER: {phrasing}"), (
+                f"{q.id} REJECTS the correct answer {phrasing!r} — a false negative makes a "
+                f"capable model look like it belongs on a lower rung"
+            )
+
+
 def test_every_verifier_rejects_its_confabulation():
     """THE test. Ground truth must reject a confident wrong answer, not just an empty one.
 

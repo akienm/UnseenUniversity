@@ -126,14 +126,27 @@ class EvalQuery:
     prompt: str
     answer: str
     confabulation: str
+    #: Correct phrasings a model ACTUALLY emits — the answer carrying its unit ('100 litres'),
+    #: spelled out ('both apples and oranges'), or with its noun ('48 books'). Rejecting these
+    #: is a false negative, and a false negative makes a capable model look like it belongs on a
+    #: lower rung. `answer` is always accepted and need not be repeated here.
+    #: (T-escalation-corpus-false-negatives.)
+    accepts: tuple[str, ...] = ()
+
+    @property
+    def accepted_forms(self) -> tuple[str, ...]:
+        """Ground truth plus every phrasing that means the same thing."""
+        return (self.answer, *self.accepts)
 
     def verify(self, reply: str) -> bool:
-        """True iff `reply`'s extracted answer matches ground truth.
+        """True iff `reply`'s extracted answer equals one of the accepted forms.
 
         Equality on the normalized form, never a substring test: 'the answer is not 42'
-        contains '42' and must not verify as 42.
+        contains '42' and must not verify as 42. Equality against a SET of forms rather than
+        one string, because a correct model writes '100 litres', not '100'.
         """
-        return normalize(extract_answer(reply)) == normalize(self.answer)
+        got = normalize(extract_answer(reply))
+        return any(got == normalize(form) for form in self.accepted_forms)
 
 
 CORPUS: tuple[EvalQuery, ...] = (

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-escalation-corpus-false-negatives.20260709.084259416535",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalation-corpus-false-negatives"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T14:42:59.416535+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-escalation-corpus-false-negatives"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-escalation-corpus-false-negatives",
+    "title": "[sprint] Corpus verifiers reject CORRECT answers that carry a unit or natural phrasing",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.92,
+    "tags": [
+      "inference",
+      "escalation",
+      "eval"
+    ],
+    "description": "FOUND 2026-07-09 by reading the raw replies behind a failure instead of trusting the verdict.\n\nThe corpus verifier (escalation_corpus.EvalQuery.verify) compares `normalize(extract_answer(reply)) == normalize(self.answer)` — exact equality on the normalized string. A model that answers CORRECTLY but phrases the answer naturally is scored as WRONG:\n\n  b2-tank   ground truth '100'   deepseek-r1:32b said 'ANSWER: 100 litres'                -> scored fail\n  b4-boxes  ground truth 'both'  deepseek-r1:32b said 'ANSWER: both apples and oranges'   -> scored fail\n\nBoth replies had correct step-by-step reasoning, finish_reason='stop', no truncation, and reproduced identically across 3 samples at temperature 0.\n\nCONSEQUENCE: the first capability matrix produced by this instrument was WRONG. It reported deepseek-r1:32b (10/12) as strictly LESS capable than deepseek-r1:14b (11/12), including a b2 query the 32b 'failed'. That conclusion was an artifact of the verifier, not a property of the models. An instrument that under-reports capability makes every model look like it belongs on a lower rung — precisely the measurement the tier ladder is about to be rebuilt on.\n\nWHY THE PROOF DID NOT CATCH IT: the closed ticket's proof was test_every_verifier_rejects_its_confabulation. That assertion is TRUE and remains true. It only ever constrained FALSE POSITIVES (accepting a wrong answer). Nothing constrained FALSE NEGATIVES (rejecting a right answer), so the verifier was free to be arbitrarily strict. A one-sided proof on a classifier proves one side.\n\nWORK:\n- Give each EvalQuery an explicit set of ACCEPTED phrasings (or an anchored regex the normalized extraction must fullmatch), covering the unit-bearing and natural-language forms a correct model actually emits: '100 litres', '100 L', 'both apples and oranges', '10 years old', 'Cy'.\n- The accepted set must still REJECT the confabulation (fullmatch, never substring — 'the answer is not 42' must not verify as 42).\n- Add the missing symmetric test: every query verifies each of its accepted phrasings. Both directions of the classifier get an assertion.\n- Re-run escalation_matrix; the previous matrix is void. Do not carry its numbers forward.\n\n**Test plan:** red->green, hermetic. RED: assert that q.verify('ANSWER: 100 litres') is True for b2-tank -> fails today. GREEN: every query accepts every declared phrasing AND still rejects its confabulation (the existing test keeps running unchanged — both sides asserted).\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T14:42:38.908904+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T14:42:38.954884+00:00",
+    "inferred_intention": "modify the scoring mechanism for model responses",
+    "inferred_intention_id": "d804353c-0a45-4135-a950-9d8baadf5f04"
+  }
+}
