@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.generaldomain-escalation-on-a-confident.T-general-domain-chat-prototype.20260709.080453693887",
+  "emitter": "cc.0",
+  "namespace": [
+    "generaldomain-escalation-on-a-confident",
+    "T-general-domain-chat-prototype"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T08:04:53.693887",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-general-domain-chat-prototype"
+    ],
+    "commits": [
+      "343e076fe812dd9234fbd1462a8575e8e038cd34"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-general-domain-chat-prototype",
+  "body": {
+    "thing": "GeneralDomain escalation on a confident wrong answer",
+    "intention": "When the cheapest rung returns a confident WRONG answer, GeneralDomain bumps exactly one rung and returns the stronger rung's correct answer — it never hands back the confabulation.",
+    "test": "tests/inference/test_general_domain_escalation.py::test_a_confident_wrong_answer_escalates_and_the_next_rung_answers",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_general_domain_escalation.py::test_a_confident_wrong_answer_escalates_and_the_next_rung_answers",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n        This is the whole prototype. If a confabulation satisfied the completion contract, the\n        walk would return the wrong answer at hop 0 and escalation would be decorative.\n        \"\"\"\n        dom, dev = _domain(\n            {0: _StubResponse(\"ANSWER: 32\"), 1: _StubResponse(\"ANSWER: 42\")},\n            answer_check=_is_42,\n        )\n>       assert dom.ask(\"what is 17+25?\") == \"ANSWER: 42\"\nE       AssertionError: assert 'ANSWER: 32' == 'ANSWER: 42'\nE         \nE         - ANSWER: 42\nE         ?         ^\nE         + ANSWER: 32\nE         ?         ^\n\ntests/inference/test_general_domain_escalation.py:136: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_general_domain_escalation.py::test_a_confident_wrong_answer_escalates_and_the_next_rung_answers\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "343e076fe812dd9234fbd1462a8575e8e038cd34",
+    "impl_paths": [
+      "devlab/runtime/memory/proofs/cc.0.escalation-eval-corpus.T-inference-escalation-eval-corpus.20260709.080435027297.json",
+      "devlab/runtime/memory/tickets/cc.0.T-general-domain-chat-prototype.20260709.074646726231.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-cost-first-sort-strands-cloud-fleet.20260709.074646577732.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-escalation-eval-corpus.20260709.074646856783.json",
+      "unseen_university/devices/inference/domains/escalation_corpus.py",
+      "unseen_university/devices/inference/domains/general.py"
+    ],
+    "ticket": "T-general-domain-chat-prototype",
+    "narrative": "",
+    "why": "Chat is the simplest consumer of the escalation walk: one dispatch, one reply, no tools. If escalation cannot be made correct here it cannot be made correct anywhere. The red is the shipped 2026-07-08 bug in miniature — a stub that returns whatever the cheapest model said.",
+    "bootstrap": false
+  }
+}
