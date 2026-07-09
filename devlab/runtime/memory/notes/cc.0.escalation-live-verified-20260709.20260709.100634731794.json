@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.escalation-live-verified-20260709.20260709.100634731794",
+  "emitter": "cc.0",
+  "namespace": [
+    "escalation-live-verified-20260709"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-09T10:06:34.731794",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Live escalation works on the general domain (2026-07-09)",
+    "text": "FIRST LIVE END-TO-END ESCALATION, unpinned, on the box.\n\n  hop 0 -> deepseek-r1:14b   answer_check FAILED  -> class=capability -> escalate\n  hop 1 -> deepseek-r1:32b   answer_check PASSED  -> class=done\n  VERIFIED ANSWER: 'Both apples and oranges'   (corpus query b4-boxes, ground truth 'both')\n\nThree defects had to be fixed first, each found by reading the RAW REPLY behind a verdict rather than trusting the verdict:\n\n1. VERIFIER FALSE NEGATIVES (T-escalation-corpus-false-negatives). Exact string equality scored 'ANSWER: 100 litres' wrong against ground truth '100'. The first capability matrix reported deepseek-r1:32b (10/12) as LESS capable than deepseek-r1:14b (11/12). That matrix is VOID. Fixed: EvalQuery.accepts.\n\n2. THE HANDOFF TRANSMITTED THE CONFABULATION (T-escalation-handoff-transmits-the-confabulation). prior_attempt = result.text[:400] is the OPENING of a reasoning model's <think> block, cut mid-sentence, injected under '**What was tried:**' with nothing saying it failed. Measured, one variable isolated:\n    32b, no handoff                    -> PASS 'both apples and oranges'\n    32b, handoff as shipped            -> FAIL 'Oranges and apples'\n    32b, answer-only + marked WRONG    -> PASS 'Both apples and oranges'\n  And stripping <think> was NOT sufficient: deepseek-r1 restates its derivation in prose outside the block, and the 32b followed it even when told 'do not continue its reasoning'. THE RULE: only the failed CLAIM crosses a rung, never the argument for it.\n\n3. SLOW LOCAL MODEL READ AS A DOWN SOURCE. GeneralDomain timeout was 120s; deepseek-r1:32b takes 110-190s on Hex. Every attempt at the stronger rung timed out, classified AVAILABILITY, retried in place, exhausted, halted. Raised to 300s. A $0/second on-box model that is merely slow is not a down source.\n\nMEASURED CAPABILITY MATRIX (fixed verifier, pinned, 12 queries / 4 structural bands):\n  deepseek-r1:14b  claims 'code'    b1 3/3  b2 3/3  b3 3/3  b4 2/3   (fails b4-boxes)\n  deepseek-r1:32b  claims 'design'  b1 3/3  b2 3/3  b3 3/3  b4 3/3\n  llama3.2:3b      claims 'classify' b1 3/3  b2 3/3  b3 1/3  b4 1/3\nllama3.2:3b claims the FLOOR bucket and clears two full bands: difficulty_bucket is a claim, not a measurement.\n\nSTILL OPEN: the runtime escalation trigger for open chat with no ground truth (a judge? self-consistency?) is the NAMED DEFERRED LEVER, pinned by test_the_default_answer_check_cannot_detect_a_confabulation. And 19/22 models remain unreachable by dimensional routing (T-inference-cost-first-sort-strands-cloud-fleet)."
+  }
+}

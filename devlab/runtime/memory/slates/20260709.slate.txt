@@ -55,3 +55,48 @@ This is also how yesterday's proof passed on environment luck.
 - T-general-domain-chat-prototype — GeneralDomain — the prototype chatbot: concrete default domain, one dispatch per attempt (GeneralDomain is the concrete default domain ('' registered, not a fallback special-case); one attempt = ONE dispatch, n)
 - T-escalation-corpus-false-negatives — Corpus verifiers reject CORRECT answers that carry a unit or natural phrasing (EvalQuery.accepts declares the phrasings a correct model actually emits; verify() compares against the accepted-forms SE)
 - T-escalation-handoff-transmits-the-confabulation — The hop-1 handoff feeds the weak model's raw reasoning to the strong model, which adopts its wrong answer (Only the failed CLAIM crosses a rung — never the argument for it. _summarize_attempt hands over extract_answer() marked )
+
+## Done today
+- T-inference-escalation-eval-corpus — CLOSED PROVEN. 12 queries / 4 structural bands, deterministic
+  verifiers, each carrying the confabulation it must reject. No LLM judge.
+- T-general-domain-chat-prototype — CLOSED PROVEN. GeneralDomain is the concrete default domain
+  (registered at '', not a fallback special-case). One attempt = ONE dispatch, no tools. Escalation
+  walk INHERITED from BaseDomain (single money-safety owner).
+- T-escalation-corpus-false-negatives — CLOSED PROVEN. Verifier rejected CORRECT answers
+  ('ANSWER: 100 litres' vs truth '100'). First capability matrix was VOID.
+- T-escalation-handoff-transmits-the-confabulation — CLOSED PROVEN + LIVE-VERIFIED.
+  Only the failed CLAIM crosses a rung, never the argument for it.
+
+## ⭐ LIVE ESCALATION WORKS (first time, unpinned, on the box)
+    hop 0 -> deepseek-r1:14b   check FAILED -> capability -> escalate
+    hop 1 -> deepseek-r1:32b   check PASSED -> done
+    VERIFIED ANSWER: "Both apples and oranges"   (b4-boxes, ground truth 'both')
+  Evidence: notes/cc.0.escalation-live-verified-20260709.*.json
+
+## ⛔ STILL BLOCKING (the reason "simple case first" was the right call)
+  19 of 22 models are UNREACHABLE by dimensional routing (all 450 dimension combos).
+  Only deepseek-r1:14b, deepseek-r1:32b, devstral-small-2:24b are ever selected — all local.
+  cost_class_rank sorts FIRST and owned_local dominates every bucket it claims; difficulty_meets
+  is a >= filter, so a cheap model claiming the top bucket wins every bucket beneath it.
+  The selector REWARDS overclaiming and nothing verifies the claim.
+  => T-inference-cost-first-sort-strands-cloud-fleet (0.95) BLOCKS T-inference-tier-ladder-real.
+
+  Measured proof the label is a wish: llama3.2:3b claims 'classify' (the FLOOR) and clears
+  b1 3/3 + b2 3/3. deepseek-r1:32b claims 'design'; gemini-2.0-flash also claims 'design'.
+
+## Next
+1. T-inference-cost-first-sort-strands-cloud-fleet (0.95) — separate CAPABILITY RANK (measured,
+   ordered) from COST PREFERENCE (the tiebreak WITHIN a rung). Escalation walks capability; cost
+   only chooses among stacks that clear it. Rank comes from escalation_matrix, not a hand-typed label.
+   Do NOT re-add curated triples.
+2. T-escalation-truncation-misclassified-as-capability (0.85) — a max_tokens truncation is
+   classified CAPABILITY and spends up a tier. The bump cannot help: the stronger model is also a
+   reasoning model. Needs a BUDGET class + bounded same-rung retry at a larger budget.
+3. T-inference-tier-ladder-real (0.95, blocked by #1).
+4. CodingDomain may need its own _summarize_attempt: its "answer" is a diff/test result, not a
+   final claim. The rule still holds — only the claim crosses.
+
+## Tools built (data, never assertions — they reach live providers)
+  devlab/claudecode/escalation_matrix.py  — pin each model, run the corpus, emit the capability matrix
+                                            (cost-gated: local by default, --include-subscription, --include-paid)
+  devlab/claudecode/escalation_demo.py    — run ONE query live through the walk, unpinned
