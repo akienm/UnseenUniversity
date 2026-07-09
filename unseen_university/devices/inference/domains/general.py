@@ -88,8 +88,18 @@ class GeneralDomain(BaseDomain):
         harvest_mode: bool = False,
         answer_check: Callable[[str], bool] | None = None,
         inference_device=None,
-        max_tokens: int = 1024,
-        timeout: int = 120,
+        # A reasoning model spends its budget inside <think> before writing a word of answer.
+        # 1024 truncates deepseek-r1 mid-thought; the check then fails and the walk classifies
+        # it as CAPABILITY and spends up a tier for want of tokens
+        # (T-escalation-truncation-misclassified-as-capability).
+        max_tokens: int = 4096,
+        # The escalation rungs are on-box and cost $0/second, and a 32b reasoning model takes
+        # 110-190s on Hex. At 120s every attempt at the stronger rung timed out, read as
+        # AVAILABILITY ("source down"), retried in place, and exhausted — a slow-but-healthy
+        # local model is not a down source. AgenticLoop already raises its wall for local /
+        # flat-rate sources on turn 0; a single dispatch has no turn 0 to learn from, so the
+        # default starts wide. Cheap to wait, expensive to misread.
+        timeout: int = 300,
     ) -> None:
         super().__init__(name, harvest_mode=harvest_mode)
         self._answer_check = answer_check or _any_nonempty_reply_is_done

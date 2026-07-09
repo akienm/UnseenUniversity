@@ -47,6 +47,8 @@ def main() -> int:
     ap.add_argument("--query", help="corpus query id (see --list)")
     ap.add_argument("--list", action="store_true", help="list query ids and bands")
     ap.add_argument("--max-tokens", type=int, default=4096)
+    ap.add_argument("--timeout", type=int, default=300,
+                    help="a 32b reasoning model takes 110-190s on Hex; too low reads as a down source")
     args = ap.parse_args()
 
     if args.list or not args.query:
@@ -71,7 +73,8 @@ def main() -> int:
 
     # Ground truth IS the answer check. At runtime, with no ground truth, this is the open
     # question the general domain names rather than pretends to have solved.
-    domain = GeneralDomain(answer_check=query.verify, max_tokens=args.max_tokens)
+    domain = GeneralDomain(answer_check=query.verify, max_tokens=args.max_tokens,
+                           timeout=args.timeout)
     result = domain.ask(f"{query.prompt}\n\n{ANSWER_INSTRUCTION}", query_id=f"demo:{query.id}")
 
     print("\n" + "=" * 72)
