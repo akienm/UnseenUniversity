@@ -237,14 +237,41 @@ class TestPostResultGuards:
         assert "DONE:" in escalate_reason or "prefix" in escalate_reason
         mock_cmd.assert_not_called()  # close must not be called
 
-    def test_done_prefix_closes_ticket(self):
+    def test_done_prefix_closes_ticket_shipped_unproven_naming_the_lever(self):
+        """A DONE: result closes the ticket — but never posing as proven.
+
+        DickSimnel is a BRANCH builder: its implementation lives on an unmerged branch, not
+        at HEAD, so it structurally cannot emit a proof the proof-on-close gate would accept
+        (the gate re-runs the test against HEAD). The honest close is therefore
+        `shipped-unproven` with the missing lever named — the real proof emits at merge time
+        via devlab/claudecode/builder_merge_proof.emit_merge_proof.
+
+        This test previously asserted a BARE three-argument close, and asserted the note with
+        `mock_cmd.call_args[0][2]` — reading the expected value out of the actual call, so it
+        could not have failed on a wrong note. It went red when DS started closing honestly.
+        Pin the intent instead: the close carries the flag AND a lever that says why.
+        """
         d = self._device()
-        close_resp = {"status": "closed"}
-        with patch.object(d, "_run_queue_cmd", return_value=close_resp) as mock_cmd:
+        with patch.object(d, "_run_queue_cmd", return_value={"status": "closed"}) as mock_cmd:
             with patch.object(d, "_channel_event"):
                 with patch.object(d, "_escalate_ticket") as mock_esc:
                     d._post_result("T-x", "DONE: shipped. Commit abc123. Tests pass.")
-        mock_cmd.assert_called_once_with("close", "T-x", mock_cmd.call_args[0][2])
+
+        mock_cmd.assert_called_once()
+        args = mock_cmd.call_args[0]
+        assert args[0] == "close" and args[1] == "T-x"
+        assert "DONE: shipped. Commit abc123." in args[2], (
+            f"the close note must carry DickSimnel's own result text; got {args[2]!r}"
+        )
+        assert "--shipped-unproven" in args, (
+            "DickSimnel must never close posing as proven — it builds on an unmerged branch "
+            f"and cannot emit a HEAD-valid proof. Close call was: {args!r}"
+        )
+        lever = args[args.index("--shipped-unproven") + 1]
+        assert "branch" in lever.lower() and "proof" in lever.lower(), (
+            f"the shipped-unproven close must NAME the missing proof-lever; got {lever!r}"
+        )
+
         mock_esc.assert_not_called()
         assert d._tickets_processed == 1
 
