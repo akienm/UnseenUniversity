@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.corpus-verifier-accepts-correct-answers.T-escalation-corpus-false-negatives.20260709.084411352740",
+  "emitter": "cc.0",
+  "namespace": [
+    "corpus-verifier-accepts-correct-answers",
+    "T-escalation-corpus-false-negatives"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T08:44:11.352740",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-escalation-corpus-false-negatives"
+    ],
+    "commits": [
+      "1ae3f374cc4bdd99dc4e7620c6f153003c122ad8"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-escalation-corpus-false-negatives",
+  "body": {
+    "thing": "corpus verifier accepts correct answers as actually phrased",
+    "intention": "Every corpus query verifies each phrasing a correct model actually emits (unit-bearing, spelled-out, noun-carrying), while still rejecting its confabulation.",
+    "test": "tests/inference/test_escalation_corpus.py::test_every_verifier_accepts_the_phrasings_a_correct_model_actually_emits",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_escalation_corpus.py::test_every_verifier_accepts_the_phrasings_a_correct_model_actually_emits",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        T-escalation-corpus-false-negatives. The first live matrix reported deepseek-r1:32b as LESS\n        capable than deepseek-r1:14b. It was not: it answered 'ANSWER: 100 litres' where ground truth\n        was '100', and 'ANSWER: both apples and oranges' where ground truth was 'both'. Exact string\n        equality scored both as wrong. An instrument that under-reports capability pushes every model\n        onto a lower rung — and the tier ladder is about to be rebuilt on exactly this measurement.\n    \n        The prior proof (rejects-its-confabulation) constrained only FALSE POSITIVES. A one-sided\n        proof on a classifier proves one side.\n        \"\"\"\n        assert CORPUS, \"empty corpus — this test would pass vacuously\"\n        for q in CORPUS:\n>           assert q.accepts, f\"{q.id} declares no accepted phrasings\"\nE           AssertionError: b1-sum declares no accepted phrasings\nE           assert ()\nE            +  where () = EvalQuery(id='b1-sum', band='b1_single_step', prompt='What is 17 + 25?', answer='42', confabulation='32', accepts=()).accepts\n\ntests/inference/test_escalation_corpus.py:72: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_escalation_corpus.py::test_every_verifier_accepts_the_phrasings_a_correct_model_actually_emits\n1 failed in 0.16s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "1ae3f374cc4bdd99dc4e7620c6f153003c122ad8",
+    "impl_paths": [
+      "unseen_university/devices/inference/domains/escalation_corpus.py"
+    ],
+    "ticket": "T-escalation-corpus-false-negatives",
+    "narrative": "",
+    "why": "The prior proof constrained only false POSITIVES. A one-sided proof on a classifier proves one side: the verifier was free to be arbitrarily strict, and it was — scoring 'ANSWER: 100 litres' wrong against ground truth '100', which made a capable model look like it belonged on a lower rung.",
+    "bootstrap": false
+  }
+}
