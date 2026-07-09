@@ -15,14 +15,18 @@ import os
 
 from unseen_university.devices.inference.domains.base import BaseDomain, DomainPrompts
 from unseen_university.devices.inference.domains.coding import CodingDomain
+from unseen_university.devices.inference.domains.general import GeneralDomain
 
 log = logging.getLogger(__name__)
 
-__all__ = ["BaseDomain", "CodingDomain", "DomainPrompts", "resolve_domain"]
+__all__ = ["BaseDomain", "CodingDomain", "DomainPrompts", "GeneralDomain", "resolve_domain"]
 
-# Registered domain specializations, keyed by domain name.
+# Registered domain specializations, keyed by domain name. '' is the GENERAL domain — the
+# default, from which everything else descends (Akien, 2026-07-08). It is a registered entry
+# rather than a fallback special-case, so 'the default domain' is a thing you can point at.
 _REGISTRY: dict[str, type[BaseDomain]] = {
     CodingDomain.name: CodingDomain,
+    GeneralDomain.name: GeneralDomain,
 }
 
 # Truthy spellings for the harvest-mode operator toggle (case-insensitive).
@@ -44,10 +48,14 @@ def _harvest_mode_from_env() -> bool:
 def resolve_domain(name: str) -> BaseDomain:
     """Return the Domain object for `name`.
 
-    A registered name yields its specialized subclass instance; any other name — unknown
-    or '' (generalist) — yields a BaseDomain carrying that exact name. The name is passed
-    through, never collapsed, so selection via the returned object is identical to calling
-    the selector with that domain string directly.
+    A registered name yields its specialized subclass instance; '' yields the GeneralDomain
+    (the default); any other name yields a GeneralDomain carrying that exact name. The name
+    is passed through, never collapsed, so selection via the returned object is identical to
+    calling the selector with that domain string directly.
+
+    'The default is the general domain, and everybody else descends from that' — so an
+    unregistered name is not an error and not a collapse to '': it is the general domain
+    wearing that name, until someone writes the specialization.
 
     harvest_mode is set from the UU_HARVEST_MODE env toggle at this single construction
     chokepoint (default OFF); see ``_harvest_mode_from_env``.
@@ -58,4 +66,4 @@ def resolve_domain(name: str) -> BaseDomain:
     cls = _REGISTRY.get(name)
     if cls is not None:
         return cls(harvest_mode=harvest)
-    return BaseDomain(name=name, harvest_mode=harvest)
+    return GeneralDomain(name=name, harvest_mode=harvest)
