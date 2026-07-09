@@ -2,8 +2,8 @@
 Tests for T-domain-object-base (D-domain-object-encapsulation-2026-07-01):
 the Domain object owns model selection + prompts for one KIND of task.
 
-Behavior-preserving: CodingDomain.select() reproduces exactly what
-RulesEngine.route(domain='coding') chooses today, and CodingDomain's prompt is
+CodingDomain.select() composes the dimensional resolver (rules_engine.resolve) for a
+domain='coding' request and picks the coding-tagged model, and CodingDomain's prompt is
 byte-identical to the coding domain-prompt. An unknown domain resolves to a
 generalist BaseDomain (name passed through, empty prompt) — no crash, no name
 collapse. Escalation / loop ownership is OUT of scope (next ticket).

@@ -209,6 +209,14 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.0,
         context_window=128_000,
         tags=["coding", "flat-rate", "ollama-pro", "agentic", "tool-call"],
+        # The free-text tags above already recorded this model's native tool-calling; the
+        # STRUCTURED flag the selector filters on was never populated. Under the monolith
+        # that was harmless (the triples curated devstral as the coding floor by hand), but
+        # dimensional selection reads `features` — leaving it empty let a tool-less reasoning
+        # model take the coding slot and silently confabulate completion. Verified live on Hex:
+        # devstral emits a native tool_call and executes the Write (tests/inference/
+        # test_dicksimnel_live_smoke.py).
+        features=["tools"],
         domains=["coding"],
         notes="Mistral Devstral Small 2 — purpose-built agentic coding model, 24B. Floor candidate for flat-rate worker tier.",
         created_at="2026-06-11T00:00:00Z",

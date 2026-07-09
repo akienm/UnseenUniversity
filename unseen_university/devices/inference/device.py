@@ -123,7 +123,7 @@ class InferenceDevice(BaseDevice):
             self._sources,
             self._models,
             connections=default_connections(self._models),
-            policies=[],
+            policies=None,  # _DEFAULT_POLICIES — coding-needs-tools is load-bearing
         )
         self._health = HealthMonitor(self._sources)
         self._health.start()
