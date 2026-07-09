@@ -78,8 +78,10 @@ def test_core_value_lookup_helper():
 def test_igor_brainstem_does_not_duplicate_the_values():
     # DRY / single source of truth: the brainstem must source from canonical, not
     # re-inline the literals (that duplication is what drifts).
-    src = (REPO_ROOT / "devices/igor/brainstem/core_patterns.py").read_text()
-    assert "from diagnostic_base.core_values import CORE_VALUES" in src
+    src = (
+        REPO_ROOT / "unseen_university/devices/igor/brainstem/core_patterns.py"
+    ).read_text()
+    assert "from unseen_university.diagnostic_base.core_values import CORE_VALUES" in src
     assert "core_patterns = [" not in src, (
         "brainstem re-inlined the core-value literals — import CORE_VALUES instead"
     )
