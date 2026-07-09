@@ -155,16 +155,19 @@ CORPUS: tuple[EvalQuery, ...] = (
         id="b1-sum", band="b1_single_step",
         prompt="What is 17 + 25?",
         answer="42", confabulation="32",
+        accepts=("42", "17 + 25 = 42"),
     ),
     EvalQuery(
         id="b1-shelves", band="b1_single_step",
         prompt="A shelf holds 8 books. How many books do 6 identical shelves hold?",
         answer="48", confabulation="14",  # added instead of multiplied
+        accepts=("48 books", "48 book"),
     ),
     EvalQuery(
         id="b1-letter", band="b1_single_step",
         prompt="What is the 5th letter of the English alphabet?",
         answer="e", confabulation="f",  # off by one
+        accepts=("e", "the letter e"),
     ),
     # ── b2: dependent steps + one irrelevant fact that must be discarded ─────
     EvalQuery(
@@ -174,6 +177,7 @@ CORPUS: tuple[EvalQuery, ...] = (
             "A separate tray holds 20 cupcakes. How many muffins does he have now?"
         ),
         answer="24", confabulation="44",  # folded the cupcake distractor in
+        accepts=("24 muffins", "24 muffin"),
     ),
     EvalQuery(
         id="b2-ages", band="b2_multi_step",
@@ -182,6 +186,7 @@ CORPUS: tuple[EvalQuery, ...] = (
             "Sarah's age plus Tom's age will be 40. How old is Tom now?"
         ),
         answer="10", confabulation="20",  # answered about Sarah, the wrong person
+        accepts=("10 years old", "10 years", "tom is 10"),
     ),
     EvalQuery(
         id="b2-tank", band="b2_multi_step",
@@ -190,6 +195,8 @@ CORPUS: tuple[EvalQuery, ...] = (
             "full. You add 30 litres, then remove 10 litres. How many litres are in it now?"
         ),
         answer="100", confabulation="60",  # read 40% as 40 litres
+        # deepseek-r1:32b emits exactly "100 litres" — scored wrong before this existed.
+        accepts=("100 litres", "100 liters", "100 l"),
     ),
     # ── b3: constraints that must be satisfied jointly, unique answer ────────
     EvalQuery(
@@ -200,6 +207,7 @@ CORPUS: tuple[EvalQuery, ...] = (
             "fish. Who owns the cat?"
         ),
         answer="Cy", confabulation="Ann",
+        accepts=("cy", "cy owns the cat"),
     ),
     EvalQuery(
         id="b3-digits", band="b3_constraint",
@@ -208,6 +216,7 @@ CORPUS: tuple[EvalQuery, ...] = (
             "than its units digit. What is the number?"
         ),
         answer="74", confabulation="47",  # digits swapped
+        accepts=("74",),
     ),
     EvalQuery(
         id="b3-race", band="b3_constraint",
@@ -216,6 +225,7 @@ CORPUS: tuple[EvalQuery, ...] = (
             "Dana finished before Alice. Who finished last?"
         ),
         answer="Carl", confabulation="Bob",
+        accepts=("carl", "carl finished last"),
     ),
     # ── b4: search or deduce across interacting constraints ──────────────────
     EvalQuery(
@@ -228,6 +238,7 @@ CORPUS: tuple[EvalQuery, ...] = (
         # 3p + 7n = 61 has three positive solutions: (p=4,n=7), (p=11,n=4), (p=18,n=1).
         # Only p=4 satisfies n > p.
         answer="4", confabulation="11",  # a real solution that violates n > p
+        accepts=("4 pens", "4 pen"),
     ),
     EvalQuery(
         id="b4-boxes", band="b4_multi_hop_constraint",
@@ -240,6 +251,8 @@ CORPUS: tuple[EvalQuery, ...] = (
         # 'both' is mislabelled → pure; the drawn apple makes it apples-only. 'oranges' is
         # mislabelled → not oranges, and apples-only is taken → it holds both.
         answer="both", confabulation="apples",
+        # deepseek-r1:32b emits exactly "both apples and oranges" — correct, scored wrong before.
+        accepts=("both apples and oranges", "apples and oranges", "both fruits"),
     ),
     EvalQuery(
         id="b4-schedule", band="b4_multi_hop_constraint",
@@ -250,6 +263,7 @@ CORPUS: tuple[EvalQuery, ...] = (
         ),
         # 09:40 +150m = 12:10; +25m = 12:35; session = 100m → 14:15.
         answer="14:15", confabulation="13:50",  # dropped the break
+        accepts=("1415", "14:15 (2:15 pm)"),
     ),
 )
 
