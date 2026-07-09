@@ -1,0 +1,99 @@
+{
+  "id": "cc.0.the-inference-proxy-contains-no-agentic.T-inference-move-agentic-loop-to-domain.20260708.191229361305",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-inference-proxy-contains-no-agentic",
+    "T-inference-move-agentic-loop-to-domain"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T19:12:29.361305",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-move-agentic-loop-to-domain"
+    ],
+    "commits": [
+      "ea74a6a005cbe5d96c1ef84149a3ead2c0daedde"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-move-agentic-loop-to-domain",
+  "body": {
+    "thing": "the inference proxy contains no agentic execution machinery — the loop, the architect/editor split, the edit engine and the stuck ladder live in the domain object",
+    "intention": "I intend that the inference proxy package contains no agentic_loop, architect_editor, block_apply, edit_format, stuck_ladder or domain_prompts module, that each of them lives in the domain layer instead, and that the shipped runtime package carries no pytest module",
+    "test": "tests/inference/test_proxy_domain_layering.py::test_proxy_package_contains_no_execution_machinery",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_proxy_domain_layering.py::test_proxy_package_contains_no_execution_machinery",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\n    def test_proxy_package_contains_no_execution_machinery():\n        \"\"\"The agentic loop and its edit machinery live in the domain layer, not in the proxy.\n    \n        'The agentic loops do not go in the proxy. They go in domain objects.' (Akien, 2026-07-08)\n        A proxy that also contains a 900-line agentic loop, an architect/editor split, and an edit\n        dialect engine is not a proxy — it is a coding agent wearing a router as a hat.\n        \"\"\"\n        stray = [m for m in EXECUTION_MACHINERY if (_INFERENCE_DIR / m).exists()]\n>       assert not stray, (\n            \"execution machinery must live in the domain layer, not the inference proxy: \"\n            + \", \".join(stray)\n        )\nE       AssertionError: execution machinery must live in the domain layer, not the inference proxy: agentic_loop.py, architect_editor.py, block_apply.py, edit_format.py, stuck_ladder.py, domain_prompts.py\nE       assert not ['agentic_loop.py', 'architect_editor.py', 'block_apply.py', 'edit_format.py', 'stuck_ladder.py', 'domain_prompts.py']\n\ntests/inference/test_proxy_domain_layering.py:118: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_proxy_domain_layering.py::test_proxy_package_contains_no_execution_machinery\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "ea74a6a005cbe5d96c1ef84149a3ead2c0daedde",
+    "impl_paths": [
+      "devlab/claudecode/harvest_batch.py",
+      "devlab/claudecode/harvest_run.py",
+      "tests/dicksimnel/test_critic_wiring.py",
+      "tests/dicksimnel/test_tier_cascade.py",
+      "tests/dicksimnel/test_toolloop_envelope.py",
+      "tests/inference/test_agentic_loop_context.py",
+      "tests/inference/test_architect_read_window.py",
+      "tests/inference/test_block_apply.py",
+      "tests/inference/test_block_repair.py",
+      "tests/inference/test_clone_commit.py",
+      "tests/inference/test_corpus_visibility.py",
+      "tests/inference/test_dicksimnel_toolloop.py",
+      "tests/inference/test_domain_cwd.py",
+      "tests/inference/test_domain_loop_wiring.py",
+      "tests/inference/test_domain_object.py",
+      "tests/inference/test_domain_prompts.py",
+      "tests/inference/test_edit_format_ladder.py",
+      "tests/inference/test_edit_format_registry.py",
+      "tests/inference/test_file_mention_handshake.py",
+      "tests/inference/test_flat_rate_routing.py",
+      "tests/inference/test_flat_rate_timeout_raise.py",
+      "tests/inference/test_harvest_mode.py",
+      "tests/inference/test_stuck_ladder.py",
+      "tests/inference/test_verdict_gate.py",
+      "tests/minion/test_minion_device.py",
+      "unseen_university/devices/inference/agentic_loop.py",
+      "unseen_university/devices/inference/architect_editor.py",
+      "unseen_university/devices/inference/block_apply.py",
+      "unseen_university/devices/inference/domain_prompts.py",
+      "unseen_university/devices/inference/domains/agentic_loop.py",
+      "unseen_university/devices/inference/domains/architect_editor.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/domains/block_apply.py",
+      "unseen_university/devices/inference/domains/coding.py",
+      "unseen_university/devices/inference/domains/domain_prompts.py",
+      "unseen_university/devices/inference/domains/edit_format.py",
+      "unseen_university/devices/inference/domains/prompts/coding.md",
+      "unseen_university/devices/inference/domains/stuck_ladder.py",
+      "unseen_university/devices/inference/edit_format.py",
+      "unseen_university/devices/inference/prompts/coding.md",
+      "unseen_university/devices/inference/stuck_ladder.py",
+      "unseen_university/devices/inference/test_inference.py",
+      "unseen_university/devices/minion/tool_loop.py"
+    ],
+    "ticket": "T-inference-move-agentic-loop-to-domain",
+    "narrative": "",
+    "why": "A proxy routes and dispatches inference; a domain decides what it means to DO a kind of work — the loop, the attempt shape, the edit dialect, the escalation ladder. Housing 2200+ lines of coding agent inside the routing device is what let a routing change (the cutover) silently break the coding path, and what made the proxy's own tests need a live model. The move is mechanical only because the proxy<->domain cycle was broken first.",
+    "bootstrap": false
+  }
+}
