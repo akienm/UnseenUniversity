@@ -38,6 +38,7 @@ import itertools
 
 import pytest
 
+from unseen_university.devices.inference.capability_evidence import measured
 from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.dimensions import ROLE_TIERS, RouteRequest
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
@@ -75,7 +76,8 @@ def _rack():
         ModelSpec("local-1-small", "worker", 0.0, 0.0, 8192, difficulty_capable="code"),
         ModelSpec("local-2-big", "analyst", 0.0, 0.0, 8192, difficulty_capable="design"),
         ModelSpec("cloud-frontier", "analyst", 0.0, 0.0, 8192,
-                  difficulty_capable=TOP_DIFFICULTY, capability_evidence="measured:test"),
+                  difficulty_capable=TOP_DIFFICULTY,
+                  capability_evidence=measured("synthetic-rack", ceiling_tokens=8192, samples=2)),
     ])
     conns = ConnectionsRegistry()
     conns.register(Connection("local-1-small", "hex", 0.0))

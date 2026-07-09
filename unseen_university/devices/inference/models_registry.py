@@ -27,15 +27,22 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 
+from unseen_university.devices.inference.capability_evidence import (
+    DECLARED,
+    CapabilityEvidence,
+    measured,
+)
 from unseen_university.devices.inference.routing_buckets import task_class_to_difficulty
 
 TIERS = ("minion", "worker", "analyst", "designer")
 
 
-#: Points at the record that established the measured capability levels below. A bare
-#: "measured" with no pointer is just "declared" wearing a better word — the corpus guard
-#: (tests/inference/test_capability_evidence.py) requires the ':<record>' half.
-_MEASURED = "measured:notes/cc.0.capability-matrix-measured-20260709"
+#: The measurement behind every `difficulty_capable` below. It names the memory-store note, the
+#: NON-BINDING token ceiling the capability pass ran at, and the samples per cell — because a
+#: verdict is only true for the conditions it was measured under. The guard
+#: (tests/inference/test_capability_evidence.py) resolves the note and reads these numbers back,
+#: so a claim cannot be hand-typed past what the instrument actually found.
+_MEASURED = measured("capability-ceiling-sweep", ceiling_tokens=32768, samples=2)
 
 
 def _now_iso() -> str:
@@ -57,19 +64,22 @@ class ModelSpec:
     # derived from `tier` (the a-priori estimate). Set explicitly to describe a model
     # whose true ceiling differs from the tier slot it's routed under.
     difficulty_capable: str = ""
-    # How we KNOW `difficulty_capable`. "declared" = a human typed it; "measured:<note>" = it
-    # was established by running the escalation corpus against this model and recording the
-    # band where its pass-rate collapsed (devlab/claudecode/escalation_matrix.py).
+    # How we KNOW `difficulty_capable`, and under what conditions. DECLARED = a human typed it;
+    # measured(...) = it was established by running the escalation corpus against this model at a
+    # named token ceiling and recording where its pass-rate collapsed
+    # (devlab/claudecode/escalation_matrix.py).
     #
     # This field exists because the cost-optimizing selector REWARDS overclaiming: it sorts by
     # cost_class first and difficulty_meets is a `>=` filter, so a cheap model that claims the
     # top bucket wins every bucket beneath it too. Nothing verified the claim, and the registry
     # had already drifted — `gemini-2.0-flash` claimed `design` while `claude-sonnet-4.6`
-    # claimed only `code`. A declared label is a wish; a measured one is a fact. Claiming the
-    # TOP bucket (routing_buckets.TOP_DIFFICULTY) requires measurement — enforced by
+    # claimed only `code`. A declared label is a wish; a measured one is a fact — but only for
+    # the conditions it was measured under, which is why the evidence is a value object and not
+    # a string (see capability_evidence.py). Claiming the TOP bucket
+    # (routing_buckets.TOP_DIFFICULTY) requires measurement — enforced by
     # tests/inference/test_capability_evidence.py, because the top rung is exactly where an
     # overclaim does the most damage: it makes escalation land on a model that cannot help.
-    capability_evidence: str = "declared"
+    capability_evidence: CapabilityEvidence = DECLARED
     # Structured capability flags the selector filters on (e.g. 'tools', 'json_mode',
     # 'vision') — distinct from free-text `tags`. A call requiring a feature excludes
     # models that lack it.

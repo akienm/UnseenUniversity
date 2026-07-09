@@ -195,7 +195,10 @@ def test_coding_ladder_cloud_models_registered_at_code_and_design():
     # of the escalation ladder — and the reason escalation can leave the local box at all.
     spec = reg.get("deepseek-v3.1:671b-cloud")
     assert spec.difficulty_capable == "frontier"
-    assert spec.capability_evidence.startswith("measured:")
+    # The CONDITIONS behind that evidence (ceiling budget, sample count, zero truncation) are
+    # owned by tests/inference/test_capability_evidence.py, which resolves the note and reads
+    # them back. Asserting them here too would give the invariant two homes to drift between.
+    assert spec.capability_evidence.is_measured
     for mid in CODING_LADDER_CLOUD:
         spec = reg.get(mid)
         assert "ollama_cloud" in {c.source_name for c in conns.by_model(mid)}
