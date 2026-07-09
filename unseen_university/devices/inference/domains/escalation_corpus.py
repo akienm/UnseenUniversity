@@ -50,6 +50,7 @@ BANDS: tuple[str, ...] = (
     "b2_multi_step",          # 2-4 dependent steps, one irrelevant fact to discard
     "b3_constraint",          # jointly satisfy constraints to a unique answer
     "b4_multi_hop_constraint",  # search/deduce across interacting constraints
+    "b5_frontier",              # exhaustive search or case-analysis over a space too big to eyeball
 )
 
 #: Appended to every query BY THE RUNNER so the answer lands somewhere a verifier can find
