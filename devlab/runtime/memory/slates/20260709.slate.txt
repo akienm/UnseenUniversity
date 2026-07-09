@@ -102,3 +102,106 @@ This is also how yesterday's proof passed on environment luck.
   devlab/claudecode/escalation_matrix.py  — pin each model, run the corpus, emit the capability matrix
                                             (cost-gated: local by default, --include-subscription, --include-paid)
   devlab/claudecode/escalation_demo.py    — run ONE query live through the walk, unpinned
+
+
+════════════════════════════════════════════════════════════════════════════
+## Session close — 2026-07-09 (savestate before compact; ~420K ctx)
+════════════════════════════════════════════════════════════════════════════
+
+STANDING DIRECTIVE (Akien, 2026-07-08): "Everything else stops until inference works
+right every time."
+
+EPISTEMOLOGY (Akien, 2026-07-09, now in CC memory as `epistemology-experiment-only`):
+  "This project starts with maximum uncertainty. NOTHING IN MY HEAD IS CERTAIN EXCEPT
+   EXPERIMENTAL RESULTS. AND THEY ARE ONLY CERTAIN FOR THEIR EXACT CIRCUMSTANCES...
+   even then it's a certainty of 90% conditional on the conditions at the time."
+  => A result measured at max_tokens=4096 is a result about the model AT 4096.
+  => Record conditions with every result. One sample at temp 0 is one sample.
+
+## Done today (all pushed, all proven, tree clean)
+- T-inference-escalation-eval-corpus        CLOSED PROVEN
+- T-general-domain-chat-prototype           CLOSED PROVEN
+- T-escalation-corpus-false-negatives       CLOSED PROVEN
+- T-escalation-handoff-transmits-the-confabulation  CLOSED PROVEN + live-verified
+- T-escalation-corpus-frontier-band         CLOSED PROVEN
+- T-inference-cost-first-sort-strands-cloud-fleet   CLOSED PROVEN
+
+## ⭐ LIVE RESULTS (unpinned, on the box)
+  b4-boxes:  hop0 deepseek-r1:14b FAILED -> hop1 deepseek-r1:32b PASSED
+             VERIFIED "Both apples and oranges"   <- first working escalation
+  Resolver:  code -> deepseek-r1:14b @ollama
+             design -> deepseek-r1:32b @ollama
+             frontier -> deepseek-v3.1:671b-cloud @ollama_cloud   <- leaves the box
+  Real-registry sweep: 4 distinct models / 2 sources (was 3 models / 1 source).
+
+## ⚠️ FOUR INSTRUMENT BUGS FOUND — ALL by reading the RAW REPLY behind a verdict
+  1. Verifier exact-equality rejected CORRECT answers ("ANSWER: 100 litres" vs "100").
+     First capability matrix (32b < 14b) was VOID.
+  2. The hop-1 handoff TRANSMITTED THE CONFABULATION upward. prior_attempt=text[:400] is
+     the opening of a <think> block; injected as "**What was tried:**". Measured, one
+     variable isolated: 32b answers b4-boxes correctly alone, adopts the 14b's wrong answer
+     when handed it. Stripping <think> was NOT enough — deepseek-r1 restates its derivation
+     in prose outside the block, and the 32b followed it even when told not to.
+     RULE: only the failed CLAIM crosses a rung, never the argument for it.
+  3. GeneralDomain timeout 120s < a 32b's 110-190s latency => every stronger-rung attempt
+     read as AVAILABILITY, retried in place, exhausted. Raised to 300s.
+  4. Matrix missed Gemini's truncation spelling (finish_reason="max_tokens", not "length")
+     and scored truncated replies as WRONG ANSWERS.
+
+## ⛔ OPEN CORRECTION — READ THIS BEFORE TRUSTING THE CAPABILITY RANKS
+  T-capability-measured-at-a-budget-ceiling (0.95, sprint) — CAPABILITY and BUDGET are two
+  axes and escalation_matrix conflated them. All b5 numbers were taken at max_tokens=4096
+  (32b, 671b) or 16384 (gemini). Then deepseek-r1:14b PASSED b5-frobenius live at 8192 —
+  the query the 32b "failed" at 4096. Different budgets => not a comparison.
+    SURVIVES: 671b cleared b5 4/4 at the same budget where 32b failed one query.
+              The resolver proof is structural and independent of this.
+    DOES NOT SURVIVE: "deepseek-r1:32b is not frontier-capable" unconditionally, and the
+              implied total order 14b < 32b < 671b.
+  The evidence note is annotated in place (stale_flags: conditions-uncontrolled).
+  Akien's design: measure capability at a SILLY-HIGH ceiling (nothing truncates), then walk
+  max_tokens DOWN to find each model's token floor. Two phases, both recorded with conditions.
+
+## Next (dependency-ordered)
+1. T-capability-measured-at-a-budget-ceiling (0.95) — the measurement half. Sweep max_tokens
+   as an axis; ceiling pass for capability, budget walk for the token floor; >1 sample; record
+   conditions in every evidence string; re-derive capability_evidence; annotate what changes.
+2. T-escalation-truncation-misclassified-as-capability (0.85) — the RUNTIME half of the same
+   confusion: the walk classifies a truncation as CAPABILITY and spends up a tier for want of
+   tokens. The bump cannot help (the stronger model is also a reasoning model). Needs a BUDGET
+   class + bounded same-rung retry at a larger budget.
+3. T-inference-activate-coding-tools-policy — coding escalation is STILL ONE RUNG
+   (coding-needs-tools requires features=['tools']; no design/frontier coding model declares
+   it). Pinned by test_the_coding_ladder_still_tops_out_and_that_is_not_hidden. Do NOT set the
+   tools flag on a hunch — measure the model's tool-calling first.
+4. T-inference-tier-ladder-real (0.95) — reconcile the two tier vocabularies (ROLE_TIERS vs
+   registry TIERS). Partly relieved by the `frontier` rung but not closed.
+5. CodingDomain needs its own `_summarize_attempt`: its "answer" is a diff/test result, not a
+   final claim. Today the shared default tells the next rung that "Tests still fail:
+   AssertionError in test_foo" was a wrong ANSWER not to repeat. Pinned by a test.
+
+## Tools (DATA, never assertions — they reach live providers)
+  devlab/claudecode/escalation_matrix.py  pin each model, run the corpus, emit the matrix
+                                          (--bands, --models, --max-tokens; cost-gated:
+                                          local default, --include-subscription, --include-paid)
+  devlab/claudecode/escalation_demo.py    run ONE query live through the walk, unpinned
+
+## Key files
+  unseen_university/devices/inference/domains/general.py           GeneralDomain (the default)
+  unseen_university/devices/inference/domains/escalation_corpus.py 16 queries / 5 bands
+  unseen_university/devices/inference/domains/reply_text.py        strip_reasoning/extract_answer
+  unseen_university/devices/inference/domains/base.py              _summarize_attempt (the seam)
+  unseen_university/devices/inference/routing_buckets.py           DIFFICULTY_BUCKETS + frontier
+  tests/inference/test_capability_evidence.py                      top rung requires MEASURED
+  tests/inference/test_escalation_leaves_the_local_box.py          the cost-first proof
+
+## Suite state
+  tests/inference/ + test_capability_mixin: 488 passed, 4 FAILED (all pre-existing & ticketed):
+    test_dicksimnel::test_done_prefix_closes_ticket
+    test_dicksimnel_live_smoke::test_dicksimnel_builds_on_hex
+    test_domain_prompts::test_coding_prompt_byte_identical_to_prior_ds_prompt
+    test_repo_map_orientation::test_signature_map_surfaces_multiple_symbols_per_file
+
+## Background job left running (safe to kill)
+  escalation_matrix --bands b5_frontier --models deepseek-r1:14b deepseek-r1:32b
+    --max-tokens 8192   -> /tmp/.../scratchpad/b5fair.txt
+  This is the FAIR-BUDGET comparison. Its result feeds ticket #1. If lost, just re-run.
