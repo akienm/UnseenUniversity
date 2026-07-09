@@ -32,6 +32,12 @@ from unseen_university.devices.inference.routing_buckets import task_class_to_di
 TIERS = ("minion", "worker", "analyst", "designer")
 
 
+#: Points at the record that established the measured capability levels below. A bare
+#: "measured" with no pointer is just "declared" wearing a better word — the corpus guard
+#: (tests/inference/test_capability_evidence.py) requires the ':<record>' half.
+_MEASURED = "measured:notes/cc.0.capability-matrix-measured-20260709"
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -273,6 +279,9 @@ _SEED: list[ModelSpec] = [
         context_window=131_072,
         tags=["local", "hex", "fast", "minion"],
         difficulty_capable="classify",
+        # Measured: clears b1 3/3 and b2 3/3 of the escalation corpus, collapses at b3 (1/3).
+        # 'classify' understates it — but it is not the top rung, so nothing rides on the level.
+        capability_evidence=_MEASURED,
         notes="Hex local minion — trivial transforms/classification. 2GB, fits easily.",
         created_at="2026-07-01T00:00:00Z",
     ),
@@ -297,6 +306,8 @@ _SEED: list[ModelSpec] = [
         context_window=131_072,
         tags=["local", "hex", "reasoning", "analyst"],
         difficulty_capable="code",
+        # Measured: b1-b3 clean, b4 2/3 (fails b4-boxes). Not 'design'.
+        capability_evidence=_MEASURED,
         notes="Hex local analyst — 14B reasoner. Serves the analyst (reasoning) tier at the "
               "CODE difficulty rung; the bigger deepseek-r1:32b (below) is the coding domain's "
               "design/architect rung. 9GB.",
@@ -327,6 +338,10 @@ _SEED: list[ModelSpec] = [
         context_window=131_072,
         tags=["local", "hex", "reasoning", "architect"],
         difficulty_capable="design",
+        # Measured: clears b1-b4 completely, but FAILS the frontier band (b5-frobenius: answered
+        # 23, ground truth 43, finish_reason=stop — a genuine wrong answer, reproduced). This is
+        # the top of the LOCAL ladder and it is measurably NOT frontier-capable.
+        capability_evidence=_MEASURED,
         domains=["coding"],
         notes="Hex local architect — fills the coding domain's design/architect rung (was "
               "empty). 19GB. First local candidate DS's escalation walk can reach at "
@@ -354,7 +369,13 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.0,
         context_window=131_072,
         tags=["reasoning", "flat-rate", "ollama-pro", "cloud-flagship", "architect"],
-        difficulty_capable="design",
+        difficulty_capable="frontier",
+        # Measured: the ONLY model with evidence of clearing the frontier band (4/4, including
+        # b5-frobenius: 43, finish_reason=stop, reproduced). It rides the Ollama Pro
+        # subscription — already paid for, and never selected by dimensional routing until the
+        # 'frontier' rung existed, because cost_class sorts first and the local box held every
+        # bucket it claimed (T-inference-cost-first-sort-strands-cloud-fleet).
+        capability_evidence=_MEASURED,
         domains=["coding"],
         notes="Ollama Cloud subscription flagship architect — too large for Hex's 32GB RAM. "
               "Escalation target only when Hex's local deepseek-r1:32b is exhausted/unavailable.",

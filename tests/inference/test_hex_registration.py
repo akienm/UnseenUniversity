@@ -189,7 +189,13 @@ def test_coding_ladder_cloud_models_registered_at_code_and_design():
     reg = default_registry()
     conns = default_connections(reg)
     assert reg.get("qwen3-coder:480b-cloud").difficulty_capable == "code"
-    assert reg.get("deepseek-v3.1:671b-cloud").difficulty_capable == "design"
+    # 'design' here was a DECLARED claim. Measured 2026-07-09: deepseek-v3.1:671b-cloud is the
+    # only model with evidence of clearing the frontier band (4/4, including b5-frobenius where
+    # the local deepseek-r1:32b answers 23 against a ground truth of 43). It is now the top rung
+    # of the escalation ladder — and the reason escalation can leave the local box at all.
+    spec = reg.get("deepseek-v3.1:671b-cloud")
+    assert spec.difficulty_capable == "frontier"
+    assert spec.capability_evidence.startswith("measured:")
     for mid in CODING_LADDER_CLOUD:
         spec = reg.get(mid)
         assert "ollama_cloud" in {c.source_name for c in conns.by_model(mid)}

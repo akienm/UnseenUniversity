@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.capability-matrix-measured-20260709.20260709.105332526905",
+  "emitter": "cc.0",
+  "namespace": [
+    "capability-matrix-measured-20260709"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-09T10:53:32.526905",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Capability matrix — measured model ranks (2026-07-09)",
+    "text": "MEASURED with devlab/claudecode/escalation_matrix.py. Each model PINNED (routing bypassed) and asked the escalation corpus; temperature 0. Every failure below was confirmed by reading the RAW REPLY, not the verdict — two instrument bugs were found that way and fixed first (exact-equality false negatives; Gemini's finish_reason='max_tokens' truncation spelling).\n\nBANDS b1-b4 (structural: single-step / multi-step+distractor / constraint / multi-hop constraint)\n  llama3.2:3b       claims 'classify'  b1 3/3  b2 3/3  b3 1/3  b4 1/3\n  deepseek-r1:14b   claims 'code'      b1 3/3  b2 3/3  b3 3/3  b4 2/3   (fails b4-boxes)\n  deepseek-r1:32b   claims 'design'    b1 3/3  b2 3/3  b3 3/3  b4 3/3\n\nBAND b5_frontier (search / case-analysis)\n  deepseek-r1:32b            @ollama        (owned_local)    3/4   FAILS b5-frobenius: answered 23, truth 43, finish=stop (a genuine wrong answer, confirmed twice)\n  gemini-2.5-flash           @google_free   (free_throttled) 3/4 + 1 TRUNC — b5-frobenius truncates even at max_tokens=16384. UNMEASURED on the separating query; NOT evidence of incapacity.\n  deepseek-v3.1:671b-cloud   @ollama_cloud  (subscription)   4/4   PASSES b5-frobenius: answered 43, finish=stop (confirmed twice)\n\nCONCLUSIONS DRAWN INTO THE REGISTRY\n  deepseek-v3.1:671b-cloud -> difficulty_capable='frontier', capability_evidence='measured'. The ONLY model with measured evidence of clearing the frontier band. It sits on the Ollama Pro subscription — already paid for, and never selected by dimensional routing before this change.\n  deepseek-r1:32b -> stays 'design', capability_evidence='measured'. Measured NOT frontier.\n  deepseek-r1:14b -> stays 'code', capability_evidence='measured'.\n  llama3.2:3b -> stays 'classify', capability_evidence='measured'. NB it clears b1 and b2 fully; 'classify' understates it, but it is not the top rung so nothing rides on the exact level.\n  gemini-2.5-flash -> stays 'design', capability_evidence='declared'. It may or may not be frontier-capable; we could not measure it. It must NOT claim the top rung on an unmeasured basis — it is free_throttled (cheaper than the subscription) and would win that rung outright.\n\nEVERYTHING ELSE stays capability_evidence='declared'. The registry's declared labels had already drifted: gemini-2.0-flash claimed 'design' while claude-sonnet-4.6 claimed only 'code'.\n\nDEAD EDGES noticed: 'google/gemini-2.0-flash'->openrouter and 'gemini-2.0-flash-paid'->google both name sources that are not in the source registry (only ollama, ollama_cloud, google_free, anthropic exist). Unreachable even by a pin.\n\nanthropic is DOWN on this box (no credential), so no token_direct model — including claude-opus-4.8 — could be measured today."
+  }
+}

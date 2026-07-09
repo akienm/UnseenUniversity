@@ -17,6 +17,7 @@ from unseen_university.devices.inference.models_registry import ModelSpec, Model
 from unseen_university.devices.inference.routing_buckets import (
     COST_CLASSES,
     DIFFICULTY_BUCKETS,
+    TOP_DIFFICULTY,
     TIME_BUCKETS,
     cost_class_rank,
     difficulty_meets,
@@ -156,7 +157,14 @@ def test_difficulty_meets_capability_ordering():
     assert difficulty_meets("code", "code") is True
     assert difficulty_meets("code", "design") is False
     assert difficulty_meets("design", "design") is True
-    assert all(difficulty_meets("design", req) for req in DIFFICULTY_BUCKETS)
+    # The TOP bucket satisfies every requirement. This used to name 'design' directly, which
+    # silently encoded "design is the top" — it stopped being true when 'frontier' was added
+    # (T-inference-cost-first-sort-strands-cloud-fleet). Read the ladder, don't hardcode its end.
+    assert all(difficulty_meets(TOP_DIFFICULTY, req) for req in DIFFICULTY_BUCKETS)
+    assert difficulty_meets("design", TOP_DIFFICULTY) is False, (
+        "a design-capable model must NOT satisfy a frontier requirement — that would let the "
+        "local box win the rung that exists so escalation can leave it"
+    )
 
 
 # ── cost_class_rank ───────────────────────────────────────────────────────────

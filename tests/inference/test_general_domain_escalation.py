@@ -147,12 +147,29 @@ def test_the_prior_attempt_is_handed_to_the_stronger_rung():
 
 
 def test_wrong_at_every_rung_halts_with_the_capability_ceiling_alarm(_no_alarms):
-    dom, dev = _domain(
-        {0: _StubResponse("ANSWER: 32"), 1: _StubResponse("ANSWER: 33")},
-        answer_check=_is_42,
-    )
+    """The walk climbs EVERY rung and only then halts.
+
+    The rung count is read from the ladder, not hardcoded: it was 2 until `frontier` was added
+    (T-inference-cost-first-sort-strands-cloud-fleet). A test that pins the count silently stops
+    exercising the top rung the moment the ladder grows — and the top rung is the one that
+    reaches off the local box.
+    """
+    from unseen_university.devices.inference.routing_buckets import bump_difficulty
+
+    rungs = []
+    hop = 0
+    while bump_difficulty("code", hop) is not None:
+        rungs.append(hop)
+        hop += 1
+    assert len(rungs) >= 3, "the generalist ladder should have at least code/design/frontier"
+
+    wrong = {h: _StubResponse(f"ANSWER: {30 + h}") for h in rungs}  # never 42
+    dom, dev = _domain(wrong, answer_check=_is_42)
+
     assert dom.ask("q") is None, "a walk that never verified must not return an answer"
-    assert [r.escalation_hop for r in dev.seen] == [0, 1]
+    assert [r.escalation_hop for r in dev.seen] == rungs, (
+        f"the walk must try every rung before halting; tried {[r.escalation_hop for r in dev.seen]}"
+    )
     assert any("capability-ceiling" in a["signature"] for a in _no_alarms), (
         "topping out must raise the capability-ceiling alarm, not silently return prose"
     )
