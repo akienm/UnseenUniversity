@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-route-all-inference-through-a-domain.20260708.220757325714",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-route-all-inference-through-a-domain"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T04:07:57.325714+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-route-all-inference-through-a-domain"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-route-all-inference-through-a-domain",
+    "title": "[dependency] There is always a domain: nothing reaches the inference proxy except through one",
+    "size": "L",
+    "status": "dependency",
+    "priority": 0.8,
+    "tags": [
+      "inference",
+      "domains",
+      "escalation",
+      "architecture"
+    ],
+    "description": "Akien 2026-07-08: 'The default IS the general domain. So there is always a domain. And everybody else descends from that.'\n\nCONSEQUENCE: escalation is currently a DS-ONLY privilege. VERIFIED — these call InferenceDevice().dispatch directly, bypassing any domain, and therefore get ZERO escalation: evaluator/core.py, evaluator/device.py, intent/device.py, reader/device.py, reader/node_extractor.py, summarizer/device.py, scraps/scraps_device.py, librarian/research.py, igor/cognition/inference_gateway.py, dicksimnel/device.py. (21 files across devices touch InferenceDevice at all.)\n\nUnder 'there is always a domain', each of these inherits the DEFAULT escalation ladder by descent instead of hand-rolling nothing. The proxy is a REPORTER (routes, dispatches, returns a typed result, never escalates); the DOMAIN is the DECIDER (owns the policy; the GENERAL domain owns the default).\n\nALSO: the general domain's default attempt is currently a full AgenticLoop (BaseDomain._run_attempt) — which is why the loop looked domain-universal. The general attempt must be ONE DISPATCH (that IS the chat agent). And rename BaseDomain -> GeneralDomain: it is concrete and instantiable, it IS the default, and 'Base' hides that.\n\nGATED on T-domains-global-package + T-inference-escalation-policy-object.\n\n**Affected files:** the 10 direct-dispatch callers above; domains/base.py; capabilities/base.py\n\n**Scope boundary:** do not change what each caller ASKS for (tier/domain/urgency); only route it through a domain so it inherits the default ladder.\n\n**Completion criteria:** an import/callgraph guard proves no device calls InferenceDevice.dispatch outside a domain; the general domain's attempt is a single dispatch, not a loop.\n\n**Test plan:** red->green — a guard test asserts no module outside the domain layer calls InferenceDevice.dispatch; and a generalist (domain='') request escalates one rung on a capability signal without any device hand-rolling a walk.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T04:07:36.049891+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T04:07:36.105683+00:00",
+    "inferred_intention": "safe-execution",
+    "inferred_intention_id": "6f1a9a4f-3def-4bf2-9f50-a2f45569d04f"
+  }
+}
