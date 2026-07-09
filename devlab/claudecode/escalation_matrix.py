@@ -80,10 +80,22 @@ def _cheapest_source(model_id, connections, sources):
     return best
 
 
+#: Every spelling a provider uses for "I ran out of output budget". OpenAI/Ollama say "length";
+#: Gemini says "max_tokens". Missing one silently scores a truncated reply as a WRONG ANSWER —
+#: which is how gemini-2.5-flash was first measured as less capable than a local 32b, from
+#: replies that were cut off mid-derivation.
+_TRUNCATION_FINISH_REASONS = {"length", "max_tokens", "maxtokens", "max_output_tokens"}
+
+
 def _unclosed_think(text: str) -> bool:
     """An opened <think> with no closing tag: the reply was cut off inside the scratchpad."""
     low = (text or "").lower()
     return "<think" in low and "</think" not in low
+
+
+def _truncated(finish_reason: str, text: str) -> bool:
+    """True if the reply ran out of budget before the model finished. NOT a wrong answer."""
+    return (finish_reason or "").strip().lower() in _TRUNCATION_FINISH_REASONS or _unclosed_think(text)
 
 
 def _ask(device, model_id, query, timeout, max_tokens):
@@ -110,7 +122,7 @@ def _ask(device, model_id, query, timeout, max_tokens):
     if query.verify(text):
         return _PASS, text
     # Ran out of budget mid-thought → no answer was ever emitted. Not a wrong answer.
-    if resp.finish_reason == "length" or _unclosed_think(text):
+    if _truncated(resp.finish_reason, text):
         return _TRUNC, text
     return _FAIL, text
 
