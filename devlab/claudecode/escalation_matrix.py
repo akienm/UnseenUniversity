@@ -382,12 +382,13 @@ def main() -> int:
                 "walk_samples": args.walk_samples,
                 "temperature": 0.0,
                 # The timeout is a CONDITION, not plumbing. Measured 2026-07-09:
-                # deepseek-v3.1:671b-cloud solves b5-frobenius twice at ceiling=4096
-                # (finish=stop, ~1.3k output tokens, 129s/180s) and TIMES OUT at
-                # ceiling=32768 — twice, at exactly the 600s limit. A capable model was
-                # recorded as 'no verdict' by a number nobody wrote down. Raising a cap the
-                # model never hit changed how long it ran, so max_tokens is not purely a
-                # truncation bound. Every result is true only for its timeout.
+                # deepseek-v3.1:671b-cloud twice hit the 600s limit on b5-frobenius and was
+                # recorded as 'no verdict' by a number nobody had written down. A controlled
+                # probe (same query, same 1800s timeout, only max_tokens varied) then showed the
+                # model finishes at BOTH 4096 (260s) and 32768 (195s) — so those timeouts were
+                # transient cloud latency, not the ceiling. Both facts are worth keeping: a
+                # timeout silently converts a capable model into no-verdict, AND the first
+                # explanation that fits the data is not thereby true.
                 "timeout_s": args.timeout,
                 "measured_on": date.today().isoformat(),
                 "corpus_size": len(queries),

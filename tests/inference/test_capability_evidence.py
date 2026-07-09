@@ -164,17 +164,21 @@ def test_a_measured_capability_claim_is_backed_by_its_measurement():
             f"ceiling, so the ceiling BOUND. No capability verdict is licensed from that run — "
             f"raise the ceiling and re-measure, or drop the claim to `declared`."
         )
-        # An instrument error is not a wrong answer — and it is not a verdict either. Measured
-        # 2026-07-09: deepseek-v3.1:671b-cloud solves b5-frobenius twice at ceiling=4096 and TIMES
-        # OUT twice at ceiling=32768. The ceiling CAUSED the error. So an errored cell voids a
-        # claim for exactly the reason a truncated one does: that cell has no result, and the
-        # thing that took it away was the condition we are claiming the result under.
+        # An instrument error is not a wrong answer — and it is not a verdict either. A model
+        # whose cells errored has holes in its measurement, and a pass-rate computed over the
+        # cells that happened to succeed is a survivorship statistic, not a capability.
+        #
+        # NB an earlier version of this comment claimed the CEILING caused the errors (671b timed
+        # out twice on b5-frobenius at ceiling=32768). A controlled probe refuted that: at the same
+        # 1800s timeout the model finishes at BOTH 4096 (260s) and 32768 (195s) — the larger
+        # ceiling was FASTER. The two timeouts were transient cloud latency against a 600s limit.
+        # The assertion stands; the reason it stood was wrong. Guard on the hole, not the story.
         errors = row["errors"]
         assert errors == 0, (
             f"{spec.model_id}: {errors} cell(s) errored at the {ev.ceiling_tokens}-token ceiling. "
-            f"An error is not a wrong answer and it is not a verdict — and a ceiling-induced "
-            f"timeout is caused by the very condition the claim rests on. Re-measure with a "
-            f"timeout that does not bind, or drop the claim to `declared`."
+            f"An error is not a wrong answer and it is not a verdict — the cell has no result, so "
+            f"the band pass-rate counts only the cells that survived. Re-measure, or drop the "
+            f"claim to `declared`."
         )
 
 
