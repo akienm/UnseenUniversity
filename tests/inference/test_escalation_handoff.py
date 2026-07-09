@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
+from unseen_university.devices.inference.domains.agentic_loop import LoopResult
 from unseen_university.devices.inference.domains.base import FAILED_MARKER
 from unseen_university.devices.inference.domains.general import GeneralDomain
 
@@ -150,3 +151,45 @@ def test_a_truncated_scratchpad_hands_over_nothing_rather_than_rambling():
                                1: _StubResponse(STRONG_CORRECT)})
     GeneralDomain(inference_device=dev, answer_check=_answer_is_both).ask("q")
     assert RAMBLE_FRAGMENT not in dev.seen[1].prior_attempt
+
+
+# ── the shared path: what CodingDomain currently emits ────────────────────────
+
+
+def test_coding_domains_handoff_is_chat_shaped_and_wrong_for_coding():
+    """PINS A KNOWN DEFECT. `_summarize_attempt` lives on BaseDomain — the SHARED escalation
+    path — and its default assumes the attempt's output is a final CLAIM. A coding attempt's
+    output is a diff, a test result, an error. `extract_answer` finds no `ANSWER:` line and
+    falls back to the last non-empty line, so the handoff tells the next rung that a failing
+    test's output was "the answer", that it is "known to be WRONG", and not to repeat it.
+
+    That is nonsense for coding: the failing test output is the most USEFUL thing to pass on,
+    not a claim to avoid. The rule still holds (only the claim crosses, never the argument) —
+    but CodingDomain must decide what its claim IS, via its own `_summarize_attempt` override.
+
+    Not a regression: the prior `text[:400]` was also wrong here (it handed over the opening of
+    the attempt, scratchpad and all). This is a lateral move on an already-broken path, and DS
+    is not running. The test exists so the shape is visible and the ticket has teeth.
+
+    => T-escalation-handoff-transmits-the-confabulation (closing note) / CodingDomain override.
+    """
+    from unseen_university.devices.inference.domains.agentic_loop import LOOP_MAX_TURNS
+    from unseen_university.devices.inference.domains.coding import CodingDomain
+
+    result = LoopResult(
+        LOOP_MAX_TURNS,
+        text="I ran the tests.\n\n```diff\n- old\n+ new\n```\nTests still fail: AssertionError in test_foo",
+    )
+    handoff = CodingDomain()._summarize_attempt(result)
+
+    # The scratchpad/derivation rule IS honoured — the diff body does not cross.
+    assert "- old" not in handoff and "+ new" not in handoff
+
+    # ...but the "claim" it extracted is a test failure, framed as a wrong answer. Documented,
+    # not endorsed. When CodingDomain overrides _summarize_attempt, this assertion must change.
+    assert "Tests still fail: AssertionError in test_foo" in handoff
+    assert FAILED_MARKER in handoff
+    assert "do not repeat that answer" in handoff, (
+        "coding's handoff currently instructs the next rung not to repeat a TEST FAILURE, as "
+        "though it were a wrong answer — the chat-shaped default applied to a coding attempt"
+    )
