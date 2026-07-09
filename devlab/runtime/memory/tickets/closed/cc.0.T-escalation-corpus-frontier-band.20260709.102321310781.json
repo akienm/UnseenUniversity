@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-escalation-corpus-frontier-band",
-    "title": "[sprint] Corpus saturates at deepseek-r1:32b — add a frontier band, or capability rank has no evidence above the local box",
+    "title": "Corpus saturates at deepseek-r1:32b — add a frontier band, or capability rank has no evidence above the local box",
     "size": "S",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.93,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T16:22:49.163590+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "b5_frontier added: 4 queries, every ground truth brute-forced before entering the corpus. Proven: proofs/cc.0.frontier-band-separates-the-local-box-fr...20260709.110706125131.json (red=AssertionError -> green=passed). MEASURED separation: deepseek-r1:32b 3/4 (genuine fail on b5-frobenius: answers 23, truth 43, finish=stop, reproduced); deepseek-v3.1:671b-cloud 4/4. gemini-2.5-flash truncates on b5-frobenius even at max_tokens=16384 -> UNMEASURED on the separating query, recorded as such, NOT as incapacity.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T17:07:20.708505+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T16:22:49.221974+00:00",
     "inferred_intention": "I intend that model capability ranks are measured against a saturating corpus instrument where deepseek-r1:32b clears all bands, ensuring no higher-ranked models can be placed above it without differing queries.",
-    "inferred_intention_id": "1927d3bd-0b96-45df-89d2-7af1e573a807"
+    "inferred_intention_id": "1927d3bd-0b96-45df-89d2-7af1e573a807",
+    "proven": true,
+    "proof_id": "cc.0.frontier-band-separates-the-local-box-fr.T-escalation-corpus-frontier-band.20260709.110706125131",
+    "proof_commit": "297d393f7c9d08ce125fc784e99f312b8e859647",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

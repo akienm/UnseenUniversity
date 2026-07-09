@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-cost-first-sort-strands-cloud-fleet",
-    "title": "[sprint] Cost-first sort makes 19/22 models unreachable — escalation can never leave the local box",
+    "title": "Cost-first sort makes 19/22 models unreachable — escalation can never leave the local box",
     "size": "L",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.95,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T13:45:58.391179+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Escalation can leave the local box. 'frontier' is the capability rung the box does not hold; claiming it requires capability_evidence='measured:<record>' because a cost-first selector rewards overclaiming. deepseek-v3.1:671b-cloud (Ollama Pro subscription, already paid for, never routed to) holds it on measured evidence. Proven: proofs/cc.0.escalation-can-leave-the-local-box...20260709.110655648957.json (red=AssertionError -> green=passed). Real-registry sweep: 4 distinct models across 2 sources (was 3 models, 1 source). Generalist ladder: code->deepseek-r1:14b@ollama, design->deepseek-r1:32b@ollama, frontier->deepseek-v3.1:671b-cloud@ollama_cloud. Cost-first NOT reverted: the cheap local model still wins every rung it can serve. The hop ceiling is now DERIVED from the ladder (was hardcoded 2, which would have made hop 2 raise RuntimeError -> caught as AVAILABILITY -> silent no-op). REMAINING GAP, pinned by test_the_coding_ladder_still_tops_out_and_that_is_not_hidden: coding escalation is still ONE rung because coding-needs-tools requires features=['tools'] and no design/frontier coding model declares it. Not fixed by asserting the flag on a hunch => T-inference-activate-coding-tools-policy.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T17:07:21.360116+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T13:45:58.437293+00:00",
     "inferred_intention": "debugging",
-    "inferred_intention_id": "0e7a15ef-11bf-42a5-a11d-2189e5acb337"
+    "inferred_intention_id": "0e7a15ef-11bf-42a5-a11d-2189e5acb337",
+    "proven": true,
+    "proof_id": "cc.0.escalation-can-leave-the-local-box.T-inference-cost-first-sort-strands-cloud-fleet.20260709.110655648957",
+    "proof_commit": "ea18c363b9b42da243f0c23effac2ed9381d7aab",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

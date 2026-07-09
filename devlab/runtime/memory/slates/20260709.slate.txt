@@ -67,6 +67,8 @@ This is also how yesterday's proof passed on environment luck.
 - T-escalation-handoff-transmits-the-confabulation — CLOSED PROVEN + LIVE-VERIFIED.
   Only the failed CLAIM crosses a rung, never the argument for it.
 
+- T-escalation-corpus-frontier-band — Corpus saturates at deepseek-r1:32b — add a frontier band, or capability rank has no evidence above the local box (b5_frontier added: 4 queries, every ground truth brute-forced before entering the corpus. Proven: proofs/cc.0.frontier-b)
+- T-inference-cost-first-sort-strands-cloud-fleet — Cost-first sort makes 19/22 models unreachable — escalation can never leave the local box (Escalation can leave the local box. 'frontier' is the capability rung the box does not hold; claiming it requires capabi)
 ## ⭐ LIVE ESCALATION WORKS (first time, unpinned, on the box)
     hop 0 -> deepseek-r1:14b   check FAILED -> capability -> escalate
     hop 1 -> deepseek-r1:32b   check PASSED -> done
