@@ -1,0 +1,70 @@
+{
+  "id": "cc.0.frontier-band-separates-the-local-box-fr.T-escalation-corpus-frontier-band.20260709.110706125131",
+  "emitter": "cc.0",
+  "namespace": [
+    "frontier-band-separates-the-local-box-fr",
+    "T-escalation-corpus-frontier-band"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T11:07:06.125131",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-escalation-corpus-frontier-band"
+    ],
+    "commits": [
+      "297d393f7c9d08ce125fc784e99f312b8e859647"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-escalation-corpus-frontier-band",
+  "body": {
+    "thing": "frontier band separates the local box from the cloud",
+    "intention": "The corpus has a band above the top of the local ladder: b5_frontier is populated, every verifier accepts its declared phrasings and rejects its confabulation.",
+    "test": "tests/inference/test_escalation_corpus.py::test_every_band_is_populated",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_escalation_corpus.py::test_every_band_is_populated",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________ test_every_band_is_populated _________________________\n\n    def test_every_band_is_populated():\n        \"\"\"A band with no queries measures nothing — the frontier would be invisible there.\"\"\"\n        for band in BANDS:\n>           assert by_band(band), f\"band {band!r} is empty — the corpus cannot locate a frontier in it\"\nE           AssertionError: band 'b5_frontier' is empty — the corpus cannot locate a frontier in it\nE           assert ()\nE            +  where () = by_band('b5_frontier')\n\ntests/inference/test_escalation_corpus.py:35: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_escalation_corpus.py::test_every_band_is_populated\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "297d393f7c9d08ce125fc784e99f312b8e859647",
+    "impl_paths": [
+      "devlab/claudecode/escalation_matrix.py",
+      "devlab/runtime/memory/notes/cc.0.capability-matrix-measured-20260709.20260709.105332526905.json",
+      "devlab/runtime/memory/proofs/cc.0.escalation-can-leave-the-local-box.T-inference-cost-first-sort-strands-cloud-fleet.20260709.110655648957.json",
+      "devlab/runtime/memory/tickets/cc.0.T-escalation-corpus-frontier-band.20260709.102321310781.json",
+      "tests/inference/test_capability_evidence.py",
+      "tests/inference/test_escalation_leaves_the_local_box.py",
+      "tests/inference/test_general_domain_escalation.py",
+      "tests/inference/test_hex_registration.py",
+      "tests/inference/test_inference_tier_escalation.py",
+      "tests/inference/test_router_schema.py",
+      "unseen_university/devices/inference/device.py",
+      "unseen_university/devices/inference/domains/escalation_corpus.py",
+      "unseen_university/devices/inference/models_registry.py",
+      "unseen_university/devices/inference/routing_buckets.py"
+    ],
+    "ticket": "T-escalation-corpus-frontier-band",
+    "narrative": "",
+    "why": "The corpus SATURATED — deepseek-r1:32b cleared b1-b4 completely — so no measurement could place any cloud model above the top of the local box, and the capability rank the cost-first fix depends on would have had no evidence. Measured after: 32b fails b5-frobenius (answers 23, truth 43, finish=stop); deepseek-v3.1:671b-cloud passes 4/4.",
+    "bootstrap": false
+  }
+}
