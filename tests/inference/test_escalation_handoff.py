@@ -27,20 +27,27 @@ import pytest
 from unseen_university.devices.inference.domains.base import FAILED_MARKER
 from unseen_university.devices.inference.domains.general import GeneralDomain
 
-#: A reasoning model's reply: a long confident scratchpad, then a wrong conclusion. The first
-#: 400 characters are ALL scratchpad — which is precisely what got handed to the next rung.
+#: The failed attempt's ARGUMENT, restated outside <think>. Measured: handing this to
+#: deepseek-r1:32b makes it reproduce the weak model's wrong answer verbatim, even when the
+#: handoff explicitly says "do not continue its reasoning". Only the final CLAIM may cross a
+#: rung — never the argument for it.
+WEAK_PROSE = "Therefore the box labelled oranges must contain only apples."
+
+#: A reasoning model's reply. Two traps live here. (1) The first 400 characters are all
+#: <think> scratchpad — which is what the old slice handed over. (2) deepseek-r1 RESTATES its
+#: whole derivation *outside* the think block, so stripping the scratchpad is not enough: the
+#: wrong argument is still there, in prose, sounding confident.
 WEAK_RAMBLE = (
     "<think>\n"
     + ("The box labelled 'both' cannot contain both fruits since all labels are wrong. "
-       "Drawing an apple means it contains only apples. The remaining boxes must then "
-       "contain the other two types: one has only oranges, and the other has both. Since ") * 4
+       "Drawing an apple means it contains only apples. Since ") * 6
     + "\n</think>\n"
-    "Therefore the box labelled 'oranges' contains only apples.\n"
-    "ANSWER: apples"
+    + WEAK_PROSE
+    + "\nANSWER: apples-only"
 )
 STRONG_CORRECT = "<think>careful re-derivation</think>\nANSWER: both"
 
-#: The scratchpad's opening — the substring that must NEVER reach the next rung.
+#: The scratchpad's opening — must never reach the next rung.
 RAMBLE_FRAGMENT = "cannot contain both fruits since all labels are wrong"
 
 
@@ -87,21 +94,28 @@ def _run() -> _StubDevice:
     return dev
 
 
-def test_the_handoff_carries_the_conclusion_not_the_scratchpad():
-    """The next rung must see WHAT WAS CONCLUDED, never the scratchpad that produced it."""
+def test_the_handoff_carries_the_failed_claim():
+    """The next rung must learn WHICH ANSWER was already ruled out."""
     prior = _run().seen[1].prior_attempt
-    assert "ANSWER: apples" in prior, (
-        "the handoff dropped the failed attempt's conclusion — the next rung cannot know "
-        "which answer was already ruled out"
+    assert "apples-only" in prior, (
+        "the handoff dropped the failed attempt's answer — the next rung cannot know which "
+        "answer was already ruled out"
     )
 
 
 def test_the_handoff_does_not_leak_the_weak_models_reasoning():
-    """THE test. A confident partial derivation is what the stronger model follows."""
+    """THE test. Only the final CLAIM crosses a rung — never the argument for it.
+
+    Stripping <think> is NOT sufficient: deepseek-r1 restates its derivation in prose outside
+    the block. Measured live — handed that prose, deepseek-r1:32b reproduced the weak model's
+    wrong answer verbatim, even though the handoff said "do not continue its reasoning".
+    Handed only the failed answer, it solved the query correctly.
+    """
     prior = _run().seen[1].prior_attempt
-    assert RAMBLE_FRAGMENT not in prior, (
-        "the handoff leaked the weak model's <think> scratchpad. Measured live: this makes "
-        "deepseek-r1:32b abandon its own correct answer and adopt deepseek-r1:14b's wrong one."
+    assert RAMBLE_FRAGMENT not in prior, "the handoff leaked the weak model's <think> scratchpad"
+    assert WEAK_PROSE not in prior, (
+        "the handoff leaked the weak model's ARGUMENT (restated outside <think>). The stronger "
+        "model follows it and reproduces the wrong answer."
     )
     assert "<think" not in prior.lower()
 
@@ -124,10 +138,10 @@ def test_hop_zero_carries_no_handoff():
 
 def test_a_short_non_reasoning_reply_survives_intact():
     """A model with no <think> block must still hand its answer forward."""
-    dev = _StubDevice(replies={0: _StubResponse("ANSWER: apples"),
+    dev = _StubDevice(replies={0: _StubResponse("ANSWER: apples-only"),
                                1: _StubResponse(STRONG_CORRECT)})
     GeneralDomain(inference_device=dev, answer_check=_answer_is_both).ask("q")
-    assert "ANSWER: apples" in dev.seen[1].prior_attempt
+    assert "apples-only" in dev.seen[1].prior_attempt
 
 
 def test_a_truncated_scratchpad_hands_over_nothing_rather_than_rambling():

@@ -31,7 +31,7 @@ from unseen_university.devices.inference.domains.agentic_loop import (
     NativeToolCodec,
 )
 from unseen_university.devices.inference.domains.domain_prompts import domain_prompt
-from unseen_university.devices.inference.domains.reply_text import conclusion
+from unseen_university.devices.inference.domains.reply_text import extract_answer
 
 log = logging.getLogger(__name__)
 
@@ -334,35 +334,45 @@ class BaseDomain:
     def _summarize_attempt(self, result: LoopResult) -> str:
         """What a FAILED attempt hands to the next rung up. The seam a domain may override.
 
-        Two things this must get right, both learned the hard way
-        (T-escalation-handoff-transmits-the-confabulation, measured on the live rack):
+        THE RULE, measured on the live rack (T-escalation-handoff-transmits-the-confabulation):
+        **only the failed CLAIM crosses a rung — never the argument for it.**
 
-        1. THE CONCLUSION, NOT THE SCRATCHPAD. The old code was
-           ``(result.text or "").strip()[:400]`` — the FIRST 400 characters. A reasoning model
-           emits ``<think>…scratchpad…</think>`` and only then its answer, so that slice is the
-           opening of the scratchpad, cut off mid-sentence. ``conclusion()`` strips the
-           reasoning and takes the TAIL.
+        Three findings, each of which had to be measured because each looked fine on paper:
 
-        2. SAY IT FAILED. The proxy injects this under a "**What was tried:**" header, which
-           reads as useful prior work. Handed deepseek-r1:14b's unmarked scratchpad,
-           deepseek-r1:32b abandoned its own correct answer and adopted the weak model's wrong
-           one; handed the same conclusion explicitly marked failed, it stayed correct. So the
-           escalation walk — which is the only thing that KNOWS the attempt failed — says so
-           here, rather than trusting the proxy's framing.
+        1. The old code was ``(result.text or "").strip()[:400]`` — the FIRST 400 characters. A
+           reasoning model emits ``<think>…scratchpad…</think>`` and only then its answer, so
+           that slice was the opening of the scratchpad, cut off mid-sentence.
 
-        An attempt whose reasoning never terminated (truncated <think>) has no conclusion to
-        pass on, and passing on the scratchpad is worse than passing on nothing.
+        2. Stripping the scratchpad is NOT enough. deepseek-r1 restates its whole derivation in
+           prose *outside* the think block. Handed that prose, deepseek-r1:32b reproduced
+           deepseek-r1:14b's wrong answer verbatim — even though the handoff explicitly said
+           "do not continue its reasoning". A confident derivation beats an instruction not to
+           follow it. Handed only the failed ANSWER, the same model solved the query correctly.
+
+        3. SAY IT FAILED. The escalation walk is the only thing that knows the attempt failed,
+           so the walk says so — rather than trusting the proxy's framing, which used to present
+           a failure as "**What was tried:**", i.e. as useful prior work.
+
+        So the handoff names the ruled-out answer and nothing else. The next rung learns which
+        answer is wrong; it does not inherit the reasoning that produced it. An attempt whose
+        reasoning never terminated (truncated <think>) has no claim to pass on, and passing on
+        the scratchpad is worse than passing on nothing.
+
+        A domain whose "answer" is not a final claim (CodingDomain: a diff, a test result) will
+        want a richer handoff — that is what this seam is for. It must still obey the rule.
         """
-        text = conclusion(result.text or "")
-        if not text:
+        claim = extract_answer(result.text or "").strip()[:200]
+        if not claim:
             return (
                 f"A previous attempt at a lower tier {FAILED_MARKER} and produced no usable "
-                f"conclusion. Solve the problem from scratch."
+                f"answer. Solve the problem from scratch."
             )
         return (
-            f"A previous attempt at a lower tier concluded:\n{text}\n\n"
-            f"That attempt {FAILED_MARKER}. Do not continue its reasoning — it is known to be "
-            f"wrong. Solve the problem independently and reach your own conclusion."
+            f"A previous attempt at a lower tier answered: {claim}\n"
+            f"That answer {FAILED_MARKER} — it is known to be WRONG. Its reasoning is "
+            f"deliberately not provided, because following that reasoning is what produced the "
+            f"wrong answer. Solve the problem independently, from the question alone, and do "
+            f"not repeat that answer."
         )
 
     def _classify(self, result: LoopResult) -> str:
