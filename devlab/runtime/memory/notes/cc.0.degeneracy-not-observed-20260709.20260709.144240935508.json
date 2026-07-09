@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.degeneracy-not-observed-20260709.20260709.144240935508",
+  "emitter": "cc.0",
+  "namespace": [
+    "degeneracy-not-observed-20260709"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-09T14:42:40.935508",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "No degeneracy observed: 226 reasoning traces, repetition does not track truncation",
+    "text": "Akien asked (2026-07-09) whether models get 'hung up' or always come back eventually, noting that a hang must live outside the neural network. Correct: the transformer forward pass is fixed compute and always halts; non-termination lives in the autoregressive loop around it. Two states produce an identical finish_reason='length': SLOW-BUT-CONVERGENT (wants a bigger budget) and DEGENERATE (self-reinforcing repetition; no budget helps). The open ticket proposed a third LoopResult outcome to separate them.\n\nMEASURED FIRST, before building it. Every io_corpus record carrying raw.message.thinking >= 500 chars (n=226), scored by 6-gram unique-ratio over the last 600 words of the reasoning tail (1.0 = no repetition; a degenerate loop approaches 0).\n\n  truncated (finish=length):  n=21   min unique-ratio 0.965\n  completed (finish=stop):    n=205  min unique-ratio 0.653\n\nRESULT: repetition does NOT track truncation. All 21 truncated traces are highly non-repetitive — systematic work, cut off mid-derivation. The MOST repetitive trace in the corpus (0.653, deepseek-r1:32b, ticket handoff:32b/with-handoff) COMPLETED normally. Worked example: deepseek-r1:14b on b5-frobenius at max_tokens=8192 spends all 8192 tokens inside `thinking` (content empty), tail unique-ratio 0.972, cut off mid-sentence at 'c=1:' while enumerating 52, 53, ...; at 32768 it finishes and answers 43.\n\nCONCLUSION: on this fleet and this corpus, ZERO degenerate cases were observed. The DEGENERACY outcome class has no positive instance to calibrate a threshold against. Building the detector now would fit a threshold to an empty positive class — declaring, not measuring (see memory: measure-dont-declare-capability, epistemology-experiment-only).\n\nWHAT TO DO INSTEAD: record the tail unique-ratio on every truncated reply (cheap: one Counter) so a positive instance is RECOGNISABLE when it appears. Revisit the third outcome class when n(degenerate) > 0. Until then a truncation means 'ran out of room' and the BUDGET retry is the right response.\n\nCONDITIONS: corpus 2026-07-05..2026-07-09; models deepseek-r1:14b/32b, deepseek-v3.1:671b-cloud, llama3.2:3b, gemini-2.5-flash, devstral; temperature 0; max_tokens 256..32768. Metric: 6-gram unique-ratio, tail 600 words, on raw.message.thinking. NOT a claim about models in general — only about what these models did under these conditions.\n\nCAVEAT: greedy decoding (temperature 0) is the sampling regime MOST prone to degenerate repetition, so this fleet is being observed where the failure is most likely, and it still did not appear. That strengthens the negative result rather than weakening it.\n\nRELATED: T-truncation-vs-degeneracy-third-outcome (scope now narrows to instrumentation), T-io-corpus-text-drops-reasoning (response.text is normalised from `content` only, so all 226 of these traces are invisible to every consumer downstream of .text, and _unclosed_think can never fire)."
+  }
+}
