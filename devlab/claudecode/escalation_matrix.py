@@ -59,7 +59,11 @@ _GATE = {
     "token_direct": "include_paid",
 }
 
-_PASS, _FAIL, _ERR = "PASS", "fail", "ERR"
+#: TRUNC is NOT a wrong answer. A reasoning model spends its budget inside <think>…</think>;
+#: if it runs out before emitting the answer, `extract_answer` sees a truncated scratchpad and
+#: returns "". Scoring that as `fail` would fabricate a capability frontier out of a token
+#: budget — the same shape as reading a signal without checking what produced it.
+_PASS, _FAIL, _ERR, _TRUNC = "PASS", "fail", "ERR", "TRUNC"
 
 
 def _cheapest_source(model_id, connections, sources):
@@ -76,7 +80,13 @@ def _cheapest_source(model_id, connections, sources):
     return best
 
 
-def _ask(device, model_id, query, timeout):
+def _unclosed_think(text: str) -> bool:
+    """An opened <think> with no closing tag: the reply was cut off inside the scratchpad."""
+    low = (text or "").lower()
+    return "<think" in low and "</think" not in low
+
+
+def _ask(device, model_id, query, timeout, max_tokens):
     """Pin `model_id` and ask one corpus query. Returns (verdict, reply_text)."""
     from unseen_university.devices.inference.shim import InferenceRequest
 
@@ -85,7 +95,7 @@ def _ask(device, model_id, query, timeout):
         model=model_id,
         # A pin is what makes this a MEASUREMENT of the model rather than of the router.
         pin_reason="model_competition",
-        max_tokens=2048,
+        max_tokens=max_tokens,
         temperature=0.0,
         timeout=timeout,
         ticket_id=f"eval:{query.id}",
@@ -96,7 +106,13 @@ def _ask(device, model_id, query, timeout):
         return _ERR, f"{type(exc).__name__}: {exc}"
     if resp.finish_reason == "error" or resp.source_kind == "none":
         return _ERR, resp.text or "(no live source)"
-    return (_PASS if query.verify(resp.text) else _FAIL), resp.text
+    text = resp.text or ""
+    if query.verify(text):
+        return _PASS, text
+    # Ran out of budget mid-thought → no answer was ever emitted. Not a wrong answer.
+    if resp.finish_reason == "length" or _unclosed_think(text):
+        return _TRUNC, text
+    return _FAIL, text
 
 
 def _selected_models(args, models, connections, sources):
@@ -123,6 +139,8 @@ def main() -> int:
                     help="also query token_direct sources — REAL DOLLARS PER QUERY")
     ap.add_argument("--models", nargs="*", default=None, help="restrict to these model ids")
     ap.add_argument("--timeout", type=int, default=180)
+    ap.add_argument("--max-tokens", type=int, default=4096,
+                    help="reasoning models spend budget inside <think>; too low fabricates failures")
     ap.add_argument("--emit-note", action="store_true", help="write the matrix to the memory store")
     args = ap.parse_args()
 
@@ -145,16 +163,17 @@ def main() -> int:
     for spec, src in sorted(targets, key=lambda t: (cost_class_rank(t[1].cost_class), t[0].model_id)):
         print(f"── {spec.model_id}  @{src.name} ({src.cost_class}, claims '{spec.difficulty_bucket}')")
         for q in CORPUS:
-            verdict, reply = _ask(device, spec.model_id, q, args.timeout)
+            verdict, reply = _ask(device, spec.model_id, q, args.timeout, args.max_tokens)
             matrix[spec.model_id][q.band].append(verdict)
             detail.append({"model": spec.model_id, "source": src.name, "query": q.id,
                            "band": q.band, "verdict": verdict, "reply": reply[-300:]})
-            mark = {"PASS": "✓", "fail": "✗", "ERR": "!"}[verdict]
+            mark = {"PASS": "✓", "fail": "✗", "ERR": "!", "TRUNC": "…"}[verdict]
             print(f"     {mark} {q.id:14} {verdict}")
         print()
 
     # ── the matrix: pass-rate per band. The band where a model collapses is its frontier. ──
-    print("CAPABILITY MATRIX  (pass/total per band; '!' = source error, not a wrong answer)")
+    print("CAPABILITY MATRIX  (pass/total per band)")
+    print("  '!' = source error, '…' = truncated mid-<think> — NEITHER is a wrong answer")
     header = f"{'model':36} {'claims':9} " + " ".join(f"{b.split('_')[0]:>6}" for b in BANDS)
     print(header)
     print("-" * len(header))
@@ -164,9 +183,9 @@ def main() -> int:
                           "claimed_bucket": spec.difficulty_bucket, "bands": {}}
         for b in BANDS:
             vs = matrix[spec.model_id][b]
-            npass, nerr = vs.count(_PASS), vs.count(_ERR)
-            cells.append(f"{npass}/{len(vs)}" + ("!" if nerr else ""))
-            row["bands"][b] = {"pass": npass, "total": len(vs), "errors": nerr}
+            npass, nerr, ntr = vs.count(_PASS), vs.count(_ERR), vs.count(_TRUNC)
+            cells.append(f"{npass}/{len(vs)}" + ("!" if nerr else "") + ("…" if ntr else ""))
+            row["bands"][b] = {"pass": npass, "total": len(vs), "errors": nerr, "truncated": ntr}
         rows.append(row)
         print(f"{spec.model_id:36} {spec.difficulty_bucket:9} " + " ".join(f"{c:>6}" for c in cells))
 
