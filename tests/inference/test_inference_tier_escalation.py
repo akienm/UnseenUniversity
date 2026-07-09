@@ -1,7 +1,7 @@
 """Tests for inference device tier escalation handoff.
 
 Verifies:
-- escalation_hop >= 2 raises RuntimeError (hard ceiling)
+- the hop ceiling is DERIVED from the capability ladder (one hop per rung above the seed)
 - escalation_hop > 0 with prior_attempt prepends structured handoff to system
 - hop=0 (normal request) passes through unchanged
 - tier transition is logged at INFO
@@ -12,7 +12,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from unseen_university.devices.inference.routing_buckets import DIFFICULTY_BUCKETS
 from unseen_university.devices.inference.shim import InferenceRequest, InferenceResponse
+
+
+def _MAX_HOPS() -> int:
+    """Mirror of device.py's derived ceiling: one hop per rung above the seed."""
+    return len(DIFFICULTY_BUCKETS) - 1
 
 
 def _make_device():
@@ -43,22 +49,37 @@ def _fake_raw() -> dict:
 
 
 class TestEscalationCeiling:
-    def test_hop_2_raises(self):
-        """Requests with escalation_hop >= 2 are rejected immediately."""
+    """The hop ceiling is DERIVED from the capability ladder, not a magic number.
+
+    It was hardcoded to 2 while DIFFICULTY_BUCKETS had three entries. Adding the `frontier`
+    rung (T-inference-cost-first-sort-strands-cloud-fleet) would have left the cap behind, and
+    hop 2 — the very hop that reaches above the local box — would have raised RuntimeError.
+    BaseDomain._run_attempt catches a raise as AVAILABILITY, so the walk would have retried the
+    same rung until it exhausted, and never escalated at all. A silent, expensive no-op.
+    """
+
+    def test_hop_2_reaches_the_frontier_rung_and_does_not_raise(self):
+        """code -> design -> frontier: hop 2 is a legitimate rung, not the ceiling."""
+        assert _MAX_HOPS() >= 3, "the ladder has 4 buckets; hop 2 must be dispatchable"
         d = _make_device()
         req = InferenceRequest(
             messages=[{"role": "user", "content": "help"}],
             escalation_hop=2,
             prior_attempt="prior text",
         )
-        with pytest.raises(RuntimeError, match="ceiling"):
-            d.dispatch(req)
+        try:
+            d.dispatch(req)  # may fail for lack of a live source; must NOT raise 'ceiling'
+        except RuntimeError as exc:
+            assert "ceiling" not in str(exc), f"hop 2 hit the escalation ceiling: {exc}"
+        except Exception:
+            pass  # no live source in the synthetic rack — not what this test is about
 
-    def test_hop_3_also_raises(self):
+    def test_hop_past_the_top_rung_raises(self):
+        """The walk must still terminate: one hop past the last bucket is the ceiling."""
         d = _make_device()
         req = InferenceRequest(
             messages=[{"role": "user", "content": "help"}],
-            escalation_hop=3,
+            escalation_hop=_MAX_HOPS(),
             prior_attempt="prior text",
         )
         with pytest.raises(RuntimeError, match="ceiling"):

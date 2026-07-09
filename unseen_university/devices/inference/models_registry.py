@@ -51,6 +51,19 @@ class ModelSpec:
     # derived from `tier` (the a-priori estimate). Set explicitly to describe a model
     # whose true ceiling differs from the tier slot it's routed under.
     difficulty_capable: str = ""
+    # How we KNOW `difficulty_capable`. "declared" = a human typed it; "measured:<note>" = it
+    # was established by running the escalation corpus against this model and recording the
+    # band where its pass-rate collapsed (devlab/claudecode/escalation_matrix.py).
+    #
+    # This field exists because the cost-optimizing selector REWARDS overclaiming: it sorts by
+    # cost_class first and difficulty_meets is a `>=` filter, so a cheap model that claims the
+    # top bucket wins every bucket beneath it too. Nothing verified the claim, and the registry
+    # had already drifted — `gemini-2.0-flash` claimed `design` while `claude-sonnet-4.6`
+    # claimed only `code`. A declared label is a wish; a measured one is a fact. Claiming the
+    # TOP bucket (routing_buckets.TOP_DIFFICULTY) requires measurement — enforced by
+    # tests/inference/test_capability_evidence.py, because the top rung is exactly where an
+    # overclaim does the most damage: it makes escalation land on a model that cannot help.
+    capability_evidence: str = "declared"
     # Structured capability flags the selector filters on (e.g. 'tools', 'json_mode',
     # 'vision') — distinct from free-text `tags`. A call requiring a feature excludes
     # models that lack it.

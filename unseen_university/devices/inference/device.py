@@ -45,6 +45,7 @@ from unseen_university.devices.inference.connections import default_connections
 from unseen_university.devices.inference.rules_engine import RoutingDecision, RulesEngine
 from unseen_university.devices.inference.dimensions import route_request
 from unseen_university.devices.inference.routing_buckets import (
+    DIFFICULTY_BUCKETS,
     bump_difficulty,
     inference_cost_record,
     task_class_to_difficulty,
@@ -428,8 +429,14 @@ class InferenceDevice(BaseDevice):
                 f"for one of {sanctioned}."
             )
 
-        # Tier escalation: enforce 2-hop ceiling and prepend attempt summary
-        _MAX_ESCALATION_HOPS = 2
+        # Tier escalation: enforce the hop ceiling and prepend the domain's attempt summary.
+        # One hop per capability rung above the seed. The seed for 'worker' work is 'code', so
+        # the reachable rungs are code -> design -> frontier: two bumps, hop values 0,1,2. The
+        # cap was 2 while DIFFICULTY_BUCKETS had only three entries, which made hop 2 a hard
+        # RuntimeError — and BaseDomain._run_attempt catches a raise as AVAILABILITY, so the
+        # walk would have retried the same rung until it exhausted rather than escalating.
+        # Derived from the bucket ladder so adding a rung cannot leave this behind.
+        _MAX_ESCALATION_HOPS = len(DIFFICULTY_BUCKETS) - 1
         if request.escalation_hop >= _MAX_ESCALATION_HOPS:
             raise RuntimeError(
                 f"InferenceDevice: escalation ceiling reached "

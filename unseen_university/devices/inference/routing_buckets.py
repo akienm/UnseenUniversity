@@ -34,7 +34,24 @@ from __future__ import annotations
 TIME_BUCKETS: tuple[str, ...] = ("interactive", "minutes", "overnight")
 
 # Easy → hard. A model's difficulty_capable says the hardest bucket it can handle.
-DIFFICULTY_BUCKETS: tuple[str, ...] = ("classify", "code", "design")
+#
+# `frontier` exists because of a MEASURED failure of the three-bucket scale
+# (T-inference-cost-first-sort-strands-cloud-fleet). The selector sorts by cost_class FIRST,
+# and difficulty_meets is a `>=` filter, so any model on the local box dominates every bucket
+# it CLAIMS. With only three buckets the local box held a member of each, and escalation —
+# which raises the required bucket — could never leave it: a sweep of all 450 dimension
+# combinations reached exactly 3 of 22 models, all on `ollama`. The entire cloud fleet,
+# including the paid Ollama-Pro 480b/671b, was unreachable by any combination of dimensions.
+#
+# `frontier` is the rung the local box does not hold. It is not another label to hand out:
+# a model may only claim it with MEASURED evidence (ModelSpec.capability_evidence), because
+# a cost-first selector actively REWARDS overclaiming — a cheap model that claims the top
+# bucket captures all the work beneath it too, and nothing checks the claim.
+DIFFICULTY_BUCKETS: tuple[str, ...] = ("classify", "code", "design", "frontier")
+
+#: The hardest bucket. Claiming it requires measured evidence — see models_registry.ModelSpec
+#: and tests/inference/test_capability_evidence.py.
+TOP_DIFFICULTY: str = DIFFICULTY_BUCKETS[-1]
 
 # Cheap → dear. A source's cost_class says how dollars accrue. graph_tree (rank 0)
 # is reserved for compiled inference that never makes an LLM call at all.
