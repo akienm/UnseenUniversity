@@ -20,7 +20,7 @@ wrong answer. On 2026-07-08 `deepseek-r1:14b` returned `{"status":"done","result
 smoke file"}` and wrote nothing; the proof went green because it believed the model. An
 escalation trigger that reads a self-reported confidence or refusal token will therefore
 NEVER fire on exactly the queries it exists for. Every verifier here must reject a
-plausible confabulation, not merely an empty string.
+plausible confabulation, not merely an empty string — hence `EvalQuery.confabulation`.
 
 Why bands are defined by STRUCTURE, not by "which model passes"
 ---------------------------------------------------------------
@@ -47,28 +47,67 @@ BANDS: tuple[str, ...] = (
     "b4_multi_hop_constraint",  # search/deduce across interacting constraints
 )
 
-#: Appended to every query so the answer lands somewhere a verifier can find it.
+#: Appended to every query BY THE RUNNER so the answer lands somewhere a verifier can find
+#: it. Kept out of `EvalQuery.prompt` so a runner can measure tagged vs untagged separately —
+#: a model that solves a query but ignores the format is failing instruction-following, not
+#: reasoning, and conflating the two would corrupt the capability matrix.
 ANSWER_INSTRUCTION = "End your reply with a final line of exactly: ANSWER: <your answer>"
+
+# A reasoning model wraps its scratchpad in <think>…</think>. An UNCLOSED block means the
+# reply was truncated mid-thought: everything after it is scratchpad, not an answer.
+_THINK_BLOCK = re.compile(r"<think\b[^>]*>.*?</think\s*>", re.DOTALL | re.IGNORECASE)
+_UNCLOSED_THINK = re.compile(r"<think\b[^>]*>.*\Z", re.DOTALL | re.IGNORECASE)
+_ANSWER_TAG = re.compile(r"^\s*ANSWER\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+
+# Trailing chrome a model adds around an otherwise-correct answer. NB the colon is NOT here:
+# stripping it would destroy a clock answer ("14:15").
+_TRAILING_CHROME = " \t\n.\"'!*"
 
 
 def band_rank(band: str) -> int:
-    """Rank of a band (lower = easier). Unknown band ranks past the hardest known one."""
-    raise NotImplementedError
+    """Rank of a band (lower = easier). Unknown band ranks past the hardest known one.
+
+    Unknown ranks HARD, not easy: an unlabelled query must never be mistaken for a
+    trivial one when locating a model's frontier.
+    """
+    try:
+        return BANDS.index(band)
+    except ValueError:
+        return len(BANDS)
 
 
 def strip_reasoning(text: str) -> str:
-    """Remove <think>…</think> reasoning blocks that reasoning models emit around answers."""
-    raise NotImplementedError
+    """Remove <think>…</think> reasoning blocks that reasoning models emit around answers.
+
+    A closed block is excised. An unclosed block consumes the rest of the reply — a
+    truncated reasoning dump contains no answer, and reading one out of it would score a
+    model on its scratchpad.
+    """
+    text = _THINK_BLOCK.sub("", text or "")
+    return _UNCLOSED_THINK.sub("", text)
 
 
 def normalize(text: str) -> str:
-    """Canonical form for answer comparison: casefold, strip money/commas/punctuation."""
-    raise NotImplementedError
+    """Canonical form for answer comparison: casefold, drop money/commas/bold, trim chrome."""
+    t = (text or "").casefold()
+    t = t.replace("$", "").replace(",", "").replace("**", "")
+    t = re.sub(r"\s+", " ", t).strip()
+    return t.strip(_TRAILING_CHROME)
 
 
 def extract_answer(text: str) -> str:
-    """Pull the model's final answer out of a raw reply."""
-    raise NotImplementedError
+    """Pull the model's final answer out of a raw reply.
+
+    Prefers the LAST `ANSWER:` line — a model that revises ("ANSWER: 7 … wait … ANSWER: 42")
+    must be read on its final claim, not its first draft. Falls back to the last non-empty
+    line so a correct untagged answer is not scored as a reasoning failure.
+    """
+    body = strip_reasoning(text or "")
+    tagged = _ANSWER_TAG.findall(body)
+    if tagged:
+        return tagged[-1]
+    lines = [ln.strip() for ln in body.splitlines() if ln.strip()]
+    return lines[-1] if lines else ""
 
 
 @dataclass(frozen=True)
@@ -76,9 +115,10 @@ class EvalQuery:
     """One graduated query with a deterministic ground-truth verifier.
 
     `confabulation` is the plausible WRONG answer a model actually reaches when it fails
-    this query — the distractor it forgot to discard, the constraint it dropped. It is not
-    decoration: the corpus's own test asserts every verifier REJECTS it. A verifier that
-    only rejects an empty reply cannot detect the failure mode escalation exists for.
+    this query — the distractor it forgot to discard, the constraint it dropped, the other
+    person it answered about. It is not decoration: the corpus's own test asserts every
+    verifier REJECTS it. A verifier that only rejects an empty reply cannot detect the
+    failure mode escalation exists for.
     """
 
     id: str
@@ -88,13 +128,119 @@ class EvalQuery:
     confabulation: str
 
     def verify(self, reply: str) -> bool:
-        """True iff `reply`'s extracted answer matches ground truth."""
-        raise NotImplementedError
+        """True iff `reply`'s extracted answer matches ground truth.
+
+        Equality on the normalized form, never a substring test: 'the answer is not 42'
+        contains '42' and must not verify as 42.
+        """
+        return normalize(extract_answer(reply)) == normalize(self.answer)
 
 
-CORPUS: tuple[EvalQuery, ...] = ()
+CORPUS: tuple[EvalQuery, ...] = (
+    # ── b1: one operation, nothing to discard ────────────────────────────────
+    EvalQuery(
+        id="b1-sum", band="b1_single_step",
+        prompt="What is 17 + 25?",
+        answer="42", confabulation="32",
+    ),
+    EvalQuery(
+        id="b1-shelves", band="b1_single_step",
+        prompt="A shelf holds 8 books. How many books do 6 identical shelves hold?",
+        answer="48", confabulation="14",  # added instead of multiplied
+    ),
+    EvalQuery(
+        id="b1-letter", band="b1_single_step",
+        prompt="What is the 5th letter of the English alphabet?",
+        answer="e", confabulation="f",  # off by one
+    ),
+    # ── b2: dependent steps + one irrelevant fact that must be discarded ─────
+    EvalQuery(
+        id="b2-muffins", band="b2_multi_step",
+        prompt=(
+            "A baker made 48 muffins. He sold three quarters of them, then baked 12 more. "
+            "A separate tray holds 20 cupcakes. How many muffins does he have now?"
+        ),
+        answer="24", confabulation="44",  # folded the cupcake distractor in
+    ),
+    EvalQuery(
+        id="b2-ages", band="b2_multi_step",
+        prompt=(
+            "Sarah is exactly twice as old as Tom. Sarah's cat is 3 years old. In 5 years, "
+            "Sarah's age plus Tom's age will be 40. How old is Tom now?"
+        ),
+        answer="10", confabulation="20",  # answered about Sarah, the wrong person
+    ),
+    EvalQuery(
+        id="b2-tank", band="b2_multi_step",
+        prompt=(
+            "A tank holds 200 litres when full and stands 1.5 m tall. It is currently 40% "
+            "full. You add 30 litres, then remove 10 litres. How many litres are in it now?"
+        ),
+        answer="100", confabulation="60",  # read 40% as 40 litres
+    ),
+    # ── b3: constraints that must be satisfied jointly, unique answer ────────
+    EvalQuery(
+        id="b3-pets", band="b3_constraint",
+        prompt=(
+            "Ann, Ben and Cy each own exactly one pet, and the pets are a cat, a dog and a "
+            "fish — one each. Ann does not own the cat. Ben owns neither the cat nor the "
+            "fish. Who owns the cat?"
+        ),
+        answer="Cy", confabulation="Ann",
+    ),
+    EvalQuery(
+        id="b3-digits", band="b3_constraint",
+        prompt=(
+            "A two-digit number has digits that sum to 11, and its tens digit is 3 more "
+            "than its units digit. What is the number?"
+        ),
+        answer="74", confabulation="47",  # digits swapped
+    ),
+    EvalQuery(
+        id="b3-race", band="b3_constraint",
+        prompt=(
+            "In a four-person race, Alice finished before Bob. Carl finished after Bob. "
+            "Dana finished before Alice. Who finished last?"
+        ),
+        answer="Carl", confabulation="Bob",
+    ),
+    # ── b4: search or deduce across interacting constraints ──────────────────
+    EvalQuery(
+        id="b4-pens", band="b4_multi_hop_constraint",
+        prompt=(
+            "A shop sells pens for $3 each and notebooks for $7 each. Maya spent exactly "
+            "$61, bought at least one of each, and bought more notebooks than pens. How "
+            "many pens did she buy?"
+        ),
+        # 3p + 7n = 61 has three positive solutions: (p=4,n=7), (p=11,n=4), (p=18,n=1).
+        # Only p=4 satisfies n > p.
+        answer="4", confabulation="11",  # a real solution that violates n > p
+    ),
+    EvalQuery(
+        id="b4-boxes", band="b4_multi_hop_constraint",
+        prompt=(
+            "Three boxes contain fruit: one holds only apples, one holds only oranges, and "
+            "one holds both. All three boxes are labelled, and every label is wrong. You "
+            "draw one fruit from the box labelled 'both' and it is an apple. What does the "
+            "box labelled 'oranges' actually contain?"
+        ),
+        # 'both' is mislabelled → pure; the drawn apple makes it apples-only. 'oranges' is
+        # mislabelled → not oranges, and apples-only is taken → it holds both.
+        answer="both", confabulation="apples",
+    ),
+    EvalQuery(
+        id="b4-schedule", band="b4_multi_hop_constraint",
+        prompt=(
+            "A meeting starts at 09:40 and runs for 150 minutes. It is followed by a "
+            "25-minute break, and then a session lasting two thirds as long as the meeting. "
+            "At what time does the session end? Give a 24-hour time as HH:MM."
+        ),
+        # 09:40 +150m = 12:10; +25m = 12:35; session = 100m → 14:15.
+        answer="14:15", confabulation="13:50",  # dropped the break
+    ),
+)
 
 
 def by_band(band: str) -> tuple[EvalQuery, ...]:
     """Every query in `band`, in corpus order."""
-    raise NotImplementedError
+    return tuple(q for q in CORPUS if q.band == band)
