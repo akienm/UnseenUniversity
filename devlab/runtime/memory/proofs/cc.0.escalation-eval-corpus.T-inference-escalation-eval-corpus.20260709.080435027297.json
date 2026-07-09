@@ -1,0 +1,63 @@
+{
+  "id": "cc.0.escalation-eval-corpus.T-inference-escalation-eval-corpus.20260709.080435027297",
+  "emitter": "cc.0",
+  "namespace": [
+    "escalation-eval-corpus",
+    "T-inference-escalation-eval-corpus"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T08:04:35.027297",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-escalation-eval-corpus"
+    ],
+    "commits": [
+      "e93cb7acf8cec1b6afbf14c62171fbce2734ad38"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-escalation-eval-corpus",
+  "body": {
+    "thing": "escalation eval corpus",
+    "intention": "Every verifier in the corpus rejects the plausible confident-wrong answer a failing model actually produces, not merely an empty reply.",
+    "test": "tests/inference/test_escalation_corpus.py::test_every_verifier_rejects_its_confabulation",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_escalation_corpus.py::test_every_verifier_rejects_its_confabulation",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "________________ test_every_verifier_rejects_its_confabulation _________________\n\n    def test_every_verifier_rejects_its_confabulation():\n        \"\"\"THE test. Ground truth must reject a confident wrong answer, not just an empty one.\n    \n        A weak model does not say 'I don't know'; it confabulates. If a verifier passes the\n        plausible wrong answer, the hard queries never trigger escalation and the whole eval\n        goes green while proving nothing (the 2026-07-08 failure, exactly).\n    \n        The non-empty guard is not ceremony: `for q in ()` passes this test vacuously, which is\n        the same shape of hollow green it is written to prevent.\n        \"\"\"\n>       assert CORPUS, \"empty corpus — this test would pass vacuously\"\nE       AssertionError: empty corpus — this test would pass vacuously\nE       assert ()\n\ntests/inference/test_escalation_corpus.py:68: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_escalation_corpus.py::test_every_verifier_rejects_its_confabulation\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "e93cb7acf8cec1b6afbf14c62171fbce2734ad38",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-general-domain-chat-prototype.20260709.074646726231.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-cost-first-sort-strands-cloud-fleet.20260709.074646577732.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-escalation-eval-corpus.20260709.074646856783.json",
+      "tests/inference/test_general_domain_escalation.py",
+      "unseen_university/devices/inference/domains/__init__.py",
+      "unseen_university/devices/inference/domains/escalation_corpus.py",
+      "unseen_university/devices/inference/domains/general.py"
+    ],
+    "ticket": "T-inference-escalation-eval-corpus",
+    "narrative": "",
+    "why": "A weak model asked a hard question does not say 'I dont know' — it confabulates. An escalation trigger that cannot detect a confident wrong answer never fires on the queries it exists for. On 2026-07-08 deepseek-r1:14b returned a done envelope and wrote nothing; the proof believed it and went green.",
+    "bootstrap": false
+  }
+}
