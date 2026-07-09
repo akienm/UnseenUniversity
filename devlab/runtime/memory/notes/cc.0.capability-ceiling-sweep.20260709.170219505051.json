@@ -1,0 +1,880 @@
+{
+  "id": "cc.0.capability-ceiling-sweep.20260709.170219505051",
+  "emitter": "cc.0",
+  "namespace": [
+    "capability-ceiling-sweep"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-09T17:02:19.505051",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Capability ceiling sweep @ 32768 tokens (rebuilt from io_corpus)",
+    "text": "Capability measured at a NON-BINDING 32768-token ceiling, 2 samples/cell, temperature 0. A cell is PASS only if every sample passed and none truncated; disagreement is UNSTABLE, never a majority-vote pass. `truncations > 0` OR `errors > 0` for a model means that model has holes in its measurement and NO capability verdict is licensed for it.\n\nREBUILT FROM io_corpus: the sweep process was killed during its (low-value) budget-walk phase before it emitted a note, and its conditions block would have omitted timeout_s anyway. Every capability call is in the corpus keyed by ticket_id=eval:<query>; this note is reconstructed from those 128 records and verified with the SAME EvalQuery.verify() the sweep used.\n\nHEADLINE: deepseek-r1:14b (a $0 local model) clears the whole b5_frontier band and fails b4-boxes. deepseek-r1:32b fails b5-frobenius (also at 4096 and 8192, clean stop). The 32b's capability set is NOT a superset of the 14b's, so the >= ladder that difficulty_meets asserts is unsound. deepseek-v3.1:671b-cloud has NO verdict on b5-frobenius: it HUNG, twice.",
+    "conditions": {
+      "ceiling_tokens": 32768,
+      "samples_per_cell": 2,
+      "temperature": 0.0,
+      "timeout_s": 600,
+      "measured_on": "2026-07-09",
+      "corpus_size": 16,
+      "bands": [
+        "b1_single_step",
+        "b2_multi_step",
+        "b3_constraint",
+        "b4_multi_hop_constraint",
+        "b5_frontier"
+      ],
+      "phase": "capability",
+      "instrument": "devlab/claudecode/escalation_matrix.py (note rebuilt from io_corpus)"
+    },
+    "models": {
+      "deepseek-r1:14b": {
+        "source": "ollama",
+        "cost_class": "owned_local",
+        "cells": {
+          "b1-sum": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-shelves": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-letter": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-muffins": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-ages": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-tank": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-pets": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-digits": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-race": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-pens": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-boxes": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-schedule": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-knights": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-modular": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-frobenius": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-digitcount": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          }
+        },
+        "bands": {
+          "b1_single_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b2_multi_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b3_constraint": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b4_multi_hop_constraint": {
+            "pass": 2,
+            "total": 3,
+            "fail": 1,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b5_frontier": {
+            "pass": 4,
+            "total": 4,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          }
+        },
+        "truncations": 0,
+        "errors": 0
+      },
+      "deepseek-r1:32b": {
+        "source": "ollama",
+        "cost_class": "owned_local",
+        "cells": {
+          "b1-sum": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-shelves": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-letter": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-muffins": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-ages": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-tank": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-pets": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-digits": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-race": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-pens": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-boxes": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-schedule": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-knights": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-modular": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-frobenius": {
+            "band": "b5_frontier",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-digitcount": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          }
+        },
+        "bands": {
+          "b1_single_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b2_multi_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b3_constraint": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b4_multi_hop_constraint": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b5_frontier": {
+            "pass": 3,
+            "total": 4,
+            "fail": 1,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          }
+        },
+        "truncations": 0,
+        "errors": 0
+      },
+      "deepseek-v3.1:671b-cloud": {
+        "source": "ollama_cloud",
+        "cost_class": "subscription",
+        "cells": {
+          "b1-sum": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-shelves": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-letter": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-muffins": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-ages": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-tank": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-pets": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-digits": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-race": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-pens": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-boxes": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-schedule": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-knights": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-modular": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-frobenius": {
+            "band": "b5_frontier",
+            "verdict": "ERR",
+            "samples": [
+              "ERR",
+              "ERR"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-digitcount": {
+            "band": "b5_frontier",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          }
+        },
+        "bands": {
+          "b1_single_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b2_multi_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b3_constraint": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b4_multi_hop_constraint": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b5_frontier": {
+            "pass": 3,
+            "total": 4,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 1,
+            "unstable": 0
+          }
+        },
+        "truncations": 0,
+        "errors": 1
+      },
+      "llama3.2:3b": {
+        "source": "ollama",
+        "cost_class": "owned_local",
+        "cells": {
+          "b1-sum": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-shelves": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b1-letter": {
+            "band": "b1_single_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-muffins": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-ages": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b2-tank": {
+            "band": "b2_multi_step",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-pets": {
+            "band": "b3_constraint",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-digits": {
+            "band": "b3_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b3-race": {
+            "band": "b3_constraint",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-pens": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-boxes": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "PASS",
+            "samples": [
+              "PASS",
+              "PASS"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b4-schedule": {
+            "band": "b4_multi_hop_constraint",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-knights": {
+            "band": "b5_frontier",
+            "verdict": "UNSTABLE",
+            "samples": [
+              "PASS",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-modular": {
+            "band": "b5_frontier",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-frobenius": {
+            "band": "b5_frontier",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          },
+          "b5-digitcount": {
+            "band": "b5_frontier",
+            "verdict": "fail",
+            "samples": [
+              "fail",
+              "fail"
+            ],
+            "budget": 32768,
+            "floor_tokens": null
+          }
+        },
+        "bands": {
+          "b1_single_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b2_multi_step": {
+            "pass": 3,
+            "total": 3,
+            "fail": 0,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b3_constraint": {
+            "pass": 1,
+            "total": 3,
+            "fail": 2,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b4_multi_hop_constraint": {
+            "pass": 2,
+            "total": 3,
+            "fail": 1,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 0
+          },
+          "b5_frontier": {
+            "pass": 0,
+            "total": 4,
+            "fail": 3,
+            "truncated": 0,
+            "errors": 0,
+            "unstable": 1
+          }
+        },
+        "truncations": 0,
+        "errors": 0
+      }
+    }
+  }
+}

@@ -289,3 +289,126 @@ DEGENERACY: MEASURED, NOT BUILT (note: degeneracy-not-observed-20260709)
 - Worked example: 14b on b5-frobenius @8192 spends all 8192 tokens inside `thinking`, content empty,
   tail ratio 0.972, cut off mid-sentence at "c=1:" while enumerating 52, 53... At 32768 it answers 43.
 
+
+### The measurement (the day's actual result)
+
+CAPABILITY, at a NON-BINDING 32768 ceiling, 2 samples/cell, temp 0, timeout 600s.
+Note: notes/capability-ceiling-sweep (REBUILT from io_corpus — see below).
+
+  model                      b1   b2   b3   b4   b5    trunc  err
+  deepseek-r1:14b   ($0)    3/3  3/3  3/3  2/3  4/4      0     0    fails b4-boxes
+  deepseek-r1:32b   ($0)    3/3  3/3  3/3  3/3  3/4      0     0    fails b5-frobenius
+  deepseek-v3.1:671b-cloud  3/3  3/3  3/3  3/3  3/4      0     1    b5-frobenius HUNG
+  llama3.2:3b       ($0)    3/3  3/3  1/3  2/3  0/4      0     0
+
+1. CAPABILITY IS NOT A LADDER. The 32b's set is NOT a superset of the 14b's: the 14b passes
+   b5-frobenius (2/2) which the 32b fails at 4096, 8192 AND 32768, clean stop each time. One
+   counterexample kills the universal `>=` that routing_buckets.difficulty_meets asserts.
+   The reverse direction is NOT established (the 32b's only edge is b4-boxes, which a 3b also
+   passes — see 2). Memory: feedback_capability_is_not_a_ladder.
+
+2. THE CORPUS DOES NOT DISCRIMINATE. b5 queries are named textbook problems (Chicken McNugget
+   6/9/20->43, knights-and-knaves, CRT, stars-and-bars) — a $0 14b clears the whole band.
+   b4-boxes leaks its answer: the token "both" appears TWICE in the prompt as the label of the
+   box you draw from; answer space is {apples,oranges,both}; 3b PASS, 14b fail, 32b PASS —
+   non-monotone in size, i.e. ANTI-correlated with capability. I designed by "what SHAPE of
+   reasoning?" and never asked "how could a model be right WITHOUT reasoning?"
+   Memory: feedback_eval_queries_must_not_leak. (I then reproduced the same defect in a test
+   fixture: REASONING contained "43", so a hop-0 reply answering 41 passed a `"43" in text` check.)
+
+3. THE 671b HANGS ON b5-frobenius, 40% (6/15 calls). ZERO hangs in 30 calls across the other 15
+   queries. Query-specific non-termination, at both budgets, consuming the full timeout on a call
+   it otherwise completes in ~240s. A timeout captures NOTHING (raw=null) — so the one place a
+   degenerate loop could hide is the one place we cannot look.
+   Note: notes/671b-hangs-frontier-unearned-20260709.
+
+4. max_tokens does NOT determine the answer. 4096: 43,43,43 (+probe 43) = 4/4. 32768: 43,43,37
+   (+probe 37) = 2/4. Suggestive, NOT significant (Fisher p~0.43). A single sample at each budget
+   nearly became "max_tokens is semantic at temperature 0". One sample is a coin.
+
+5. TEMPERATURE 0 IS NOT DETERMINISTIC. llama3.2:3b scored PASS then fail on b5-knights, same
+   prompt, same budget. GPU float reduction order is not associative; near-ties flip the argmax.
+   samples>=2 caught it and _aggregate records UNSTABLE rather than majority-voting a pass.
+
+6. THE TIMEOUT IS A CONDITION. It was never recorded. Two 600s ERRs looked ceiling-induced; I wrote
+   that into a code comment as fact and committed it. A controlled probe (timeout held at 1800s,
+   only max_tokens varied) refuted it — the model finishes at BOTH 4096 (260s) and 32768 (195s).
+   Retracted in 512ca1ba. `timeout_s` now lands in the note's conditions; the guard rejects a
+   measured claim from a run where that model ERRORED at the ceiling.
+
+## Next — THE DECISION AKIEN MUST TAKE (do not let CC pick)
+
+  `frontier` HAS NO MEASURED HOLDER. The bucket was added (T-inference-cost-first-sort-strands-
+  cloud-fleet) so escalation could leave the local box, ASSUMING the cloud model was more capable.
+  Measured: it is not — not on this corpus, and on the one separating query it cannot reliably
+  even return. The guard correctly refuses the claim on two independent grounds.
+
+  (a) Drop the 671b to `declared`; accept an EMPTY top bucket. Escalation's last hop then always
+      halts. test_the_top_bucket_is_not_empty goes red, correctly.
+  (b) Remove `frontier`; revert to 3 buckets. Re-opens "escalation never leaves the box" — but we
+      have no evidence that leaving it helps.
+  (c) REBUILD THE CORPUS so the top band discriminates: GENERATE queries (parameterise a family,
+      brute-force ground truth in code), answer token absent from the prompt, wide answer space.
+      `6,9,20->43` is memorisable; `7,11,24->?` is the same reasoning with nothing to recall.
+      Only option that produces NEW information rather than re-labelling old.
+  (d) Investigate the hang first — a top rung that returns nothing 40% of the time is unusable
+      whatever its capability.
+
+  CC's read: (c) then (d). But this is a D-level call.
+
+## Working tree at compact (DELIBERATELY UNCOMMITTED)
+
+  unseen_university/devices/inference/capability_evidence.py   NEW — CapabilityEvidence value object
+  unseen_university/devices/inference/models_registry.py       evidence: str -> CapabilityEvidence
+  tests/inference/test_capability_evidence.py                  the guard (resolves the note, reads
+                                                               numbers back; un-fakeable by design)
+  tests/inference/test_escalation_leaves_the_local_box.py      \_ consumers updated
+  tests/inference/test_hex_registration.py                     /
+  devlab/claudecode/escalation_matrix.py                       committed already (a8e10ae9/512ca1ba)
+
+  Guard state: 2 RED, both naming deepseek-v3.1:671b-cloud — (i) 1 cell errored at the ceiling, so
+  no verdict is licensed; (ii) claims 'frontier' but scored 3/4 on b5_frontier. The other three
+  models pass their conditions cleanly. THE REDS ARE THE FINDING. Do not make them green by
+  editing the registry — that is the hollow-build move this whole ticket exists to prevent.
+  Resolve them by taking the decision above.
+
+## Also today — the clones (Akien: "a whole folder of hidden stuff")
+
+  Removed 16 paths, 441MB. ~/.unseen_university 553MB -> 146MB. Nothing lost, VERIFIED: every file
+  of every type in every clone was either identical to a current canonical file, or its git blob
+  sha1 was found among ALL 16135 blobs ever committed. A filename-only diff (my first check) was
+  the WRONG check — slates are .txt. Preserved to ~/TheIgorsProject/runtime/memory/
+  aider_unmerged_20260709/ (92KB + MANIFEST): 4 unmerged aider commits.
+
+  IT UNCOVERED A HOLLOW BUILD THE GATE PASSED. T-reorg-parents-path-sweep is CLOSED, "gate PASS,
+  tests=green". The builder (qwen3-coder:30b) added three 0-BYTE files at pre-reorg paths that do
+  not exist, touched nothing real. Patch line-count: +0/-0. The ticket carried `intention: None` —
+  with no "I intend that..." there was nothing for the gate to check the build AGAINST, so "tests
+  green" was the only signal, and "tests green" is satisfied by doing nothing.
+  -> T-aider-gate-passed-a-hollow-build (0.95)
+
+  THE BUG IT CLAIMED TO FIX IS LIVE AT 7 SITES. parents[2] from unseen_university/devices/X/f.py
+  is the PACKAGE dir, not the repo root (that is parents[3]). Two OTHER sites are accidentally
+  correct because they append "devices" — which is why a skim misses it.
+  -> T-reorg-parents-sweep-still-live (0.8)
+
+  memory_emit derives _REPO from __file__, so a future clone still forks the store.
+  -> T-aider-work-clones-hidden-state (0.6)
+
+  Stale: an aider device daemon has run since 2026-07-07 out of a dead CC session's job dir.
+  Idle, harmless, unknown to anyone. Left running; flagged.
+
+## Also today
+
+  - T-inference-run-record: SPINE PROVEN (14ed9c35). Every inference request now leaves one JSON
+    ticket under uu_home()/inference_corpus/runs/. Written in a `finally` so halts leave records.
+    Gaps ticketed: T-run-record-io-join, -coding-domain-model-blank, -retention-sweeper.
+  - 4 standing test reds cleared; 2 were REAL bugs (graph map ingested a 2173-file venv and ranked
+    pip's typing_extensions above the task's files in EVERY DickSimnel orientation).
+  - Sweep killed at 16:09 during its low-value budget-walk phase (671b walk = ~60 calls against a
+    provider that hangs 40% on the walk's hardest query). Capability data intact in io_corpus;
+    note REBUILT from it. 14b token floors survived: b4-schedule 1024, b5-digitcount 1024,
+    b5-modular 2048, b4-pens 4096, b5-knights 8192, b5-frobenius 8192 — an 8x per-query spread.
+
+Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0.95).
+      3. T-reorg-parents-sweep-still-live (0.8). 4. T-io-corpus-text-drops-reasoning (0.8).
