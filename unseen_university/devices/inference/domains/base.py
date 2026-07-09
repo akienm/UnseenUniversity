@@ -1,18 +1,19 @@
 """
-base.py — the Domain object: one owner for a task-domain's model selection + prompts.
+base.py — the Domain object: one owner for a task-domain's EXECUTION and prompts.
 
-D-domain-object-encapsulation-2026-07-01. Domain-specificity was scattered — model
-selection lived in rules_engine, prompts in domain_prompts.py, and no object *was*
-'the coding domain'. A Domain unifies that: it owns (1) select() — the cost-optimizing,
-availability-aware choice of a Source+ModelSpec for THIS domain, delegating to the
-existing RulesEngine selector but OWNED here; and (2) prompts — the system (and, later,
-loop) prompt text, resolved from the domain-prompt data store.
+D-domain-object-encapsulation-2026-07-01. A Domain owns what it means to *do* a kind of
+work: (1) the agentic loop / attempt shape, (2) the escalation walk (the single money-safety
+owner: capability failures bump difficulty, availability failures re-select at the same
+difficulty), and (3) prompts, resolved from the domain-prompt store.
 
-This ticket (T-domain-object-base) is behavior-preserving: the object wraps existing
-selection + prompt behavior, relocated, with no change to what gets chosen. The agentic
-loop + the single escalation owner move here in T-domain-owns-loop-and-escalation — that
-ticket also revisits select()'s return shape (today a single RoutingDecision, as returned
-by rules_engine.resolve()).
+A domain does NOT route. It is a CONSUMER of the inference proxy — it runs a loop that
+dispatches to it. Routing lives in the routing layer (dimensions.route_request +
+rules_engine.resolve), and `domain` reaches the resolver as a plain dimension string. The old
+BaseDomain.select() inverted this: the proxy had to import a domain in order to choose a
+model, which made `device -> domains -> agentic_loop -> device` a cycle (hidden behind a
+function-local lazy import). Deleted in T-inference-break-proxy-domain-cycle.
+
+Layering, one direction only:  worker -> domain -> inference proxy (routing + dispatch).
 """
 
 from __future__ import annotations
@@ -29,29 +30,9 @@ from unseen_university.devices.inference.agentic_loop import (
     LoopResult,
     NativeToolCodec,
 )
-from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.domain_prompts import domain_prompt
-from unseen_university.devices.inference.rules_engine import RoutingDecision, RulesEngine
 
 log = logging.getLogger(__name__)
-
-#: The mechanical task_class (the caller's task vocabulary) -> ticket_tier (role) bridge for
-#: the dimensional resolver. Both vocabularies collapse to the same 3 difficulty buckets, and
-#: this mapping is verified to preserve device.py's a-priori difficulty seed for every
-#: task_class (minion→classify, worker/analyst/batch→code, designer→design). ticket_tier is
-#: a SEED hint only (D-inference-router-stack-decomposition: "tiers seed where resolution
-#: starts; hints, not authority") — the external escalation walk still drives difficulty via
-#: required_difficulty. designer→master (NOT guru) so the guru-work-is-design policy floor is
-#: not spuriously imposed. Unknown task_class → builder (the code-difficulty default).
-_TASK_CLASS_TO_TIER: dict[str, str] = {
-    "minion": "apprentice",
-    "worker": "builder",
-    "analyst": "builder",
-    "batch": "builder",
-    "creator": "creator",
-    "designer": "master",
-}
-
 
 @dataclass(frozen=True)
 class DomainPrompts:
@@ -66,16 +47,14 @@ class DomainPrompts:
 
 
 class BaseDomain:
-    """A task domain: owns model selection + prompts for one KIND of task.
+    """A task domain: owns execution (loop + escalation walk) and prompts for one KIND of task.
 
-    The base is the generalist / unspecialized domain. `name` is passed through to the
-    resolver's domain filter (via the RouteRequest select() builds) and to the prompt
-    resolver, so an unregistered domain name behaves exactly as passing that name to
-    rules_engine.resolve: a generalist request
-    ('') matches any model; an unknown non-empty name resolves to no specialized prompt
-    ('') and to whatever the domain-eligibility filter yields — no crash, no name
-    collapse. Specialization is a registered subclass (see CodingDomain), not a name
-    special-case.
+    The base is the generalist / unspecialized domain. `name` reaches the resolver as a plain
+    domain dimension on the dispatched request, and resolves this domain's prompt: an
+    unregistered domain name is not a crash and not a name collapse — a generalist request
+    ('') matches any model, and an unknown non-empty name yields no specialized prompt ('')
+    plus whatever the domain-eligibility filter allows. Specialization is a registered
+    subclass (see CodingDomain), not a name special-case.
     """
 
     #: the domain identifier; '' = generalist. Subclasses set their own.
@@ -111,43 +90,14 @@ class BaseDomain:
         """The domain's prompt data, resolved from the domain-prompt store by name."""
         return DomainPrompts(system=domain_prompt(self.name))
 
-    def select(
-        self,
-        rules_engine: RulesEngine,
-        *,
-        task_class: str = "worker",
-        session_id: str = "",
-        hour: int | None = None,
-        foreground: bool = False,
-        urgency: str | None = None,
-        required_features: list[str] | None = None,
-        required_difficulty: str = "",
-    ) -> RoutingDecision | None:
-        """Choose the Source+ModelSpec for this domain — cost-optimizing, availability-aware.
-
-        Composes the dimensional resolver (D-inference-router-stack-decomposition): builds a
-        RouteRequest from the caller's dimensions (task_class bridged to a ticket_tier SEED,
-        this domain's `name`, urgency derived from foreground) and delegates to
-        rules_engine.resolve(). The domain OWNS the call. The external escalation walk still
-        drives difficulty via `required_difficulty` (resolve honors it exactly as route did);
-        `session_id` carries affinity for multi-call consumers. Returns a single
-        RoutingDecision (or None if nothing serves).
-
-        `hour`/`required_features` are accepted for signature compatibility but no longer
-        steer selection: the night-mode batch gate has no live batch dispatch (deferred,
-        T-inference-batch-nightgate-in-resolver) and required_features is now expressed as
-        policy on the rules stack, not a per-call argument.
-        """
-        req = RouteRequest(
-            ticket_tier=_TASK_CLASS_TO_TIER.get(task_class, "builder"),
-            builder_tier="builder",
-            domain=self.name,
-            urgency=urgency or ("interactive" if foreground else "normal"),
-            escalation_allowed=True,
-        )
-        return rules_engine.resolve(
-            req, required_difficulty=required_difficulty, session_id=session_id
-        )
+    # NOTE: this object deliberately has NO select()/routing method. A domain CONSUMES the
+    # inference proxy (it runs an agentic loop that dispatches); it is not something the proxy
+    # calls to choose a model. The old BaseDomain.select() was a pure pass-through that built
+    # a RouteRequest from the domain's own name — which forced device.py to import a domain in
+    # order to route, making device -> domains -> agentic_loop -> device a cycle. Routing now
+    # lives entirely in the routing layer (dimensions.route_request + rules_engine.resolve);
+    # `domain` is just a dimension string the proxy already has on the request.
+    # (T-inference-break-proxy-domain-cycle.)
 
     # ── The escalation walk: this domain is the SINGLE escalation owner ────────
 

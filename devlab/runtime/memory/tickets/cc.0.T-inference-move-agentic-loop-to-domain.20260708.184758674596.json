@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-move-agentic-loop-to-domain.20260708.184758674596",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-move-agentic-loop-to-domain"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T00:47:58.674596+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-move-agentic-loop-to-domain"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-move-agentic-loop-to-domain",
+    "title": "[dependency] The agentic loop belongs to the domain object, not the proxy — relocate loop/editor/edit machinery out of inference/",
+    "size": "L",
+    "status": "dependency",
+    "priority": 0.9,
+    "tags": [
+      "inference",
+      "architecture",
+      "domains"
+    ],
+    "description": "The inference PROXY device currently contains the entire agentic execution stack: agentic_loop.py (902 LOC), architect_editor.py (615), block_apply.py (640), edit_format.py, stuck_ladder.py, domain_prompts.py, prompts/. A proxy routes and dispatches inference; it must not contain a coding agent. Akien, 2026-07-08: \"the agentic loops do not go in the proxy. they go in domain objects.\"\n\nWORK: relocate the execution machinery into the domain layer (the BaseDomain/CodingDomain objects that already own the escalation walk and prompts). The proxy keeps ONLY: sources, models_registry, connections, policy, dimensions, rules_engine, device (dispatch), shim, health_monitor, resource_monitor, provider_health, version_checker, budget. Also move the stray in-package test_inference.py into tests/.\n\n**Affected files:** agentic_loop.py, architect_editor.py, block_apply.py, edit_format.py, stuck_ladder.py, domain_prompts.py, prompts/, domains/*, test_inference.py\n\n**Scope boundary:** gated on T-inference-break-proxy-domain-cycle (the cycle must be gone first or the move re-creates it). No logic rewrite — relocation + import fixes.\n\n**Completion criteria:** the inference package contains no agentic-loop/editor/edit-format module; domains own them.\n\n**Test plan:** red->green — assert the inference routing package exposes no agentic_loop/architect_editor/block_apply symbol, and the coding domain still runs a full loop end to end.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T00:47:18.286573+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T00:47:18.286652+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b500c576-a9d1-4ea6-8aa7-8952779b08c9"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-relocate-domains-out-of-device-package.20260708.184758940387",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-relocate-domains-out-of-device-package"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T00:47:58.940387+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-relocate-domains-out-of-device-package"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-relocate-domains-out-of-device-package",
+    "title": "[dependency] Move domains/ out of devices/inference/ — a domain is not part of the proxy device",
+    "size": "S",
+    "status": "dependency",
+    "priority": 0.6,
+    "tags": [
+      "inference",
+      "architecture",
+      "domains"
+    ],
+    "description": "Once the cycle is broken and the loop has moved, unseen_university/devices/inference/ imports nothing from domains/, so relocating the domain package is a pure directory move plus import rewrites. A domain (coding, prose, ...) is a task-kind owner consumed by workers (DickSimnel, aider, Igor) — it is not part of the inference proxy device, and living under devices/inference/ keeps implying it is.\n\n**Affected files:** devices/inference/domains/* -> a home outside the inference device; all importers\n\n**Scope boundary:** pure relocation; gated on T-inference-break-proxy-domain-cycle + T-inference-move-agentic-loop-to-domain. Confirm the destination with Akien before moving (single import root rule: everything ships under unseen_university/).\n\n**Completion criteria:** no domain module lives under devices/inference/.\n\n**Test plan:** import-graph assertion + full inference/dicksimnel suites green after the move.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T00:47:44.785743+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T00:47:44.785800+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a7d68859-9dca-422f-a2f8-88795722136b"
+  }
+}

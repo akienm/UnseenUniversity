@@ -42,8 +42,8 @@ from unseen_university.devices.inference.models_registry import (
     default_registry as _default_models,
 )
 from unseen_university.devices.inference.connections import default_connections
-from unseen_university.devices.inference.rules_engine import RulesEngine
-from unseen_university.devices.inference.domains import resolve_domain
+from unseen_university.devices.inference.rules_engine import RoutingDecision, RulesEngine
+from unseen_university.devices.inference.dimensions import route_request
 from unseen_university.devices.inference.routing_buckets import (
     bump_difficulty,
     inference_cost_record,
@@ -353,6 +353,27 @@ class InferenceDevice(BaseDevice):
         except Exception as exc:  # noqa: BLE001 — capture must never break dispatch
             log.warning("dispatch: inference I/O capture failed (non-fatal): %s", exc)
 
+    def _route(
+        self, request: InferenceRequest, required_difficulty: str
+    ) -> RoutingDecision | None:
+        """Resolve this request's dimensions to a (Source, ModelSpec).
+
+        The proxy owns routing and builds the RouteRequest itself, from the routing layer's
+        own vocabulary bridge (dimensions.route_request). It must NOT reach up into a domain
+        object to do this: a domain CONSUMES the proxy (it runs an agentic loop that
+        dispatches), so importing one here made device -> domains -> agentic_loop -> device a
+        cycle (T-inference-break-proxy-domain-cycle). `domain` is just a dimension string.
+        """
+        return self._rules.resolve(
+            route_request(
+                task_class=request.task_class or "worker",
+                domain=request.domain,
+                foreground=request.foreground,
+            ),
+            required_difficulty=required_difficulty,
+            session_id=request.session_id,
+        )
+
     def dispatch(self, request: InferenceRequest) -> InferenceResponse:
         """Route and dispatch an inference request via the mini-rack rules engine.
 
@@ -520,13 +541,7 @@ class InferenceDevice(BaseDevice):
                         session_id=request.session_id, foreground=request.foreground,
                         ticket_id=request.ticket_id,
                     )
-                    decision = resolve_domain(request.domain).select(
-                        self._rules,
-                        task_class=request.task_class or "worker",
-                        session_id=request.session_id,
-                        foreground=request.foreground,
-                        required_difficulty=req_difficulty,
-                    )
+                    decision = self._route(request, req_difficulty)
             else:
                 # Unknown model ID — converge on the tier router (same fall-through as
                 # an unavailable explicit model). No hardcoded source: route() skips dead
@@ -536,21 +551,9 @@ class InferenceDevice(BaseDevice):
                     "dispatch: unknown model=%s — routing by task_class=%s via rules engine",
                     request.model, request.task_class or "worker",
                 )
-                decision = resolve_domain(request.domain).select(
-                    self._rules,
-                    task_class=request.task_class or "worker",
-                    session_id=request.session_id,
-                    foreground=request.foreground,
-                    required_difficulty=req_difficulty,
-                )
+                decision = self._route(request, req_difficulty)
         else:
-            decision = resolve_domain(request.domain).select(
-                self._rules,
-                task_class=request.task_class or "worker",
-                session_id=request.session_id,
-                foreground=request.foreground,
-                required_difficulty=req_difficulty,
-            )
+            decision = self._route(request, req_difficulty)
 
         if decision is not None:
             # Resolve model_id for the request

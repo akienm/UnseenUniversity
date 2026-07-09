@@ -96,5 +96,52 @@ class RouteRequest:
         return difficulty_seed(self.ticket_tier)
 
 
+#: The caller's task_class vocabulary -> ticket_tier (role) vocabulary. Both collapse onto
+#: the same three difficulty buckets, and this mapping preserves the a-priori difficulty seed
+#: for every task_class (minion->classify, worker/analyst/batch->code, designer->design).
+#: designer->master (NOT guru) so the guru-work-is-design policy floor is not spuriously
+#: imposed. Unknown task_class -> builder (the code-difficulty default).
+#:
+#: This lives HERE, in the routing layer that owns the dimension vocabulary — not on a domain
+#: object. A domain is a CONSUMER of routing; when the bridge lived on BaseDomain.select() the
+#: proxy had to import a domain to route, which made device -> domains -> agentic_loop ->
+#: device a cycle (T-inference-break-proxy-domain-cycle).
+TASK_CLASS_TO_TIER: dict[str, str] = {
+    "minion": "apprentice",
+    "worker": "builder",
+    "analyst": "builder",
+    "batch": "builder",
+    "creator": "creator",
+    "designer": "master",
+}
+
+
+def route_request(
+    *,
+    task_class: str = "worker",
+    domain: str = "",
+    urgency: str | None = None,
+    foreground: bool = False,
+    escalation_allowed: bool = True,
+    builder_tier: str = "builder",
+) -> RouteRequest:
+    """Build a RouteRequest from a caller's task_class/domain/urgency.
+
+    The single construction point for live dispatch: the proxy calls this, and so does the
+    decomposition invariant proof, so both exercise the same bridge. `foreground` is the
+    latency-sensitive shorthand for urgency='interactive' (a TIME filter, not a cost lever).
+
+    builder_tier is currently inert in live dispatch (no shipped policy reads it except the
+    coding/guru predicates) and defaults to 'builder'; wiring real worker tiers is a follow-on.
+    """
+    return RouteRequest(
+        ticket_tier=TASK_CLASS_TO_TIER.get(task_class, "builder"),
+        builder_tier=builder_tier,
+        domain=domain,
+        urgency=urgency or ("interactive" if foreground else "normal"),
+        escalation_allowed=escalation_allowed,
+    )
+
+
 # Ensure the seed map only names real difficulty buckets (guards a typo'd bucket).
 assert set(_TIER_DIFFICULTY.values()) <= set(DIFFICULTY_BUCKETS)

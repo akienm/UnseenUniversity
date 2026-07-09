@@ -11,7 +11,8 @@ reachability was smeared across ModelSpec.source_name (a 1:1 binding) AND the ha
 NEW provider meant EDITING RULES. Registering a Connection changed nothing, because dispatch
 (device -> domain.select -> route) never read the connections stack.
 
-The test therefore drives the real DISPATCH path (BaseDomain.select), not resolve() directly:
+The test therefore drives the real DISPATCH construction (dimensions.route_request, the
+factory device.py itself uses), not a hand-rolled RouteRequest:
 that is the seam where the collapse would reappear. It builds a rack whose ONLY available
 provider is one no rule ever named, so every model is initially unreachable; then it adds a
 single Connection — no rule, no ModelSpec, no code change — and the same dispatch call must
@@ -28,7 +29,7 @@ from unittest.mock import MagicMock
 
 from unseen_university.devices.inference.connections import Connection
 from unseen_university.devices.inference.device import _default_models
-from unseen_university.devices.inference.domains.base import BaseDomain
+from unseen_university.devices.inference.dimensions import route_request
 from unseen_university.devices.inference.rules_engine import RulesEngine
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
@@ -63,10 +64,14 @@ def test_new_connection_needs_zero_rule_edits():
     models = _default_models()
     engine = RulesEngine(sources, models, policies=[])
 
-    coding = BaseDomain(name="coding")
+    # Exactly the RouteRequest the proxy builds for a live coding dispatch
+    # (dimensions.route_request is device.py's own construction point — no domain object is
+    # involved in routing; see T-inference-break-proxy-domain-cycle).
+    def _dispatch():
+        return engine.resolve(route_request(task_class="worker", domain="coding"))
 
     # Baseline: nothing is reachable — no connection lands on the only live provider.
-    assert coding.select(engine, task_class="worker") is None, (
+    assert _dispatch() is None, (
         "baseline must be unreachable: no model has a connection on the only available provider"
     )
 
@@ -76,7 +81,7 @@ def test_new_connection_needs_zero_rule_edits():
         Connection(EXISTING_MODEL, NEW_PROVIDER, 0.0)
     )
 
-    decision = coding.select(engine, task_class="worker")
+    decision = _dispatch()
 
     assert decision is not None, (
         "adding a connection for an existing model must make it dispatchable with ZERO rule "

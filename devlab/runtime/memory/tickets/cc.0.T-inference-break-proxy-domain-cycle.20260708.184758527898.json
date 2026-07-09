@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-break-proxy-domain-cycle.20260708.184758527898",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-break-proxy-domain-cycle"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T00:47:58.527898+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-break-proxy-domain-cycle"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-break-proxy-domain-cycle",
+    "title": "[sprint] Break the proxy<->domain circular dependency: device builds RouteRequest, delete BaseDomain.select()",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.95,
+    "tags": [
+      "inference",
+      "architecture",
+      "cycle"
+    ],
+    "description": "device.py (the inference PROXY) imports domains.resolve_domain and calls domain.select() in 3 places; domains/base.py imports agentic_loop; agentic_loop does a function-local lazy `from ...device import InferenceDevice` and constructs one. That is a CYCLE (device -> domains -> agentic_loop -> device), hidden by the lazy import. Root cause: BaseDomain glues two opposite-facing responsibilities — select() is consumed BY the proxy, run() consumes the proxy.\n\nselect() is a pure pass-through: it builds RouteRequest(domain=self.name, ticket_tier=bridge(task_class), ...) and calls rules_engine.resolve(). device.py already has request.domain and request.task_class, so it can build the RouteRequest itself.\n\nWORK: move _TASK_CLASS_TO_TIER into dimensions.py (the routing layer that owns the vocabulary); have device.dispatch build RouteRequest and call self._rules.resolve() directly; DELETE BaseDomain.select() and the domains import from device.py. After this, unseen_university/devices/inference/ (the routing core) imports NOTHING from domains/ — which makes the later relocation of domains a pure directory move.\n\n**Affected files:** device.py, domains/base.py, dimensions.py\n\n**Scope boundary:** no behavior change to selection; the agentic loop is NOT moved here (T-inference-move-agentic-loop-to-domain).\n\n**Completion criteria:** device.py has no `domains` import; BaseDomain has no select(); resolve picks are unchanged.\n\n**Test plan:** red->green — an import-graph assertion that no module in the routing core (device/rules_engine/sources/models_registry/connections/policy/dimensions) imports domains or agentic_loop, plus selection-parity on the live coding path (coding -> devstral@ollama, tool-capable).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T00:46:55.825219+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T00:46:55.871956+00:00",
+    "inferred_intention": "safe-execution",
+    "inferred_intention_id": "5057860b-22cf-4dd5-b1ee-d516fed47564"
+  }
+}
