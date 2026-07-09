@@ -31,8 +31,17 @@ from unseen_university.devices.inference.domains.agentic_loop import (
     NativeToolCodec,
 )
 from unseen_university.devices.inference.domains.domain_prompts import domain_prompt
+from unseen_university.devices.inference.domains.reply_text import conclusion
 
 log = logging.getLogger(__name__)
+
+#: The exact phrase that tells the next rung its predecessor FAILED. A handoff without it reads
+#: as helpful prior work, and the stronger model continues the weaker one's reasoning.
+#: Measured live (T-escalation-handoff-transmits-the-confabulation): deepseek-r1:32b answers
+#: b4-boxes correctly alone, and adopts deepseek-r1:14b's wrong answer when handed its
+#: unmarked scratchpad. Kept as a constant so the test asserts the marker, not a loose word
+#: like "wrong" — which the weak model's own rambling happens to contain.
+FAILED_MARKER = "did not satisfy the completion check"
 
 @dataclass(frozen=True)
 class DomainPrompts:
@@ -259,6 +268,8 @@ class BaseDomain:
                 continue  # same hop → selector skips the down source, picks next-cheapest
 
             # cls == 'capability': reached a terminal but never DONE.
+            # NB the prior-attempt handoff is built by _summarize_attempt (below), NOT by
+            # slicing result.text — see that method for what the naive slice actually sent.
             if self.harvest_mode:
                 # Harvest mode: do NOT escalate. Hand the wall to the cost-ordered stuck-ladder,
                 # which picks the cheapest viable rung (answer / drop / halt / call-CC) and records
@@ -282,7 +293,7 @@ class BaseDomain:
                          self.name, ticket_id, escalation_hop, choice.rung)
                 return None
             # otherwise bump difficulty one rung.
-            prior_attempt = (result.text or "").strip()[:400]
+            prior_attempt = self._summarize_attempt(result)
             escalation_hop += 1
             log.info("domain=%s crossing|step=escalate|ticket=%s|hop→%d|reason=capability",
                      self.name, ticket_id, escalation_hop)
@@ -319,6 +330,32 @@ class BaseDomain:
             prior_attempt=prior_attempt,
             cwd=cwd,
         )
+
+    def _summarize_attempt(self, result: LoopResult) -> str:
+        """What a FAILED attempt hands to the next rung up. The seam a domain may override.
+
+        Two things this must get right, both learned the hard way
+        (T-escalation-handoff-transmits-the-confabulation, measured on the live rack):
+
+        1. THE CONCLUSION, NOT THE SCRATCHPAD. The old code was
+           ``(result.text or "").strip()[:400]`` — the FIRST 400 characters. A reasoning model
+           emits ``<think>…scratchpad…</think>`` and only then its answer, so that slice is the
+           opening of the scratchpad, cut off mid-sentence. ``conclusion()`` strips the
+           reasoning and takes the TAIL.
+
+        2. SAY IT FAILED. The proxy injects this under a "**What was tried:**" header, which
+           reads as useful prior work. Handed deepseek-r1:14b's unmarked scratchpad,
+           deepseek-r1:32b abandoned its own correct answer and adopted the weak model's wrong
+           one; handed the same conclusion explicitly marked failed, it stayed correct. So the
+           escalation walk — which is the only thing that KNOWS the attempt failed — says so
+           here, rather than trusting the proxy's framing.
+
+        An attempt whose reasoning never terminated (truncated <think>) has no conclusion to
+        pass on, and passing on the scratchpad is worse than passing on nothing.
+        """
+        # STUB (proof-first): the shipped behaviour — the FIRST 400 characters of the raw
+        # reply, scratchpad and all, with nothing saying the attempt failed.
+        return (result.text or "").strip()[:400]
 
     def _classify(self, result: LoopResult) -> str:
         """Map a typed LoopResult to the escalation policy's class.

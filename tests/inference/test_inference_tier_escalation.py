@@ -104,9 +104,15 @@ class TestEscalationHandoff:
         call_args = mock_source.call.call_args[0][0]
         sys_sent = call_args.system or ""
         assert "Base system prompt." in sys_sent
-        assert "Prior attempt summary" in sys_sent
+        # The proxy prepends the domain's handoff verbatim under a header that names it a
+        # FAILURE. The old header ("Prior attempt summary" / "What was tried:" / "What now?")
+        # presented a failed attempt as useful prior work, and the stronger model continued
+        # the weaker one's reasoning — measured live, T-escalation-handoff-transmits-the-
+        # confabulation. The proxy no longer frames the handoff at all; the escalation walk,
+        # which is the only thing that knows the attempt failed, frames it.
+        assert "Failed prior attempt (escalation hop 1)" in sys_sent
         assert "I tried approach X, got stuck at Y" in sys_sent
-        assert "What now?" in sys_sent
+        assert "What was tried:" not in sys_sent
 
     def test_hop_1_no_prior_attempt_no_prepend(self):
         """Hop 1 without prior_attempt does not inject anything."""

@@ -437,11 +437,14 @@ class InferenceDevice(BaseDevice):
                 f"cannot escalate further"
             )
         if request.escalation_hop > 0 and request.prior_attempt:
-            # Prepend structured handoff to system prompt
+            # Prepend the domain's handoff verbatim. The proxy does NOT frame it: the old
+            # header read "**What was tried:**", which presents a FAILED attempt as useful
+            # prior work — the stronger model then continues the weaker one's reasoning
+            # (T-escalation-handoff-transmits-the-confabulation). Only the escalation walk
+            # knows the attempt failed, so only the walk says so (BaseDomain._summarize_attempt).
             attempt_summary = (
-                f"\n\n## Prior attempt summary (hop {request.escalation_hop})\n"
-                f"**What was tried:** {request.prior_attempt}\n"
-                "**What now?**\n"
+                f"\n\n## Failed prior attempt (escalation hop {request.escalation_hop})\n"
+                f"{request.prior_attempt}\n"
             )
             request = InferenceRequest(
                 messages=request.messages,
