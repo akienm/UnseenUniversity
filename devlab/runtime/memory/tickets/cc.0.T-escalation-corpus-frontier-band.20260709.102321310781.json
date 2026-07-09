@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-escalation-corpus-frontier-band.20260709.102321310781",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalation-corpus-frontier-band"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T16:23:21.310781+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-escalation-corpus-frontier-band"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-escalation-corpus-frontier-band",
+    "title": "[sprint] Corpus saturates at deepseek-r1:32b — add a frontier band, or capability rank has no evidence above the local box",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.93,
+    "tags": [
+      "inference",
+      "escalation",
+      "eval"
+    ],
+    "description": "PREREQUISITE for T-inference-cost-first-sort-strands-cloud-fleet.\n\nMeasured 2026-07-09: deepseek-r1:32b clears every band of the corpus (b1 3/3, b2 3/3, b3 3/3, b4 3/3). The instrument saturates at the top of the LOCAL ladder. A capability rank derived from this corpus therefore cannot place claude-opus-4.8 or deepseek-v3.1:671b-cloud ABOVE deepseek-r1:32b — there is no query on which they differ.\n\nConsequence: the fix for the cost-first sort ('escalation walks a measured capability rank; cost only breaks ties WITHIN a rank') cannot be proven. Its whole claim is that escalating past the top local rung reaches a strictly more capable stack. With a saturated corpus that claim has no evidence, and asserting it would be exactly the hollow green this project exists to prevent.\n\nWORK: add band b5_frontier — queries with deterministic, checkable answers that require search or case-analysis beyond a 32b reasoning model. Then MEASURE: deepseek-r1:32b (owned_local) vs deepseek-v3.1:671b-cloud (subscription, sunk cost) and gemini-2.5-flash (free_throttled). anthropic is DOWN on this box, so no token_direct measurement today.\n\nThe band is defined by the SHAPE of the reasoning, as every band is — not by 'the band the 32b fails'. If the 32b clears b5 too, that is data: harden again. Do NOT tune queries until a chosen model fails; that fits the instrument to the answer.\n\n**Test plan:** red->green, hermetic. RED: `by_band('b5_frontier')` is empty. GREEN: b5 is populated, every query's verifier accepts each declared phrasing and rejects its confabulation (both existing corpus tests extend to it automatically). The LIVE separation (32b fails, a cloud model passes) is recorded as DATA in the memory store — never as a green assertion, since it reaches real providers.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T16:22:49.163590+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T16:22:49.221974+00:00",
+    "inferred_intention": "I intend that model capability ranks are measured against a saturating corpus instrument where deepseek-r1:32b clears all bands, ensuring no higher-ranked models can be placed above it without differing queries.",
+    "inferred_intention_id": "1927d3bd-0b96-45df-89d2-7af1e573a807"
+  }
+}

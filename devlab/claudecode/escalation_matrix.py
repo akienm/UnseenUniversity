@@ -138,6 +138,7 @@ def main() -> int:
     ap.add_argument("--include-paid", action="store_true",
                     help="also query token_direct sources — REAL DOLLARS PER QUERY")
     ap.add_argument("--models", nargs="*", default=None, help="restrict to these model ids")
+    ap.add_argument("--bands", nargs="*", default=None, help="restrict to these bands")
     ap.add_argument("--timeout", type=int, default=180)
     ap.add_argument("--max-tokens", type=int, default=4096,
                     help="reasoning models spend budget inside <think>; too low fabricates failures")
@@ -153,8 +154,14 @@ def main() -> int:
         print("no models selected (all gated off?) — try --include-subscription", file=sys.stderr)
         return 1
 
+    bands = tuple(args.bands) if args.bands else BANDS
+    queries = [q for q in CORPUS if q.band in bands]
+    if not queries:
+        print(f"no queries in bands {bands} (known: {BANDS})", file=sys.stderr)
+        return 1
+
     device = InferenceDevice()
-    print(f"corpus: {len(CORPUS)} queries across {len(BANDS)} bands | models: {len(targets)}\n")
+    print(f"corpus: {len(queries)} queries across {len(bands)} band(s) | models: {len(targets)}\n")
 
     # model_id -> band -> [verdicts]
     matrix: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
@@ -162,7 +169,7 @@ def main() -> int:
 
     for spec, src in sorted(targets, key=lambda t: (cost_class_rank(t[1].cost_class), t[0].model_id)):
         print(f"── {spec.model_id}  @{src.name} ({src.cost_class}, claims '{spec.difficulty_bucket}')")
-        for q in CORPUS:
+        for q in queries:
             verdict, reply = _ask(device, spec.model_id, q, args.timeout, args.max_tokens)
             matrix[spec.model_id][q.band].append(verdict)
             detail.append({"model": spec.model_id, "source": src.name, "query": q.id,
@@ -174,14 +181,14 @@ def main() -> int:
     # ── the matrix: pass-rate per band. The band where a model collapses is its frontier. ──
     print("CAPABILITY MATRIX  (pass/total per band)")
     print("  '!' = source error, '…' = truncated mid-<think> — NEITHER is a wrong answer")
-    header = f"{'model':36} {'claims':9} " + " ".join(f"{b.split('_')[0]:>6}" for b in BANDS)
+    header = f"{'model':36} {'claims':9} " + " ".join(f"{b.split('_')[0]:>6}" for b in bands)
     print(header)
     print("-" * len(header))
     rows = []
     for spec, src in sorted(targets, key=lambda t: (cost_class_rank(t[1].cost_class), t[0].model_id)):
         cells, row = [], {"model": spec.model_id, "source": src.name,
                           "claimed_bucket": spec.difficulty_bucket, "bands": {}}
-        for b in BANDS:
+        for b in bands:
             vs = matrix[spec.model_id][b]
             npass, nerr, ntr = vs.count(_PASS), vs.count(_ERR), vs.count(_TRUNC)
             cells.append(f"{npass}/{len(vs)}" + ("!" if nerr else "") + ("…" if ntr else ""))

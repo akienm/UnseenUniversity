@@ -233,6 +233,55 @@ CORPUS: tuple[EvalQuery, ...] = (
         answer="14:15", confabulation="13:50",  # dropped the break
         accepts=("1415", "14:15 (2:15 pm)"),
     ),
+    # ── b5: exhaustive search or case-analysis over a space too big to eyeball ──
+    # Added because the corpus SATURATED: deepseek-r1:32b cleared b1-b4 completely, so no
+    # measurement could place a cloud model above the top of the local box. Every ground truth
+    # below was brute-forced before it entered the corpus — a wrong answer here would corrupt
+    # every capability rank derived from it.
+    EvalQuery(
+        id="b5-knights", band="b5_frontier",
+        prompt=(
+            "On an island, knights always tell the truth and knaves always lie. Every "
+            "inhabitant is exactly one of the two. You meet three inhabitants: A, B and C.\n"
+            "A says: 'B is a knave.'\n"
+            "B says: 'A and C are the same type as each other.'\n"
+            "C says: 'I am a knight.'\n"
+            "How many of the three are knaves?"
+        ),
+        # Two assignments are consistent — (A knave, B knight, C knave) and (A knight, B knave,
+        # C knave) — and BOTH contain exactly 2 knaves. The count is unique even though the
+        # assignment is not, which is what makes the query checkable and the reasoning hard.
+        answer="2", confabulation="1",
+        accepts=("2 knaves", "two"),
+    ),
+    EvalQuery(
+        id="b5-modular", band="b5_frontier",
+        prompt=(
+            "What is the smallest positive integer that is divisible by 7, and that leaves a "
+            "remainder of exactly 1 when divided by each of 2, 3, 4, 5 and 6?"
+        ),
+        answer="301", confabulation="61",  # 60k+1 without checking divisibility by 7
+        accepts=("301",),
+    ),
+    EvalQuery(
+        id="b5-frobenius", band="b5_frontier",
+        prompt=(
+            "A shop sells items only in packs of 6, 9 and 20 units. Any whole number of units "
+            "may be bought using any combination of packs, including none of a given pack. "
+            "What is the LARGEST number of units that cannot be bought exactly?"
+        ),
+        answer="43", confabulation="41",
+        accepts=("43 units",),
+    ),
+    EvalQuery(
+        id="b5-digitcount", band="b5_frontier",
+        prompt=(
+            "How many four-digit positive integers have digits that sum to exactly 9, where "
+            "none of the four digits is zero?"
+        ),
+        answer="56", confabulation="84",  # stars-and-bars without the no-zero constraint
+        accepts=("56",),
+    ),
 )
 
 
