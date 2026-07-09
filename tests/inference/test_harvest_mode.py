@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from unseen_university.devices.inference.agentic_loop import LOOP_ESCALATE, LoopResult
+from unseen_university.devices.inference.domains.agentic_loop import LOOP_ESCALATE, LoopResult
 from unseen_university.devices.inference.domains.base import BaseDomain, DomainPrompts
 
 _TICKET = {"id": "T-harvest-proof", "title": "always-fails", "tags": [], "description": "d"}
@@ -70,7 +70,7 @@ def test_harvest_wall_emits_one_call_cc_rung_record(tmp_path, monkeypatch):
     With no answer source and no HALT seam wired at the domain layer, the wall falls to call-CC —
     the starved-resource metric. The record carries the fixed tier and the turns reached.
     """
-    from unseen_university.devices.inference.stuck_ladder import RUNG_CALL_CC, read_rung_choices
+    from unseen_university.devices.inference.domains.stuck_ladder import RUNG_CALL_CC, read_rung_choices
 
     monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
     d = _RecordingDomain(harvest_mode=True)

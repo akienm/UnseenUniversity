@@ -22,7 +22,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from unseen_university.devices.inference.agentic_loop import (
+from unseen_university.devices.inference.domains.agentic_loop import (
     LOOP_AVAILABILITY,
     LOOP_COST_EXCEEDED,
     LOOP_DONE,
@@ -30,7 +30,7 @@ from unseen_university.devices.inference.agentic_loop import (
     LoopResult,
     NativeToolCodec,
 )
-from unseen_university.devices.inference.domain_prompts import domain_prompt
+from unseen_university.devices.inference.domains.domain_prompts import domain_prompt
 
 log = logging.getLogger(__name__)
 
@@ -267,7 +267,7 @@ class BaseDomain:
                 # fail the completion gate → escalate (see stuck_ladder module doc); the rung-choice
                 # RECORD is what distinguishes call-CC from halt from drop. No system_alarm — a
                 # harvested wall is the wanted outcome, not an incident.
-                from unseen_university.devices.inference.stuck_ladder import (
+                from unseen_university.devices.inference.domains.stuck_ladder import (
                     DEFAULT_DOMAIN,
                     StuckEvent,
                     StuckLadder,

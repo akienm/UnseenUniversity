@@ -95,6 +95,40 @@ def test_domain_object_has_no_routing_method():
     )
 
 
+#: Execution machinery — what it means to *do* the work. Owned by the domain object, never by
+#: the proxy. The proxy routes an inference request and dispatches it; it is not a coding agent.
+EXECUTION_MACHINERY = (
+    "agentic_loop.py",
+    "architect_editor.py",
+    "block_apply.py",
+    "edit_format.py",
+    "stuck_ladder.py",
+    "domain_prompts.py",
+)
+
+
+def test_proxy_package_contains_no_execution_machinery():
+    """The agentic loop and its edit machinery live in the domain layer, not in the proxy.
+
+    'The agentic loops do not go in the proxy. They go in domain objects.' (Akien, 2026-07-08)
+    A proxy that also contains a 900-line agentic loop, an architect/editor split, and an edit
+    dialect engine is not a proxy — it is a coding agent wearing a router as a hat.
+    """
+    stray = [m for m in EXECUTION_MACHINERY if (_INFERENCE_DIR / m).exists()]
+    assert not stray, (
+        "execution machinery must live in the domain layer, not the inference proxy: "
+        + ", ".join(stray)
+    )
+    # ...and it really is in the domain layer.
+    for m in EXECUTION_MACHINERY:
+        assert (_INFERENCE_DIR / "domains" / m).exists(), f"{m} missing from the domain layer"
+
+
+def test_proxy_package_ships_no_test_module():
+    """A shipped runtime package must not carry a pytest module (it imported pytest at runtime)."""
+    assert not (_INFERENCE_DIR / "test_inference.py").exists()
+
+
 def test_the_proxy_builds_its_own_route_request():
     """The proxy owns routing end to end: dimensions -> RouteRequest -> resolve."""
     from unseen_university.devices.inference.dimensions import RouteRequest, route_request

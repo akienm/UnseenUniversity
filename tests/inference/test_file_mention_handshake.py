@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock
 
-from unseen_university.devices.inference.architect_editor import (
+from unseen_university.devices.inference.domains.architect_editor import (
     ArchitectEditorFlow,
     _repo_relative_files,
     get_file_mentions,

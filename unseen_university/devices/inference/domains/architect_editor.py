@@ -34,7 +34,7 @@ import logging
 import re
 from pathlib import Path
 
-from unseen_university.devices.inference.agentic_loop import (
+from unseen_university.devices.inference.domains.agentic_loop import (
     _REPO_ROOT,
     HISTORY_WINDOW_TURNS,
     LOOP_AVAILABILITY,
@@ -44,7 +44,7 @@ from unseen_university.devices.inference.agentic_loop import (
     LoopResult,
     NativeToolCodec,
 )
-from unseen_university.devices.inference.block_apply import (
+from unseen_university.devices.inference.domains.block_apply import (
     apply_blocks_to_dir,
     apply_wholefile_to_dir,
     build_repair_message,
@@ -444,7 +444,8 @@ class ArchitectEditorFlow:
         from unseen_university.devices.inference.shim import InferenceRequest
 
         from unseen_university.devices.inference.clone_commit import CloneCommitter
-        from unseen_university.devices.inference import edit_format, verdict_gate
+        from unseen_university.devices.inference import verdict_gate
+        from unseen_university.devices.inference.domains import edit_format
 
         inference_device = self._inference_device or InferenceDevice()
         editor_cwd = Path(cwd) if cwd is not None else Path.cwd()

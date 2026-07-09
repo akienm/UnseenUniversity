@@ -143,7 +143,7 @@ def _run_seed(seed: dict, *, keep: bool, checkout: Path | None = None) -> dict:
     scratch. The transcript is captured by io_corpus as a side effect (correlated by ticket_id).
     """
     from unseen_university.devices.inference.domains import resolve_domain
-    from unseen_university.devices.inference.stuck_ladder import read_rung_choices
+    from unseen_university.devices.inference.domains.stuck_ladder import read_rung_choices
 
     ticket = {
         "id": seed["id"], "title": seed.get("title", ""),

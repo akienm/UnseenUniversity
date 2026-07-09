@@ -6,11 +6,11 @@ records, and warm-lookup format selection (empty registry → block).
 
 from __future__ import annotations
 
-from unseen_university.devices.inference.block_apply import (
+from unseen_university.devices.inference.domains.block_apply import (
     apply_wholefile_to_dir,
     parse_wholefile,
 )
-from unseen_university.devices.inference import edit_format
+from unseen_university.devices.inference.domains import edit_format
 
 
 def test_wholefile_parse_and_apply_overwrites(tmp_path):

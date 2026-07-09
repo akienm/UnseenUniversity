@@ -12,7 +12,7 @@ that selects but never records) → green.
 """
 from __future__ import annotations
 
-from unseen_university.devices.inference.stuck_ladder import (
+from unseen_university.devices.inference.domains.stuck_ladder import (
     RUNG_ANSWER,
     RUNG_CALL_CC,
     RUNG_DROP_TICKET,

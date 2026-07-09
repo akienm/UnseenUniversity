@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from unseen_university.devices.inference.agentic_loop import LoopResult
+from unseen_university.devices.inference.domains.agentic_loop import LoopResult
 from unseen_university.devices.inference.domains.base import BaseDomain
 
 log = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class CodingDomain(BaseDomain):
                 agent_id=agent_id, escalation_hop=escalation_hop, prior_attempt=prior_attempt,
                 cwd=cwd,
             )
-        from unseen_university.devices.inference.architect_editor import ArchitectEditorFlow
+        from unseen_university.devices.inference.domains.architect_editor import ArchitectEditorFlow
 
         return ArchitectEditorFlow(
             critic_enabled=self.critic_enabled,

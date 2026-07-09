@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from unseen_university.devices.inference.agentic_loop import (
+from unseen_university.devices.inference.domains.agentic_loop import (
     LOOP_AVAILABILITY,
     LOOP_DONE,
     LOOP_MAX_TURNS,
@@ -405,7 +405,7 @@ def test_bash_failure_hint_after_three_consecutive_failures():
     device.dispatch.side_effect = dispatch
     loop = AgenticLoop(codec=NativeToolCodec(), max_turns=50, inference_device=device)
     with patch(
-        "unseen_university.devices.inference.agentic_loop.execute_tool",
+        "unseen_university.devices.inference.domains.agentic_loop.execute_tool",
         return_value="[Bash rc=1]\nboom",
     ):
         result = loop.run(system_prompt="s", initial_message="go", ticket_id="T")
@@ -430,7 +430,7 @@ def test_bash_success_resets_failure_counter():
     device = MagicMock()
     device.dispatch.side_effect = dispatch
     loop = AgenticLoop(codec=NativeToolCodec(), max_turns=50, inference_device=device)
-    with patch("unseen_university.devices.inference.agentic_loop.execute_tool", side_effect=lambda *a, **k: next(exec_results)):
+    with patch("unseen_university.devices.inference.domains.agentic_loop.execute_tool", side_effect=lambda *a, **k: next(exec_results)):
         result = loop.run(system_prompt="s", initial_message="go", ticket_id="T")
     assert result.outcome == LOOP_DONE
     assert not any("[HINT:" in c for c in seen_tool_content), "no hint without 3 CONSECUTIVE fails"

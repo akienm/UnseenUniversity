@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import subprocess
 
-from unseen_university.devices.inference.block_apply import apply_blocks_to_dir
+from unseen_university.devices.inference.domains.block_apply import apply_blocks_to_dir
 from unseen_university.devices.inference.clone_commit import CloneCommitter
 
 

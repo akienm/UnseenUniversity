@@ -11,7 +11,7 @@ FIXED completion string (no LLM):
 
 from __future__ import annotations
 
-from unseen_university.devices.inference.block_apply import apply_blocks_to_dir
+from unseen_university.devices.inference.domains.block_apply import apply_blocks_to_dir
 
 
 def test_multiple_blocks_in_one_completion_all_apply(tmp_path):

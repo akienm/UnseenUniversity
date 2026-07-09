@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import json
 
-from unseen_university.devices.inference.agentic_loop import AgenticLoop, NativeToolCodec
+from unseen_university.devices.inference.domains.agentic_loop import AgenticLoop, NativeToolCodec
 
 
 class _Resp:

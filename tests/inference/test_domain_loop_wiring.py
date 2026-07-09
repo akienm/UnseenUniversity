@@ -12,7 +12,7 @@ import logging
 
 from unittest.mock import MagicMock, patch
 
-from unseen_university.devices.inference.agentic_loop import LOOP_DONE, LOOP_ESCALATE, LoopResult
+from unseen_university.devices.inference.domains.agentic_loop import LOOP_DONE, LOOP_ESCALATE, LoopResult
 
 
 def _run_with_mocked_loop(run_side_effect, *, prompt="CODING-SYS-PROMPT"):

@@ -19,7 +19,7 @@ from unittest.mock import MagicMock
 
 from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.dimensions import RouteRequest, route_request
-from unseen_university.devices.inference.domain_prompts import domain_prompt
+from unseen_university.devices.inference.domains.domain_prompts import domain_prompt
 from unseen_university.devices.inference.domains import (
     BaseDomain,
     CodingDomain,

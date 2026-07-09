@@ -14,7 +14,7 @@ import json
 from unittest.mock import MagicMock
 
 from unseen_university.devices.inference import verdict_gate
-from unseen_university.devices.inference.architect_editor import ArchitectEditorFlow
+from unseen_university.devices.inference.domains.architect_editor import ArchitectEditorFlow
 
 
 # ── verdict_gate unit checks ──────────────────────────────────────────────────

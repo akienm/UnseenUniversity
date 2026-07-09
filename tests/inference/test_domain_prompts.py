@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import hashlib
 
-from unseen_university.devices.inference.domain_prompts import domain_prompt
+from unseen_university.devices.inference.domains.domain_prompts import domain_prompt
 
 # Anchor: sha256 of the DS builder/coding system prompt as it stood before the move
 # (device.py SYSTEM_PROMPT, len 2944). The move must be byte-identical — this pin

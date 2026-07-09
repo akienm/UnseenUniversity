@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from unseen_university.devices.inference.agentic_loop import (
+from unseen_university.devices.inference.domains.agentic_loop import (
     LOOP_AVAILABILITY,
     LOOP_DONE,
     LOOP_MAX_TURNS,

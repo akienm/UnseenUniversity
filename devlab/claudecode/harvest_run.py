@@ -84,7 +84,7 @@ def _pin_low_turn_cap(max_turns: int) -> None:
     """
     import functools
 
-    from unseen_university.devices.inference import architect_editor
+    from unseen_university.devices.inference.domains import architect_editor
 
     architect_editor.AgenticLoop = functools.partial(
         architect_editor.AgenticLoop, max_turns=max_turns, flat_rate_max_turns=max_turns,
@@ -119,7 +119,7 @@ def main() -> int:
     os.environ["UU_HARVEST_MODE"] = "1"
 
     from unseen_university.devices.inference.domains import resolve_domain
-    from unseen_university.devices.inference.stuck_ladder import read_rung_choices
+    from unseen_university.devices.inference.domains.stuck_ladder import read_rung_choices
     from unseen_university.devices.inference import io_corpus
 
     # Pre-flight: confirm the coding route resolves to the FREE Hex ollama tier, not paid OpenRouter.
