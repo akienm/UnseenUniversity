@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-frontier-has-no-measured-holder.20260709.170611389190",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-frontier-has-no-measured-holder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T23:06:11.389190+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-frontier-has-no-measured-holder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-frontier-has-no-measured-holder",
+    "title": "[akien] DECISION (Akien): the frontier bucket has no measured holder — the 671b is not measurably better than a $0 local 14b",
+    "size": "M",
+    "status": "akien",
+    "priority": 0.95,
+    "tags": [
+      "inference",
+      "routing",
+      "capability",
+      "decision",
+      "Architecture"
+    ],
+    "intention": "I intend that no capability rung exists in the router unless some model has MEASURABLY earned it — so that escalation spends money only where a measurement says it buys capability.",
+    "description": "MEASURED 2026-07-09 at a non-binding 32768-token ceiling, 2 samples/cell, temp 0 (note: capability-ceiling-sweep; note: 671b-hangs-frontier-unearned-20260709).\n\n  deepseek-r1:14b   ($0 local)  b5 4/4 clean, 0 trunc, 0 err.  Fails b4-boxes.\n  deepseek-r1:32b   ($0 local)  b5 3/4 — fails b5-frobenius at 4096, 8192 AND 32768, clean stop.\n  deepseek-v3.1:671b-cloud      b5 3/4 with 1 ERR — the b5-frobenius cell HAS NO VERDICT.\n  llama3.2:3b       ($0 local)  b5 0/4.\n\nTHE FRONTIER BUCKET WAS ADDED (T-inference-cost-first-sort-strands-cloud-fleet) so escalation could LEAVE the local box, on the assumption the cloud model is more capable. That assumption is unsupported on this corpus. The 671b is not measurably better than a $0 local 14b on the only query that has ever cleanly separated two models — and on that query it HANGS 40% of the time (6/15 calls; zero hangs in 30 calls across the other 15 queries).\n\nThe guard refuses the claim on two independent grounds, and both reds on main are CORRECT:\n  - a model that ERRORED at the ceiling has holes in its measurement (no verdict is licensed);\n  - a TOP claim requires a clean pass of the top band.\n\nDO NOT MAKE THEM GREEN BY EDITING THE REGISTRY. That is precisely the hollow-build move the whole proof-on-close regime exists to prevent, and it is the move a cost-first selector rewards.\n\nA DEEPER RESULT SITS UNDER THIS. The 32b's capability set is NOT a superset of the 14b's, so the universal `>=` that routing_buckets.difficulty_meets asserts ('a design-capable model can do everything below it') is FALSE. Capability is a SET, not a scalar; comparing models is set inclusion, a PARTIAL order. Bumping a tier is 'different, and pricier', not 'more capable'. Whatever is decided here, that unsoundness outlives it.\n\nOPTIONS (CC's read: (c) then (d); this is a D-level call):\n  (a) Drop the 671b to `declared`; accept an EMPTY top bucket. Honest; escalation's last hop then always halts, and test_the_top_bucket_is_not_empty goes red, correctly.\n  (b) Remove `frontier`; revert to 3 buckets. Re-opens 'escalation never leaves the box' — but we now have no evidence that leaving it helps.\n  (c) REBUILD THE CORPUS so the top band DISCRIMINATES. b5 is fame-contaminated (Chicken McNugget 6/9/20->43, knights-and-knaves, CRT, stars-and-bars) — a $0 14b clears it. b4-boxes leaks its answer ('both' appears twice in the prompt, answer space {apples,oranges,both}; 3b PASS / 14b fail / 32b PASS, i.e. anti-correlated with capability). GENERATE queries: parameterise a family, brute-force ground truth in code, keep the answer token out of the prompt, widen the answer space. `6,9,20->43` is memorisable; `7,11,24->?` is the same reasoning with nothing to recall. Only option that produces NEW information rather than re-labelling old.\n  (d) Investigate the hang first — a top rung that returns nothing 40% of the time is unusable whatever its capability. A timeout captures NOTHING (raw=null), so this is also the one place a degenerate decoding loop could hide.\n\n**Affected files:** unseen_university/devices/inference/models_registry.py, routing_buckets.py, domains/escalation_corpus.py, tests/inference/test_capability_evidence.py\n**Design rules:** measure-dont-declare-capability; epistemology-experiment-only (a result is true only for its conditions); CP1 (nothing closes posing as done)\n**Scope boundary:** IN — the decision, and whichever of (a)-(d) follows from it. OUT — silently re-labelling the registry to clear the reds.\n**Test plan:** the two reds on main ARE the test. tests/inference/test_capability_evidence.py::test_a_measured_capability_claim_is_backed_by_its_measurement and ::test_the_top_bucket_claim_is_backed_by_a_clean_pass_of_the_top_band go green only when a model has MEASURABLY earned the top rung (option c), or when the rung ceases to exist (option b), or when the claim is honestly withdrawn and the empty-bucket invariant is rewritten to say so (option a).\n\n**Completion criteria:** Akien names an option; the two guard reds are resolved by measurement or by removing the rung, never by editing the claim.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T23:05:37.458474+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T23:05:37.505802+00:00"
+  }
+}
