@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-general-domain-chat-prototype.20260709.074646726231",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-general-domain-chat-prototype"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T13:46:46.726231+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-general-domain-chat-prototype"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-general-domain-chat-prototype",
+    "title": "GeneralDomain — the prototype chatbot: concrete default domain, one dispatch per attempt",
+    "size": "M",
+    "status": "closed",
+    "priority": 0.9,
+    "tags": [
+      "inference",
+      "domains",
+      "escalation"
+    ],
+    "description": "'The default is the general domain. So there is always a domain, and everybody else descends from that.' (Akien, 2026-07-08). 'We move to a simpler case and get that right first.' (Akien, 2026-07-09).\n\nToday there is NO chatbot prototype and NO GeneralDomain. `BaseDomain` is the generalist by accident (name='') but it is welded to ticket-shaped work: `run()` takes a ticket dict, `_initial_message()` formats a ticket, and `_run_attempt()` builds a full AgenticLoop with tools. There is nothing that just... talks. The closest thing is DickSimnel.chat() (devices/dicksimnel/device.py:430) — a one-shot dispatch with a hardcoded system prompt, no history, no escalation.\n\nWHY CHAT FIRST: chat is the simplest possible consumer of the escalation walk — one dispatch, one reply, no tools, no edit format, no repo state. If escalation cannot be made correct here it cannot be made correct anywhere. The coding ladder (T-inference-tier-ladder-real) is the hard case and waits behind this.\n\nWORK:\n- `GeneralDomain(BaseDomain)`, concrete, name='' — the default domain. Registered so `resolve_domain('')` and `resolve_domain(None)` return it.\n- A chat-shaped entry seam: `_initial_message()` must accept a plain query, not only a ticket dict. `_run_attempt()` overridden to ONE dispatch (no AgenticLoop, no tools), wrapping the reply in a LoopResult.\n- The completion contract for chat: what counts as DONE vs CAPABILITY-failure. See the CRITICAL note below.\n- GeneralDomain owns the DEFAULT escalation policy (per D-...-2026-07-08 Amendment 1: the default policy lives on the general domain, NOT on the proxy).\n\nCRITICAL — the escalation trigger must NOT be the model's self-report. A weak model asked a hard question does not say 'I don't know'; it confabulates a confident wrong answer. That is precisely the bug shipped 2026-07-08 (deepseek-r1:14b returned {\"status\":\"done\",\"result\":\"wrote smoke file\"} and wrote nothing). If `_classify()` reads a self-reported confidence or refusal token, the hard queries will NEVER trigger escalation and the prototype will go green while proving nothing. The trigger must be an answer CHECK. For the eval corpus that check is ground truth (T-inference-escalation-eval-corpus). For open-ended chat with no ground truth, the runtime trigger is an OPEN QUESTION — judge model? self-consistency? — and this ticket must NOT claim to have solved it. Name it as the deferred lever.\n\n**Test plan:** red->green, HERMETIC (fake models, no live device, no HealthMonitor — a proof that constructs InferenceDevice() passes on environment luck, see 2026-07-08). Given a stub dispatch that returns a wrong answer at rung 1 and a right answer at rung 2: `GeneralDomain.run(query)` returns the rung-2 answer, having bumped exactly once; a right answer at rung 1 returns immediately with zero bumps; a wrong answer at every rung halts with the capability-ceiling alarm and returns None.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T13:46:19.020530+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "GeneralDomain is the concrete default domain ('' registered, not a fallback special-case); one attempt = ONE dispatch, no tools; escalation walk inherited from BaseDomain (single money-safety owner). Proven: proofs/cc.0.generaldomain-escalation-on-a-confident.T-general-domain-chat-prototype.20260709.080453693887.json (red=AssertionError -> green=passed). DEFERRED LEVER, named in code and pinned by test_the_default_answer_check_cannot_detect_a_confabulation: the runtime escalation trigger for open chat with no ground truth is unsolved.",
+    "dispatched_at": null,
+    "completed_at": "2026-07-09T14:05:07.556787+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T13:46:19.020599+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "865880d7-8345-4e38-a511-f7aff269ad1c",
+    "proven": true,
+    "proof_id": "cc.0.generaldomain-escalation-on-a-confident.T-general-domain-chat-prototype.20260709.080453693887",
+    "proof_commit": "343e076fe812dd9234fbd1462a8575e8e038cd34",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}
