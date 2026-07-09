@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-proof-form-for-repinned-tests.20260709.125205593611",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proof-form-for-repinned-tests"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T18:52:05.593611+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proof-form-for-repinned-tests"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-proof-form-for-repinned-tests",
+    "title": "[triage] Missing proof-lever: a test re-pinned onto intended behaviour has no red form a hollow re-pin would fail",
+    "size": "M",
+    "status": "triage",
+    "priority": 0.5,
+    "tags": [
+      "proof",
+      "process",
+      "proof-emitter",
+      "gates"
+    ],
+    "description": "Named twice on 2026-07-09, by two independent tickets closing shipped-unproven for the SAME structural reason:\n  - T-repin-coding-prompt-sha256 — re-pin a SHA constant after verifying its referent.\n  - T-preexisting-dicksimnel-done-prefix-close — re-pin a test's expectation onto the implementation's intended (already-correct) behaviour.\n\nTHE SHAPE. Both are test-only changes. proof_emitter requires an implementation delta between the red and green commits (it reverts parent..HEAD MINUS the test file; here that diff is empty), so it refuses. But the deeper problem is not the tool — it is that no red form exists that a HOLLOW version of the change would fail. A test rewritten to match whatever the code currently does passes identically to a test rewritten after verifying the code is right. The assertion cannot tell the two apart, so a green proves nothing about the work that earned it.\n\nThe verification that made both closes correct lived OUTSIDE any assertion: in git archaeology (124553ee is the only content change; ea74a6a0 was a 0-insertion rename) and in reading the code (DS's branch-builder constraint is real; emit_merge_proof exists). That is exactly the class of knowledge the proof gate exists to force into a machine-checkable form, and it currently escapes.\n\nWHY IT MATTERS. This is the gate's blind spot, and it is the most dangerous one, because 'update the test to match the code' is the single most common way a hollow build is laundered into a green suite. Every such close today is honest only because a human/CC chose to do the archaeology. The gate does not compel it.\n\nCANDIDATE LEVERS (none validated):\n  1. Require the re-pin commit to cite the commit that CAUSED the drift, and have the gate verify that commit touched the pinned artifact. Turns 'I checked' into a checkable claim.\n  2. Derive the pin from a committed reference artifact rather than a literal, so re-pinning is a deliberate two-file act with its own diff (gives proof_emitter an impl delta).\n  3. Property-first pinning: require every hash/expectation pin to ship alongside at least one PROPERTY assertion that discriminates the dangerous change (as test_the_coding_prompt_injects_no_absolute_paths does — measured: 6 hits on the pre-fix text, 0 on HEAD). The hash alarms on any change; the property fails on the bad ones. The gate could require the property, not the hash.\n  4. Accept that this class is unprovable and make shipped-unproven + a named cause the CANONICAL close for it, with a periodic audit of accumulated re-pins.\n\nLever 3 looks strongest: it is the only one that produces an assertion a hollow re-pin actually fails.\n\n**Affected files:** devlab/claudecode/proof_emitter.py, devlab/claudecode/cc_queue.py (close gate), skills/ticket + skills/sprint-ticket guidance\n**Design rules:** proof-on-close (CLAUDE.md); CP1 (no closing posing as done); CP2 (the nuisance stays visible until the lever is found)\n**Scope boundary:** IN — designing and validating a proof form for re-pinned constants/expectations. OUT — relaxing the proof gate, or auto-accepting test-only diffs (that is the escape hatch this ticket exists to avoid cutting).\n**Test plan:** the lever must itself be demonstrated on a HOLLOW re-pin: construct a re-pin made WITHOUT verifying the referent and show the proposed form goes RED on it, while the verified re-pin goes GREEN. If no such discriminator can be built, that is the finding, and lever 4 is the honest answer — record it and stop paying the search cost.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T18:51:04.996951+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T18:51:05.045697+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68911973-7a03-494e-94f9-c46ccc03391a"
+  }
+}
