@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.graph-map-virtualenv-exclusion.T-graph-map-ingests-venvs.20260709.124837006832",
+  "emitter": "cc.0",
+  "namespace": [
+    "graph-map-virtualenv-exclusion",
+    "T-graph-map-ingests-venvs"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T12:48:37.006832",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-graph-map-ingests-venvs"
+    ],
+    "commits": [
+      "5fc6269213738844ee776207263a4b67e3e7b8fc"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-graph-map-ingests-venvs",
+  "body": {
+    "thing": "graph map virtualenv exclusion",
+    "intention": "A virtualenv inside the repo contributes NO symbols to the orientation packet, however well its vendored code scores against the ticket keywords — while the repo's own files still rank.",
+    "test": "tests/inference/test_repo_map_orientation.py::test_the_graph_map_surfaces_two_symbols_and_ingests_no_vendored_code",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_repo_map_orientation.py::test_the_graph_map_surfaces_two_symbols_and_ingests_no_vendored_code",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        )\nE       AssertionError: the graph map ingested a virtualenv inside the repo. Its skip list matches directory NAMES, so a venv called anything but `.venv`/`venv` is walked as source — this repo's own `test_env/` (2173 files) ranks pip's vendored code above the task's files in every DickSimnel orientation. Packet rendered:\nE         ## Repo graph map (files ranked by reference-graph centrality toward the task; plan from this structure, read a file only if the map is insufficient)\nE         pkg/foo.py: helper_fn, parse_widget\nE         test_env/lib/python3.12/site-packages/widget_junk.py: parse_widget_vendored\nE         pkg/bar.py: other_thing\nE         \nE         \nE       assert ('widget_junk' not in '## Repo gra...er_thing\\n\\n'\nE         \nE         'widget_junk' is contained here:\nE           -packages/widget_junk.py: parse_widget_vendored\nE         ?           +++++++++++\nE           pkg/bar.py: other_thing\nE           )\n\ntests/inference/test_repo_map_orientation.py:107: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_repo_map_orientation.py::test_the_graph_map_surfaces_two_symbols_and_ingests_no_vendored_code\n1 failed in 0.11s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "5fc6269213738844ee776207263a4b67e3e7b8fc",
+    "impl_paths": [
+      "unseen_university/devices/scraps/repo_graph_map.py"
+    ],
+    "ticket": "T-graph-map-ingests-venvs",
+    "narrative": "",
+    "why": "The skip list matched directory NAMES while promising to skip venv/site dirs. This repo's venv is test_env/ (2173 .py files), so pip's vendored typing_extensions outranked the task's own files in every DickSimnel orientation — misdirecting the weak model the map exists to keep from read-wandering. Detecting a venv by its pyvenv.cfg is name-independent.",
+    "bootstrap": false
+  }
+}

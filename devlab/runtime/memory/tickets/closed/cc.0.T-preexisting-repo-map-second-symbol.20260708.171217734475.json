@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-preexisting-repo-map-second-symbol",
-    "title": "[sprint] test_signature_map_surfaces_multiple_symbols red — repo-map drops a file's 2nd symbol",
+    "title": "test_signature_map_surfaces_multiple_symbols red — repo-map drops a file's 2nd symbol",
     "size": "S",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.2,
     "tags": [
       "test",
@@ -32,9 +32,9 @@
     "created_at": "2026-07-08T23:12:03.697572+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "PROVEN, and the original red was a dead fixture rather than a regression. The old node patched psycopg2.connect and asserted a fabricated symbol 'helper_fn' came back from the symbols table; build_signature_map now calls build_graph_map FIRST and returns early whenever it yields a packet (orientation_classifier.py:298-303), so the fake cursor was never consulted and the assertion asked for a symbol present in no file on disk. There was no honest way to make it green. Re-pointed the proof at build_graph_map(ticket, repo_root) over a hermetic tmp repo: the multi-symbol property (a file's SECOND matching symbol surfaces) still holds, and pinning it alongside the venv-exclusion property caught the live T-graph-map-ingests-venvs defect. Proof: tests/inference/test_repo_map_orientation.py::test_the_graph_map_surfaces_two_symbols_and_ingests_no_vendored_code, red=AssertionError -> green=passed, commit 5fc62692.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T18:48:18.942088+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T23:12:03.697618+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "a3843ff2-3d11-4902-835c-5357db2b6a2e"
+    "inferred_intention_id": "a3843ff2-3d11-4902-835c-5357db2b6a2e",
+    "proven": true,
+    "proof_id": "cc.0.repo-graph-map-orientation-packet.T-preexisting-repo-map-second-symbol.20260709.124634286025",
+    "proof_commit": "5fc6269213738844ee776207263a4b67e3e7b8fc",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

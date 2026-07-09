@@ -71,6 +71,8 @@ This is also how yesterday's proof passed on environment luck.
 - T-inference-cost-first-sort-strands-cloud-fleet — Cost-first sort makes 19/22 models unreachable — escalation can never leave the local box (Escalation can leave the local box. 'frontier' is the capability rung the box does not hold; claiming it requires capabi)
 - T-repin-coding-prompt-sha256 — Repin coding-prompt SHA256 (stale since coding-prompt path fix 124553ee) (Re-pinned _CODING_PROMPT_SHA256 to 0e044ff7 (the intended post-124553ee text). Verified BEFORE re-pinning: 124553ee (Aki)
 - T-preexisting-domain-prompt-sha — test_coding_prompt_byte_identical red — coding prompt drifted from pinned SHA256 (DUPLICATE of T-repin-coding-prompt-sha256 — same failing node (test_domain_prompts.py, the coding-prompt SHA pin), same )
+- T-preexisting-repo-map-second-symbol — test_signature_map_surfaces_multiple_symbols red — repo-map drops a file's 2nd symbol (PROVEN, and the original red was a dead fixture rather than a regression. The old node patched psycopg2.connect and asse)
+- T-graph-map-ingests-venvs — Repo graph map walked virtualenvs as first-party source — vendored code outranked the task's files (PROVEN. Virtualenvs detected by mechanism (pyvenv.cfg), not by name; site-packages/dist-packages skipped wherever an env)
 ## ⭐ LIVE ESCALATION WORKS (first time, unpinned, on the box)
     hop 0 -> deepseek-r1:14b   check FAILED -> capability -> escalate
     hop 1 -> deepseek-r1:32b   check PASSED -> done

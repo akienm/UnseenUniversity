@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-graph-map-ingests-venvs.20260709.124806889502",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-map-ingests-venvs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T18:48:06.889502+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-graph-map-ingests-venvs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-graph-map-ingests-venvs",
+    "title": "Repo graph map walked virtualenvs as first-party source — vendored code outranked the task's files",
+    "size": "S",
+    "status": "closed",
+    "priority": 0.7,
+    "tags": [
+      "inference",
+      "orientation",
+      "coding-domain",
+      "correctness"
+    ],
+    "description": "Found 2026-07-09 while re-pointing the stale orientation proof node (T-preexisting-repo-map-second-symbol).\n\n`repo_graph_map._gather_py_files` skipped directories by NAME — {.git, __pycache__, .venv, venv, node_modules, build, dist, .tox} — while its own docstring claimed it 'Skips hidden/venv/site dirs'. This repo's gitignored virtualenv is `test_env/` (2173 .py files), which no name in that list matches.\n\nCONSEQUENCE (measured, not theoretical): every DickSimnel orientation packet led with pip's vendored typing_extensions, pyparsing and pluggy, ranked ABOVE the task's own files. Vendored stdlib-shim code defines the most-referenced identifiers in any tree, so reference-graph centrality hands it the top slots. A weak model told those are the most task-relevant files is being actively misdirected — and read-wandering is precisely the failure the graph map exists to prevent.\n\nSECOND, LATENT BUG on the same line: the skip matched `p.parts` of the ABSOLUTE path, so a checkout living under any directory named `build`, `dist` or `venv` would silently skip its entire source tree and render an empty map (fail-open to the keyword path, orientation lost with no error).\n\n**Fix shipped:** detect a virtualenv by MECHANISM (the `pyvenv.cfg` the interpreter writes) rather than by guessing its name; add site-packages/dist-packages to the skip set; match relative to repo_root, directories only.\n\n**Affected files:** unseen_university/devices/scraps/repo_graph_map.py, tests/inference/test_repo_map_orientation.py\n**Design rules:** none apply (no storage, no daemon, no device boundary)\n**Scope boundary:** IN — the skip predicate and its proof. OUT — the dead keyword/DB fallback path in orientation_classifier.build_signature_map, which build_graph_map now shadows unconditionally (separate ticket).\n**Test plan:** tests/inference/test_repo_map_orientation.py::test_the_graph_map_surfaces_two_symbols_and_ingests_no_vendored_code — hermetic tmp repo containing pkg/foo.py (two matching symbols) and a venv named `test_env/` whose module scores HIGH on the ticket keywords. RED: the vendored symbol is in the packet. GREEN: it is not, and the repo's own files still are (test_the_map_still_ranks_the_repos_own_files guards against over-skipping).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T18:47:06.290273+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "PROVEN. Virtualenvs detected by mechanism (pyvenv.cfg), not by name; site-packages/dist-packages skipped wherever an environment puts them; skip matched relative to repo_root, directories only — which also fixes the latent absolute-path bug that would have blanked the map for a checkout under any dir named build/dist/venv. Proof: tests/inference/test_repo_map_orientation.py::test_the_graph_map_surfaces_two_symbols_and_ingests_no_vendored_code, red=AssertionError -> green=passed, commit 5fc62692. Verified past the assertion: the LIVE map now leads with bus/envelope.py, identity.py, ticket_store.py, and 'site-packages' appears at no budget. Stub c51711b4 -> impl 5fc62692.",
+    "dispatched_at": null,
+    "completed_at": "2026-07-09T18:48:44.694996+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T18:47:06.339049+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "188cff35-53f1-4c80-b7da-dd4bae767374",
+    "proven": true,
+    "proof_id": "cc.0.graph-map-virtualenv-exclusion.T-graph-map-ingests-venvs.20260709.124837006832",
+    "proof_commit": "5fc6269213738844ee776207263a4b67e3e7b8fc",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}
