@@ -114,6 +114,40 @@ class BaseDomain:
         self, ticket: dict, *, urgency: str = "normal", agent_id: str = "",
         cwd: Path | None = None,
     ) -> str | None:
+        """Drive the escalation walk, and leave a run record behind whatever happens.
+
+        The record is written in a ``finally`` because **the failures are the runs worth
+        reading** — a halt, an exhausted walk, or an unexpected raise all produce the artifact.
+        A record written only on the success path would be the least useful artifact imaginable
+        (T-inference-run-record).
+
+        Specialties extend the record rather than reimplement it: override ``_decorate_record``
+        to add domain-specific fields (architect/editor turns, edit format, test results).
+        """
+        from unseen_university.devices.inference.run_record import RunRecord
+
+        record = RunRecord.begin(
+            ticket=ticket, domain=self.name, task_class=self.task_class,
+            agent_id=agent_id, urgency=urgency,
+        )
+        try:
+            return self._escalation_walk(
+                ticket, urgency=urgency, agent_id=agent_id, cwd=cwd, record=record,
+            )
+        finally:
+            self._decorate_record(record)
+            record.write()
+
+    def _decorate_record(self, record) -> None:
+        """Hook: a specialty adds its own fields to the run record. Base adds nothing.
+
+        Never raise from here — a decoration failure must not cost us the record.
+        """
+
+    def _escalation_walk(
+        self, ticket: dict, *, urgency: str = "normal", agent_id: str = "",
+        cwd: Path | None = None, record=None,
+    ) -> str | None:
         """Work a ticket through the shared agentic loop, driving THIS domain's escalation walk.
 
         ``cwd`` (default None → the loop's ``_REPO_ROOT`` fallback) is the working directory the
@@ -147,6 +181,16 @@ class BaseDomain:
             task_class_to_difficulty,
         )
         from unseen_university import system_alarms
+        # Deferred: run_record imports domains.reply_text, which executes domains/__init__, which
+        # imports CodingDomain -> BaseDomain. A module-level import here would close that cycle.
+        from unseen_university.devices.inference.run_record import (
+            RESOLUTION_AVAILABILITY_EXHAUSTED,
+            RESOLUTION_AVAILABILITY_WALL,
+            RESOLUTION_CAPABILITY_CEILING,
+            RESOLUTION_COST_CAP,
+            RESOLUTION_DONE,
+            RESOLUTION_HARVEST_WALL,
+        )
 
         ticket_id = ticket.get("id", "?")
         system_prompt = self.prompts.system
@@ -177,6 +221,8 @@ class BaseDomain:
                 )
                 log.error("domain=%s crossing|step=escalate|ticket=%s|hop=%d|result=capability-ceiling-halt",
                           self.name, ticket_id, escalation_hop)
+                if record is not None:
+                    record.resolution = RESOLUTION_CAPABILITY_CEILING
                 return None
 
             log.info("domain=%s crossing|step=loop|ticket=%s|hop=%d|difficulty=%s",
@@ -201,10 +247,16 @@ class BaseDomain:
             cls = self._classify(result)
             log.info("domain=%s crossing|step=classify|ticket=%s|hop=%d|outcome=%s|class=%s",
                      self.name, ticket_id, escalation_hop, result.outcome, cls)
+            if record is not None:
+                record.add_hop(hop=escalation_hop, required_difficulty=required,
+                               result=result, classification=cls)
 
             if cls == "done":
                 log.info("domain=%s: DONE for %s at hop=%d difficulty=%s",
                          self.name, ticket_id, escalation_hop, required)
+                if record is not None:
+                    record.resolution = RESOLUTION_DONE
+                    record.answer = extract_answer(result.text or "")[:200]
                 return result.text
 
             if cls == "cost":
@@ -219,6 +271,8 @@ class BaseDomain:
                 )
                 log.error("domain=%s crossing|step=loop|ticket=%s|result=cost-cap-halt: %s",
                           self.name, ticket_id, (result.text or "").strip()[:120])
+                if record is not None:
+                    record.resolution = RESOLUTION_COST_CAP
                 return None
 
             if cls == "availability":
@@ -248,6 +302,8 @@ class BaseDomain:
                     log.error("domain=%s crossing|step=select|ticket=%s|turns=%d|"
                               "result=availability-midrun-wall-halt",
                               self.name, ticket_id, result.turns)
+                    if record is not None:
+                        record.resolution = RESOLUTION_AVAILABILITY_WALL
                     return None
                 availability_retries += 1
                 if availability_retries > self.max_availability_retries:
@@ -262,6 +318,8 @@ class BaseDomain:
                     )
                     log.error("domain=%s crossing|step=select|ticket=%s|result=availability-exhausted-halt",
                               self.name, ticket_id)
+                    if record is not None:
+                        record.resolution = RESOLUTION_AVAILABILITY_EXHAUSTED
                     return None
                 log.warning("domain=%s crossing|step=select|ticket=%s|retry=%d/%d|difficulty=%s|reason=availability",
                             self.name, ticket_id, availability_retries, self.max_availability_retries, required)
@@ -291,6 +349,8 @@ class BaseDomain:
                 log.info("domain=%s crossing|step=escalate|ticket=%s|hop=%d|"
                          "result=harvest-wall|rung=%s|reason=capability (escalation disabled)",
                          self.name, ticket_id, escalation_hop, choice.rung)
+                if record is not None:
+                    record.resolution = RESOLUTION_HARVEST_WALL
                 return None
             # otherwise bump difficulty one rung.
             prior_attempt = self._summarize_attempt(result)

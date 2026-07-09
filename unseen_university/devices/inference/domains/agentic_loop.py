@@ -564,6 +564,12 @@ class LoopResult:
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float = 0.0
+    #: WHICH model/source actually served this attempt. The escalation walk resolves a tier, not a
+    #: model, so without these the run record cannot answer the first question a reader asks —
+    #: "who answered?" — and the glance-view would be useless without joining the io corpus.
+    #: Empty when the attempt never reached a source (availability), which is itself the signal.
+    model: str = ""
+    source_kind: str = ""
 
 
 def _outcome_from_envelope(env: dict | None) -> str:

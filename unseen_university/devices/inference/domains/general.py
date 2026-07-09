@@ -199,4 +199,6 @@ class GeneralDomain(BaseDomain):
             input_tokens=response.input_tokens,
             output_tokens=response.output_tokens,
             cost_usd=response.cost_estimate,
+            model=response.model,
+            source_kind=response.source_kind,
         )

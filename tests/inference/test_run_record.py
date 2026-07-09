@@ -41,7 +41,11 @@ from unseen_university.devices.inference.run_record import (
 )
 
 #: The model's scratchpad. It must NEVER reach the run record — only the claim crosses.
-REASONING = "Let me think. 6a+9b+20c... I'll try 41, then 42, then check 43 carefully."
+#: NB it deliberately does NOT contain the correct answer. The first draft said "then check 43
+#: carefully", so a hop-0 reply whose ANSWER was 41 still satisfied a `"43" in text` check — the
+#: scratchpad leaked the answer past the verifier. That is the same defect measured in the corpus
+#: query b4-boxes, whose prompt contains its own correct answer token. Fixtures leak answers too.
+REASONING = "Let me think. 6a+9b+20c... I'll try a few values and check each one carefully."
 
 
 @dataclass
