@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.aider-clone-cleanup-20260709.20260709.160518046325",
+  "emitter": "cc.0",
+  "namespace": [
+    "aider-clone-cleanup-20260709"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-09T16:05:18.046325",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Aider clone cleanup 2026-07-09 — 441MB removed, nothing lost, verified against all git blobs",
+    "text": "Akien: 'I don't want the clones. any of them. the only historical backups are in ~/TheIgorsProject ... when we made the last pass over the file system, a monthish ago to clean up all that crap, that was the intention.'\n\nREMOVED (16 paths, 441MB): ~/.unseen_university/aider_work/* (15 entries) and ~/dicksimnel. ~/.unseen_university went 553MB -> 146MB. The aider_work/ directory itself was KEPT (empty); both roots are auto-created on demand — AIDER_WORKROOT default in devices/aider/runner.py:255, and ~/dicksimnel by harvest_batch --checkout — so no reference dangles.\n\nSAFETY, VERIFIED NOT ASSUMED. 8 aider clones plus ~/dicksimnel each carried a full copy of devlab/runtime/memory/ (3012-3213 files). Every file of EVERY type was checked, not just *.json (slates are *.txt): files identical to a current canonical file were skipped; all others had their git blob sha1 looked up in the set of ALL 16135 blobs ever committed to the canonical repo. RESULT: zero files whose content exists nowhere in canonical. The 129 apparently-'unique' files were stale versions of tickets whose status later changed — already in git history. A filename-only diff had shown 0 unique and would have been the wrong check; the content check is what proves it.\n\nPRESERVED to ~/TheIgorsProject/runtime/memory/aider_unmerged_20260709/ (92KB, with MANIFEST.txt): the only content git did not have — 4 unmerged aider commits. Patch line-counts confirm the reading: the three ESCALATED tickets carry real diffs (+157/-869, +36/-12, +39/-12); T-reorg-parents-path-sweep is +0/-0, i.e. three 0-byte files, the hollow build its gate passed as 'tests=green' (T-aider-gate-passed-a-hollow-build). Also recorded: 7 of the 15 aider_work entries were not UU clones at all but toy `shop/` fixture repos from smoke tests (292-460KB), dirty only with __pycache__.\n\nPRE-FLIGHT: the aider device daemon (PID 3348168, `python -m unseen_university.devices.aider`) was confirmed IDLE — last log line 2026-07-07 17:26, cwd = the repo not a clone, zero open handles under either root. Delete list was enumerated and eyeballed, then removed by explicit path with a guard refusing anything outside the two roots. No glob, no -rf on a wildcard.\n\nWHAT THE CLEANUP DOES NOT FIX: memory_emit.py derives its repo root from os.path.abspath(__file__), so an emit from a build running inside a future clone still lands in that clone — outside git, invisible to grep and /context-load. Deleting the clones removed the symptom; T-aider-work-clones-hidden-state owns the write path.\n\nALSO SURFACED: that aider daemon has been running since 2026-07-07 out of a dead CC session's job dir (/home/akien/.claude/jobs/6f60cd3f/). Idle, harmless, and nobody knew it was there. Same class of finding as the clones themselves."
+  }
+}
