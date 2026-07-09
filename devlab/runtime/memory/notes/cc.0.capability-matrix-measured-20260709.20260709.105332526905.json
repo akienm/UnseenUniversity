@@ -23,6 +23,12 @@
         "at": "2026-07-09",
         "ticket": "T-capability-measured-at-a-budget-ceiling",
         "reason": "Every b5_frontier number in this note was measured at max_tokens=4096 (32b, 671b) or 16384 (gemini re-run) \u2014 the budget was NOT held fixed and NOT recorded per row. deepseek-r1:14b subsequently PASSED b5-frobenius live at max_tokens=8192, the query deepseek-r1:32b 'failed' at 4096. Two measurements at different budgets are not a comparison. What survives: 671b cleared b5 4/4 at the same budget where 32b failed one query. What does NOT survive: 'deepseek-r1:32b is not frontier-capable' as an unconditional claim, and the implied total order 14b < 32b < 671b. Capability must be measured at a budget ceiling high enough that nothing truncates; the token floor is a SEPARATE, cost-side measurement."
+      },
+      {
+        "flag": "follow-up-measurement",
+        "at": "2026-07-09",
+        "ticket": "T-capability-measured-at-a-budget-ceiling",
+        "reason": "FAIR-BUDGET RE-RUN, both models at max_tokens=8192, band b5_frontier:\n  deepseek-r1:14b  knights PASS, modular PASS, frobenius TRUNC, digitcount PASS  (3/4, no verdict on frobenius)\n  deepseek-r1:32b  knights PASS, modular PASS, frobenius fail,  digitcount PASS  (3/4, finish_reason=stop)\nSTRENGTHENS: deepseek-r1:32b fails b5-frobenius at BOTH 4096 and 8192, terminating cleanly (finish_reason=stop) each time. Its failure is a capability failure, not a budget artifact. The registry's 'deepseek-r1:32b is not frontier-capable' therefore rests on two independent budgets, and deepseek-v3.1:671b-cloud remains the only model measured to clear the band.\nSTILL UNSUPPORTED: the ordering 14b < 32b. The 14b has NO VERDICT on b5-frobenius \u2014 it truncates at 8192 in the matrix while PASSING the same query at the same budget in the live demo minutes earlier. It sits on the truncation boundary and is not reproducible there.\nSTILL REQUIRED: a ceiling pass at a budget where nothing truncates, with >1 sample."
       }
     ]
   }

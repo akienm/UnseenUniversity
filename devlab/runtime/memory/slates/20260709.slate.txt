@@ -205,8 +205,13 @@ EPISTEMOLOGY (Akien, 2026-07-09, now in CC memory as `epistemology-experiment-on
   escalation_matrix --bands b5_frontier --models deepseek-r1:14b deepseek-r1:32b
     --max-tokens 8192   -> /tmp/.../scratchpad/b5fair.txt
   This is the FAIR-BUDGET comparison. Its result feeds ticket #1. If lost, just re-run.
-  PARTIAL RESULT (already damning, and it settles the argument):
-    deepseek-r1:14b @ max_tokens=8192:  knights PASS, modular PASS, frobenius TRUNC, digitcount PASS
+  FINAL RESULT (fair budget, both at max_tokens=8192, band b5_frontier):
+    deepseek-r1:14b  knights PASS  modular PASS  frobenius TRUNC  digitcount PASS   (no verdict)
+    deepseek-r1:32b  knights PASS  modular PASS  frobenius fail   digitcount PASS   (finish=stop)
+  STRENGTHENS the shipped claim: the 32b fails b5-frobenius at BOTH 4096 and 8192, terminating
+  cleanly each time => a genuine capability failure, not a budget artifact. 671b remains the only
+  model measured to clear the band. The registry entry is better-founded than when it was written.
+  STILL UNSUPPORTED: the ordering 14b < 32b — the 14b has NO VERDICT on the separating query.
   ...yet the SAME model at the SAME 8192 budget PASSED b5-frobenius in the live demo minutes
   earlier. So at 8192 the 14b is ON THE TRUNCATION BOUNDARY for that query and its verdict is
   not reproducible. A capability label read off a budget-bound run is noise. This is exactly
