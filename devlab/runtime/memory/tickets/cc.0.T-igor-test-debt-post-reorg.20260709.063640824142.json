@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-test-debt-post-reorg.20260709.063640824142",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-test-debt-post-reorg"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T12:36:40.824142+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-igor-test-debt-post-reorg"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-igor-test-debt-post-reorg",
+    "title": "[sprint] tests/igor: 9 collection errors + 5 stale pre-reorg 'devices/...' paths",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.3,
+    "tags": [
+      "test",
+      "igor",
+      "reorg",
+      "preexisting"
+    ],
+    "description": "Found by the 2026-07-08 day-close audit (fix-one-leave-many sweep). TWO distinct pre-existing debts, both in tests/igor, both dating from the single-package reorg (D-single-package-reorg, 2026-06-28) when devices/ moved under unseen_university/.\n\n(1) NINE COLLECTION ERRORS: tests/igor/test_layer3_*.py and test_layer4_nodes.py fail to collect with ModuleNotFoundError: No module named 'claudecode.seed_layer3_constrain' (also _decompose, _hypothesize, _observe, _parse_goal, _replan, _scope_check, _situate). The seed_layer3_* modules do not exist under that import root. These 9 errors make `pytest tests/` uncollectable as a whole, which is why day-close cannot run the full suite in one pass.\n\n(2) FIVE STALE PATH REFS: tests/igor/{test_coherence_inhibitor_llm_gate,test_cortex_delete_memory_fk_cascade,test_web_identify_handshake,test_twm_boot_singletons}.py build paths like `Path(__file__)...parent.parent / \"devices/igor/main.py\"` — the pre-reorg location. The same bug in tests/test_core_values.py was FIXED during this audit (it read devices/igor/brainstem/core_patterns.py and asserted the pre-reorg import string `from diagnostic_base.core_values import CORE_VALUES`); the remaining 5 were left because they live in the igor tree, which is on ice.\n\nNOTE: the core_values fix was a FALSE ALARM masking a real assertion — the brainstem correctly imports canonical CORE_VALUES and does not re-inline them. A test that dies on FileNotFoundError never reaches its assertion, so a stale path silently disables the guard it was written to enforce. That is the general hazard here: 9 uncollectable modules and 5 unreachable assertions are all guards that are quietly OFF.\n\nIgor is on ice (see memory: Igor-Wild1 live, igor is LAST), so priority is low — but the guards being silently off is the finding, not the failing output.\n\n**Affected files:** tests/igor/test_layer3_*.py, tests/igor/test_layer4_nodes.py, tests/igor/test_coherence_inhibitor_llm_gate.py, tests/igor/test_cortex_delete_memory_fk_cascade.py, tests/igor/test_web_identify_handshake.py, tests/igor/test_twm_boot_singletons.py\n\n**Scope boundary:** repoint paths/imports only; do not rewrite igor cognition. If the seed_layer3_* modules are genuinely gone, delete the tests that import them rather than stubbing.\n\n**Completion criteria:** `pytest tests/ --collect-only` reports 0 errors; no test builds a path under a bare `devices/` root.\n\n**Test plan:** red->green — `pytest tests/ --collect-only -q` exits 0 with zero collection errors, and a grep for `/ \"devices/` under tests/ returns nothing.\n\n**Decision:** none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T12:36:12.104500+00:00",
+    "worker": "claude",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-09T12:36:12.162117+00:00",
+    "inferred_intention": "fix-import-issues-in-tests",
+    "inferred_intention_id": "15ceef17-40e5-4b72-8e64-7916064d82d3"
+  }
+}

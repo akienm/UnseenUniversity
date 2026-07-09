@@ -1,97 +1,107 @@
 {
-  "id": "cc.0.inference-router-cutover-every-consumer.T-inference-migrate-consumers-cutover.20260708.174409121535",
-  "emitter": "cc.0",
-  "namespace": [
-    "inference-router-cutover-every-consumer",
-    "T-inference-migrate-consumers-cutover"
+ "id": "cc.0.inference-router-cutover-every-consumer.T-inference-migrate-consumers-cutover.20260708.174409121535",
+ "emitter": "cc.0",
+ "namespace": [
+  "inference-router-cutover-every-consumer",
+  "T-inference-migrate-consumers-cutover"
+ ],
+ "category": "proofs",
+ "kind": "proof",
+ "emitted_at": "2026-07-08T17:44:09.121535",
+ "links": {
+  "decisions": [],
+  "tickets": [
+   "T-inference-migrate-consumers-cutover"
   ],
-  "category": "proofs",
-  "kind": "proof",
-  "emitted_at": "2026-07-08T17:44:09.121535",
-  "links": {
-    "decisions": [],
-    "tickets": [
-      "T-inference-migrate-consumers-cutover"
-    ],
-    "commits": [
-      "441076bf309a6c7bd0c013f595802d53d57d1f10"
-    ],
-    "whys": []
-  },
-  "produced_by": "T-inference-migrate-consumers-cutover",
-  "body": {
-    "thing": "inference router cutover: every consumer dispatches through the dimensional resolver; the (task_class, model_id, source_name) triple monolith and ModelSpec.source_name are deleted",
-    "intention": "I intend that after the cutover no rule triple, route(), or ModelSpec.source_name survives, yet the live proxy still resolves a dispatch, the triple-only owned-local Hex edge (devstral-small-2:24b@ollama) survives into the connections stack the resolver actually reads, the coding escalation ladder still serves the design rung (no false-halt), and every default model remains reachable",
-    "test": "tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof",
-    "kind_detail": "red-green",
-    "gates": [
-      {
-        "name": "tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof",
-        "result": "green",
-        "evidence": {
-          "red_run": {
-            "outcome": "failed",
-            "exc_type": "AssertionError",
-            "exit_code": 1,
-            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________ test_consumers_cutover_proof _________________________\n\n    def test_consumers_cutover_proof():\n        # (A) The monolith is deleted — no triple / route() / compiled-rule path survives.\n>       assert not hasattr(rules_engine_mod, \"_DEFAULT_RULES\"), \"the rule triples must be gone\"\nE       AssertionError: the rule triples must be gone\nE       assert not True\nE        +  where True = hasattr(rules_engine_mod, '_DEFAULT_RULES')\n\ntests/inference/test_consumers_cutover.py:41: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof\n1 failed in 0.32s",
-            "authentic_red": true
-          },
-          "green_run": {
-            "outcome": "passed",
-            "exc_type": null,
-            "exit_code": 0,
-            "summary": ".                                                                        [100%]\n1 passed in 0.46s"
-          }
-        }
-      }
-    ],
-    "commit": "441076bf309a6c7bd0c013f595802d53d57d1f10",
-    "impl_paths": [
-      "devlab/runtime/memory/slates/20260708.slate.txt",
-      "devlab/runtime/memory/tickets/cc.0.T-inference-activate-coding-tools-policy.20260708.171217331891.json",
-      "devlab/runtime/memory/tickets/cc.0.T-inference-batch-nightgate-in-resolver.20260708.171217475676.json",
-      "devlab/runtime/memory/tickets/cc.0.T-preexisting-dicksimnel-done-prefix-close.20260708.174331013363.json",
-      "devlab/runtime/memory/tickets/cc.0.T-preexisting-domain-prompt-sha.20260708.171217603807.json",
-      "devlab/runtime/memory/tickets/cc.0.T-preexisting-repo-map-second-symbol.20260708.171217734475.json",
-      "tests/dicksimnel/test_tier_cascade.py",
-      "tests/inference/test_connections_stack.py",
-      "tests/inference/test_cost_record.py",
-      "tests/inference/test_dicksimnel.py",
-      "tests/inference/test_domain_object.py",
-      "tests/inference/test_flat_rate_routing.py",
-      "tests/inference/test_google_source.py",
-      "tests/inference/test_hex_registration.py",
-      "tests/inference/test_inference_tier_escalation.py",
-      "tests/inference/test_io_corpus.py",
-      "tests/inference/test_mini_rack.py",
-      "tests/inference/test_models_versioned.py",
-      "tests/inference/test_pin_gate.py",
-      "tests/inference/test_resolver_compose.py",
-      "tests/inference/test_resource_monitor.py",
-      "tests/inference/test_router_schema.py",
-      "tests/inference/test_router_selector.py",
-      "tests/inference/test_rules_as_policy.py",
-      "tests/inference/test_source_kind.py",
-      "tests/inference/test_version_checker.py",
-      "tests/scraps/test_routing_compiler.py",
-      "tests/test_inference.py",
-      "tests/test_inference_dead_path_and_alarm.py",
-      "tests/test_web_inference_models.py",
-      "unseen_university/devices/inference/__init__.py",
-      "unseen_university/devices/inference/connections.py",
-      "unseen_university/devices/inference/device.py",
-      "unseen_university/devices/inference/dimensions.py",
-      "unseen_university/devices/inference/domains/base.py",
-      "unseen_university/devices/inference/models_registry.py",
-      "unseen_university/devices/inference/policy.py",
-      "unseen_university/devices/inference/rules_engine.py",
-      "unseen_university/devices/inference/sources.py",
-      "unseen_university/devices/inference/version_checker.py",
-      "unseen_university/devices/web_server/server.py"
-    ],
-    "ticket": "T-inference-migrate-consumers-cutover",
-    "narrative": "",
-    "why": "The monolith smeared model<->provider reachability across BOTH ModelSpec.source_name (1:1) and the rule triples; deleting the triples without relocating the triple-only edges would silently drop reachability while a grep-proof still passed green. The proof therefore asserts the structural deletion AND the two things a grep cannot see: the surviving Hex edge and the preserved escalation ladder.",
-    "bootstrap": false
-  }
+  "commits": [
+   "441076bf309a6c7bd0c013f595802d53d57d1f10"
+  ],
+  "whys": []
+ },
+ "produced_by": "T-inference-migrate-consumers-cutover",
+ "body": {
+  "thing": "inference router cutover: every consumer dispatches through the dimensional resolver; the (task_class, model_id, source_name) triple monolith and ModelSpec.source_name are deleted",
+  "intention": "I intend that after the cutover no rule triple, route(), or ModelSpec.source_name survives, yet the live proxy still resolves a dispatch, the triple-only owned-local Hex edge (devstral-small-2:24b@ollama) survives into the connections stack the resolver actually reads, the coding escalation ladder still serves the design rung (no false-halt), and every default model remains reachable",
+  "test": "tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof",
+  "kind_detail": "red-green",
+  "gates": [
+   {
+    "name": "tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof",
+    "result": "green",
+    "evidence": {
+     "red_run": {
+      "outcome": "failed",
+      "exc_type": "AssertionError",
+      "exit_code": 1,
+      "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________ test_consumers_cutover_proof _________________________\n\n    def test_consumers_cutover_proof():\n        # (A) The monolith is deleted \u2014 no triple / route() / compiled-rule path survives.\n>       assert not hasattr(rules_engine_mod, \"_DEFAULT_RULES\"), \"the rule triples must be gone\"\nE       AssertionError: the rule triples must be gone\nE       assert not True\nE        +  where True = hasattr(rules_engine_mod, '_DEFAULT_RULES')\n\ntests/inference/test_consumers_cutover.py:41: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof\n1 failed in 0.32s",
+      "authentic_red": true
+     },
+     "green_run": {
+      "outcome": "passed",
+      "exc_type": null,
+      "exit_code": 0,
+      "summary": ".                                                                        [100%]\n1 passed in 0.46s"
+     }
+    }
+   }
+  ],
+  "commit": "441076bf309a6c7bd0c013f595802d53d57d1f10",
+  "impl_paths": [
+   "devlab/runtime/memory/slates/20260708.slate.txt",
+   "devlab/runtime/memory/tickets/cc.0.T-inference-activate-coding-tools-policy.20260708.171217331891.json",
+   "devlab/runtime/memory/tickets/cc.0.T-inference-batch-nightgate-in-resolver.20260708.171217475676.json",
+   "devlab/runtime/memory/tickets/cc.0.T-preexisting-dicksimnel-done-prefix-close.20260708.174331013363.json",
+   "devlab/runtime/memory/tickets/cc.0.T-preexisting-domain-prompt-sha.20260708.171217603807.json",
+   "devlab/runtime/memory/tickets/cc.0.T-preexisting-repo-map-second-symbol.20260708.171217734475.json",
+   "tests/dicksimnel/test_tier_cascade.py",
+   "tests/inference/test_connections_stack.py",
+   "tests/inference/test_cost_record.py",
+   "tests/inference/test_dicksimnel.py",
+   "tests/inference/test_domain_object.py",
+   "tests/inference/test_flat_rate_routing.py",
+   "tests/inference/test_google_source.py",
+   "tests/inference/test_hex_registration.py",
+   "tests/inference/test_inference_tier_escalation.py",
+   "tests/inference/test_io_corpus.py",
+   "tests/inference/test_mini_rack.py",
+   "tests/inference/test_models_versioned.py",
+   "tests/inference/test_pin_gate.py",
+   "tests/inference/test_resolver_compose.py",
+   "tests/inference/test_resource_monitor.py",
+   "tests/inference/test_router_schema.py",
+   "tests/inference/test_router_selector.py",
+   "tests/inference/test_rules_as_policy.py",
+   "tests/inference/test_source_kind.py",
+   "tests/inference/test_version_checker.py",
+   "tests/scraps/test_routing_compiler.py",
+   "tests/test_inference.py",
+   "tests/test_inference_dead_path_and_alarm.py",
+   "tests/test_web_inference_models.py",
+   "unseen_university/devices/inference/__init__.py",
+   "unseen_university/devices/inference/connections.py",
+   "unseen_university/devices/inference/device.py",
+   "unseen_university/devices/inference/dimensions.py",
+   "unseen_university/devices/inference/domains/base.py",
+   "unseen_university/devices/inference/models_registry.py",
+   "unseen_university/devices/inference/policy.py",
+   "unseen_university/devices/inference/rules_engine.py",
+   "unseen_university/devices/inference/sources.py",
+   "unseen_university/devices/inference/version_checker.py",
+   "unseen_university/devices/web_server/server.py"
+  ],
+  "ticket": "T-inference-migrate-consumers-cutover",
+  "narrative": "",
+  "why": "The monolith smeared model<->provider reachability across BOTH ModelSpec.source_name (1:1) and the rule triples; deleting the triples without relocating the triple-only edges would silently drop reachability while a grep-proof still passed green. The proof therefore asserts the structural deletion AND the two things a grep cannot see: the surviving Hex edge and the preserved escalation ladder.",
+  "bootstrap": false,
+  "stale_flags": [
+   {
+    "flag": "superseded",
+    "flagged_at": "2026-07-08",
+    "by": "cc.0 (day-close audit)",
+    "reason": "DEFECTIVE PROOF. Two independent defects. (1) It asserted through a live InferenceDevice(), whose HealthMonitor probes real providers on a background thread, so it went green on environment luck (Hex happened to be up on this box); a concurrent agent on the same tree saw the identical assertion fail. (2) It encoded a WRONG invariant \u2014 'the coding escalation ladder must serve the design rung' \u2014 which merely matched route()'s already-broken rung (deepseek-r1:32b, features=[], cannot build). Its green therefore HID a real shipped bug: with coding-needs-tools off, coding resolved to a tool-less reasoning model that CONFABULATED completion (claimed it wrote a file; wrote nothing).",
+    "superseded_by": "cc.0.the-inference-cutover-s-anti-confabulati.T-inference-migrate-consumers-cutover.20260708.181853589484.json",
+    "note": "The replacement is HERMETIC (builds the engine directly, no device) and asserts the invariant that was actually broken: a coding request must resolve to a TOOL-CAPABLE model, so a coding failure HALTS instead of silently claiming success. Its red was taken at a25de650 \u2014 the bad close commit \u2014 so its red->green proves the FIX, not the deletion. Do not cite this artifact as evidence the cutover was proven."
+   }
+  ]
+ }
 }

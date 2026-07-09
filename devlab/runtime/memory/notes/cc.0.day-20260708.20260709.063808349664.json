@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.day-20260708.20260709.063808349664",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260708"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-09T06:38:08.349664",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Day 2026-07-08",
+    "text": "## Done\n- Inference router rebuilt as 4 composable stacks; monolith deleted (6/6 tickets proven)\n- CAUGHT A BAD CLOSE: the cutover proof was env-dependent AND encoded a wrong invariant; its green hid a real bug —\n  coding resolved to a tool-less model that CONFABULATED completion (claimed it wrote a file; wrote nothing).\n  Fixed (devstral features=['tools'] + coding-needs-tools), proof rewritten hermetic, re-closed proven.\n- Broke the device -> domains -> agentic_loop -> device CYCLE (hidden by a function-local lazy import)\n- Evicted the coding agent from the inference proxy (agentic_loop/architect_editor/block_apply/edit_format/...)\n- Decided the domains architecture: global domains shared, specialized domain owned by its device,\n  the default IS the general domain, escalation is a policy, and SPECIALIZATION IS GRADUATING DEBT\n- Day-close audit: fixed a silently-disabled core_values guard; found the graduation apparatus is dead code\n\n"
+  }
+}

@@ -1,5 +1,119 @@
 # Slate 2026-07-08
 
+## Done today
+
+### The inference router: rebuilt as 4 composable stacks, then its layering fixed (the day's spine)
+- T-inference-connections-stack @62f3e261 — model<->provider CONNECTIONS stack (additive)
+- T-inference-dimensions-contract @f6db2251 — caller contract {ticket_tier, builder_tier, domain, urgency, escalation_allowed}
+- T-inference-rules-as-policy @a6620843 — rules as dimension->capability-envelope policy (no model/provider literals)
+- T-inference-resolver-compose @eafe7d79 — resolve(RouteRequest) composes the 4 stacks beside the untouched route()
+- T-inference-migrate-consumers-cutover @6704dc1d — CUTOVER. Deleted _DEFAULT_RULES triples, RoutingRule, route(),
+  add_compiled_rule, _is_night_mode, by_source, seed_from_models, ModelSpec.source_name. connections.py holds the
+  authoritative 24-edge table (sole home of reachability). ⚠ RE-CLOSED after I caught a BAD CLOSE — see below.
+- T-inference-router-decomposition-invariant-proof @240ad99f — add-a-connection / zero-rule-edits invariant, driven
+  through the real dispatch path so a re-collapse cannot pass
+- T-inference-break-proxy-domain-cycle @343c20f3 — device.py -> domains -> agentic_loop -> device.py was a CYCLE,
+  hidden behind a function-local lazy import. Routing moved to dimensions.route_request(); BaseDomain.select() deleted
+- T-inference-move-agentic-loop-to-domain @ea74a6a0 — the proxy contained the coding agent (agentic_loop 902 LOC,
+  architect_editor 615, block_apply 640, edit_format, stuck_ladder, domain_prompts, prompts/). All relocated
+- T-inference-relocate-domains-out-of-device-package — closed shipped-unproven (superseded by the domains decision)
+
+### Earlier in the day (Fable judgment block + Opus mechanical build-out)
+- T-rules-store-materialize @2950bebb — 14 rule artifacts materialized
+- T-builder-memory-repo-residency @8ebe84c8 — 146 memories triaged, 72 mirrored
+- T-ungate-status-flip @581ae3a6 — clearing the last dependency flips dependency->sprint
+- T-claude-md-stale-anchors @ec86eda8 — CLAUDE.md anchor checker + the one genuine stale anchor
+- T-consequence-ticket-aging-alarm @698bda08 — day-close overdue-consequence alarm
+- T-produced-by-emission-sweep @670b06fd — produced_by at the 3 emission chokepoints
+- T-validity-sweep-day-close @ba8165fd — day-close validity sweep (annotate, never delete)
+- T-filing-audits-independent-examiner — DESIGN HALF @c4deb58f (build gated)
+- T-audit-run-records-enforced — REFRAMED+GATED (audit_telemetry still points at the retired Postgres palace)
+- Also closed: T-collapse-daemons-to-ground-loop, T-granny-dispatch-observability-gap,
+  T-granny-dispatch-tests-preexisting-failures, T-routing-compiler-rules-engine-test-red
+
+### Decisions
+- D-domains-general-with-device-owned-specializations-2026-07-08 (+2 amendments) — global domains are shared; the
+  SPECIALIZED domain belongs to its device; the executor is the specialization axis; escalation is a POLICY;
+  THE DEFAULT *IS* THE GENERAL DOMAIN (there is always a domain, everybody descends from it);
+  and SPECIALIZATION IS GRADUATING DEBT — fold it back only when the general case PROVES the property.
+
+## Notes
+
+### ⚠ THE DAY'S MOST IMPORTANT LESSON — I shipped a bad close and caught it
+I closed T-inference-migrate-consumers-cutover "proven" on a DEFECTIVE proof, twice defective:
+ (1) It asserted through a live InferenceDevice(), whose HealthMonitor probes real providers on a background thread.
+     It went green on ENVIRONMENT LUCK — Hex happened to be up on this box. A concurrent agent saw it fail.
+ (2) It encoded a WRONG invariant ("the coding escalation ladder must serve the design rung"), which merely matched
+     route()'s ALREADY-BROKEN rung (deepseek-r1:32b, features=[], cannot build). I was matching a broken rung and
+     calling it parity.
+Its green HID a real shipped bug: with coding-needs-tools off, coding resolved to a tool-less REASONING model which
+CANNOT emit a tool call. It returned {"status":"done","result":"wrote smoke file"} and WROTE NOTHING. Confabulated
+completion. Found ONLY by running the live coding path and checking the filesystem — the test's assertion died at
+`.startswith("DONE:")` BEFORE ever reaching `smoke_file.exists()`.
+ROOT DATA DEFECT: devstral's own catalog row already recorded 'agentic'/'tool-call' TAGS, but the STRUCTURED
+`features` flag the selector actually filters on was never populated. Fixed: features=["tools"] on devstral
+(evidence-based — only devstral carries the tag; qwen3-coder-next does not and was NOT tagged) + device.py
+policies=None. Proof rewritten HERMETIC, red taken at the bad-close commit so red->green proves THE FIX.
+Two memories captured: "run the consumer past the first assertion" and "hermetic proofs — never build a live device".
+
+### The cutover was an UNEARNED FOLD-BACK (this is why the graduation rule exists)
+The rule triples WERE a compensation: they hand-curated devstral as the coding floor, guaranteeing "coding runs on a
+tool-capable model". We folded that diversity into the general dimensional case because it looked more principled.
+Nobody wrote the PROPERTY down, so nobody proved the general case still held it. It didn't. That single episode is
+the worked example in D-domains-general-with-device-owned-specializations.
+
+### ⛔ BLOCKING PREREQUISITE (verified): THE ESCALATION LADDER'S RUNGS ARE FAKE
+    ticket_tier=builder -> devstral-small-2:24b@ollama
+    ticket_tier=creator -> devstral-small-2:24b@ollama   (IDENTICAL)
+    ticket_tier=master  -> None
+Five role rungs (apprentice/builder/creator/master/guru) collapse into 3 difficulty buckets; builder+creator both map
+to 'code'. NO model is creator-tier — the registry vocabulary (minion/worker/analyst/designer) shares not one word
+with the role ladder. Two tier vocabularies that never meet. Nothing can escalate — not DS's ladder, not the chat
+agent's free default — until a model declares WHICH RUNG'S STACK it can stand in. => T-inference-tier-ladder-real.
+
+### Escalation is currently a DS-ONLY privilege (verified)
+evaluator/core.py, evaluator/device.py, intent/device.py, reader/device.py, reader/node_extractor.py,
+summarizer/device.py, scraps/scraps_device.py, librarian/research.py, igor/cognition/inference_gateway.py and
+dicksimnel/device.py all call InferenceDevice().dispatch DIRECTLY, bypassing any domain => zero escalation.
+=> T-route-all-inference-through-a-domain. New invariant: nothing reaches the proxy except through a domain.
+
+### Day-close audit findings (2026-07-08)
+- Critical suites: 689 passed / 4 failed. 1 FIXED inline (test_core_values read a pre-reorg path and died on
+  FileNotFoundError BEFORE its assertion — the DRY guard it enforces was silently OFF). 3 known + ticketed.
+- Full `pytest tests/` is NOT runnable in one pass: 9 tests/igor collection errors + a test that blocks in do_wait on
+  a spawned child (non-hermetic). => T-igor-test-debt-post-reorg.
+- Dead code: prereg.py and eval_slice.py have ZERO importers; corpus_verdict.py is imported only by the orphaned
+  prereg.py. The GRADUATION APPARATUS IS DEAD CODE — the mechanical reason fold-back never happened automatically.
+- clone_commit.py + verdict_gate.py are imported ONLY by domains/architect_editor.py — edit machinery left behind in
+  the proxy when the loop moved; they must follow into unseen_university/agentic/.
+- Proxy top level: 9283 -> 6270 LOC after the move. sources.py (1082) and device.py (841) are next.
+- A SUPERSEDED PROOF sat unmarked in the proof corpus; annotated stale_flags[superseded] by hand.
+  => T-proof-corpus-superseded-guard (nothing detects a defective or env-dependent proof).
+- Gate sweep: 1 cleared. Validity sweep: flagged=2 checked=7 unresolvable=2. Path-moves: clean.
+  Consequence overdue: 0. Wiring: OK. Stashes: 0. Duplication in inference: 0.
+- Tickets filed by the audit: T-proof-corpus-superseded-guard, T-vendored-ebook-drm-trips-audit-scans,
+  T-igor-test-debt-post-reorg. Small fix committed @70764723.
+
+## Session close 2026-07-08
+Done: the router decomposition (6/6 proven) + the proxy/domain layering fixed (cycle broken, agentic loop evicted)
++ the domains architecture decided and ticketed (9 tickets, dependency-ordered).
+Next: T-inference-tier-ladder-real — the rungs are fake and block EVERY escalation path, chat included. Then
+T-inference-typed-no-path-result (proxy reports NoCapableModel vs NoAvailableProvider; the domain decides), then
+T-inference-escalation-policy-object. Structure track: T-domains-global-package + T-agentic-primitives-package ->
+DS/aider specializations -> T-compensation-record-and-graduation.
+Standing directive (Akien): "Everything else stops until inference works right every time."
+
+## In-flight
+NONE — everything closed, proven or shipped-unproven; tree clean; all pushed.
+
+## Ad hoc
+See the preserved narrative below — the day ran as one long inference thread, with the router cutover, the bad-close
+catch, the layering fixes, and the domains design intake all in sequence.
+
+---
+
+## Session narrative (preserved verbatim, chronological)
+
 ## Done today (9 closed proven + 1 design + 1 reframe)
 - T-rules-store-materialize @2950bebb — 14 rule artifacts materialized (rules_citation_check.py 15/15)
 - T-builder-memory-repo-residency @8ebe84c8 — 146 memories triaged, 72 mirrored to rules/+notes/
@@ -217,3 +331,5 @@ TWO DEFECTS EXPOSED + VERIFIED: (1) the GENERAL domain's default attempt is curr
 BASE IS NOT CEREMONIAL (resolves CC.0's anti-ceremony worry): GeneralDomain (concrete; rename from BaseDomain) = default EscalationPolicy + COMPLETION CONTRACT + _run_attempt=one dispatch. CodingDomain overrides the contract; DSCodingDomain/AiderCodingDomain override the attempt. The completion contract belongs at the ROOT because it PRODUCES the escalation signal — without it 'bump on capability failure' has no input.
 Tickets retargeted: T-inference-escalation-policy-object (default -> general domain, proxy is reporter), T-domains-global-package (BaseDomain -> GeneralDomain, concrete, owns default policy + contract + single-dispatch attempt). Filed: T-route-all-inference-through-a-domain (dep).
 NEXT (unchanged): T-inference-tier-ladder-real — the rungs are fake and block every escalation path, chat included.
+
+✅ CLOSED

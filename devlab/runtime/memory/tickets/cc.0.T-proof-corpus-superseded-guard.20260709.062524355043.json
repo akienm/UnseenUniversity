@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-proof-corpus-superseded-guard.20260709.062524355043",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proof-corpus-superseded-guard"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T12:25:24.355043+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proof-corpus-superseded-guard"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-proof-corpus-superseded-guard",
+    "title": "[sprint] Nothing detects a superseded or defective proof sitting in the proof corpus",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.6,
+    "tags": [
+      "proof",
+      "audit",
+      "CP1"
+    ],
+    "description": "Found by the 2026-07-08 day-close audit, by hand. T-inference-migrate-consumers-cutover carries TWO proof artifacts: the original (defective) and the corrected one. The original went green on ENVIRONMENT LUCK — it asserted through a live InferenceDevice() whose HealthMonitor probes real providers, so it passed only because Hex happened to be up — and it encoded a WRONG invariant, so its green actively HID a real shipped bug (coding resolving to a tool-less model that confabulated completion). Nothing in the store flagged it; I annotated stale_flags[superseded] manually.\n\nA proof corpus whose entries are never re-checked is a corpus of claims, not proofs. Two concrete gaps: (a) a ticket may accumulate multiple proofs with no marker of which is authoritative; (b) a proof that depends on the environment (constructs a live device, opens a socket, needs a provider up) is not a proof, and nothing detects that.\n\nWORK: (1) day-close (or the validity sweep) flags any ticket with >1 proof artifact where none is marked superseded; (2) a hermeticity guard on proof nodes — a proof whose test constructs a live device / touches the network should be flagged (the smell test: would this proof give the same verdict with the network unplugged?).\n\n**Affected files:** devlab/claudecode/validity_sweep.py, devlab/claudecode/proof_emitter.py, skills/day-close-audit\n\n**Scope boundary:** annotate, never delete (CP2). Do not auto-retract a proof.\n\n**Completion criteria:** a sweep reports tickets with multiple unmarked proofs, and reports proof nodes that touch a live device/network.\n\n**Test plan:** red->green — a ticket with two proofs and no superseded marker is flagged; a proof node that constructs a live device is flagged as non-hermetic.\n\n**Decision:** none\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T12:23:53.457628+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T12:23:53.503791+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "da65ef6b-47e6-4194-8f9a-65dbb3ce7d10"
+  }
+}
