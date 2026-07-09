@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-reorg-parents-sweep-still-live.20260709.152930440824",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reorg-parents-sweep-still-live"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T21:29:30.440824+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-reorg-parents-sweep-still-live"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-reorg-parents-sweep-still-live",
+    "title": "[sprint] parents[2] repo-root derivations are still broken at 7 sites — the sweep ticket closed without doing it",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.8,
+    "tags": [
+      "reorg",
+      "paths",
+      "correctness",
+      "debt"
+    ],
+    "description": "T-reorg-parents-path-sweep is CLOSED, marked 'gate PASS ... tests=green'. The work was never done: the builder created three empty files at pre-reorg paths (see T-aider-gate-passed-a-hollow-build). The bug is live.\n\nMECHANISM: the single-package collapse moved devices/X -> unseen_university/devices/X. From unseen_university/devices/X/f.py, `Path(__file__).resolve().parents[2]` is now the PACKAGE dir (unseen_university/), not the repo root (parents[3]). Every derivation that appends a REPO-ROOT directory is broken; ones that append 'devices' are accidentally correct, which is why this survives a skim.\n\nMEASURED 2026-07-09 by existence check (as-written path missing, intended path present):\n  BROKEN  unseen_university/devices/vetinari/device.py:103        -> devlab/claudecode/cc_queue.py\n  BROKEN  unseen_university/devices/web_server/server.py:1319     -> devlab/claudecode/stop_cc_minions.py\n  BROKEN  unseen_university/devices/evaluator/loop.py:30          -> devlab/claudecode/cc_queue.py\n  BROKEN  unseen_university/devices/evaluator/uu_enrollment.py:93 -> tests/\n  BROKEN  unseen_university/devices/sudo_relay/device.py:26       -> sudo_relay/\n  BROKEN  unseen_university/devices/claude/cc_compact_cadence.py:36 (sys.path gets the package dir)\n  BROKEN  unseen_university/devices/web_server/server.py:130      -> wild_igor/web_ui/dist  (NEITHER path exists — separate rot, flag it)\n  ok      unseen_university/devices/web_server/server.py:1719     -> devices/identities.yaml (package-relative, correct)\n  ok      unseen_university/devices/evaluator/uu_enrollment.py:26 -> devices/ (package-relative, correct)\n\nThe canonical fix is `unseen_university._uu_root.uu_root()` (CLAUDE.md: one env var, everything derives). Do NOT change parents[2] to parents[3] — that re-encodes depth and breaks on the next move.\n\n**Affected files:** the 7 sites above\n**Design rules:** single import root; UU_ROOT is the one canonical env var and uu_root() the one accessor\n**Scope boundary:** IN — replace repo-root parents[N] derivations with uu_root(). OUT — the wild_igor/web_ui/dist target, which points at a directory that exists nowhere (ticket it separately). OUT — the gate fix.\n**Test plan:** hermetic, red->green, no device. A guard test walks unseen_university/devices/**/*.py, finds every `parents[N]` derivation, and asserts that any path it constructs which names a REPO-ROOT dir (devlab, tests, skills, wild_igor) actually EXISTS. RED: 7 sites fail. GREEN: 0. THE DISCRIMINATOR: the guard must still PASS the two package-relative sites (server.py:1719, uu_enrollment.py:26) — a naive rule banning parents[N] outright would fail them and prove nothing about correctness.\n\n**Completion criteria:** `grep -rn 'parents\\[' unseen_university/devices/` shows no derivation that appends a repo-root dir; the guard test resolves every derived repo-root path and finds it exists; the two package-relative sites (server.py:1719, uu_enrollment.py:26) still pass.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "intention": "I intend that every repo-root path in unseen_university/devices/ derives from uu_root(), so that no device silently points at a path inside the package dir that does not exist — verified by a guard that resolves each derived path and asserts it exists.",
+    "created_at": "2026-07-09T21:28:29.816804+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T21:28:29.865566+00:00"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-aider-gate-passed-a-hollow-build.20260709.152755980294",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-gate-passed-a-hollow-build"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T21:27:55.980294+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-gate-passed-a-hollow-build"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-aider-gate-passed-a-hollow-build",
+    "title": "[sprint] The aider gate closed a ticket PASS on three EMPTY files at paths that do not exist",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.95,
+    "tags": [
+      "gates",
+      "proof",
+      "builder",
+      "aider",
+      "correctness",
+      "safety"
+    ],
+    "description": "Found 2026-07-09 when Akien asked why a copy of an intentions record was sitting in /home/akien/.unseen_university/aider_work/.\n\nWHAT HAPPENED. T-reorg-parents-path-sweep was dispatched to Aider.0[qwen3-coder:30b]. The builder committed `A installer/shim.py, A vetinari/device.py, A web_server/server.py` — three files, 0 bytes each, at PRE-REORG top-level paths that do not exist in the repo. It never touched the real files. The gate then reported, verbatim:\n\n    Aider.0[qwen3-coder:30b]: gate PASS — branch=aider/T-reorg-parents-path-sweep-1783455822\n    files=['installer/shim.py','vetinari/device.py','web_server/server.py'] tests=green wall=34.8s\n\nand the ticket CLOSED. Tests were green because three empty files break nothing.\n\nTHE BUG IT CLAIMED TO FIX IS LIVE IN MAIN, MEASURED TODAY, at 7 sites: `Path(__file__).resolve().parents[2]` from unseen_university/devices/X/f.py yields the PACKAGE dir, not the repo root (that is parents[3]). Verified by existence check — vetinari/device.py:103 (_CC_QUEUE), web_server/server.py:130 + :1319, evaluator/loop.py:30, evaluator/uu_enrollment.py:93, sudo_relay/device.py:26, claude/cc_compact_cadence.py:36 (sys.path). Two more sites are ACCIDENTALLY correct because they append 'devices', which really is package-relative — which is exactly why a human skim misses this.\n\nWHY THE GATE COULD NOT CATCH IT. The ticket carries `intention: None`. With no 'I intend that...' statement there is nothing for a gate to check the build AGAINST, so 'tests green' was the only signal available — and 'tests green' is satisfied by doing nothing. This is the CLAUDE.md thesis made concrete: *a test that passes on hollow output is the signature of a missing spec.*\n\nCOMPOUNDING: the gate accepted a `files=[...]` list naming paths that do not exist in the repo it was building. It never checked that the paths it was told about were real, nor that the diff was non-empty.\n\n**Affected files:** the aider gate / builder close path (unseen_university/devices/aider/*, devlab/claudecode/builder_merge_proof.py), unseen_university/devices/_builder_close.py\n**Design rules:** proof-on-close (CLAUDE.md); CP1 (nothing closes posing as done); CP6 (a gate that passes hollow builds is worse than no gate — it launders them)\n**Scope boundary:** IN — the gate must reject (a) an empty diff, (b) a diff touching only paths absent from the ticket's stated affected-files, (c) a build for a ticket with no intention. OUT — fixing the parents[N] sites themselves (T-reorg-parents-sweep-still-live).\n**Test plan:** hermetic, red->green. Construct a build result whose diff adds three EMPTY files at paths not in the repo, with tests green. RED: gate returns PASS. GREEN: gate returns FAIL naming 'empty diff' / 'unknown paths'. THE DISCRIMINATOR: a gate that merely checks `len(files) > 0` passes the hollow build identically — so assert it also FAILS a diff of three 0-byte additions, and PASSES a real one-line fix to unseen_university/devices/vetinari/device.py:103.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:** the gate returns FAIL for a diff of three 0-byte additions at paths absent from the repo (today it returns PASS); it returns PASS for a real one-line fix to unseen_university/devices/vetinari/device.py:103; a build for a ticket with no `intention` field is refused.",
+    "created_at": "2026-07-09T21:26:55.373574+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": "I intend that a builder gate REJECTS a build whose diff is empty, whose files are 0 bytes, or whose touched paths do not exist in the repo it built — so that no ticket can ever again close 'gate PASS, tests=green' having changed nothing.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T21:26:55.419020+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d4bf5e6-f5ee-42ed-a674-40925c445e2b"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-aider-work-clones-hidden-state.20260709.153031430907",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-aider-work-clones-hidden-state"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T21:30:31.430907+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-aider-work-clones-hidden-state"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-aider-work-clones-hidden-state",
+    "title": "[sprint] 15 aider_work clones (408MB) each carry a full copy of the memory store, and memory_emit would write into them",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.6,
+    "tags": [
+      "cleanup",
+      "memory-store",
+      "safety",
+      "aider",
+      "disk"
+    ],
+    "description": "Akien, 2026-07-09: 'looks to me like a whole folder of hidden stuff.'\n\nINVENTORY (measured). /home/akien/.unseen_university/aider_work/ holds 15 clones, 408MB. 8 are full UU clones carrying 3012-3079 memory-store JSON records each. /home/akien/dicksimnel is a 9th (34MB, HEAD pinned at 124553ee, 2026-07-06). ~/.unseen_university totals 553MB — and that is the directory Akien is cleaning.\n\nNOTHING WAS LOST. Checked by filename set-difference against the canonical store (3228 records): ZERO records exist only inside a clone. Every clone store is a strict SUBSET — stale snapshots, not divergent ones. Four clones carry one unmerged aider commit each; three belong to ESCALATED tickets (CC re-does them, no loss) and the fourth is the hollow build in T-aider-gate-passed-a-hollow-build (nothing of value to recover).\n\nTHE LIVE RISK IS THE WRITE PATH, NOT THE DISK. memory_emit.py:37 derives `_REPO` from `os.path.abspath(__file__)`. Inside a clone that resolves to the CLONE's devlab/runtime/memory/. So any DS/aider run that emits a decision, ticket, note or proof while working in a clone writes it THERE — outside git, invisible to grep, invisible to /context-load. It has not bitten yet (0 orphan records), but it is exactly the failure CLAUDE.md's 'one home, no exceptions' rule names: *a renamed store with surviving write-paths silently splits the source of truth.*\n\n**Affected files:** devlab/claudecode/memory_emit.py, the aider clone provisioner (harvest_batch --checkout), a cleanup step\n**Design rules:** canonical memory — one home, no exceptions; CP6 (deleting is irreversible: dry-run, name exact ids, get Akien's approval before rm)\n**Scope boundary:** IN — (a) make memory_emit refuse to write to a store that is not the canonical one (resolve via uu_root()/UU_MEMORY_ROOT, and ALARM if __file__'s repo != that root); (b) exclude devlab/runtime/memory from the clone, or make the clone read-only for it; (c) a reviewed cleanup of the 15 stale clones. OUT — deleting anything before Akien names the ids.\n**Test plan:** hermetic, red->green, tmp dirs. Copy memory_emit.py into a fake clone tree; call emit(); RED: the record lands in the CLONE's devlab/runtime/memory/. GREEN: it lands in the canonical root, or emit refuses and raises a system alarm naming the split. THE DISCRIMINATOR: a fix that merely honours UU_MEMORY_ROOT passes only when the env var is set — assert the UNSET case, which is exactly how an aider clone runs.\n\n**Completion criteria:** calling memory_emit from a copied tree with UU_MEMORY_ROOT UNSET writes to the canonical store or alarms; `find ~/.unseen_university/aider_work -name '*.json' -path '*runtime/memory*'` returns nothing after the reviewed cleanup Akien approves.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "intention": "I intend that a memory-store write from inside a throwaway clone is impossible — it either lands in the canonical store or raises a system alarm naming the split — so the source of truth cannot fork into a directory nobody reads.",
+    "created_at": "2026-07-09T21:29:30.714608+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T21:29:30.759965+00:00"
+  }
+}
