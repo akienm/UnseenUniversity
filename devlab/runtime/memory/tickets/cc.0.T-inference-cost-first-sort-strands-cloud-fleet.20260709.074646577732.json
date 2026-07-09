@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-cost-first-sort-strands-cloud-fleet.20260709.074646577732",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-cost-first-sort-strands-cloud-fleet"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T13:46:46.577732+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-cost-first-sort-strands-cloud-fleet"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-cost-first-sort-strands-cloud-fleet",
+    "title": "[sprint] Cost-first sort makes 19/22 models unreachable — escalation can never leave the local box",
+    "size": "L",
+    "status": "sprint",
+    "priority": 0.95,
+    "tags": [
+      "inference",
+      "routing",
+      "escalation"
+    ],
+    "description": "ROOT CAUSE of the fake escalation ladder. Blocks T-inference-tier-ladder-real (that ticket's test plan — 'each higher rung is strictly more capable' — cannot pass while this holds).\n\nVERIFIED 2026-07-09 by exhaustive sweep of the dimension space (450 combinations: 5 ticket_tier x 5 builder_tier x 2 domain x 3 urgency x 3 required_difficulty), hermetic engine, no health filter:\n\n  REACHABLE (3 of 22 models, all on `ollama`):\n    135x  deepseek-r1:32b       @ ollama\n     90x  deepseek-r1:14b       @ ollama\n     90x  devstral-small-2:24b  @ ollama\n  UNREACHABLE (19 of 22): the ENTIRE cloud fleet, including\n    anthropic/claude-opus-4.8, anthropic/claude-sonnet-4.6, anthropic/claude-haiku-4.5,\n    google/gemini-2.0-flash, gemini-2.5-flash, deepseek-v3.1:671b-cloud,\n    qwen3-coder:480b-cloud, qwen/qwen3-235b-a22b-2507, ... (19 total)\n\nMECHANISM: the selector sorts by (cost_class_rank(source.cost_class), dollars_per_unit, ...) — cost_class_rank is the FIRST key, and `ollama` is `owned_local` = rank 1 (only `graph_tree`=0 is cheaper, and nothing uses it). `difficulty_meets(model_capable, required)` is a >= filter, so a `design`-capable local model is also eligible for `code` and `classify`. Therefore ANY model on ollama dominates every difficulty bucket it claims. Raising required_difficulty (what escalation does) only NARROWS the candidate set; it never changes the cost preference. So the generalist escalation ladder is, in full:\n\n    deepseek-r1:14b (classify,code)  ->  deepseek-r1:32b (design)  ->  None -> ceiling alarm\n\nTwo rungs, both local, then halt. It is structurally impossible to escalate to Opus, Sonnet, Gemini, or the paid Ollama-Pro 480b/671b models. A query only Opus can answer will fail after a 'full' escalation — and the alarm will say 'capability ceiling', which is a TRUE statement about the reachable set and a FALSE statement about the fleet.\n\nCONSEQUENCE (money, not just correctness): the Ollama Pro subscription is paid for and never selected by dimensional routing. deepseek-v3.1:671b-cloud and qwen3-coder:480b-cloud are dead code. The only path to a cloud model today is a PINNED model (request.model), which bypasses routing entirely — which is how Igor's multi_cloud reaches them.\n\nDEEPER PROBLEM: `difficulty_bucket` is a SELF-ASSIGNED CLAIM, and the cost-first sort REWARDS OVERCLAIMING — a cheap model that claims the top bucket captures all the work in every bucket. Nothing verifies the claim. Evidence of drift already in the registry: `gemini-2.0-flash` and `deepseek-r1:32b` are labelled `design` (top rung) while `anthropic/claude-sonnet-4.6` is labelled `code`. Those labels are not measurements.\n\nWORK: separate CAPABILITY RANK (ordered, measured) from COST PREFERENCE (the tiebreak WITHIN a rung). Escalation must walk capability; cost must only choose among stacks that clear the required capability. Capability rank must come from an eval, not a hand-typed label — see T-inference-escalation-eval-corpus, which measures it.\n\nDo NOT fix by re-adding curated (task_class, model, source) triples — that curation is exactly the compensation that was folded back unproven (D-domains-general-with-device-owned-specializations-2026-07-08).\n\n**Test plan:** red->green. RED: assert that some cloud model is reachable by SOME dimension combination -> fails today (only 3 local models are ever selected). GREEN after the fix: escalating a generalist request past the top LOCAL rung selects a strictly-more-capable non-local stack rather than raising a ceiling alarm; and the 450-combo sweep reaches > 3 distinct models.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T13:45:58.391179+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T13:45:58.437293+00:00",
+    "inferred_intention": "debugging",
+    "inferred_intention_id": "0e7a15ef-11bf-42a5-a11d-2189e5acb337"
+  }
+}
