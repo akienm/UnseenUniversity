@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-escalation-handoff-transmits-the-confabulation",
-    "title": "[sprint] The hop-1 handoff feeds the weak model's raw reasoning to the strong model, which adopts its wrong answer",
+    "title": "The hop-1 handoff feeds the weak model's raw reasoning to the strong model, which adopts its wrong answer",
     "size": "M",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.95,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T15:23:09.031296+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Only the failed CLAIM crosses a rung — never the argument for it. _summarize_attempt hands over extract_answer() marked FAILED; the proxy no longer frames a failure as 'What was tried'. Proven: proofs/cc.0.escalation-handoff-carries-only-the-fail...20260709.100104269063.json (red=AssertionError -> green=passed); the earlier proof at 9f4ac0b0 is annotated superseded (scratchpad-stripping alone was insufficient). LIVE end-to-end, unpinned: hop0 deepseek-r1:14b FAILED -> escalate -> hop1 deepseek-r1:32b PASSED -> verified answer 'Both apples and oranges'. Every domain inherits this: BaseDomain.run is the single escalation owner, so the coding ladder is fixed too. NOTE: CodingDomain's handoff (a diff, a test result) is not a final claim and may want its own _summarize_attempt override.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T16:01:16.975688+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T15:23:09.086820+00:00",
     "inferred_intention": "safe-execution",
-    "inferred_intention_id": "97b27e79-f202-4962-8357-94b0f6ae0a3e"
+    "inferred_intention_id": "97b27e79-f202-4962-8357-94b0f6ae0a3e",
+    "proven": true,
+    "proof_id": "cc.0.escalation-handoff-carries-only-the-fail.T-escalation-handoff-transmits-the-confabulation.20260709.100104269063",
+    "proof_commit": "9b3d94fcbba3028ddc55cf82fd421ae6b8ac31e2",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

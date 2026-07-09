@@ -52,6 +52,14 @@
     "ticket": "T-escalation-handoff-transmits-the-confabulation",
     "narrative": "",
     "why": "Measured live with one variable isolated: deepseek-r1:32b answers b4-boxes correctly on its own, adopts deepseek-r1:14b's wrong answer when handed its unmarked scratchpad, and recovers when handed only the conclusion marked failed. Escalation was transmitting the confabulation upward, on the shared path every domain uses.",
-    "bootstrap": false
+    "bootstrap": false,
+    "stale_flags": [
+      {
+        "flag": "superseded",
+        "at": "2026-07-09",
+        "by": "cc.0.escalation-handoff-carries-only-the-fail.T-escalation-handoff-transmits-the-confabulation.20260709.100104269063",
+        "reason": "This proof asserted only that the <think> scratchpad was stripped from the handoff. That invariant is TRUE but insufficient: deepseek-r1 restates its derivation in prose OUTSIDE the think block, the stronger rung followed it, and reproduced the weak model's wrong answer on the live rack. The shipped invariant is stronger \u2014 only the failed CLAIM crosses a rung, never the argument for it. Annotated, not deleted (CP2)."
+      }
+    ]
   }
 }
