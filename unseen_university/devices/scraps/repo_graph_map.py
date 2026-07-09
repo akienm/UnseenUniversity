@@ -335,16 +335,43 @@ class TagCache:
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{2,}")
 
 
+#: Directory names that never hold first-party source. Matched against the path RELATIVE to the
+#: repo root — an absolute match would skip an entire repo that merely lives under, say, ~/build.
+_SKIP_DIRS = frozenset({
+    ".git", "__pycache__", ".venv", "venv", "node_modules", "build", "dist", ".tox",
+    # Installed third-party code, wherever an environment puts it.
+    "site-packages", "dist-packages",
+})
+
+
+def _venv_roots(repo_root: Path) -> set[Path]:
+    """Directories that ARE virtualenvs, found by mechanism rather than by name.
+
+    A venv is whatever contains a ``pyvenv.cfg`` — that is the marker the interpreter itself
+    writes, and it holds no matter what the directory is called. Naming them (``.venv``,
+    ``venv``) only skips the venvs someone thought to list: this repo's own gitignored
+    environment is ``test_env/``, 2173 Python files, and it was being walked as first-party
+    source and ranked into the orientation packet a weak model reads first.
+    """
+    return {cfg.parent for cfg in repo_root.rglob("pyvenv.cfg")}
+
+
 def _gather_py_files(repo_root: Path, cache: TagCache | None) -> tuple[dict, dict]:
     """Return ``(sources, tags)``: rel-path → source, and rel-path → (defs, refs).
 
-    Uses the cache for tags when given (mtime-keyed), else parses. Skips hidden/venv/site dirs.
+    Uses the cache for tags when given (mtime-keyed), else parses. Skips hidden directories,
+    virtualenvs (by their ``pyvenv.cfg``, not their name), and installed-package trees — the
+    map is an orientation over FIRST-PARTY structure, and vendored code both drowns it and
+    outranks it (pip's `typing_extensions` defines the most-referenced names in any tree).
     """
     sources: dict = {}
     tags: dict = {}
-    skip = {".git", "__pycache__", ".venv", "venv", "node_modules", "build", "dist", ".tox"}
+    venvs = _venv_roots(repo_root)
     for p in sorted(repo_root.rglob("*.py")):
-        if any(part in skip for part in p.parts):
+        rel_parts = p.relative_to(repo_root).parts[:-1]  # directories only; never the filename
+        if any(part in _SKIP_DIRS or part.startswith(".") for part in rel_parts):
+            continue
+        if any(parent in venvs for parent in p.parents):
             continue
         rel = str(p.relative_to(repo_root))
         try:
