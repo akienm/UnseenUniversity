@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-escalation-handoff-transmits-the-confabulation.20260709.092341698968",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalation-handoff-transmits-the-confabulation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T15:23:41.698968+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-escalation-handoff-transmits-the-confabulation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-escalation-handoff-transmits-the-confabulation",
+    "title": "[sprint] The hop-1 handoff feeds the weak model's raw reasoning to the strong model, which adopts its wrong answer",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.95,
+    "tags": [
+      "inference",
+      "domains",
+      "escalation"
+    ],
+    "description": "MEASURED 2026-07-09 on the live rack, one variable isolated (same query, same model, same 4096-token budget, temperature 0; only the injected system prompt differs):\n\n  query b4-boxes, ground truth 'both'\n  deepseek-r1:32b, NO handoff                        -> PASS  ('both apples and oranges')\n  deepseek-r1:32b, WITH the current hop-1 handoff    -> FAIL  ('Oranges and Apples')\n  deepseek-r1:32b, handoff naming only the CONCLUSION, marked WRONG -> PASS ('Both apples and oranges')\n\nThe stronger rung answers this query correctly on its own and is TALKED OUT OF IT by the escalation handoff. Escalation currently transmits the confabulation upward.\n\nTWO DEFECTS, both live:\n\n1. WRONG SLICE. BaseDomain.run does `prior_attempt = (result.text or '').strip()[:400]`. For a reasoning model (deepseek-r1:*) the first 400 characters of the reply are the OPENING of its <think> scratchpad, cut off mid-sentence. The measured handoff literally ends '...one has only oranges, and the other has both fruits. Since'. That is not a summary and not a conclusion — it is the weak model's unfinished rambling, and it happens to contain its wrong chain of reasoning stated confidently.\n\n2. WRONG FRAMING. device.dispatch injects it into the system prompt under the header '## Prior attempt summary (hop N)\\n**What was tried:** ...\\n**What now?**'. Nothing says the prior attempt FAILED. The strong model reads a confident partial derivation labelled 'what was tried' as useful prior work and continues it.\n\nThe fix is not cosmetic. Experiment 4 above shows the strong model recovers completely when handed only its predecessor's CONCLUSION explicitly marked as verified-wrong.\n\nBLAST RADIUS: this is the shared escalation path. BaseDomain.run is the single escalation owner for EVERY domain, and device.dispatch's injection is unconditional on escalation_hop > 0. So the coding ladder (CodingDomain / DS) has been handing devstral's truncated scratchpad to its escalation target for as long as tier escalation has existed. It is a candidate root cause for 'escalation never helps' in the coding harvest runs.\n\nWORK:\n- Extract the shared reply-text helpers (strip_reasoning / extract_answer / normalize) out of escalation_corpus into a module both the corpus and BaseDomain can import. No duplicated regex.\n- BaseDomain.run: build prior_attempt from a `_summarize_attempt(result)` seam. Default = reasoning stripped, then the TAIL (the conclusion), not the head. A domain may override.\n- device.dispatch: reword the injected block to state that the prior attempt did NOT satisfy the completion check and must not be continued.\n- Re-run escalation_demo --query b4-boxes: it must go hop0 FAIL -> hop1 PASS -> verified answer, instead of halting on capability-ceiling.\n\n**Test plan:** red->green, HERMETIC (stub device, no live InferenceDevice). Given a stub whose hop-0 LoopResult text is '<think>long wrong rambling...</think>\\nANSWER: wrong', the InferenceRequest dispatched at hop 1 must carry a prior_attempt that (a) contains the conclusion 'ANSWER: wrong', (b) does NOT contain the <think> rambling, and (c) is framed as a FAILED attempt. Today the hop-1 request carries the rambling and no failure marker.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T15:23:09.031296+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T15:23:09.086820+00:00",
+    "inferred_intention": "safe-execution",
+    "inferred_intention_id": "97b27e79-f202-4962-8357-94b0f6ae0a3e"
+  }
+}
