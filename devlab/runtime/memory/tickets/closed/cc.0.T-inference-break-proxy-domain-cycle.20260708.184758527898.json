@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-break-proxy-domain-cycle",
-    "title": "[sprint] Break the proxy<->domain circular dependency: device builds RouteRequest, delete BaseDomain.select()",
+    "title": "Break the proxy<->domain circular dependency: device builds RouteRequest, delete BaseDomain.select()",
     "size": "M",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.95,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T00:46:55.825219+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "CLOSED PROVEN (proof cc.0.the-inference-proxy-is-a-leaf-the-routin @343c20f3, red=AssertionError -> green=passed). device.py imported domains.resolve_domain to call BaseDomain.select() (3 sites); domains/base.py imports agentic_loop; agentic_loop reached back with a function-local 'from ...device import InferenceDevice' and constructed one => cycle device -> domains -> agentic_loop -> device, hidden by the lazy import. Root cause: BaseDomain glued two opposite-facing responsibilities (select() consumed BY the proxy, run() CONSUMES the proxy), and select() was a pure pass-through building a RouteRequest from the domain's own name that the proxy already had as request.domain. FIX: dimensions.py owns TASK_CLASS_TO_TIER + route_request() (the single live-dispatch construction point); device.py builds its own RouteRequest via InferenceDevice._route() and calls resolve() directly; BaseDomain.select() DELETED. Layering is now one-directional: worker -> domain (loop+escalation+prompts) -> proxy (routing+dispatch). Pinned structurally by test_proxy_domain_layering.py, which reads the import graph with ast.walk so a function-local import cannot re-hide the cycle. Suites: 540 passed (inference+scraps+granny); 3 pre-existing reds, ticketed.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T00:56:37.821786+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T00:46:55.871956+00:00",
     "inferred_intention": "safe-execution",
-    "inferred_intention_id": "5057860b-22cf-4dd5-b1ee-d516fed47564"
+    "inferred_intention_id": "5057860b-22cf-4dd5-b1ee-d516fed47564",
+    "proven": true,
+    "proof_id": "cc.0.the-inference-proxy-is-a-leaf-the-routin.T-inference-break-proxy-domain-cycle.20260708.185623639839",
+    "proof_commit": "343c20f35f98f97eb1cf00ecbdd565928408ef6e",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

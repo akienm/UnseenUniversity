@@ -1,0 +1,65 @@
+{
+  "id": "cc.0.the-inference-proxy-is-a-leaf-the-routin.T-inference-break-proxy-domain-cycle.20260708.185623639839",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-inference-proxy-is-a-leaf-the-routin",
+    "T-inference-break-proxy-domain-cycle"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T18:56:23.639839",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-break-proxy-domain-cycle"
+    ],
+    "commits": [
+      "343c20f35f98f97eb1cf00ecbdd565928408ef6e"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-break-proxy-domain-cycle",
+  "body": {
+    "thing": "the inference proxy is a leaf: the routing core imports nothing from the domain layer, so device -> domains -> agentic_loop -> device is no longer a cycle",
+    "intention": "I intend that no module of the inference routing core (device, rules_engine, sources, models_registry, connections, policy, dimensions, routing_buckets) imports the domain layer or the agentic loop at ANY nesting depth including function-local imports, that BaseDomain carries no routing method, and that the proxy builds its own RouteRequest from the routing layer's own task_class->tier bridge",
+    "test": "tests/inference/test_proxy_domain_layering.py::test_routing_core_does_not_import_the_domain_layer",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_proxy_domain_layering.py::test_routing_core_does_not_import_the_domain_layer",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            assert path.exists(), f\"routing-core module missing: {filename}\"\n            for imported in _imported_names(path):\n                for banned in ABOVE_THE_PROXY:\n                    # match 'x.domains', 'x.domains.y', 'x.agentic_loop' — not 'domain_prompts'\n                    parts = imported.split(\".\")\n                    if banned in parts:\n                        violations.append(f\"{filename} imports {imported}\")\n>       assert not violations, (\n            \"the inference proxy must not import the layer above it (domain / agentic loop) — \"\n            \"that is the device -> domains -> agentic_loop -> device cycle:\\n  \"\n            + \"\\n  \".join(sorted(violations))\n        )\nE       AssertionError: the inference proxy must not import the layer above it (domain / agentic loop) — that is the device -> domains -> agentic_loop -> device cycle:\nE           device.py imports unseen_university.devices.inference.domains\nE       assert not ['device.py imports unseen_university.devices.inference.domains']\n\ntests/inference/test_proxy_domain_layering.py:80: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_proxy_domain_layering.py::test_routing_core_does_not_import_the_domain_layer\n1 failed in 0.19s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.15s"
+          }
+        }
+      }
+    ],
+    "commit": "343c20f35f98f97eb1cf00ecbdd565928408ef6e",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-inference-break-proxy-domain-cycle.20260708.184758527898.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-move-agentic-loop-to-domain.20260708.184758674596.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-relocate-domains-out-of-device-package.20260708.184758940387.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-single-device-instance-no-thread-per-call.20260708.184758807882.json",
+      "tests/inference/test_domain_object.py",
+      "tests/inference/test_router_decomposition_invariant.py",
+      "unseen_university/devices/inference/device.py",
+      "unseen_university/devices/inference/dimensions.py",
+      "unseen_university/devices/inference/domains/base.py"
+    ],
+    "ticket": "T-inference-break-proxy-domain-cycle",
+    "narrative": "",
+    "why": "A proxy routes and dispatches; a domain runs an agentic loop that dispatches TO it. BaseDomain.select() inverted that — a routing method on a proxy-consumer — so the proxy had to import a domain to choose a model, and the domain's loop had to lazily re-import the proxy to run. The lazy function-local import hid the cycle from every import-time check, so the guard must read the import graph with ast.walk rather than trust module-level imports.",
+    "bootstrap": false
+  }
+}

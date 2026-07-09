@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-move-agentic-loop-to-domain",
-    "title": "[dependency] The agentic loop belongs to the domain object, not the proxy — relocate loop/editor/edit machinery out of inference/",
+    "title": "[sprint] The agentic loop belongs to the domain object, not the proxy — relocate loop/editor/edit machinery out of inference/",
     "size": "L",
-    "status": "dependency",
+    "status": "sprint",
     "priority": 0.9,
     "tags": [
       "inference",
