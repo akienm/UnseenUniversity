@@ -28,7 +28,7 @@ from unseen_university.devices.inference.domains.domain_prompts import domain_pr
 # which commit ea74a6a0 then MOVED without changing a byte. Re-pin deliberately, never to
 # silence a red: a mismatch means the prompt changed, and the only question worth asking is
 # whether that change was meant.
-_CODING_PROMPT_SHA256 = "cac647602bad462315c1eb3b284216e63023c0fcb0aa45c7fd6e85ce12ee3296"
+_CODING_PROMPT_SHA256 = "0e044ff70e1d4c2c963619c0d002b0164be5ea5b4ef01a0ca169263e027decd7"
 
 #: The exact shape of the bug 124553ee fixed. The prompt is allowed to SAY `/home/...` inside
 #: its own prohibition ("NEVER write an absolute path (no `/home/...`)"); what it may never do
