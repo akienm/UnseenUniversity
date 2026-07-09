@@ -353,9 +353,17 @@ class BaseDomain:
         An attempt whose reasoning never terminated (truncated <think>) has no conclusion to
         pass on, and passing on the scratchpad is worse than passing on nothing.
         """
-        # STUB (proof-first): the shipped behaviour — the FIRST 400 characters of the raw
-        # reply, scratchpad and all, with nothing saying the attempt failed.
-        return (result.text or "").strip()[:400]
+        text = conclusion(result.text or "")
+        if not text:
+            return (
+                f"A previous attempt at a lower tier {FAILED_MARKER} and produced no usable "
+                f"conclusion. Solve the problem from scratch."
+            )
+        return (
+            f"A previous attempt at a lower tier concluded:\n{text}\n\n"
+            f"That attempt {FAILED_MARKER}. Do not continue its reasoning — it is known to be "
+            f"wrong. Solve the problem independently and reach your own conclusion."
+        )
 
     def _classify(self, result: LoopResult) -> str:
         """Map a typed LoopResult to the escalation policy's class.
