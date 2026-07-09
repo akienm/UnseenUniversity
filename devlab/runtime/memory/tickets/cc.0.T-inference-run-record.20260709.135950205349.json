@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-run-record.20260709.135950205349",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-run-record"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-09T19:59:50.205349+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-run-record"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-run-record",
+    "title": "[sprint] An inference request is its own JSON ticket — the whole escalation, readable at a glance",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.9,
+    "tags": [
+      "inference",
+      "observability",
+      "escalation",
+      "base-domain"
+    ],
+    "description": "Akien, 2026-07-09: 'an inference request is its own kind of json ticket. not just the calling parameters but everything that happens along the way. we implement it in the base domain, and then just add to it as we grow specialties from it. an inference call then becomes the whole conversation of the escalation that you can read at a glance. the log files or complete querys and replies don't even have to be in the ticket, they can be file references if logged elsewhere. and like all logging, they'd have a 30 day lifespan. even put a summary at the top when done analyzing so you don't ever have to again.'\n\nWHAT PROMPTED IT. CC claimed 'we have no captured truncated replies' and filed a ticket on that basis. FALSE: io_corpus.py had captured every byte of all 1948 calls in uu_home()/inference_corpus/. CC searched devlab/runtime/memory/ and concluded the data did not exist. The capture was never the problem — FINDABILITY was. Akien: 'even if we do [have it], the fact it didn't show up when you were looking at stuff is an important lever.'\n\nWHAT EXISTS TODAY (measured, 1948 records):\n  - io_corpus writes one append-only NDJSON record per MODEL CALL at InferenceDevice.dispatch, with full request (system/messages/tools/params) and full raw response. Each carries a UUID `id`.\n  - 1355 complete calls (outcome=ok), 186 error calls (raw-only, legitimately no response), 373 NON-CALL side events (kind=architect_file_set, outcome=None), 35 'repaired' events.\n\nTHE GAPS:\n  1. NO OBJECT REPRESENTS A REQUEST. escalation_hop / parent_id / session_id exist per call, but nothing joins them. Reading one escalation means grepping and sorting NDJSON by hand.\n  2. SCHEMA CONFLATION. Model calls and non-call side events share schema 'inference.io.v1'; the call records carry no `kind`, so a reader must infer 'is this a call?' from which fields happen to be present. CC wrote the naive reader and produced a bogus '30% of records are broken' statistic within a minute of looking.\n  3. DISCOVERABILITY. The corpus is under uu_home(), unmentioned in CLAUDE.md, absent from the memory store. The most valuable data in the system is the least findable.\n  4. NO RETENTION. Nothing prunes the corpus. No TTL anywhere.\n\nTHE SHAPE (approved by Akien 2026-07-09):\n  Location: uu_home()/inference_corpus/runs/<yyyymmdd>/<run_id>.json — a subdir of the EXISTING corpus root, so no new top-level path in the dir being cleaned, co-located with the io records it references, one thing to prune and one thing to discover.\n  ONE JSON FILE PER RUN (not NDJSON): the summary is written into the record AFTER analysis, so it must be mutable in place.\n\n  {\n    \"schema\": \"inference.run.v1\",\n    \"summary\": null,                     // null until analyzed; then {verdict, why, analyzed_at, analyzer}\n    \"run_id\": \"...\", \"ts\": ..., \"expires_at\": ts+30d,\n    \"ticket_id\": ..., \"domain\": ..., \"agent_id\": ..., \"task_class\": ...,\n    \"question\": \"<the initial message, truncated; full text via hops[0].io_ref>\",\n    \"resolution\": \"done|escalation_exhausted|halted|error\",\n    \"answer\": \"<final claim, if any>\",\n    \"total_dollars\": 0.0, \"total_elapsed_ms\": 0, \"hops_used\": 2,\n    \"hops\": [ { \"hop\": 0, \"required_difficulty\": \"code\", \"source\": \"ollama\",\n                \"cost_class\": \"owned_local\", \"model\": \"deepseek-r1:14b\",\n                \"max_tokens\": 4096, \"elapsed_ms\": 118000, \"dollars\": 0.0,\n                \"finish_reason\": \"stop\", \"outcome\": \"CAPABILITY\",\n                \"claim\": \"41\", \"io_ref\": \"<io_corpus record uuid>\" } ]\n  }\n\n  WHY io_ref AND NOT THE PAYLOAD: Akien — 'the log files or complete querys and replies don't even have to be in the ticket, they can be file references if logged elsewhere.' The io record already holds every byte. Duplicating it doubles storage and creates two truths. The run ticket is the INDEX and the NARRATIVE; io_corpus is the evidence.\n\n  WRITE POINT: BaseDomain.run — it already owns the escalation walk (base.py:113). Specialties (CodingDomain, GeneralDomain) extend the record rather than reimplement it: a domain hook adds its own fields (architect/editor/critic turns, edit-format, test results) to the hop. 'we implement it in the base domain, and then just add to it as we grow specialties from it.'\n  Written in a `finally` so a halt, an exception, or an exhausted walk still leaves a record — the failures are the runs worth reading.\n\n  SUMMARY-ONCE: `summary` starts null. An analyzer (human or CC) writes {verdict, why, analyzed_at} into it. A run with a non-null summary is never re-analyzed. This is the cache that makes the 30-day window cheap to revisit.\n\n**Affected files:** unseen_university/devices/inference/domains/base.py (write point + hook), unseen_university/devices/inference/run_record.py (new), unseen_university/devices/inference/io_corpus.py (add `kind` to call records), unseen_university/devices/inference/device.py (return the io record id so the hop can reference it), devlab/claudecode/ (a reader + the day-close prune), CLAUDE.md (point at the corpus — fixing gap 3)\n**Design rules:** no-sqlite (flat JSON files); log every interface crossing; device.py/shim.py design centre (record is written by the domain, not by a free function); homogeneity over special-case (every request gets a record, including single-hop ones that never escalate)\n**Scope boundary:** IN — the run record, its write point in BaseDomain, the io_ref join, the domain extension hook, a 30-day expires_at + a day-close sweeper, and a reader that prints one run as a readable conversation. OUT — changing what io_corpus captures per call (that is T-io-corpus-text-drops-reasoning); OUT — the degeneracy detector (T-truncation-vs-degeneracy-third-outcome), though its verdict will land in hop.outcome once built.\n**Test plan:** hermetic, red->green, no live device. RED: run a stub domain whose escalation walk fails at hop 0 and succeeds at hop 1; assert no run record exists. GREEN: exactly one record exists; it has 2 hops in order; hop 0's outcome is the CAPABILITY failure and hop 1's is DONE; each hop's io_ref is non-empty and matches an io_corpus record id emitted during the run; expires_at is 30 days after ts; summary is null. THE DISCRIMINATOR — a record written only on SUCCESS would pass a naive test, so assert a record also exists when the walk EXHAUSTS (halt path), and that its resolution is 'escalation_exhausted', not 'done'. Second discriminator: assert the record does NOT contain the full prompt/reply text (it must reference, not duplicate) while hops[0].io_ref resolves to a record that DOES.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-09T19:59:18.908197+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-09T19:59:18.953913+00:00",
+    "inferred_intention": "replace rule shape with policy-based routing",
+    "inferred_intention_id": "9b61b2bb-c0d4-4fdf-8eb7-23b67cdb237b"
+  }
+}
