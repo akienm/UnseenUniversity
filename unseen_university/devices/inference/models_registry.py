@@ -369,7 +369,13 @@ _SEED: list[ModelSpec] = [
         output_cost_per_1m=0.0,
         context_window=131_072,
         tags=["reasoning", "flat-rate", "ollama-pro", "cloud-flagship", "architect"],
-        difficulty_capable="design",  # STUB: the pre-measurement DECLARED claim.
+        difficulty_capable="frontier",
+        # Measured: the ONLY model with evidence of clearing the frontier band (4/4, including
+        # b5-frobenius: 43, finish_reason=stop, reproduced). It rides the Ollama Pro
+        # subscription — already paid for, and never selected by dimensional routing until the
+        # 'frontier' rung existed, because cost_class sorts first and the local box held every
+        # bucket it claimed (T-inference-cost-first-sort-strands-cloud-fleet).
+        capability_evidence=_MEASURED,
         domains=["coding"],
         notes="Ollama Cloud subscription flagship architect — too large for Hex's 32GB RAM. "
               "Escalation target only when Hex's local deepseek-r1:32b is exhausted/unavailable.",
