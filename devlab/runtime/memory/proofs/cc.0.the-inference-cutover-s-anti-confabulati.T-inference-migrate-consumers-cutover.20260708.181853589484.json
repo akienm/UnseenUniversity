@@ -1,0 +1,66 @@
+{
+  "id": "cc.0.the-inference-cutover-s-anti-confabulati.T-inference-migrate-consumers-cutover.20260708.181853589484",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-inference-cutover-s-anti-confabulati",
+    "T-inference-migrate-consumers-cutover"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-08T18:18:53.589484",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-migrate-consumers-cutover"
+    ],
+    "commits": [
+      "6704dc1dd69d7718422b9c96c267cd9f968c5b98"
+    ],
+    "whys": []
+  },
+  "produced_by": "T-inference-migrate-consumers-cutover",
+  "body": {
+    "thing": "the inference cutover's anti-confabulation invariant: a coding request resolves to a TOOL-CAPABLE model, so a coding failure halts instead of silently claiming success",
+    "intention": "I intend that after the router cutover a coding request resolves to a model whose structured features include 'tools' (the purpose-built agentic coder), that any model whose catalog tags record 'tool-call' has that capability mirrored into the features flag the selector actually filters on, that the monolith's triples/route()/ModelSpec.source_name are gone, that the triple-only owned-local Hex edges survive into the connections stack the resolver reads, and that every default model remains reachable",
+    "test": "tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        engine, models = _hermetic_engine()\n    \n        # ── (B) Recorded capability must be mirrored into the flag the SELECTOR reads.\n        # The free-text tags were the evidence; `features` is what routing actually filters on.\n        # Leaving them out of sync is what let a tool-less model take the coding slot.\n        for spec in models.all():\n            if \"tool-call\" in (spec.tags or []):\n>               assert \"tools\" in (spec.features or []), (\n                    f\"{spec.model_id} records a 'tool-call' tag but its structured features flag \"\n                    f\"is {spec.features!r} — the selector filters on `features`, so an unmirrored \"\n                    f\"capability makes the model invisible to a tools-requiring policy\"\n                )\nE               AssertionError: devstral-small-2:24b records a 'tool-call' tag but its structured features flag is [] — the selector filters on `features`, so an unmirrored capability makes the model invisible to a tools-requiring policy\nE               assert 'tools' in (([] or []))\nE                +  where [] = ModelSpec(model_id='devstral-small-2:24b', tier='worker', input_cost_per_1m=0.0, output_cost_per_1m=0.0, context_windo... created_at='2026-06-11T00:00:00Z', difficulty_capable='', features=[], domains=['coding'], edit_format_conformance={}).features\n\ntests/inference/test_consumers_cutover.py:76: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_consumers_cutover.py::test_consumers_cutover_proof\n1 failed in 0.19s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.16s"
+          }
+        }
+      }
+    ],
+    "commit": "6704dc1dd69d7718422b9c96c267cd9f968c5b98",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260708.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-activate-coding-tools-policy.20260708.171217331891.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-capability-ceiling-misclassified-as-availability.20260708.181525586471.json",
+      "devlab/runtime/memory/tickets/cc.0.T-inference-migrate-consumers-cutover.20260708.151304665350.json",
+      "devlab/runtime/memory/tickets/cc.0.T-live-smoke-red-devstral-loop-not-routing.20260708.181525736701.json",
+      "devlab/runtime/memory/tickets/closed/cc.0.T-inference-migrate-consumers-cutover.20260708.151304665350.json",
+      "tests/inference/test_domain_object.py",
+      "tests/inference/test_hex_registration.py",
+      "unseen_university/devices/inference/device.py",
+      "unseen_university/devices/inference/models_registry.py"
+    ],
+    "ticket": "T-inference-migrate-consumers-cutover",
+    "narrative": "",
+    "why": "The monolith's triples hand-curated devstral as the coding floor. Dimensional selection reads the structured features flag instead, and devstral's was never populated despite its own row recording agentic/tool-call tags — so coding resolved to a tool-less reasoning model that cannot emit a tool call and confabulated completion (claimed it wrote the file; wrote nothing). A builder that confabulates success is worse than one that fails, so the invariant is tool-capability, not model preference. The prior proof asserted through a live InferenceDevice whose HealthMonitor probes real providers, so it passed on environment luck and hid this; the rewritten node is hermetic.",
+    "bootstrap": false
+  }
+}
