@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-escalation-corpus-false-negatives",
-    "title": "[sprint] Corpus verifiers reject CORRECT answers that carry a unit or natural phrasing",
+    "title": "Corpus verifiers reject CORRECT answers that carry a unit or natural phrasing",
     "size": "S",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.92,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T14:42:38.908904+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "EvalQuery.accepts declares the phrasings a correct model actually emits; verify() compares against the accepted-forms SET (still equality, never substring). Proven: proofs/cc.0.corpus-verifier-accepts-correct-answers.T-escalation-corpus-false-negatives.20260709.084411352740.json (red=AssertionError -> green=passed). The rejects-its-confabulation test runs unchanged, so both directions of the classifier are asserted. The first capability matrix (which reported 32b < 14b) is VOID; re-running.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-09T14:44:18.517351+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T14:42:38.954884+00:00",
     "inferred_intention": "modify the scoring mechanism for model responses",
-    "inferred_intention_id": "d804353c-0a45-4135-a950-9d8baadf5f04"
+    "inferred_intention_id": "d804353c-0a45-4135-a950-9d8baadf5f04",
+    "proven": true,
+    "proof_id": "cc.0.corpus-verifier-accepts-correct-answers.T-escalation-corpus-false-negatives.20260709.084411352740",
+    "proof_commit": "1ae3f374cc4bdd99dc4e7620c6f153003c122ad8",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
