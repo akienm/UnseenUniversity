@@ -1,0 +1,23 @@
+{
+  "id": "cc.0.staged-intention-compiler-pipeline.20260710.122157673040",
+  "emitter": "cc.0",
+  "namespace": [
+    "staged-intention-compiler-pipeline"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-10T12:21:57.673040",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "human:akien",
+  "body": {
+    "title": "Staged intention→verification compiler pipeline (Akien napkin sketch, 2026-07-10)",
+    "status": "brainstorming — incomplete, back-of-napkin; captured verbatim so it is not lost, NOT a settled decision",
+    "text": "Akien's in-progress idea for the shape of the dev-process as a staged compiler. Each stage is a transform that takes the prior stage's output + a body of knowledge and ADDS a layer, carrying intent forward from raw user input all the way to long-term verification. Prompted by the disposition problem 'where does a ticket-that-needs-design go?' — answer: there is no design home yet; we would CREATE a workflow that routes a ticket back to a design STAGE. The pipeline is that design stage's home.\n\nSTAGES (as sketched, verbatim shape):\n  interviewer         inputs: user, history                                        -> outputs: intentions + whys + how-to-verify, constraints\n  intention extractor inputs: above + relevant history                            -> outputs: adds hierarchical intentions\n  designer            inputs: above + design patterns                             -> outputs: adds design\n  ticketer            inputs: above + ticketing rules + prerun of prebuild steps  -> outputs: writes into the JSON ticket\n                              (orientation, constraints, etc.)\n  ... and the rest of the levels get fleshed out from intention, one part to the next, all the way through long-term verifications.\n\nTWO NOVEL PROPERTIES beyond today's ticket:\n  1. Each ticket/artifact lists not ONLY the forward build path (as it does now) but ALSO the return-for-learning path and the return-for-more-high-level-work path. Bidirectional edges, not a one-way chart.\n  2. The pipeline is continuous from user-intent to long-term verification — the ticket JSON is one station in it, not the origin.\n\nWHERE IT WAS HEADING: 'toward our intentions' — this concretizes the intention-compiler / compiled-inference vision as an explicit stage graph, and it is the natural forward home for the already-ticketed intentions chain (extract-intentions-from-chatlogs, intentions-store, intentions-as-living-entities).\n\nCONNECTS TO (do not rebuild — reconcile against):\n  - build_packet pre-inference compiler (packages intent+constraints+proof_plan) — this pipeline is the multi-stage generalization\n  - Delta-UU factory-of-factories (Vetinari->Hubert->DS) and the reflexive intention-compiler\n  - dev-pipeline-stations decision (forward stations) + feedback-edges architecture point (the RETURN/learning edges this makes first-class)\n  - ticket-as-chart provenance ledger (T-ticket-as-chart-provenance-ledger) — today's forward-only chart; this adds return paths\n  - goals->intentions, intentions-as-living-entities, graph-trees-self-aware telos (the north star)\n\nOPEN (for Akien when ready to formalize): the full stage list past 'ticketer' through long-term verification; what each return-edge carries and to which stage it returns; whether stages are devices, workflows, or graph-tree nodes."
+  }
+}
