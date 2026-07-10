@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.day-20260709.20260709.213514813032",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260709"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-09T21:35:14.813032",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Day 2026-07-09",
+    "text": "## Done\n13 tickets closed, 12 proofs emitted, all pushed, tree clean.\n\n## The one thing\nOn 2026-06-26 the goal->intention switch deleted the `links.goals` EDGE (memory_emit.LINK_KINDS,\nticket_store._LINK_KEYS) and never added a successor. Intentions kept being captured -- 444 times,\nas free-text prose stapled to a ticket, plus 215 nulls -- in a shape nothing could point at. The\nsame hole let the aider gate close a ticket `PASS` on three 0-byte files: its ticket carried\n`intention: null`, so the gate had nothing to check the build against. Edge restored, PROVEN\n(T-links-intentions-edge-kind, red=AssertionError -> green=passed, bcb28a75).\n\n## Measured (conditions recorded)\n- Capability is a SET, not a ladder: deepseek-r1:14b passes b5-frobenius; the 32b fails it at\n  4096/8192/32768 with a clean `stop`. `difficulty_meets`'s `>=` filter is unsound.\n- `frontier` has no measured holder (T-frontier-has-no-measured-holder, status=akien).\n- The eval corpus does not discriminate: b4-boxes leaks its answer token twice in its own prompt.\n- validity_sweep checks 7 store entries; 0 of 130 proofs carry validity_conditions.\n- shipped-unproven: 49 closes, 17 named a proof method, 1 ever revisited; 8 of the 17 name the\n  same one -- \"no red form\".\n\n## Intention Based Development (design, with Akien)\nAn intention states how the system IS, present tense, even unbuilt -- it is the CONTRACT, and a\nconflicting contract reconciles TO it before ticketing. Intention + why lets an LLM sort intent\nalways; a why-less line is a contract hole that cannot arbitrate. 90% is a stipulated ceiling, not\na statistic: enum (provisional|proved), never a float. Proving is RETROACTIVE both ways -- a claim\nrises when its proof method arrives, and falls back when its recorded conditions move -- so\nshipped-unproven is not terminal. Red is made of git history and evaporates once the impl is not\nHEAD~1; mutation-red is the general proof method, and it also detects the echo-test. To mutate you\nmust know what to break: the property IS the intention. \"Lever\" renamed to \"proof method\" after the\nmetaphor of force made CC write a false line (the proof CORPUS earns a gate's removal, never the\nbacklog). Membership test: an intention belongs in the layer only if it cannot be derived from a\nstanding intention plus its why.\n\n## Artifacts\nakien/inbox/20260709.CCReviewOfIntentionsOutline.txt is the markup master (43 contract holes,\n7 conflicts / 4 resolved, 19 [CC] lines to ratify). Plus IntentionsHarvest.txt (121 of Akien's\ntyped statements from 207 transcripts) and IntentionsByDevice.txt (565 store-held, 34 devices).\n\n## Audit\n3 known failures (2 deliberate guard reds + 1 pre-existing arch-point TypeError), all ticketed.\nFull suite NOT run: tests/igor has 9 collection errors that abort it, and the rest exceeds 10 min\n(standing rule: overnight). Stated, not papered. Stashes 0. Path-moves clean. Consequence 0 overdue.\n"
+  }
+}

@@ -1,4 +1,131 @@
-# Slate 2026-07-09
+# Slate 2026-07-09  ——  DAY CLOSED
+
+## ⭐ THE DAY IN ONE LINE
+On 2026-06-26 the goal→intention switch deleted the `links.goals` EDGE and never added a
+successor. Intentions kept being captured — 444 times, as prose stapled to a ticket, plus 215
+nulls — in a shape nothing could point at. That same hole let the aider gate close a ticket
+`PASS` on three 0-byte files (its ticket carried `intention: null`, so the gate had nothing to
+check against). The edge is restored and proven. Everything else today falls out of it.
+
+## Done today — 13 tickets closed
+- T-links-intentions-edge-kind          PROVEN  (stub 7a45f68c -> impl bcb28a75 -> proof 0540f8d6)
+- T-inference-run-record                spine proven, closed shipped-unproven
+- T-graph-map-ingests-venvs             PROVEN  (5fc62692)
+- T-preexisting-repo-map-second-symbol  PROVEN
+- T-escalation-corpus-false-negatives   PROVEN
+- T-escalation-corpus-frontier-band     PROVEN
+- T-escalation-handoff-transmits-the-confabulation  PROVEN (live-verified)
+- T-general-domain-chat-prototype       PROVEN
+- T-inference-escalation-eval-corpus    PROVEN
+- T-inference-cost-first-sort-strands-cloud-fleet   PROVEN
+- T-repin-coding-prompt-sha256          shipped-unproven
+- T-preexisting-domain-prompt-sha       duplicate of the above
+- T-preexisting-dicksimnel-done-prefix-close        shipped-unproven
+12 proofs emitted. All pushed. Tree clean, 0 stashes.
+
+## ⭐ MEASURED TODAY (conditions recorded; nothing declared)
+- Capability is a SET, not a ladder. deepseek-r1:14b passes b5-frobenius; the 32b FAILS it at
+  4096, 8192 and 32768, clean `stop`. So `difficulty_meets`'s `>=` filter is unsound.
+  Conditions: 32768-token ceiling, 2 samples, temp 0, timeout 600s, 0 truncations.
+- `frontier` has NO measured holder. -> T-frontier-has-no-measured-holder (status=akien).
+- The corpus does not discriminate: b5 is fame-contaminated; b4-boxes leaks "both" twice in its
+  own prompt (3b PASS / 14b fail / 32b PASS — anti-correlated with capability).
+- 0 degeneracy in 226 traces. 671b hangs on b5-frobenius 6/15 calls; max_tokens does NOT
+  determine it (4/4 at 4096, 2/4 at 32768; Fisher p≈0.43).
+- validity_sweep checks 7 entries store-wide. 14 of 2734 records carry validity_conditions.
+  0 of 130 PROOFS carry any. The retroactivity hook was built; nothing was ever hung on it.
+- shipped-unproven: 49 closes, 17 named a proof method, exactly 1 ever revisited.
+  8 of the 17 name the SAME one — "no red form".
+
+## Intention Based Development — the design thread (Akien + CC, this afternoon)
+- An intention states "this is how the system IS", present tense, even if unbuilt. It is THE
+  CONTRACT: a conflicting contract reconciles TO it, before ticketing. The tree changes.
+- Intention + why lets an LLM sort underlying intent ALWAYS. A line with no why is a CONTRACT
+  HOLE — it cannot arbitrate. 43 holes found; Akien closed 3, each instantly settling a conflict.
+- 90% is a stipulated CEILING, not a computed statistic. Enum (provisional|proved), never a float.
+  A float is a hand-typed number waiting to happen.
+- PROVING IS RETROACTIVE, BOTH WAYS (Akien's correction): a claim rises when its proof method
+  arrives; a proof falls back to provisional when its recorded conditions move. So nothing HAS to
+  close unproven — shipped-unproven is `provisional` carrying the name of the method it lacks.
+- Red is currently made of GIT HISTORY (parent..HEAD, reverted in place), so it evaporates once
+  the impl stops being the last commit. Mutation-red is the general proof method: break the
+  property in the CURRENT tree; the test must fail. It also mechanically detects the echo-test
+  that arch:examiner-station says proof-on-close cannot distinguish. And to mutate you must know
+  WHAT to break — the property IS the intention. intention -> mutation -> red.
+- "Lever" -> "PROOF METHOD" (a mechanism that makes a CLASS of claim provable). The metaphor of
+  force made CC write a false line: the PROOF CORPUS earns a gate's removal, never the backlog.
+  Three things, two words: proof / proof method / proof corpus (the third had no name at all).
+- Membership test for the intention layer: an intention belongs there only if it CANNOT be derived
+  from a standing intention plus its why. Derivable => a design consequence, downstream, with an
+  edge to its parent. Strengthening a WHY unlocks a class of derivations, as a proof method
+  unlocks a class of proofs.
+
+## Artifacts for Akien (he is the only writer on outbox/IntentionsOutline.txt)
+- ~/.unseen_university/akien/inbox/20260709.CCReviewOfIntentionsOutline.txt  — THE MARKUP MASTER
+  (present-tense contract voice; 43 holes; 7 conflicts, 4 resolved; 19 [CC] lines to ratify/cut)
+- ~/.unseen_university/akien/inbox/20260709.IntentionsHarvest.txt  — 121 of Akien's typed
+  statements from 207 transcripts (filtered isMeta/compactSummary/sidechain/markdown-shape;
+  keeper pass applied; 19 removals listed in Section C with reasons)
+- ~/.unseen_university/akien/inbox/20260709.IntentionsByDevice.txt  — 565 store-held intentions,
+  34 devices, 194 honestly unattributed
+
+## Priority inversion corrected
+The whole intention-capture chain sat under the code it was supposed to gate, for 9 days:
+intentions-store .55->.95, extract-from-chatlogs .5->.95, sorted-intention-map .5->.9,
+audit-ticket-atomicity .45->.85, sorted-decompose .5->.85, intent-extractor .25->.8
+
+## Tickets filed today (the new ones)
+T-intention-contradiction-gate (gated), T-proofs-carry-conditions-and-decay,
+T-mutation-red-retroactive-proof, T-rename-lever-to-proof-method,
+T-claude-md-documents-dead-spawn-path, T-cc-queue-next-is-a-claim-primitive,
+T-proof-emitter-tests-pollute-store, T-arch-point-pointer-is-dict-not-path,
+T-aider-gate-passed-a-hollow-build, T-reorg-parents-sweep-still-live,
+T-frontier-has-no-measured-holder (akien), T-aider-work-clones-hidden-state,
+T-io-corpus-text-drops-reasoning, T-run-record-io-join, T-run-record-coding-domain-model-blank,
+T-run-record-retention-sweeper, T-truncation-vs-degeneracy-third-outcome,
+T-proof-form-for-repinned-tests
+
+## AUDIT — 2026-07-09
+Tests:            3 FAIL / 57 pass on the targeted set. ALL THREE KNOWN AND TICKETED:
+                  - test_architecture_intention_points (TypeError: PosixPath / dict)
+                      -> T-arch-point-pointer-is-dict-not-path. Confirmed pre-existing in a
+                         clean worktree at the stub commit; NOT caused by today's edge work.
+                  - 2x test_capability_evidence  -> T-frontier-has-no-measured-holder (status=akien).
+                      DELIBERATE. They ARE the finding. Do not make them green by editing the
+                      registry.
+                  FULL SUITE NOT RUN: tests/igor has 9 COLLECTION errors that abort the whole run
+                  (T-igor-test-debt-post-reorg), and the remainder ran >10min — the standing rule
+                  is overnight, not mid-session. This is a gap in the audit, stated, not papered.
+Gate sweep:       0 cleared
+Stash hygiene:    0 stashes (clean)
+Validity sweep:   flagged=2 checked=7 unresolvable=2 (both probeless "fact" conditions)
+Path-moves:       clean — every artifact in the canonical home
+Consequence age:  0 overdue
+Stall check:      clean
+Code smells:      124 silent excepts in unseen_university/ — ALREADY TICKETED
+                  (T-regression-silent-failures, escalated). No duplicate filed.
+Credentials:      1 hit, vendored third-party ebook_drm/androidkindlekey.py — ALREADY TICKETED
+                  (T-vendored-ebook-drm-trips-audit-scans). No duplicate filed.
+Logs:             db_queries.log.1 >10MB (a rotation backup, not a live log)
+Memory store:     all 9 categories present. intentions/ still holds 2 records.
+Fixed now:        nothing — every finding was already ticketed
+Ticketed:         nothing new from the audit itself
+
+## Next — for Akien, in his own workflow (larger => talk here, smaller => note in the master)
+1. Ratify or cut the 19 [CC] lines in the markup master. The heaviest bind hardest.
+2. Three conflicts still OPEN because no why exists to arbitrate them:
+   18.2 timestamp shape (yours vs the emitted form; ~2500 filenames if yours wins)
+   18.4 arch:bus "IDLE PUSH" vs CLAUDE.md "workers POLL" — two intention-points, one is stale,
+        NEITHER is your contract, so CC cannot settle it
+   18.5 is "design" a stored artifact or the /sorted conversation? blocks the skills sweep
+3. T-frontier-has-no-measured-holder — status=akien. Main's two guard reds wait on this.
+4. Say the word on §19's unticketed items: the rules-engine hoist (18.6), the shim MCP surface
+   (18.7), the skills sweep, "designs" as an artifact, intention-supersedes edges.
+
+
+==============================================================================
+# SESSION LOG (verbatim, oldest first) — everything above is the close
+==============================================================================
 
 ## Notes
 STANDING DIRECTIVE (Akien, 2026-07-08): "Everything else stops until inference works right every time."
@@ -426,3 +553,5 @@ Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0
 - T-rename-lever-to-proof-method: "lever" is a metaphor of force -> it made CC weld "backlog earns removal" onto "corpus earns removal". Define proof/proof-method/proof-corpus in rules/.
 - T-claude-md-documents-dead-spawn-path: CLAUDE.md:180 documents _launch_builder (definition gone)
 - T-cc-queue-next-is-a-claim-primitive: `never claim` held by prose, not by the tool surface
+
+✅ CLOSED
