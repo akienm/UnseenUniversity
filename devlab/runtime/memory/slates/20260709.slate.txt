@@ -421,3 +421,4 @@ Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0
 - Capture pass 2: akien/inbox/20260709.IntentionsByDevice.txt (565 store-held intentions, 34 devices)
 - T-links-intentions-edge-kind: PROVEN, closed (bcb28a75) — links.intentions restored
 - Intentions outline redraft -> akien/inbox/20260709.CCReviewOfIntentionsOutline.txt (present-tense contract voice; 43 contract holes; 6 conflicts to reconcile; 18 [CC] lines to ratify or cut)
+- T-proofs-carry-conditions-and-decay: proofs record conditions; validity_sweep demotes to provisional (retroactive proven/unproven)

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-proofs-carry-conditions-and-decay.20260709.195713420965",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proofs-carry-conditions-and-decay"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T01:57:13.420965+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proofs-carry-conditions-and-decay"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-proofs-carry-conditions-and-decay",
+    "title": "[sprint] A proof records its conditions and decays to provisional when they move (retroactive proven/unproven)",
+    "status": "sprint",
+    "priority": 0.85,
+    "size": "M",
+    "worker": "claude",
+    "tags": [
+      "architecture",
+      "proof",
+      "epistemology",
+      "memory"
+    ],
+    "intention": "I intend that every claim is provisional until proved, that a proof records the conditions under which it holds, and that when those conditions move the claim falls back to provisional automatically — so proven/unproven is retroactive and a stale proof cannot go on posing as knowledge.",
+    "intention_id": "I-self-improving-process",
+    "description": "Akien, 2026-07-09: 'declared capabilities are always provisional and must be proved to have 90% confidence... one of the issues in our past proven/not proven is it's not set up to be retroactive. we can't easily put out a provisional level of confidence on things subject to verification.' And: 'we still kinda ask how do we tell — that's asking how to prove.'\n\n**90% IS A STIPULATED CEILING, NOT A COMPUTED STATISTIC.** Recorded epistemology: 'I know nothing until proved. And even then it's a certainty of 90% conditional on the conditions at the time of the experiment.' A passing proof buys ~90%, never 100%. So there is NO confidence operator to invent, and a float field would be a hand-typed number waiting to happen — the exact defect capability_evidence.py exists to stop. 'How do we tell?' is the proof-lever question we already ask; when it has no answer the claim closes shipped-unproven naming the lever.\n\n**MEASURED GAP (the red is already sitting there).** validity_sweep.py's _STORE_CATEGORIES already includes 'proofs'. It runs every day-close. Of 130 proof records, ZERO carry validity_conditions and ZERO carry any provisional/proved status. The sweep scans all 130 and finds nothing to check, every single day. Store-wide only 14 of 2734 records carry validity_conditions (decisions 4/276, tickets 4/2361, architecture 1/23, rules 5/19, notes 0/35, proofs 0/130). T-validity-sweep-day-close closed with an explicit scope boundary: 'no backfill of old entries' — and proofs were never wired to emit conditions at all. The retroactivity hook was built and nothing was ever hung on it.\n\nA proof body today is {bootstrap, commit, gates, impl_paths, intention, kind_detail, narrative, test, thing, ticket, why}. Nothing in it can go stale, because nothing in it says what the proof DEPENDS ON.\n\n**Proposed shape.** (1) proof_emitter writes `conditions` (the existing 3-type validity_conditions vocabulary: artifact / path / fact) and `status` — an ENUM `provisional | proved`, never a float. `proved` is documented as '~90%, conditional on the recorded conditions'. (2) proof_emitter REQUIRES conditions, or the emission names the missing lever (honest absence accepted, 0-3 conditions, per the validity-conditions contract's filing-friction cap). (3) validity_sweep demotes a flagged proof to `provisional` and annotates stale_flags IN PLACE — never deletes (CP2), and never reopens the ticket. The TICKET is history; the CLAIM is what reopens. This avoids resurrecting 2361 dead tickets. (4) CapabilityEvidence (kind=declared|measured, record, ceiling_tokens, samples) is this object in miniature — `declared` IS `provisional`. Align the vocabulary; do not fork it.\n\n**Affected files:** devlab/claudecode/proof_emitter.py, devlab/claudecode/validity_sweep.py, unseen_university/devices/inference/capability_evidence.py (vocabulary alignment only), the proof envelope docs.\n**Design rules:** annotate-never-delete (CP2); canonical memory home devlab/runtime/memory/; memory_emit is the one write chokepoint; NO SQLITE; a proof enum, never a confidence float (measure-don't-declare).\n**Scope boundary:** IN — conditions + status on new proof emissions; sweep demotion + annotation; vocabulary alignment with CapabilityEvidence. OUT — backfilling the 130 existing proofs (file separately if wanted); reopening closed tickets (explicitly not this); any per-claim confidence arithmetic (there is none — 90% is a ceiling); the intention-validation clock (separate, see the markup master §19).\n**Test plan:** hermetic. Emit a proof carrying a path condition; assert status=proved and conditions present. Move the path. Run the sweep. Assert the proof is annotated stale AND demoted to provisional, that the file is annotated in place (not deleted), and that the ticket's status is untouched. Red form at HEAD: proof_emitter writes no conditions, so the sweep cannot flag it — assert conditions present fails with AssertionError.\n**Completion criteria:** a newly emitted proof carries conditions + status=proved; moving a named condition causes the day-close sweep to demote it to provisional and annotate stale_flags; the closed ticket is not reopened; `grep -c validity_conditions devlab/runtime/memory/proofs/` > 0.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "New proofs carry conditions + status enum (provisional|proved, no float). validity_sweep demotes a proof whose condition moved and annotates in place. Ticket status untouched. CapabilityEvidence vocabulary aligned (declared==provisional).",
+    "created_at": "2026-07-10T01:56:49.119635+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-10T01:56:49.173955+00:00"
+  }
+}
