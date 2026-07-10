@@ -118,15 +118,30 @@ def validate_design(body: dict, *, draft: bool = False) -> None:
         )
 
     # ── The fork contract (the anti-hollow lever) ──────────────────────────────
-    # STUB (T-design-first-artifact-type, commit A): fork enforcement is a no-op
-    # here so the scaffold + emit + projection land first; commit B flips it on
-    # and the proof node test_forkless_design_rejected goes red->green.
     _validate_forks(body.get("forks"))
 
 
 def _validate_forks(forks) -> None:
-    """STUB — replaced with real fork enforcement in commit B (proof flip)."""
-    return None
+    """Enforce the fork contract: a resolved design must record ≥1 fork-decision,
+    and every fork must carry its ``why`` (CP3). This is what makes ``design`` a
+    design and not a wish — a block that resolved nothing, or resolved something
+    without recording why, is refused.
+    """
+    if not isinstance(forks, list) or not forks:
+        raise DesignValidationError(
+            "a resolved design must record ≥1 fork (the decision(s) it folds in) — "
+            "forks[] is empty or missing; a design that resolved no fork is not a design"
+        )
+    for i, fork in enumerate(forks):
+        if not isinstance(fork, dict):
+            raise DesignValidationError(f"forks[{i}] must be an object, got {type(fork).__name__}")
+        for key in _FORK_REQUIRED:
+            v = fork.get(key)
+            if not isinstance(v, str) or not v.strip():
+                raise DesignValidationError(
+                    f"forks[{i}].{key} missing or empty — every fork must state its "
+                    f"question, resolution, and why (there's always a why, CP3)"
+                )
 
 
 def iter_designs() -> Iterator[dict]:
