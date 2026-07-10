@@ -129,11 +129,8 @@ def _proof_obligation(ticket: dict) -> str:
     verbatim into the packet so the last deterministic layer before the LLM names the
     obligation the build must discharge, not just the test plan that observes success.
 
-    STUB (T-rekey-decision-first-skills-to-design-first, commit A): returns "" so the
-    scaffold lands first; commit B extracts the `**Proof obligation:**` section and the
-    proof node goes red->green.
     """
-    return ""
+    return _section(ticket.get("description", ""), "Proof obligation")
 
 
 def _consequence_check(ticket: dict, affected_files: list[str]) -> dict:
