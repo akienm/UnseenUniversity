@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-workflow-levels-breakdown.20260710.125913774191",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workflow-levels-breakdown"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T18:59:13.774191+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-workflow-levels-breakdown"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-workflow-levels-breakdown",
+    "title": "[sprint] Define the optimal breakdown of workflow LEVELS — interviewer->prebuild AND post-build->testing->verification->learning (NOT the LLM middle yet)",
+    "status": "sprint",
+    "priority": 0.8,
+    "tags": [
+      "workflow",
+      "intention-workflow",
+      "pipeline",
+      "design"
+    ],
+    "worker": "cc.0",
+    "intention_id": "I-self-improving-process",
+    "description": "intention: I intend that our dev workflow is expressed as an explicit, optimal set of LEVELS (stages) surrounding the build — each level a transform that takes the prior level's output + a knowledge body and adds a layer — so intent flows deterministically from user input through prebuild, and from build-output through testing to long-term verification, with forward AND return edges made first-class.\n\nwhy: Akien (2026-07-10) sketched this as the staged intention->verification compiler (note: staged-intention-compiler-pipeline). This ticket turns the napkin into a defined level breakdown.\n\nSCOPE — the whole surround, BOTH halves, NOT the middle (Akien's explicit correction 2026-07-10):\n  FRONT HALF: interviewer -> intention-extractor -> designer -> ticketer -> prebuild (the deterministic build_packet compiler, which IS already live: build_packet.py + constraint decoration + prereg firewall fire in the sprint preflight).\n  BACK HALF: build-output -> testing -> post-build steps -> verification -> long-term verification, INCLUDING the return-for-learning and return-for-more-high-level-work edges.\n  EXPLICITLY OUT (for now): the LLM-in-the-middle build/inference step itself. 'We aren't going to say ok what's happening in the middle here where the LLM lives? we leave that until the surrounding stuff is solid with our intention based approach.' Get the intention-based scaffold solid on both sides FIRST; the middle comes later.\n\nEach level defined by: name; inputs (prior output + knowledge body); outputs (the layer it adds); its forward edge(s); its return-for-learning edge(s); its return-for-higher-level-work edge(s). Reconcile against what already exists (the sprint preflight passes, the ticket JSON as one station, feedback-edges for return paths, dev-pipeline-stations for forward) rather than inventing greenfield.\n\n**Affected files:** output is a design artifact — a decision (D-workflow-levels-*) and/or an architecture intention-point in devlab/runtime/memory/architecture/, plus the note staged-intention-compiler-pipeline promoted/expanded. Likely follow-on build tickets per level-gap.\n**Design rules:** canonical-memory-home; intention = present-tense contract; every level carries its why; homogeneity over special-case.\n**Scope boundary:** IN — the level breakdown for the front (intent->prebuild) and back (build-output->testing->verification->learning) halves, with forward + both return edges per level, reconciled to existing machinery. OUT — the LLM build step in the middle; OUT — building any not-yet-existing level (those are follow-ons); OUT — the skills reorg (T-skills-review-...) though it should consume this level map.\n**Test plan:** no automated test because this is a design deliverable — proof is the artifact (the defined level map as a decision/architecture-point + follow-on tickets). Honest close: shipped-unproven naming 'design artifact, no red form'.\n**Completion criteria:** a decision or architecture intention-point defines the level set for both halves, each level with inputs/outputs/forward+return edges and its why; the LLM-middle is explicitly marked out-of-scope-for-now; follow-on tickets filed for level-gaps; reconciled to the live build_packet prebuild.\n\nRelated: note staged-intention-compiler-pipeline, [[project_build_packet_pre_inference_compiler]], [[T-skills-review-prune-rearrange-intention-compat]], [[T-ticket-as-chart-provenance-ledger]] (forward chart this extends with return edges).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-10T18:58:59.696165+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": "I intend that our dev workflow is expressed as an explicit optimal set of LEVELS surrounding the build — each a transform adding a layer — so intent flows deterministically from user input through prebuild, and from build-output through testing to long-term verification, with forward AND return edges first-class (LLM-middle deferred).",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-10T18:58:59.742810+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4dc021e3-5067-40ad-84a5-6d393931f0f0"
+  }
+}

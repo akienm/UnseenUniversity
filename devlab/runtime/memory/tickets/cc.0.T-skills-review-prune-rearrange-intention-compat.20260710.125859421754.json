@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-skills-review-prune-rearrange-intention-compat.20260710.125859421754",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-review-prune-rearrange-intention-compat"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T18:58:59.421754+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-skills-review-prune-rearrange-intention-compat"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-skills-review-prune-rearrange-intention-compat",
+    "title": "[sprint] Detailed review of ALL skills — prune, rearrange for effectiveness, make intention-workflow-compatible",
+    "status": "sprint",
+    "priority": 0.8,
+    "tags": [
+      "skills",
+      "review",
+      "intention-workflow",
+      "design"
+    ],
+    "worker": "cc.0",
+    "intention_id": "I-self-improving-process",
+    "description": "intention: I intend that the skill set is the minimum set of maximally-effective skills, arranged so each does one thing well at the right boundary, and that every skill is compatible with the intention-based workflow (present-tense intention contracts, forward + return-for-learning edges) rather than the older goal/decision-era flow.\n\nwhy: Akien (2026-07-10) — 'detailed review of all skills. What don't you need? what can we rearrange to be more effective? especially that last one. and how to make them compatible with the intention based workflows?' Skills accreted over many eras (goal->intention migration, /decided->/sorted rename, IMAP->PgBus, palace->filesystem store); several carry dead steps, stale paths, and pre-intention assumptions. This is the sibling of the memory/CLAUDE.md review (T-compact-memory-index) — separate but related: same 'prune the accreted substrate to what earns its place' move, applied to skills.\n\nThree questions to answer FOR EACH skill, per Akien:\n  1. PRUNE — what don't we need? (dead skills, dead steps, skills superseded by another, skills that duplicate a deterministic tool). Flag for deletion (deletion after Akien review).\n  2. REARRANGE (emphasis: 'especially that last one') — what can we rearrange to be more effective? Boundaries between skills, step order, which skill owns which responsibility, composition vs duplication. Propose the reorganized shape.\n  3. INTENTION-COMPAT — how to make each compatible with the intention-based workflows? Does it speak intentions (present-tense contracts) or goals/decisions? Does it carry the forward path only, or also the return-for-learning / return-for-higher-level edges (see note staged-intention-compiler-pipeline)?\n\n**Affected files:** skills/*/SKILL.md (all of them; ~/.claude/skills is the symlinked live copy — see T-skills-dir-not-symlinked-drift, verify symlink before assuming edits propagate). Output: a findings/proposal artifact in devlab/runtime/memory/notes/ or a decision, plus follow-on tickets per accepted change.\n**Design rules:** NO skills SYNC — symlink only (copy-sync IS the drift disease); skills live in repo skills/; canonical-memory-home for any emitted findings.\n**Scope boundary:** IN — inventory all skills; per-skill verdict on prune/rearrange/intention-compat; a proposed reorganized skill map; follow-on tickets for accepted changes. OUT — executing large deletions/rewrites in THIS ticket (those are the follow-ons, after Akien reviews the proposal); OUT — the memory/CLAUDE.md review (T-compact-memory-index owns that).\n**Test plan:** no automated test because this is a review/proposal deliverable — the proof is the artifact (per-skill verdicts + reorganized map + filed follow-on tickets). Honest close: shipped-unproven naming 'review deliverable, no red form' UNLESS the reorg itself lands testable structural invariants (e.g. a guard that every skill declares its intention-compat status).\n**Completion criteria:** a findings artifact exists listing every skill with a prune/rearrange/intention-compat verdict; a proposed reorganized skill map; follow-on tickets filed for each accepted change; symlink-propagation confirmed.\n\nRelated: [[T-compact-memory-index]] (sibling review), note staged-intention-compiler-pipeline (the intention-workflow levels these must serve), [[T-workflow-levels-breakdown]].\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-10T18:58:33.969579+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": "I intend that the skill set is the minimum set of maximally-effective skills, each doing one thing at the right boundary, and every skill is compatible with the intention-based workflow (present-tense contracts, forward + return-for-learning edges).",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-10T18:58:34.020128+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dc3ece3a-cab2-45e8-a0e9-792a21224f36"
+  }
+}

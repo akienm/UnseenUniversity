@@ -6,6 +6,9 @@
 NONE
 
 ## Planned
+- T-compact-memory-index: EXPANDED scope — now all Claude memories + topic files + CLAUDE.md (was MEMORY.md-only); sibling of the skills review.
+- T-skills-review-prune-rearrange-intention-compat: NEW — review all skills: prune / rearrange / make intention-workflow-compatible.
+- T-workflow-levels-breakdown: NEW — define optimal workflow LEVELS front (interviewer->prebuild) + back (build-output->testing->verification->learning); LLM-middle deferred.
 
 ## Ad hoc
 - T-arch-point-pointer-is-dict-not-path: KICKED BACK to open_questions (Q1-Q3) — type-correcting the test surfaces ~100 misses spanning the OUT-of-scope stale-path sweep + a reference_docs-are-not-paths schema question; needs a design call on the intention-point pointer contract before it's buildable.
