@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.the-intention-contract-refuses-a-deconst.T-intention-capture-deconstruct-skill.20260710.163638763839",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-intention-contract-refuses-a-deconst",
+    "T-intention-capture-deconstruct-skill"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-10T16:36:38.763839",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-intention-capture-deconstruct-skill"
+    ],
+    "commits": [
+      "517105fa33ea1b4a135b3c008177c0a06908160c"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-intention-capture-deconstruct-skill",
+  "body": {
+    "thing": "the intention contract refuses a deconstruction whose sub-intention carries no proof-obligation",
+    "intention": "validate_intention rejects a deconstructed intention with a sub-intention lacking its proof_obligation, so the proof thread cannot start hollow",
+    "test": "tests/test_intention_store.py::test_subintention_missing_proof_obligation_rejected",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_intention_store.py::test_subintention_missing_proof_obligation_rejected",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "Failed",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____________ test_subintention_missing_proof_obligation_rejected ______________\n\n    def test_subintention_missing_proof_obligation_rejected():\n        \"\"\"A sub-intention with no proof-obligation breaks the proof thread — reject it.\"\"\"\n        bad = _deconstructed(sub_intentions=[{\n            \"statement\": \"I intend that X.\",\n            \"why\": \"because.\",\n            # no proof_obligation\n        }])\n>       with pytest.raises(ins.IntentionValidationError):\nE       Failed: DID NOT RAISE <class 'unseen_university.intention_store.IntentionValidationError'>\n\ntests/test_intention_store.py:73: Failed\n=========================== short test summary info ============================\nFAILED tests/test_intention_store.py::test_subintention_missing_proof_obligation_rejected\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "517105fa33ea1b4a135b3c008177c0a06908160c",
+    "impl_paths": [
+      "unseen_university/intention_store.py"
+    ],
+    "ticket": "T-intention-capture-deconstruct-skill",
+    "narrative": "",
+    "why": "proof is a thread born with each sub-intention as its how-to-verify; a sub-intention with no proof-obligation breaks the thread — CP1/CP3",
+    "bootstrap": false
+  }
+}
