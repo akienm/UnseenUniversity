@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-mutation-red-retroactive-proof.20260709.200306516830",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mutation-red-retroactive-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T02:03:06.516830+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-mutation-red-retroactive-proof"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-mutation-red-retroactive-proof",
+    "title": "[sprint] Red comes from mutation, not git history — so a proof can arrive late, and an echo-test cannot hide",
+    "status": "sprint",
+    "priority": 0.9,
+    "size": "L",
+    "worker": "claude",
+    "tags": [
+      "architecture",
+      "proof",
+      "epistemology",
+      "examiner"
+    ],
+    "intention": "I intend that a proof's red is produced by breaking the property in the CURRENT tree rather than by reverting to a pre-implementation commit, so that a claim can be proved at any time after it shipped, and so that a test which passes while its property is violated is detected as an echo-test.",
+    "intention_id": "I-self-improving-process",
+    "description": "Akien, 2026-07-09: 'doesn't have to be unproven if proving can be RETROACTIVE.' That inverts the arrow. Retroactive DOWNGRADE (proved -> provisional when conditions move) is T-proofs-carry-conditions-and-decay. This ticket is retroactive UPGRADE (provisional -> proved when the lever arrives), and it is blocked by exactly one thing.\n\n**RED IS CURRENTLY MADE OF GIT HISTORY.** proof_emitter runs the test against the PRE-IMPLEMENTATION tree by reverting the parent..HEAD diff IN PLACE. Its own docstring records the limit: 'WEAK RED FOR MULTI-COMMIT THINGS: red = HEAD~1 removes only the last commit.' So red exists only in the window where the implementation is the most recent commit. Once the impl landed 200 commits ago there is no red to reconstruct, and a late-arriving proof has nothing to prove against. Retroactive proving is not blocked by policy; it is blocked by where the red comes from.\n\n**MEASURED (2026-07-09).** 49 tickets closed touching shipped-unproven. 17 recorded a lever. Exactly 1 proof record has ever referenced an unproven close — the backlog has never been harvested. Of the 17 levers, **8 say 'no red form / cannot produce red'** — the single dominant entry. 5 more are design/doc artifacts with no test; 2 need a live device.\n\n**THE LEVER: MUTATION-RED.** Do not reconstruct the past tree. Break the property in the CURRENT tree and require the test to fail. That red is history-independent, so it can be produced at any time — which is what retroactive proving needs. It also gives REFACTORS a red form (the property is behaviour-preservation; mutate, and the test must catch it), which proof_emitter cannot produce today at all.\n\n**IT ALSO KILLS THE ECHO-TEST.** arch:examiner-station states that 'proof-on-close cannot distinguish intent-tests from echo-tests — presence-checks pass template-dressed vagueness.' A test that still passes while its property is violated IS an echo-test, by definition. Mutation-red detects this mechanically, with no examiner and no judgment call. One lever, two problems.\n\n**INTENTION IS THE PRECONDITION.** To mutate you must know WHAT TO BREAK — you must know the property. The property is the intention. intention -> mutation -> red. Without an intention there is nothing to violate, which is exactly why T-reorg-parents-path-sweep, carrying intention: null, could close 'gate PASS — tests=green' on three 0-byte files. The links.intentions edge (T-links-intentions-edge-kind, shipped proven 2026-07-09) is the prerequisite, not bookkeeping.\n\n**Affected files:** devlab/claudecode/proof_emitter.py (the red_strategy seam already exists and is injectable — see _git_inplace_red), devlab/claudecode/_proof_pytest_plugin.py, a new mutation-red strategy module, devlab/claudecode/validity_sweep.py (upgrade path).\n**Design rules:** authentic red == AssertionError or pytest Failed ONLY (a red from ImportError/missing-symbol is collateral and must stay REJECTED); never accept a builder-supplied red (a builder that can hand in red can fabricate it); annotate-never-delete (CP2); hermetic — never build a live device; canonical memory home.\n**Scope boundary:** IN — a mutation red_strategy behind the existing seam; the mutation is DERIVED FROM THE TICKET'S INTENTION, not guessed; a proof emitted with kind=mutation records what was mutated; the echo-test verdict (test passed under mutation => the test does not guard its property). OUT — automatic mutation generation for arbitrary code (start with the intention-named property); backfilling the 49 unproven closes (separate ticket once the lever exists); full mutation-adequacy scoring; the downgrade half (T-proofs-carry-conditions-and-decay).\n**Test plan:** hermetic, and the meta-test is the point. (a) Take a test known to guard a real property; mutate the property; assert red=AssertionError. (b) Take a deliberately vacuous echo-test (asserts a file exists); mutate the property it claims to guard; assert it STILL PASSES, and assert the emitter therefore REFUSES the proof and reports echo-test. (c) Assert a builder-supplied red is still rejected. Red form at HEAD: no mutation strategy exists, so (b) cannot be run — the echo-test ships.\n**Completion criteria:** proof_emitter can emit a proof for a commit that is NOT HEAD~1, using a mutation-derived red; a vacuous test is refused with an echo-test verdict; the mutation is derived from the ticket's intention_id; authentic-red rules unchanged.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "A proof is emitted for an implementation that is not the last commit, red produced by mutating the intention-named property. A test that passes under mutation is refused as an echo-test. Builder-supplied red still rejected.",
+    "created_at": "2026-07-10T02:02:40.580475+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-10T02:02:40.630088+00:00"
+  }
+}
