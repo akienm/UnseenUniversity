@@ -1,0 +1,66 @@
+{
+  "id": "cc.0.igor-test-suite-has-no-orphaned-importer.T-fix-igor-layer3-4-test-seed-imports.20260710.120119682195",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-test-suite-has-no-orphaned-importer",
+    "T-fix-igor-layer3-4-test-seed-imports"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-10T12:01:19.682195",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-fix-igor-layer3-4-test-seed-imports"
+    ],
+    "commits": [
+      "ff8c374e875ed6b569f93ca6af1cab85ece28dc0"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-fix-igor-layer3-4-test-seed-imports",
+  "body": {
+    "thing": "igor test suite has no orphaned importer of the retired seed_layer templates",
+    "intention": "No test module imports a claudecode.seed_layer* module (retired in 3fcfd070), so the igor layer3/4 suite collects without ModuleNotFoundError",
+    "test": "tests/igor/test_no_orphaned_seed_layer_imports.py::test_no_test_imports_retired_seed_layer_module",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_no_orphaned_seed_layer_imports.py::test_no_test_imports_retired_seed_layer_module",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    def test_no_test_imports_retired_seed_layer_module():\n        offenders: list[str] = []\n        for py in _TESTS_ROOT.rglob(\"*.py\"):\n            if py.resolve() == _SELF:\n                continue  # this guard names the pattern; don't flag itself\n            text = py.read_text(encoding=\"utf-8\", errors=\"ignore\")\n            if _RETIRED.search(text):\n                offenders.append(str(py.relative_to(_TESTS_ROOT.parent)))\n    \n>       assert not offenders, (\n            \"Test modules import retired claudecode.seed_layer* modules \"\n            f\"(deleted in 3fcfd070) and will error at collection: {sorted(offenders)}\"\n        )\nE       AssertionError: Test modules import retired claudecode.seed_layer* modules (deleted in 3fcfd070) and will error at collection: ['tests/igor/test_layer3_constrain.py', 'tests/igor/test_layer3_decompose.py', 'tests/igor/test_layer3_hypothesize.py', 'tests/igor/test_layer3_observe.py', 'tests/igor/test_layer3_parse_goal.py', 'tests/igor/test_layer3_replan.py', 'tests/igor/test_layer3_scope_check.py', 'tests/igor/test_layer3_situate.py', 'tests/igor/test_layer4_nodes.py']\nE       assert not ['tests/igor/test_layer4_nodes.py', 'tests/igor/test_layer3_observe.py', 'tests/igor/test_layer3_decompose.py', 'tests/igor/test_layer3_scope_check.py', 'tests/igor/test_layer3_replan.py', 'tests/igor/test_layer3_hypothesize.py', ...]\n\ntests/igor/test_no_orphaned_seed_layer_imports.py:40: AssertionError\n=========================== short test summary info ============================\nFAILED tests/igor/test_no_orphaned_seed_layer_imports.py::test_no_test_imports_retired_seed_layer_module\n1 failed in 2.06s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.32s"
+          }
+        }
+      }
+    ],
+    "commit": "ff8c374e875ed6b569f93ca6af1cab85ece28dc0",
+    "impl_paths": [
+      "tests/igor/test_layer3_constrain.py",
+      "tests/igor/test_layer3_decompose.py",
+      "tests/igor/test_layer3_hypothesize.py",
+      "tests/igor/test_layer3_observe.py",
+      "tests/igor/test_layer3_parse_goal.py",
+      "tests/igor/test_layer3_replan.py",
+      "tests/igor/test_layer3_scope_check.py",
+      "tests/igor/test_layer3_situate.py",
+      "tests/igor/test_layer4_nodes.py"
+    ],
+    "ticket": "T-fix-igor-layer3-4-test-seed-imports",
+    "narrative": "",
+    "why": "Nine tests importing the deleted seed templates errored at collection, silently disabling their own runs; the guard makes a future retire-without-tests fail loudly instead of rotting.",
+    "bootstrap": false
+  }
+}

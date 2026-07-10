@@ -17,8 +17,8 @@
   },
   "body": {
     "id": "T-fix-igor-layer3-4-test-seed-imports",
-    "title": "[triage] Fix pre-existing collection errors: tests/igor/test_layer3_* + test_layer4_nodes import missing claudecode.seed_layer* modules",
-    "status": "triage",
+    "title": "Fix pre-existing collection errors: tests/igor/test_layer3_* + test_layer4_nodes import missing claudecode.seed_layer* modules",
+    "status": "closed",
     "size": "S",
     "tags": [
       "tests",
@@ -35,12 +35,15 @@
     "created_by": null,
     "result": null,
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-10T18:01:35.014758+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "decision_id": null,
     "gate": null,
-    "scraps_validated": "2026-07-02T21:15:32.422138+00:00"
+    "scraps_validated": "2026-07-02T21:15:32.422138+00:00",
+    "proven": true,
+    "proof_id": "cc.0.igor-test-suite-has-no-orphaned-importer.T-fix-igor-layer3-4-test-seed-imports.20260710.120119682195",
+    "proof_commit": "ff8c374e875ed6b569f93ca6af1cab85ece28dc0"
   }
 }
