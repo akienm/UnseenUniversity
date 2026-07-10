@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-cc-queue-next-is-a-claim-primitive.20260709.202023356677",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-next-is-a-claim-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T02:20:23.356677+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-next-is-a-claim-primitive"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-cc-queue-next-is-a-claim-primitive",
+    "title": "[sprint] cc_queue.py next marks in_progress and hands over a ticket — a claim primitive the contract forbids",
+    "status": "sprint",
+    "priority": 0.55,
+    "size": "M",
+    "worker": "claude",
+    "tags": [
+      "architecture",
+      "queue",
+      "granny",
+      "cooperative"
+    ],
+    "intention": "I intend that a builder cannot take work for itself, only be offered it, so that the orchestrator remains the single owner of ticket status and no component reaches into shared state to claim.",
+    "intention_id": "I-self-improving-process",
+    "description": "Akien's contract: 'The entire system is cooperative... Builders don't pick up tickets, they ask the orchestrator for one. the orchestrator manages the ticket STATUS updates.' Restated in CLAUDE.md as 'No claim, no launch — pure handshake.'\n\nBut the tool surface offers a claim. `cc_queue.py next --worker <name>` — its own help text: 'mark in_progress + return highest-priority sprint ticket for worker'. That is take-for-yourself: one call both selects the work and mutates its status. The prohibition lives only in prose ('Never call cc_queue.py next or list directly to pick work') and in the existence of a read-only alternative (/query-ticket, 'read-only, surfaces next ticket, never claims').\n\nA contract held by convention is not held. Compare the sibling that WAS closed properly: T-builder-report-not-write made Granny the SOLE ticket writer by removing the builder's ability to write, not by asking it not to.\n\nNote the asymmetry, which is the finding: `never spawn` is enforced by the tree (the _launch_builder definition is gone). `never claim` is enforced by a sentence.\n\n**Affected files:** devlab/claudecode/cc_queue.py (cmd_next), skills/query-ticket, granny/daemon.py (the orchestrator side that should be the only caller).\n**Design rules:** cooperative peers — each component responsible for itself; a component that mutates another's state is a supervisor; single-writer contract (D-single-mechanism, T-builder-report-not-write); homogeneity over special-case.\n**Scope boundary:** IN — decide and enforce ONE of: (a) `next` becomes orchestrator-only (authenticated caller check, workers get a read-only offer), or (b) `next` is split into `offer` (read-only) + an orchestrator-only `assign`. Whichever, a builder invoking it must FAIL, not be asked nicely. OUT — the handshake protocol itself (built); Granny's routing rules; the CLAUDE.md stale-spawn fix (T-claude-md-documents-dead-spawn-path).\n**Test plan:** discriminating, not presence. Assert that a caller identifying as a builder cannot mutate a ticket to in_progress via `next` — it raises or refuses. Assert the orchestrator still can. Red form: at HEAD any caller may pass --worker and the mutation succeeds, so the builder-refusal assertion fails.\n**Completion criteria:** a builder calling next is REFUSED (not merely discouraged); the orchestrator path is unchanged; /query-ticket remains read-only.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "A builder-identified caller cannot mutate ticket status via cc_queue next; orchestrator can; /query-ticket still read-only. Enforcement in code, not prose.",
+    "created_at": "2026-07-10T02:19:59.051909+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-10T02:19:59.051987+00:00"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-claude-md-documents-dead-spawn-path.20260709.202023204902",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-claude-md-documents-dead-spawn-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T02:20:23.204902+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-claude-md-documents-dead-spawn-path"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-claude-md-documents-dead-spawn-path",
+    "title": "[sprint] CLAUDE.md:180 documents _launch_builder auto-launch as a live 'later path' — the definition is gone",
+    "status": "sprint",
+    "priority": 0.6,
+    "size": "S",
+    "worker": "claude",
+    "tags": [
+      "docs",
+      "stale",
+      "granny"
+    ],
+    "intention": "I intend that CLAUDE.md never describes a code path that does not exist, so that the document which arbitrates every conflict cannot itself be the source of one.",
+    "intention_id": "I-self-improving-process",
+    "description": "CLAUDE.md line 180: 'Builder auto-launch (`launch_cmd` via `_launch_builder`, rate-limited) is a separate, *later* path for workers not already running; it does not apply to CC.0.' Line 169 also refers to 'the subprocess.Popen in _launch_builder'.\n\nVerified 2026-07-09: `grep -rn 'def _launch_builder' unseen_university/` returns NOTHING. The definition is gone. granny/dispatch.py is retired and its own docstring says the opposite: 'Spawning CC directly violates two standing rules... must NEVER subprocess.Popen one.' T-granny-dispatch-rewrite's close note records the removal: 'Granny no longer launches any worker — removed _launch_builder, its run_once launch block, _last_launch_attempt...'\n\nThis is not cosmetic. CLAUDE.md is the document that arbitrates conflicts between the contract and the tree. A stale spawn path in it means the arbiter itself carries a false fact — and a future CC reading 'auto-launch is a separate, later path' would reasonably build it. Same failure class as the IMAP claim that CLAUDE.md now flags in bold ('repeatedly misleads CC').\n\n**Affected files:** CLAUDE.md (lines ~169 and ~180). Possibly granny/dispatch.py (delete the retired module, or keep it as a tombstone — decide, don't drift).\n**Design rules:** cooperative peers, each component responsible for itself (a spawner owns the spawnee's lifecycle = supervisor); feedback_granny_no_cc_spawn; validity_conditions (this entry should have carried one naming _launch_builder, and did not).\n**Scope boundary:** IN — correct the two CLAUDE.md lines to state that no spawn path exists and that dispatch is bus-handshake only; attach a validity_condition naming the symbol so the day-close sweep catches it if it ever returns. OUT — deleting granny/dispatch.py (separate call); the claim-primitive gap (T-cc-queue-next-is-a-claim-primitive).\n**Test plan:** a discriminating test, not a presence check: assert that `def _launch_builder` appears nowhere in unseen_university/ AND that CLAUDE.md contains no sentence describing auto-launch as an available path. Red form: at HEAD the second assertion fails.\n**Completion criteria:** CLAUDE.md describes no spawn path; a validity_condition names _launch_builder so its reappearance is flagged by the day-close sweep.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "CLAUDE.md has no live-auto-launch sentence; a validity_condition names the _launch_builder symbol; test asserts both the symbol's absence and the doc's silence.",
+    "created_at": "2026-07-10T02:19:33.268912+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-10T02:19:33.314665+00:00"
+  }
+}

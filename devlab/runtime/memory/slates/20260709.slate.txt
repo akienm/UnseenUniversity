@@ -424,3 +424,5 @@ Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0
 - T-proofs-carry-conditions-and-decay: proofs record conditions; validity_sweep demotes to provisional (retroactive proven/unproven)
 - T-mutation-red-retroactive-proof: red from mutation not git history -> late proofs possible + echo-tests detected
 - T-rename-lever-to-proof-method: "lever" is a metaphor of force -> it made CC weld "backlog earns removal" onto "corpus earns removal". Define proof/proof-method/proof-corpus in rules/.
+- T-claude-md-documents-dead-spawn-path: CLAUDE.md:180 documents _launch_builder (definition gone)
+- T-cc-queue-next-is-a-claim-primitive: `never claim` held by prose, not by the tool surface
