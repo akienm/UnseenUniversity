@@ -76,6 +76,10 @@ def _project_decision_body(design_body: dict, decision_id: str) -> dict:
         # The narrative readers render. Prefer the design's own text; fall back to
         # the shape so a projection is never empty.
         "text": design_body.get("text") or design_body.get("shape", ""),
+        # Outcome fields (written by /outcome onto the design) must ride the
+        # projection too, or the decision-first outcome readers (/outcome list,
+        # decision-rollup) miss an outcome the design already records.
+        "outcome_date": design_body.get("outcome_date"),
         # Provenance breadcrumb: this decision is a projection, not a source.
         "projected_from_design": design_body.get("design_id"),
     }

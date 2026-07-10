@@ -70,46 +70,63 @@ Compare the hypothesis claim against the evidence. Choose one:
 - **too_early** — insufficient time has passed or data accumulated to tell. Set a re-check date.
 - **inconclusive** — the measurement signal named at hypothesis time wasn't available or was ambiguous.
 
-### 4. Write verdict to decision record
+### 4. Write verdict to the canonical record (design if one exists, else decision)
 
-Re-emit the decision JSON with an `## Outcome` section appended to `body.text`,
-reusing the file's existing stamp so it's an atomic in-place overwrite — never a
-second decision node (D-canonical-memory-consolidation-2026-06-23). Fill the
-verdict fields (from Step 3) into `OUTCOME` before running:
+Append an `## Outcome` section to `body.text` + set `outcome_date`, reusing the
+file's existing stamp so it's an atomic in-place overwrite — never a second node
+(D-canonical-memory-consolidation-2026-06-23).
+
+**Write to the CANONICAL artifact.** A design is the source of truth and its
+projected `D-*` is a read-model — writing the outcome only to the projection would
+leave the design (which `/weekly-retro` reads first) perpetually unreviewed. So:
+- **design exists** → re-emit the DESIGN via `design_emit.py` reusing the design's
+  stamp. That overwrites the design AND re-projects the decision, so both carry the
+  outcome and every reader (design-first or decision-first) agrees.
+- **no design (legacy `D-*`)** → re-emit the decision via `memory_emit.py` as before.
+
+Fill the verdict fields (from Step 3) into `OUTCOME` before running:
 
 ```bash
-DECISION_FILE=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)
 OUTCOME=$(cat <<EOF
 
 ## Outcome — $(date +%Y-%m-%d)
 **Verdict:** <confirmed / partially_confirmed / falsified / too_early / inconclusive>
 **Evidence:** <1-3 sentences summarizing what the data showed>
-**Learning:** <one sentence: what does this outcome teach us about this kind of decision?>
+**Learning:** <one sentence: what does this outcome teach us about this kind of intention/design?>
 **Re-check:** <if too_early: when to check again>
 EOF
 )
-OUTCOME="$OUTCOME" python3 - "$DECISION_FILE" <<'PY'
-import json, os, sys, subprocess
+OUTCOME="$OUTCOME" python3 - "<D-id>" <<'PY'
+import glob, json, os, subprocess, sys
 from unseen_university._uu_root import uu_root
+from unseen_university.memory_root import memory_root
 TOOLS = str(uu_root() / "devlab" / "claudecode")
 sys.path.insert(0, TOOLS)
 from memory_emit import parse_filename
-path = sys.argv[1]
-rec = json.load(open(path))
-body = rec["body"]
+did = sys.argv[1]
+root = memory_root()
+designs = glob.glob(str(root / "designs" / f"*{did}*.json"))
+path = designs[0] if designs else glob.glob(str(root / "decisions" / f"*{did}*.json"))[0]
+rec = json.load(open(path)); body = rec["body"]
 body["text"] = body.get("text", "") + os.environ["OUTCOME"]
 body["outcome_date"] = __import__("datetime").date.today().isoformat()
 open("/tmp/outcome_body.json", "w").write(json.dumps(body))
 stamp = parse_filename(os.path.basename(path))["stamp"]   # reuse → atomic overwrite
-subprocess.run([sys.executable, os.path.join(TOOLS, "memory_emit.py"),
-    "--category", "decisions", "--emitter", rec["emitter"], "--kind", "decision",
-    "--namespace", body["decision_id"], "--stamp", stamp,
-    "--body-file", "/tmp/outcome_body.json"], check=True)
+if designs:  # canonical: design_emit re-projects the decision too
+    subprocess.run([sys.executable, os.path.join(TOOLS, "design_emit.py"),
+        "--emitter", rec["emitter"], "--stamp", stamp,
+        "--body-file", "/tmp/outcome_body.json"], check=True)
+else:        # legacy decision, no design
+    subprocess.run([sys.executable, os.path.join(TOOLS, "memory_emit.py"),
+        "--category", "decisions", "--emitter", rec["emitter"], "--kind", "decision",
+        "--namespace", body["decision_id"], "--stamp", stamp,
+        "--body-file", "/tmp/outcome_body.json"], check=True)
 PY
 ```
 
-The decision JSON now carries the outcome (Step 4 wrote `## Outcome` + `outcome_date`
-into it). No second store to update — the flat-file record is canonical.
+The canonical record now carries the outcome (`## Outcome` + `outcome_date`); when a
+design was written, its projection carries it too, so design-first and decision-first
+readers agree.
 
 ### 5. Surface to Akien
 
