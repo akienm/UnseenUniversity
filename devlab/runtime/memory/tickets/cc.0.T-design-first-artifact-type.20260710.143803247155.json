@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-design-first-artifact-type.20260710.143803247155",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-design-first-artifact-type"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T20:38:03.247155+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-design-first-artifact-type"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-design-first-artifact-type",
+    "title": "[sprint] Make `design` a first-class artifact type (decision folds in as a fork); rework /sorted + /design to emit it",
+    "size": "L",
+    "tags": [
+      "skills",
+      "architecture",
+      "intentions",
+      "design"
+    ],
+    "status": "sprint",
+    "intention": "I intend that DESIGN is a first-class dev-process artifact type — the shape that realizes an intention, carrying its fork-decisions inside it — so the Design->Ticket boundary crosses a design artifact, not a decision.",
+    "produced_by": "architecture/workflow-levels",
+    "description": "Keystone of the settled boundary contract (architecture/cc.0.workflow-levels.*, boundary contract COMPLETE 2026-07-10). The artifact-type stack is INTENTION -> DESIGN -> TICKET; DECISION is subtracted as a standalone type and becomes a FORK-RESOLUTION recorded INSIDE a design. Define the `design` artifact contract (fields: the intention(s) it realizes, the shape, the fork-decisions inside it each with why, the proof-obligations it must satisfy, links) and rework /sorted (decision-half) + /design (currently a bare marker) to EMIT a design artifact. NO device needed — the contract goes into the SKILLS.\n\n**Affected files:** skills/sorted/, skills/design/, a new design artifact schema/store under devlab/runtime/memory/ (mirroring decisions/), architecture/cc.0.workflow-levels.* reconciled.\n**Design rules:** intention=present-tense contract; every artifact carries its why; homogeneity over special-case; canonical-memory-home.\n**Scope boundary:** IN — define the design artifact contract + make /sorted and /design emit it, with decisions recorded as forks inside. OUT — building Interviewer/Architect devices; OUT — the audit re-key (separate ticket, gated on this); OUT — the LLM-middle.\n**Test plan:** proof = /sorted emits a design artifact with a fork-decision recorded inside it, validated against the contract (a red->green on the schema/emit path). Honest close: shipped-unproven only if no red form is reachable.\n**Completion criteria:** design artifact contract defined; /sorted + /design emit it; decision recorded as a fork-within-design (not a standalone D-*); reconciled to architecture/workflow-levels.\n\nRelated: architecture/cc.0.workflow-levels.*, T-skills-review-prune-rearrange-intention-compat, project_intention_is_a_present_tense_contract.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-10T20:36:54.002702+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-10T20:36:54.054695+00:00"
+  }
+}

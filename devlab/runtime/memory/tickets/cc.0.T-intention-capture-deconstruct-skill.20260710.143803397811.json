@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-intention-capture-deconstruct-skill.20260710.143803397811",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intention-capture-deconstruct-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T20:38:03.397811+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-intention-capture-deconstruct-skill"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-intention-capture-deconstruct-skill",
+    "title": "[sprint] New skill: capture the intention contract + deconstruct into sub-intentions ⊗ proof-obligations (front boundary, no device)",
+    "size": "M",
+    "tags": [
+      "skills",
+      "intentions",
+      "design"
+    ],
+    "status": "sprint",
+    "intention": "I intend that the front boundary (interview -> deconstruct) is served by a SKILL that captures a global intention contract and deconstructs it into hierarchical sub-intentions each paired with its proof-obligation — so the intention artifact exists and accretes even before any Interviewer device is built.",
+    "produced_by": "architecture/workflow-levels",
+    "description": "The one true GAP the skills review found: nothing lives at the intention boundary today (intentions are hand-authored in akien/outbox/IntentionsOutline.txt; /question is retired). Build the contract into a SKILL, not a device. The skill: takes {intention text / conversation} -> emits a global intention (present-tense contract + why + how-to-verify + constraints) and DECONSTRUCTS it into sub-intentions, each paired with its proof-obligation (proof is a THREAD born here, settled 2026-07-10).\n\n**Affected files:** new skills/<name>/ (SKILL.md + run), the intention artifact contract (coordinate with T-design-first-artifact-type's artifact-store pattern), IntentionsOutline reconciliation (Akien-authored source stays canonical — see project_intentions_outline_is_source).\n**Design rules:** intention=present-tense contract; every sub-intention carries why + proof-obligation; homogeneity over special-case.\n**Scope boundary:** IN — the capture + deconstruct skill and the sub-intention⊗proof-obligation contract. OUT — the Interviewer device; OUT — an agentic chat loop (that's the later device — Akien: build the contract/process first, even with no code); OUT — the LLM-middle.\n**Test plan:** proof = the skill deconstructs a sample intention into >=2 sub-intentions each carrying a proof-obligation, validated against the contract. Honest close: shipped-unproven only if no red form.\n**Completion criteria:** skill exists; emits sub-intentions ⊗ proof-obligations per contract; reconciled to IntentionsOutline-as-source and architecture/workflow-levels.\n\nRelated: architecture/cc.0.workflow-levels.*, note pipeline-walk-front-to-back (Interviewer intent), project_intentions_outline_is_source, project_intentions_as_living_entities.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-10T20:37:16.842473+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-10T20:37:16.842529+00:00"
+  }
+}
