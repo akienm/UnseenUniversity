@@ -1,0 +1,227 @@
+{
+  "id": "cc.0.workflow-levels.20260710.133555068072",
+  "emitter": "cc.0",
+  "namespace": [
+    "workflow-levels"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-07-10T13:35:55.068072",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-workflow-levels-breakdown",
+  "body": {
+    "title": "Workflow levels — the intention-accreting stage map surrounding the build (front: intent→prebuild; back: build-output→verification→learning; LLM-middle bracketed OUT)",
+    "subsystem": "workflow-levels",
+    "kind": "intention-point",
+    "summary": "Unifies three existing records (dev-pipeline forward devices, D-dev-pipeline-stations post-build stations, feedback-edges backward flow) into ONE explicit level map in the napkin framing (staged-intention-compiler-pipeline, Akien 2026-07-10): each LEVEL is a transform that takes the prior level's output + a knowledge body and ADDS a layer to a carried intent artifact, so intent flows deterministically from raw user input through prebuild, and from build-output through testing to long-term verification. Each level carries THREE edge types: the forward build edge, the return-for-learning edge, and the return-for-higher-level-work edge. Two properties beyond today's forward-only ticket chart: (1) bidirectional edges are first-class; (2) the pipeline is continuous — the JSON ticket is ONE station, not the origin. SCOPE (Akien's explicit correction 2026-07-10): BOTH halves SURROUNDING the build; the LLM/inference build step in the MIDDLE is deliberately OUT OF SCOPE for now — solidify the intention-based scaffold on both sides first, decide the middle later. Cross-cutting invariant threaded through every level: SEPARATION OF POWERS — no level grades its own output.",
+    "key_concepts": [
+      {
+        "name": "L1 Interviewer (Vetinari)",
+        "layer": "front",
+        "inputs": "{user, history}",
+        "outputs": "intent artifact = intentions + whys + how-to-verify + constraints",
+        "forward": "-> L2 intention-extractor",
+        "return_for_learning": "origin of the chain (no inbound learning edge; it is where learning ultimately lands as revised interview priors)",
+        "return_for_higher": "n/a (top of stack)",
+        "implementing": "devices/vetinari/ (device.py, shim.py, decompose_prompt.txt); clarification loop; Intent Doc is the compilation seam",
+        "why": "intent must be captured as a durable artifact with its whys and its verification criteria at the source, or every downstream level is compiling guesses"
+      },
+      {
+        "name": "L2 Intention-extractor",
+        "layer": "front",
+        "inputs": "{intent artifact + relevant history}",
+        "outputs": "adds HIERARCHICAL intentions (present-tense contracts); the Intent Doc Hubert consumes",
+        "forward": "-> L3 designer",
+        "return_for_learning": "<- L11 verification: 'did this intention hold in reality?' revises the hierarchy",
+        "return_for_higher": "<- escalate-to-design when a spec-shaped failure names an intention as the wrong artifact",
+        "implementing": "devices/vetinari/ codify path; intentions store (intentions-as-living-entities); IntentionsOutline is Akien-authored source",
+        "why": "flat intent under-specifies; hierarchy is what lets a low-level failure resolve to the RIGHT altitude of intent to re-open"
+      },
+      {
+        "name": "L3 Designer (Hubert)",
+        "layer": "front",
+        "inputs": "{hierarchical intentions + design patterns}",
+        "outputs": "adds ARCHITECTURE/design -> a decision (D-*)",
+        "forward": "-> L4 ticketer",
+        "return_for_learning": "<- L11 verification: decision hypothesis confirmed/falsified feeds pattern reuse",
+        "return_for_higher": "<- escalate-to-design (feedback-edges): a spec-shaped build failure resolves produced_by and RE-OPENS the producing decision in the producer's review surface",
+        "implementing": "devices/hubert/ (device.py, tools.py, constraint_normalizer.py, repo_auditor.py); /sorted + audit-design",
+        "why": "architecture is the layer that turns 'what we intend' into 'the shape that realizes it'; a decision is the durable, falsifiable unit that a failure can re-open"
+      },
+      {
+        "name": "L4 Ticketer (Hubert emit + INDEPENDENT filing audits)",
+        "layer": "front",
+        "inputs": "{design/decision + ticketing rules + a PRERUN of prebuild steps (orientation, constraints)}",
+        "outputs": "writes the JSON ticket (intent, constraints, test/observability plan)",
+        "forward": "-> L5 prebuild",
+        "return_for_learning": "audit run-records accumulate (audit-audits) -> promote recurring smells to rules",
+        "return_for_higher": "audit AMEND/SPLIT/DISCARD bounces the ticket back to L3/L2 (mis-scoped -> triage + design Qs = 'kick back to design')",
+        "implementing": "hubert/tools.py, cc_queue.py add-path, examiner-station (audits run by an instance that did NOT draft the artifact), audit-hypothesis/design/ticket",
+        "why": "the ticket is where intent becomes buildable; filing audits by an INDEPENDENT examiner are separation-of-powers at filing time — the author cannot grade its own narrative (gate-attack G2/G3/G6a)"
+      },
+      {
+        "name": "L5 Prebuild (deterministic build_packet compiler) — LIVE",
+        "layer": "front",
+        "inputs": "{ticket}",
+        "outputs": "build_packet.v1: intent, hard_constraints, scored context_shortlist, sufficiency_gate, baseline-vs-helper token_measurement, determinism fingerprint; + constraint decoration; + prospective-preregistration firewall fire",
+        "forward": "-> [BUILD — OUT OF SCOPE]",
+        "return_for_learning": "sufficiency_gate + prereg measure orientation-token savings (~51% Delta) and preregister the intended proof",
+        "return_for_higher": "sufficiency_gate FAIL surfaces an under-specified ticket back to L4",
+        "implementing": "build_packet.py, sprint_preflight_brief.py, pre_inference_assemble.py, prereg.py, hubert constraint_decorator; fires in sprint preflight. STATUS: LIVE but surface-don't-block v1; a manual sprint can still skip it",
+        "why": "this is the last deterministic layer before the LLM — it packages everything the middle needs so the expensive resolver spends tokens on the novel, not on re-orienting"
+      },
+      {
+        "name": "[MIDDLE] Build / inference step — OUT OF SCOPE FOR NOW",
+        "layer": "middle",
+        "inputs": "{build_packet}",
+        "outputs": "a built branch/diff",
+        "forward": "-> L6 test",
+        "return_for_learning": "DEFERRED",
+        "return_for_higher": "DEFERRED",
+        "implementing": "builders: CC / DickSimnel / Haiku / aider (aider is the viable editor path). DELIBERATELY UNMODELED — 'we leave the middle until the surrounding stuff is solid with our intention-based approach' (Akien 2026-07-10)",
+        "why": "the LLM-middle is the one irreducible resolver; we make the surrounds compile FIRST so that when we return to the middle, it is bounded on both sides by solid intention-based scaffolding"
+      },
+      {
+        "name": "L6 Test (INDEPENDENT tester)",
+        "layer": "back",
+        "inputs": "{built branch/diff}",
+        "outputs": "test verdict",
+        "forward": "-> L7 examine",
+        "return_for_learning": "flake/coverage signals feed test-factory horizon",
+        "return_for_higher": "red tests bounce to the build step (and, if spec-shaped, onward to L3/L4)",
+        "implementing": "devices/tester (T-tester-rackmount, in flight), evaluator. INVARIANT: the tester is NOT the builder",
+        "why": "a builder grading its own tests is the self-grading-hollow hazard; an independent tester removes it without a human in the loop"
+      },
+      {
+        "name": "L7 Examine (INDEPENDENT examiner)",
+        "layer": "back",
+        "inputs": "{branch + audit checklist + minimal context}",
+        "outputs": "audit verdict (smell/debris/precode)",
+        "forward": "-> L8 prove",
+        "return_for_learning": "audit run-records -> audit-audits -> rule promotion / dead-check pruning",
+        "return_for_higher": "AMEND bounces to the build step or back to L4/L3",
+        "implementing": "examiner-station (design), audit-smell/debris/precode; execution leaves a run-record, not a free claim",
+        "why": "presence-checks pass template-dressed vagueness when the author runs them; routing to an independent examiner is filing-and-build-time separation of powers"
+      },
+      {
+        "name": "L8 Prove (INDEPENDENT verifier)",
+        "layer": "back",
+        "inputs": "{branch + ticket}",
+        "outputs": "a proof: a commit-bound red->green a hollow build could NOT pass (proof-on-close, CP1)",
+        "forward": "-> L9 merge",
+        "return_for_learning": "proof corpus grows -> earns eventual gate removal (pipeline-trajectory staircase)",
+        "return_for_higher": "no authentic red form => close shipped-unproven NAMING the missing proof-lever (the lever is the return-for-higher signal)",
+        "implementing": "proof_emitter.py, evaluator/loop.py (judge panel), proof_store.py. INVARIANT: the prover is NOT the builder",
+        "why": "proof is how an answer earns the right to cache; the prover being independent is what makes the cached answer trustworthy"
+      },
+      {
+        "name": "L9 Merge",
+        "layer": "back",
+        "inputs": "{proven branch}",
+        "outputs": "merged to main",
+        "forward": "-> L10 index/savestate",
+        "return_for_learning": "n/a",
+        "return_for_higher": "merge conflict/regression bounces to the build step",
+        "implementing": "branching model (D-branching-model-2026-07-08); commit-to-main while just Akien+CC",
+        "why": "merge is the commit that makes the proven answer part of the substrate"
+      },
+      {
+        "name": "L10 Index / savestate",
+        "layer": "back",
+        "inputs": "{merged commit}",
+        "outputs": "code index updated; slate/session state flushed",
+        "forward": "-> L11 verification",
+        "return_for_learning": "the index + savestate are what a future session reads to avoid re-deriving",
+        "return_for_higher": "n/a",
+        "implementing": "devlab/claudecode/code_indexer.py, /savestate, /day-close roll-up",
+        "why": "an answer that is not findable is not cached; indexing + savestate keep answers reusable (the whole point of making cognition compile)"
+      },
+      {
+        "name": "L11 Verification (consequence / outcome) — the return-for-learning trigger",
+        "layer": "back",
+        "inputs": "{closed decision + observable evidence}",
+        "outputs": "hypothesis verdict: confirmed / falsified / needs-more-time",
+        "forward": "-> L12 long-term verification",
+        "return_for_learning": "THIS is the primary return-for-learning edge: the verdict flows back to L2/L3 (did the intention hold? did the decision's hypothesis confirm?) — closes intention->why->observation",
+        "return_for_higher": "a falsified hypothesis re-opens the producing decision (L3)",
+        "implementing": "/outcome, consequence_aging.py, completion_audit.py, consequence-gate at filing (audit-ticket check 19)",
+        "why": "a decision with no consequence check closes on paper only; verification is what makes the learning loop fire in reality (gate-attack G7)"
+      },
+      {
+        "name": "L12 Long-term verification (validity conditions)",
+        "layer": "back",
+        "inputs": "{store entries + current world}",
+        "outputs": "validity_conditions resolved; stale entries FLAGGED (never deleted, CP2)",
+        "forward": "loops to L1/L2 as revised priors",
+        "return_for_learning": "the rot-RATE control: a stale fact is caught by the sweep instead of silently misleading a future session (the IMAP-claim failure mode)",
+        "return_for_higher": "a >=2-sweep CURATE flag surfaces a fact for human review",
+        "implementing": "validity_sweep.py (--apply at day-close), architecture/validity-conditions",
+        "why": "answers rot; long-term verification is what keeps the compiled corpus honest over months instead of decaying into confident-but-wrong"
+      },
+      {
+        "name": "EDGE-TYPE: the one backward edge (produced_by)",
+        "layer": "cross-cutting",
+        "what": "every emitted artifact carries produced_by — a single directed blame edge naming the artifact whose CONTENT caused this emission ('if this is wrong, what should be reviewed?'). Stamped at the chokepoints (memory_emit, cc_queue add, proof emitter). This is the substrate that makes BOTH return-edge types resolvable to a specific level.",
+        "why": "one uniform edge type is what makes ONE dispatch rule possible; per-artifact-type escalation paths were the special-case trap (homogeneity over special-case)"
+      },
+      {
+        "name": "EDGE-TYPE: return-for-learning",
+        "layer": "cross-cutting",
+        "what": "the consequence/outcome + validity loop (L11, L12) feeding verdicts back to the intent/design levels (L2, L3). Answers 'did the answer this level produced hold up?' Non-blaming — it is the observe->learn->improve loop running at the design level.",
+        "why": "forward edges are answers; this edge is the evidence that turns a one-time answer into a durable, trusted cache entry (or retires it)"
+      },
+      {
+        "name": "EDGE-TYPE: return-for-higher-level-work (escalate-to-design)",
+        "layer": "cross-cutting",
+        "what": "the ONE escalation verb (builder result envelope, outcome=escalated, enriched — payload-field, NO bus change) + the ONE dispatch rule at Granny reconcile: capability-shaped failures ride the tier ladder first; spec-shaped failures (or ladder exhaustion) resolve produced_by and land in the PRODUCER'S review surface, re-opening the producing decision/intention. A failure re-opening the question a level already answered (graph-tree telos).",
+        "why": "like a compiler blaming the source line via provenance instead of reporting 'backend failed'; this is what moves the cost of specifying intent up-front where it belongs"
+      },
+      {
+        "name": "INVARIANT: separation of powers (threads every level)",
+        "layer": "cross-cutting",
+        "what": "no level grades its own output. Build-time: builder never tests/proves its own diff (L6/L7/L8 independent). Filing-time: author never audits its own ticket/decision (L4 examiner-station). This is the SINGLE property that lets the routine compile away from human supervision.",
+        "why": "it doesn't matter that a builder can't self-certify — it SHOULDN'T; independent test+examine+prove removes the self-grading-hollow hazard WITHOUT a human in the loop"
+      }
+    ],
+    "implementing_files": [
+      "unseen_university/devices/vetinari/device.py",
+      "unseen_university/devices/hubert/device.py",
+      "unseen_university/devices/hubert/tools.py",
+      "devlab/claudecode/cc_queue.py",
+      "devlab/claudecode/build_packet.py",
+      "devlab/claudecode/pre_inference_assemble.py",
+      "devlab/claudecode/prereg.py",
+      "devlab/claudecode/proof_emitter.py",
+      "unseen_university/devices/evaluator/loop.py",
+      "unseen_university/proof_store.py",
+      "devlab/claudecode/consequence_aging.py",
+      "devlab/claudecode/completion_audit.py",
+      "devlab/claudecode/validity_sweep.py",
+      "devlab/claudecode/code_indexer.py"
+    ],
+    "reference_docs": [
+      "devlab/runtime/memory/architecture/cc.0.dev-pipeline.20260630.103101036158.json (forward device pipeline this maps into levels)",
+      "devlab/runtime/memory/decisions/cc.0.D-dev-pipeline-stations-2026-07-07.20260707.145027196100.json (back-half forward stations + separation-of-powers invariant)",
+      "devlab/runtime/memory/architecture/cc.0.feedback-edges.20260707.181212678946.json (the backward flow: produced_by + one escalation verb + one dispatch rule)",
+      "devlab/runtime/memory/architecture/cc.0.examiner-station.20260708.063926739676.json (independent filing-time audits)",
+      "devlab/runtime/memory/notes/cc.0.staged-intention-compiler-pipeline.20260710.122157673040.json (Akien's napkin source)"
+    ],
+    "status_notes": "Synthesis map, 2026-07-10 (CC's own abilities — Fable not consulted; not needed). FRONT half: devices exist (Vetinari L1/L2, Hubert L3/L4) but are NOT yet assembled as an intent-ACCRETING assembly line — the data contract for the carried intent artifact (what it IS, field by field, as each level adds a layer) is UNDEFINED; that is the biggest front-half gap (follow-on T-workflow-levels-front-intent-artifact-contract). Prebuild L5: LIVE (build_packet + prereg fire in sprint preflight), surface-don't-block v1. BACK half: D-dev-pipeline-stations forward stations DESIGNED, tester/examiner rackmounting in flight; verification loop partly LIVE (outcome/consequence/validity); return edges DESIGNED (feedback-edges) with impl gated (T-produced-by-emission-sweep, T-escalation-dispatch-producer-review). LLM-MIDDLE explicitly OUT of scope. OPEN (Akien's calls — NOT confabulated): (a) whether each level is a device, a workflow, or a graph-tree node (napkin open item); (b) level granularity (is 'designer' one level or does architecture vs decision split?). This map is a synthesis/design artifact — NO red->green proof form exists; the ticket that produced it closes shipped-unproven naming the missing 'pipeline-conformance' proof-lever.",
+    "related": [
+      "project_staged_intention_compiler_pipeline",
+      "project_build_packet_pre_inference_compiler",
+      "project_delta_uu_architecture",
+      "project_intention_compiler_reflexive",
+      "T-skills-review-prune-rearrange-intention-compat",
+      "T-ticket-as-chart-provenance-ledger",
+      "D-feedback-edge-every-emission-2026-07-07",
+      "D-dev-pipeline-stations-2026-07-07"
+    ]
+  }
+}

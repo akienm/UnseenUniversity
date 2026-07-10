@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-workflow-levels-front-intent-artifact-contract.20260710.133719852691",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workflow-levels-front-intent-artifact-contract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T19:37:19.852691+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-workflow-levels-front-intent-artifact-contract"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-workflow-levels-front-intent-artifact-contract",
+    "title": "[triage] Define the carried intent-artifact accretion contract across front-half levels L1-L4",
+    "size": "M",
+    "tags": [
+      "architecture",
+      "design",
+      "intentions"
+    ],
+    "status": "triage",
+    "intention": "I intend that the intent artifact carried through the front-half levels (interviewer -> intention-extractor -> designer -> ticketer) has an EXPLICIT field-by-field data contract, so each level's 'adds a layer' is a defined accretion onto a shared object rather than an ad-hoc handoff between devices.",
+    "produced_by": "architecture/workflow-levels",
+    "description": "The workflow-levels map (architecture/cc.0.workflow-levels.*, 2026-07-10) identified the biggest FRONT-half gap: Vetinari (L1/L2) and Hubert (L3/L4) exist as devices, but they are NOT assembled as an intent-ACCRETING assembly line. The napkin framing is 'each level takes the prior output + a knowledge body and ADDS a layer' — but the thing being added-to (the carried intent artifact) has no defined shape. This ticket defines that contract: what fields the intent artifact holds after each of L1-L4, so the accretion is a typed, inspectable object (the compilation seam), not a device-to-device guess.\n\n**Affected files:** design deliverable first — a decision (D-intent-artifact-contract-*) and/or extension of architecture/cc.0.intent.* and architecture/cc.0.workflow-levels.*; then likely unseen_university/devices/vetinari/ + devices/hubert/ to emit/consume the shaped artifact. Discovery in sprint.\n**Design rules:** intention = present-tense contract; homogeneity over special-case; every field carries its why; canonical-memory-home.\n**Scope boundary:** IN — the field-by-field contract for the carried intent artifact across L1(interviewer)->L2(intention-extractor)->L3(designer)->L4(ticketer), reconciled to the existing Intent Doc (architecture/cc.0.intent.*) and build_packet inputs. OUT — the back-half levels; OUT — the LLM-middle; OUT — wiring the devices to actually pass it (that is a follow-on once the contract is defined).\n**Test plan:** design deliverable — proof is the artifact (the defined contract). Honest close: shipped-unproven naming 'design artifact, no red form' UNLESS the contract is realized as a validated schema (then a schema-conformance red->green becomes possible).\n**Completion criteria:** a decision/architecture-point defines each field of the carried intent artifact, which level adds it, and its why; reconciled to architecture/cc.0.intent.* and the build_packet.v1 inputs; the OPEN napkin question (is a level a device/workflow/graph-tree node) is NOT pre-decided here (Akien's call).\n\nRelated: architecture/cc.0.workflow-levels.*, architecture/cc.0.intent.*, project_staged_intention_compiler_pipeline, project_build_packet_pre_inference_compiler, project_intentions_as_living_entities.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-10T19:36:54.150867+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-10T19:36:54.203507+00:00"
+  }
+}
