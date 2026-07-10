@@ -27,7 +27,7 @@
       "Skills"
     ],
     "status": "sprint",
-    "priority": 0.45,
+    "priority": 0.85,
     "intention": "Given a ticket, /audit-ticket returns SPLIT when it carries more than one falsifiable intention OR when no single gate a hollow build couldn't pass can be written for it.",
     "decision_id": "D-proof-on-close-2026-06-20",
     "gate": null,
@@ -43,6 +43,7 @@
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-21T02:10:14.324655+00:00"
+    "scraps_validated": "2026-06-21T02:10:14.324655+00:00",
+    "updated_at": "2026-07-10T00:21:02.610302+00:00"
   }
 }

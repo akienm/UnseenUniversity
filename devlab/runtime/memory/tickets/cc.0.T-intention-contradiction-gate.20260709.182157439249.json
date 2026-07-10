@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-intention-contradiction-gate.20260709.182157439249",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intention-contradiction-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T00:21:57.439249+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-intention-contradiction-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-intention-contradiction-gate",
+    "title": "[sprint] A new intention is checked against the standing set and HALTS until reconciled (contradiction, not veto)",
+    "status": "sprint",
+    "priority": 0.9,
+    "size": "M",
+    "worker": "claude",
+    "tags": [
+      "architecture",
+      "intentions",
+      "design-gate"
+    ],
+    "intention": "I intend that a new intention is checked against every standing intention at design time, and that an irreconcilable pair halts the work until a human reconciles it, so intentions compete and disagree openly instead of silently coexisting.",
+    "description": "Intentions are living entities: they compete (lateral tension), merge/fold, decompose, and prove/disprove. Competition is the load-bearing half and it is not built. Today a new intention can contradict a standing one and nothing notices.\n\nThe mechanism is CONTRADICTION-DETECTION, NOT VETO (I-compiled-inference-residue): 'A new intention that can't be reconciled with the standing set halts until reconciled. Contradiction is structural and moodless; a veto would have a dial and could go rose- or shit-colored.' Keeping the gate as contradiction rather than scoring is what keeps mood out of it. The six core values (CP1-CP6) are simply the standing intentions installed first and never evictable.\n\nThis is the design-end check Akien named: 'we can have intentions compete. disagree until reconciled. and that needs to be in the design end. checking new intentions against old ones.'\n\nDistinct from T-sorted-intention-open-then-map, which is the READ half (surface the extant list). This ticket is the CONTRADICTION half (compare, detect, halt).\n\n**Affected files:** skills/sorted (design-time hook), skills/audit-design (Check 6 currently compares against 30d of decisions — extend to standing intentions), a new reconciliation surface in the intentions store, unseen_university/ reader for the standing set.\n**Design rules:** canonical memory home devlab/runtime/memory/; contradiction not veto (no scoring dial); CP1 — an undetectable contradiction is a confabulated coherence; halt-until-sorted (CP6).\n**Scope boundary:** IN — read the standing intention set, detect contradiction between a candidate intention and each standing one, HALT design until a human reconciles (merge / supersede / decompose / accept-tension-with-reason), record the reconciliation as an edge. OUT — automated resolution of a contradiction (a human reconciles; the gate never picks a winner); scoring/ranking intentions; the intention envelope schema (T-intentions-store); the edge kind (T-links-intentions-edge-kind).\n**Test plan:** hermetic. Seed a standing intention and a deliberately contradictory candidate; assert the gate HALTS and names both sides. Seed a compatible candidate; assert it passes. Red form: at HEAD, no gate exists, so the contradictory pair passes silently — that IS the red.\n**Completion criteria:** a contradictory candidate intention halts the design flow and names the standing intention it contradicts; a reconciliation is recordable as an edge; a compatible candidate passes untouched; the gate never auto-resolves.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "Contradictory candidate halts design and names both intentions; reconciliation recorded as an edge; compatible candidate passes; no auto-resolution path exists.",
+    "created_at": "2026-07-10T00:21:31.813030+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": "T-intentions-store + T-links-intentions-edge-kind — needs the store and the edge before a standing set can be read",
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-10T00:21:31.860251+00:00"
+  }
+}

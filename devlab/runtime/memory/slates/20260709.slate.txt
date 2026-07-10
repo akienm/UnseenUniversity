@@ -413,3 +413,8 @@ Note: notes/capability-ceiling-sweep (REBUILT from io_corpus — see below).
 Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0.95).
       3. T-reorg-parents-sweep-still-live (0.8). 4. T-io-corpus-text-drops-reasoning (0.8).
 - T-links-intentions-edge-kind: Restore the intention edge (LINK_KINDS lost goals 2026-06-26, never got intentions)
+- T-intention-contradiction-gate: intentions compete; contradiction HALTS until reconciled (gated on store+edge)
+- Intention chain priority inversion corrected: intentions-store .55->.95, extract-from-chatlogs .5->.95,
+  sorted-intention-map .5->.9, audit-ticket-atomicity .45->.85, sorted-decompose .5->.85, intent-extractor .25->.8
+- Capture pass 1: akien/inbox/20260709.IntentionsHarvest.txt (121 of Akien's typed statements, 06-01 on)
+- Capture pass 2: akien/inbox/20260709.IntentionsByDevice.txt (565 store-held intentions, 34 devices)
