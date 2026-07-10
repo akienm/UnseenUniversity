@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.intention-edge.T-links-intentions-edge-kind.20260709.191438544438",
+  "emitter": "cc.0",
+  "namespace": [
+    "intention-edge",
+    "T-links-intentions-edge-kind"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-09T19:14:38.544438",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-links-intentions-edge-kind"
+    ],
+    "commits": [
+      "bcb28a759353bdf50c20b71f610cde79ee20afa0"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-links-intentions-edge-kind",
+  "body": {
+    "thing": "intention-edge",
+    "intention": "I intend that a ticket or decision can point at the intention record it serves, so a build can be checked against the intention it claims to satisfy instead of against a prose sentence that dies with the ticket.",
+    "test": "tests/test_intention_edge.py::test_a_ticket_points_at_the_intention_it_serves",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_intention_edge.py::test_a_ticket_points_at_the_intention_it_serves",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n        Both link-kind tuples must agree — memory_emit and ticket_store write the\n        same envelope, and a kind declared in only one of them is a silent schema\n        split (that is what test_envelope_schema_matches_memory_emit pins).\n        \"\"\"\n        from devlab.claudecode import memory_emit\n    \n>       assert \"intentions\" in memory_emit.LINK_KINDS, (\n            \"memory_emit.LINK_KINDS has no `intentions` edge kind — a decision or \"\n            \"ticket cannot point at the intention it serves. links.goals was removed \"\n            \"by T-skills-goals-to-intentions and never replaced.\"\n        )\nE       AssertionError: memory_emit.LINK_KINDS has no `intentions` edge kind — a decision or ticket cannot point at the intention it serves. links.goals was removed by T-skills-goals-to-intentions and never replaced.\nE       assert 'intentions' in ('decisions', 'tickets', 'commits', 'whys')\nE        +  where ('decisions', 'tickets', 'commits', 'whys') = <module 'devlab.claudecode.memory_emit' from '/home/akien/dev/src/UnseenUniversity/devlab/claudecode/memory_emit.py'>.LINK_KINDS\n\ntests/test_intention_edge.py:52: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_intention_edge.py::test_a_ticket_points_at_the_intention_it_serves\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "bcb28a759353bdf50c20b71f610cde79ee20afa0",
+    "impl_paths": [
+      "devlab/claudecode/memory_emit.py",
+      "tests/test_ticket_store.py",
+      "unseen_university/ticket_store.py"
+    ],
+    "ticket": "T-links-intentions-edge-kind",
+    "narrative": "",
+    "why": "links.goals was an edge into an entity; T-skills-goals-to-intentions removed it and never added a successor, so 444 intentions accumulated as unpointable prose and 215 as null. A gate cannot check a hollow build against a null intention.",
+    "bootstrap": false
+  }
+}
