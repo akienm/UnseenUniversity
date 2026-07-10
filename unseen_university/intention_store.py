@@ -95,15 +95,31 @@ def validate_intention(body: dict, *, deconstructed: bool = False) -> None:
             "field is not)")
 
     # ── The sub-intention ⊗ proof-obligation contract (the anti-hollow lever) ──
-    # STUB (T-intention-capture-deconstruct-skill, commit A): enforcement is a
-    # no-op here so the scaffold + emit land first; commit B flips it on and the
-    # proof node test_subintention_missing_proof_obligation_rejected goes red->green.
     _validate_sub_intentions(body.get("sub_intentions"))
 
 
 def _validate_sub_intentions(subs) -> None:
-    """STUB — replaced with real enforcement in commit B (proof flip)."""
-    return None
+    """Enforce the deconstruction contract: ≥1 sub-intention, and EVERY
+    sub-intention must carry its ``statement``, ``why``, and — the load-bearing
+    field — its ``proof_obligation``. A deconstruction that cannot say how each
+    piece will be verified breaks the proof thread the pipeline rides on; refuse it.
+    """
+    if not isinstance(subs, list) or not subs:
+        raise IntentionValidationError(
+            "a deconstructed intention must have ≥1 sub_intention — sub_intentions "
+            "is empty or missing; a deconstruction with no sub-intentions is not a "
+            "deconstruction")
+    for i, sub in enumerate(subs):
+        if not isinstance(sub, dict):
+            raise IntentionValidationError(
+                f"sub_intentions[{i}] must be an object, got {type(sub).__name__}")
+        for key in _SUBINTENTION_REQUIRED:
+            v = sub.get(key)
+            if not isinstance(v, str) or not v.strip():
+                raise IntentionValidationError(
+                    f"sub_intentions[{i}].{key} missing or empty — every "
+                    f"sub-intention must carry its statement, why, and "
+                    f"proof_obligation (proof is a thread born here, CP1/CP3)")
 
 
 def iter_intentions() -> Iterator[dict]:
