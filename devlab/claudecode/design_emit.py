@@ -29,9 +29,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import re
 import sys
+
+log = logging.getLogger(__name__)
 
 # devlab/claudecode/design_emit.py -> repo root is three dirs up. Make the
 # package importable without requiring an editable install to be active.
@@ -111,6 +114,11 @@ def emit_design(body: dict, *, emitter: str = "cc.0", links: dict | None = None,
             namespace=[decision_id], links=links, stamp=stamp,
             produced_by=f"design:{design_id}",
         )
+
+    # Log the store crossing (state change + interface crossing — AR-009 / the
+    # stamped logging constraint). Parity with ticket_store's write logging.
+    log.info("design_emit: %s %s written%s", "draft" if draft else "resolved",
+             design_id, "" if decision_path is None else f" (+decision {_decision_id_from_design(design_id)})")
 
     return {"design_path": design_path, "decision_path": decision_path}
 
