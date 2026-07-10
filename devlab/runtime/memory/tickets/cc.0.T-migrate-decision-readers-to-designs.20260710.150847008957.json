@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-migrate-decision-readers-to-designs.20260710.150847008957",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-migrate-decision-readers-to-designs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T21:08:47.008957+00:00",
+  "links": {
+    "decisions": [
+      "D-design-first-artifact-type-2026-07-10"
+    ],
+    "tickets": [
+      "T-migrate-decision-readers-to-designs"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "D-design-first-artifact-type-2026-07-10",
+  "body": {
+    "id": "T-migrate-decision-readers-to-designs",
+    "title": "[triage] Migrate decisions/ readers to designs/ and retire the emit_design decision projection",
+    "size": "L",
+    "tags": [
+      "skills",
+      "architecture",
+      "designs",
+      "cleanup"
+    ],
+    "status": "triage",
+    "intention": "I intend that the design artifact is the single home its readers point at, so the transitional back-compat decision projection can be deleted and the -1-decision delta of the boundary contract actually completes.",
+    "decision_id": "D-design-first-artifact-type-2026-07-10",
+    "description": "FOLLOW-ON to T-design-first-artifact-type. That keystone made `design` first-class but, to avoid stranding the broad decisions/ reader surface, emit_design PROJECTS a derived D-* decision into decisions/ (design=source of truth, projection=read-model). This ticket retires that projection by pointing the readers at designs/ (via design_store.iter_designs/get_design or a projected view), then removing the project_decision default.\n\n**Reader surface to migrate (grep 'decisions/'):** skills/context-load/run (Step 2a/3 recent+active decisions), devlab/claudecode/validity_sweep.py, decision-rollup/auto-close path (cc_queue.py / outcome_check.py), unseen_university/devices/web_server/server.py, igor cognition readers (bliss_integrator, self_inspect, resource_manager, pursuits, cortex). Coordinate with the audit re-key (T-rekey-decision-first-skills-to-design-first) which handles audit-* + /outcome + /weekly-retro.\n\n**Design rules:** one home no exceptions (CLAUDE.md #1); homogeneity over special-case; delete old copies after successful migration (no dups).\n**Scope boundary:** IN — re-point the non-audit decisions/ readers at designs/ + drop the projection default in design_emit. OUT — the audit re-key (its own ticket); OUT — deleting historical decisions/ records (they stay readable).\n**Test plan:** proof = a reader (e.g. context-load recent-decisions or validity_sweep) surfaces a design emitted with project_decision=False (red->green: reader finds the design without a projected D-*). \n**Completion criteria:** the named readers read designs/; design_emit no longer projects by default; boundary-contract -1-decision delta complete; reconciled to architecture/workflow-levels.\n\nRelated: T-design-first-artifact-type, T-rekey-decision-first-skills-to-design-first, architecture/cc.0.workflow-levels.*, note reader-gap-decision 2026-07-10.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "gate": "T-rekey-decision-first-skills-to-design-first",
+    "priority": 0.4,
+    "created_at": "2026-07-10T21:08:23.874950+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-10T21:08:23.920608+00:00"
+  }
+}
