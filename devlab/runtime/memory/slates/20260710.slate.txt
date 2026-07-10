@@ -8,6 +8,7 @@ NONE
 ## Planned
 
 ## Ad hoc
+- T-arch-point-pointer-is-dict-not-path: KICKED BACK to open_questions (Q1-Q3) — type-correcting the test surfaces ~100 misses spanning the OUT-of-scope stale-path sweep + a reference_docs-are-not-paths schema question; needs a design call on the intention-point pointer contract before it's buildable.
 - T-watch-primitive-is-hollow: revive cross-day watch-for (Akien uses CC as HIS memory; watches expire by default)
 
 ## Done today
