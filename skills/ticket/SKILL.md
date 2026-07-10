@@ -21,6 +21,7 @@ these sections at filing time, and missing ones get flagged:
     **Design rules:** <which palace checks under unseenuniversity/rules/ticket_design_checks/ apply — e.g. "no-sqlite, test-plan-or-why-not". "none apply" only after thinking about it.>
     **Scope boundary:** <what's explicitly in scope; what's explicitly out of scope>
     **Test plan:** <specific tests to add or run, OR "no tests because: <reason>" — always state one or the other>
+    **Proof obligation:** <what a hollow build could NOT pass — the obligation this ticket must discharge, threaded from the design sub-intention that produced it (proof-as-thread: intention → ticket → prereg → prove). build_packet surfaces it into proof_plan.proof_obligation. Omit only for a ticket with no design-borne obligation.>
 
 Structure lives in description TEXT as labeled sections. Free-form narrative
 on top, labeled fields below. The cc_queue.py DB row stays shape-stable —

@@ -148,3 +148,29 @@ def test_packet_matches_build_packet_v1_schema():
     assert "token_measurement" in p["proof_plan"]
     assert "fingerprint_sha256" in p["determinism"]
     assert 0.0 <= p["intent"]["confidence"] <= 1.0
+
+
+# ── (e) proof-obligation threading (T-rekey-decision-first-skills-to-design-first) ─────
+# The settled proof-as-thread carries each sub-intention's proof-obligation onto its
+# ticket; the last deterministic layer before the LLM must surface it so the build knows
+# the obligation to discharge, not just the test plan that observes success.
+
+def test_proof_obligation_threaded_into_packet():
+    """A ticket carrying a `**Proof obligation:**` section surfaces it in the packet's
+    proof_plan. PROOF NODE: at HEAD~1 the extractor is a stub returning "" (the
+    obligation is silently dropped) -> this assertion fails with an authentic
+    behavioral AssertionError; at HEAD the section is threaded through -> green."""
+    ticket = {
+        "id": "T-proof-obligation-fixture",
+        "title": "Fixture carrying a proof-obligation",
+        "description": (
+            "**Affected files:** alpha.py\n"
+            "**Test plan:** run pytest\n"
+            "**Proof obligation:** emit(hollow) raises before any file is written\n"
+            "**Scope boundary:** only alpha\n"
+        ),
+    }
+    p = build_packet(ticket, context_shortlist=_SHORTLIST, file_bodies=_BODIES)
+    assert p["proof_plan"]["proof_obligation"] == (
+        "emit(hollow) raises before any file is written"
+    )

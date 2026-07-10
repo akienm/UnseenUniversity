@@ -123,6 +123,19 @@ def _success_definition(ticket: dict) -> dict:
     return {"text": _section(ticket.get("description", ""), "Test plan"), "from": "ticket-test-plan"}
 
 
+def _proof_obligation(ticket: dict) -> str:
+    """The proof-obligation threaded from the design's sub-intention onto the ticket
+    (the settled proof-as-thread: intention -> ticket -> prereg -> prove). Carried
+    verbatim into the packet so the last deterministic layer before the LLM names the
+    obligation the build must discharge, not just the test plan that observes success.
+
+    STUB (T-rekey-decision-first-skills-to-design-first, commit A): returns "" so the
+    scaffold lands first; commit B extracts the `**Proof obligation:**` section and the
+    proof node goes red->green.
+    """
+    return ""
+
+
 def _consequence_check(ticket: dict, affected_files: list[str]) -> dict:
     """v1 consequence surface: each touched file is a surface that could regress.
 
@@ -293,6 +306,7 @@ def build_packet(
     intent = _intent(ticket)
     hard_constraints = _hard_constraints(ticket)
     success_definition = _success_definition(ticket)
+    proof_obligation = _proof_obligation(ticket)
     measurement = _token_measurement(shortlist, bodies)
 
     gate = _sufficiency_gate({
@@ -315,6 +329,7 @@ def build_packet(
         "sufficiency_gate": gate,
         "proof_plan": {
             "test_plan": success_definition["text"],
+            "proof_obligation": proof_obligation,
             "token_measurement": measurement,
         },
         "consequence_check": _consequence_check(ticket, affected_files),

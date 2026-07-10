@@ -206,9 +206,14 @@ that must happen first.
 **Skip when:** `status` is anything other than `hold`. This check does not fire
 on sprint, design, triage, or any other status.
 
-### 19. Decision consequence gate (M/L/XL with decision_id)
+### 19. Design consequence gate (M/L/XL with a design/decision handle)
 
-When `decision_id` is set AND any ticket in the batch is M, L, or XL:
+The artifact that spawns tickets is now a **design** (INTENTION → DESIGN → TICKET;
+decisions fold in as forks). A ticket still carries `decision_id` — the design's
+**projected D-\*** back-compat handle — so this gate keys on it unchanged; read it
+as "the design this ticket realizes".
+
+When `decision_id` (the design handle) is set AND any ticket in the batch is M, L, or XL:
 
 1. Check whether the batch includes a `T-consequence-{slug}` ticket.
 2. If not: check queue for an already-closed consequence ticket for this decision:

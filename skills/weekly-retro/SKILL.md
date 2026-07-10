@@ -20,7 +20,12 @@ Weekly-retro covers the question neither asks: **are we making the right bets?**
 
 ## Steps
 
-### 1. Pull this week's decision outcomes
+### 1. Pull this week's design/intention outcomes
+
+Reads canonical **designs/** first, then legacy/projected **decisions/** for any id not
+already present as a design (the projection means a design and its D-* share a slug — dedup
+so a shipped design is counted once). "Did the intention/design hold?" is the learning
+question (INTENTION → DESIGN → TICKET).
 
 ```bash
 python3 - <<'PY'
@@ -28,9 +33,17 @@ import json, glob, os, datetime
 root = os.environ.get("UU_ROOT", os.path.expanduser("~/dev/src/UnseenUniversity"))
 cut = datetime.date.today() - datetime.timedelta(days=7)
 reviewed, unreviewed = [], []
-for f in glob.glob(f"{root}/devlab/runtime/memory/decisions/*.json"):
+def _norm(i): return (i or "").replace("Design-", "").replace("D-", "")
+_seen = set()
+_files = (glob.glob(f"{root}/devlab/runtime/memory/designs/*.json")
+          + glob.glob(f"{root}/devlab/runtime/memory/decisions/*.json"))
+for f in _files:
     b = json.load(open(f)).get("body", {})
-    did, title, txt = b.get("decision_id", "?"), b.get("title", ""), b.get("text", "")
+    did = b.get("design_id") or b.get("decision_id", "?")
+    if _norm(did) in _seen:   # design already counted this slug; skip its projection
+        continue
+    _seen.add(_norm(did))
+    title, txt = b.get("title", ""), b.get("text", "")
     od = b.get("outcome_date")
     if od:
         try:

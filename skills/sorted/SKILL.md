@@ -91,16 +91,19 @@ the decision has been filed.
 
 ### 3. Draft tickets
 
-For each implementation unit the decision implies, draft one ticket shaped
-per the `/ticket` description template:
+For each implementation unit the design implies, draft one ticket shaped
+per the `/ticket` description template. **Thread the proof-obligation:** each
+ticket carries a `**Proof obligation:**` section sourced from the design's
+sub-intention (or fork) it realizes — the proof-as-thread that `build_packet`
+surfaces into `proof_plan.proof_obligation` and prereg/prove later discharge.
 ```python
 {
   "id": "T-<kebab-slug>",
   "title": "<short title, <80 chars>",
   "size": "S|M|L|XL",
   "tags": ["<Topic>", "<Area>"],
-  "description": "<problem + proposed shape + Affected files + Design rules + Scope boundary + Test plan>",
-  "decision_id": "D-...",
+  "description": "<problem + proposed shape + Affected files + Design rules + Scope boundary + Test plan + Proof obligation>",
+  "decision_id": "D-...",   # the projected D-* of the design (back-compat handle)
   "gate": null,  # set if depends on another pending ticket
   "priority": 0.5  # raise for unblockers
 }

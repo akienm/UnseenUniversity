@@ -19,14 +19,14 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-rekey-decision-first-skills-to-design-first",
-    "title": "[sprint] Re-key the decision-first skills to design-first; thread the proof-obligation field through",
+    "title": "[in_progress] Re-key the decision-first skills to design-first; thread the proof-obligation field through",
     "size": "L",
     "tags": [
       "skills",
       "intentions",
       "design"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "gate": null,
     "intention": "I intend that the skills which are DECISION-first today (audit-design, audit-hypothesis, audit-ticket, /outcome, /weekly-retro) key on the DESIGN/INTENTION artifacts instead, and that the proof-obligation field is threaded through /ticket + /sorted + prebuild — so the whole skill set speaks the settled Intention->Design->Ticket stack.",
     "produced_by": "architecture/workflow-levels",

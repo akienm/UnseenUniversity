@@ -31,13 +31,19 @@ knowing if the system is actually improving.
 
 ### 1. Read the hypothesis
 
+The learning question is now **"did the intention/design hold?"** (INTENTION → DESIGN →
+TICKET; a decision is a fork inside a design). Read the canonical **design** first, falling
+back to the projected/legacy `decisions/` record — both carry the same `## Hypothesis`
+section (the design SUBSUMES the decision's fields, so this loop is unchanged in substance):
+
 ```bash
-DECISION_FILE=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)
-python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('text',''))" "$DECISION_FILE" \
+DESIGN_FILE=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/designs/*<D-id>*.json 2>/dev/null | head -1)
+DESIGN_FILE=${DESIGN_FILE:-$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)}
+python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('text',''))" "$DESIGN_FILE" \
   | grep -A 20 "## Hypothesis"
 ```
 
-If the decision predates hypothesis tracking (no `## Hypothesis` section), note that and skip to a general outcome assessment.
+If the design/decision predates hypothesis tracking (no `## Hypothesis` section), note that and skip to a general outcome assessment.
 
 ### 2. Gather observable evidence
 

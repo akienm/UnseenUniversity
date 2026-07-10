@@ -15,7 +15,8 @@ A vague hypothesis produces no outcome data — it's a bet with no payoff.
 Called automatically by /sorted after hypothesis extraction. Also standalone:
 ```
 /audit-hypothesis          — audit the hypothesis just extracted in conversation
-/audit-hypothesis D-xxx    — audit the hypothesis stored on a filed decision
+/audit-hypothesis I-xxx    — audit an intention's deconstruction (proof-obligations)
+/audit-hypothesis D-xxx    — audit the hypothesis stored on a filed design (projected D-*)
 ```
 
 ## Inputs
@@ -25,9 +26,19 @@ Called automatically by /sorted after hypothesis extraction. Also standalone:
 - **intention** — the "I intend that..." statement this serves
 - **time horizon** — when we'd check the outcome
 
-For standalone on a filed decision:
+**Proof-obligation-at-deconstruct (intention artifact).** When auditing an intention's
+deconstruction (`/intend` output), each sub-intention must carry a well-formed
+`proof_obligation` — a concrete thing a build could red→green, not a restatement of the
+sub-intention. This is the front end of the same proof-as-thread the ticket's
+`**Proof obligation:**` section and `build_packet.proof_plan.proof_obligation` carry
+downstream. `intention_store.validate_intention` enforces presence at emit; this audit
+checks the obligation is *testable*, not just non-empty. AMEND a sub-intention whose
+proof-obligation names no observable.
+
+For standalone on a filed design (canonical `designs/`, `decisions/` for legacy/projected):
 ```bash
-F=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)
+F=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/designs/*<D-id>*.json 2>/dev/null | head -1)
+F=${F:-$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)}
 python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('text',''))" "$F" | grep -A 10 "## Hypothesis"
 ```
 

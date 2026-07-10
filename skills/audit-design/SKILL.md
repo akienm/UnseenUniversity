@@ -3,24 +3,33 @@ name: audit-design
 description: Filing-time decision audit. Called by /sorted after the decision summary, before tickets are drafted. Catches a "decision" that isn't actually decided — vague intention, unobservable success criteria, conflicts with prior decisions or palace rules, undecomposed scope, missing executor assignment. Returns PASS / AMEND. Standalone invocation also supported via `/audit-design <decision-id>` for re-checking an already-filed decision.
 ---
 
-# audit-design — Decision-time positive checks
+# audit-design — Design-time positive checks
 
 Fires between `/sorted` Step 2 (summarize) and Step 3 (draft tickets).
-Reviews the decision narrative + scope context against nine positive
-checks. Cheap relative to the cost of filing tickets that don't survive
-their first sprint.
+Reviews the **design** (the shape realizing the intention) + scope context
+against the positive checks below. Cheap relative to the cost of filing
+tickets that don't survive their first sprint.
 
-This audit operates on the *decision*, not on individual tickets — the
+This audit operates on the *design*, not on individual tickets — the
 ticket-level checks live in `audit-ticket` (called per ticket in
-/sorted Step 4).
+/sorted Step 4). The artifact is now a DESIGN (INTENTION → DESIGN → TICKET);
+a "decision" is a **fork-resolution folded inside** the design (`forks[]`).
+
+**Design-specific check — fork decidedness.** Beyond the nine narrative checks,
+verify the design actually RESOLVED its forks: every `forks[]` entry names its
+`question`, its `resolution`, and its `why` (this is what `design_store.validate_design`
+enforces at emit — the audit catches a would-be design that reads as decided but
+left a fork open or unexplained). A design that resolved no fork is not a design;
+AMEND to name the open fork.
 
 ---
 
 ## Inputs
 
-- **Decision narrative**: the 1–2 sentence summary written in /sorted Step 2.
+- **Design**: the shape + fork-resolutions summarized in /sorted Step 2 (the
+  design body: `intentions`, `shape`, `forks[]`).
 - **Scope context**: the conversation turns since the most recent `DESIGN_START`, prior `/sorted`, or session start.
-- **Optional arg**: `<decision-id>` to audit an already-filed decision retroactively.
+- **Optional arg**: `<design-id>` (or its projected `<decision-id>`) to audit an already-filed design retroactively.
 
 ---
 
