@@ -53,7 +53,8 @@ The hypothesis must be extracted and stored on the decision record before audit-
 
 **Question 3:** "How will we know? What's the signal?" — a metric, log line, behavior, or eval question that can be checked with current infrastructure.
 
-Store answers in the decision JSON `body.text` (these sections are emitted in Step 6):
+Store answers on the DESIGN body (Step 6): Q1 → `intentions[]`, Q2 → `hypothesis`,
+Q3 → `measurement_signal`; they are also mirrored into `body.text` as these sections:
 ```
 ## Hypothesis
 <Question 2 answer>
@@ -186,52 +187,86 @@ The "Predicted unintended effects" field must come from reasoning about the deci
 
 Run `/audit-ticket` on this draft before filing. File via `cc_queue.py add` alongside the batch (append to the same `/tmp/sorted_batch_<D-id>.json` file, or add separately — either is fine).
 
-### 6. Write the decision to the canonical store (JSON only)
+### 6. Write the DESIGN to the canonical store (design-first)
 
-The decision is a JSON file in the canonical store —
-`devlab/runtime/memory/decisions/`. No `.md` stub, no `lab/` path: every store
-file is JSON and the full narrative rides in `body.text`
-(D-canonical-memory-consolidation-2026-06-23). `memory_emit.py` is the one
-chokepoint — always go through it so the filename convention and envelope stay
-uniform:
+**The artifact is a DESIGN, not a standalone decision** (boundary contract SETTLED
+2026-07-10, architecture/workflow-levels; T-design-first-artifact-type). The
+dev-process stack is `INTENTION -> DESIGN -> TICKET`. A design is the *shape* that
+realizes the intention, and each decision you made in the block folds in as a
+**fork-resolution inside the design** (`forks[]`, each carrying its `why` — CP3).
+There is no standalone `D-*` type any more: `design_emit.py` validates the design
+and **projects** a back-compat `D-*` read-model into `decisions/` so the existing
+decision readers (context-load, validity_sweep, decision-rollup auto-close) keep
+working during the cut-over. You go through `design_emit.py`, not `memory_emit`
+directly — validation is enforced in code (a hollow, fork-less design is refused
+before any write).
+
+**Promote the draft, don't duplicate.** If `/design` opened the block it wrote a
+DRAFT design; read `$HOME/.unseen_university/cc_channel/design_mode.json` and
+**reuse its `design_id` + `stamp`** below so this emit overwrites the same artifact
+in place (the draft accretes into the resolved design — one node, never two). If
+there is no draft (`/sorted` invoked without `/design`), mint a fresh
+`Design-<id>` + stamp here.
+
 ```bash
-cat > /tmp/decision_body_<id>.json <<'JSON'
+cat > /tmp/design_body_<id>.json <<'JSON'
 {
-  "decision_id": "D-<id>",
+  "design_id": "Design-<id>",
   "title": "<one-line summary>",
   "status": "open",
   "date": "YYYY-MM-DD",
+  "intentions": ["<the 'I intend that...' statement from Q1>"],
+  "shape": "<the architecture/shape that realizes the intention — the narrative>",
+  "forks": [
+    {
+      "question": "<the decision point you resolved in this block>",
+      "options": ["<alternative A>", "<alternative B>"],
+      "resolution": "<which you chose>",
+      "why": "<the reasoning — there's always a why>"
+    }
+  ],
+  "proof_obligations": ["<what a ticket from this design must prove — the how-to-verify thread>"],
   "spawned_tickets": ["T-x", "T-y", "T-z"],
-  "text": "# D-<id>\n**title:** <summary>\n**date:** YYYY-MM-DD\n**status:** open\n**spawned_tickets:** T-x, T-y, T-z\n\n## Decision narrative\n<1-2 sentences from step 2 + scope context>\n\n## Hypothesis\n<Q2 answer>\n\n## Measurement Signal\n<Q3 answer>\n\n## Intention\n<the 'I intend that...' statement from Q1>"
+  "hypothesis": "<Q2 answer>",
+  "measurement_signal": "<Q3 answer>",
+  "text": "# Design-<id>\n**title:** <summary>\n**date:** YYYY-MM-DD\n**status:** open\n**spawned_tickets:** T-x, T-y, T-z\n\n## Shape\n<1-2 sentences from step 2 + scope context>\n\n## Forks resolved\n- <question> -> <resolution> (why: <why>)\n\n## Hypothesis\n<Q2 answer>\n\n## Measurement Signal\n<Q3 answer>\n\n## Intention\n<the 'I intend that...' statement from Q1>"
 }
 JSON
-python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/memory_emit.py" \
-  --category decisions --emitter cc.0 --kind decision \
-  --namespace D-<id> --body-file /tmp/decision_body_<id>.json \
-  --produced-by "<the intention or session that produced this decision>"
+python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/design_emit.py" \
+  --body-file /tmp/design_body_<id>.json \
+  --stamp "<reuse the draft's stamp from design_mode.json, or mint a fresh one>" \
+  --produced-by "<the intention that produced this design>"
 ```
 
-`--produced-by` is the decision's backward edge (feedback-edges contract): the
-artifact whose content caused it — an `intent:I-*` id when the decision realizes a
-named intention, else `session:cc.0` (the honest default memory_emit stamps if you
-omit it). It answers "if this decision is wrong, what should be reviewed?".
+Emit rules:
+- **≥1 fork is mandatory** — a `/sorted` block that resolved no decision is not a
+  design; the emitter refuses it. Record every choice you made, with its `why`.
+- **`--produced-by`** is the design's backward edge (feedback-edges contract): an
+  `intent:I-*` id when it realizes a named intention, else `session:cc.0` (the
+  honest default). It answers "if this design is wrong, what should be reviewed?".
+- Tickets keep `decision_id: D-<id>` (the projected read-model) so `cc_queue` and
+  decision-rollup auto-close are undisturbed; `D-<id>` is derived from
+  `Design-<id>` by the emitter. (Re-keying tickets to `design_id` is the gated
+  follow-on T-rekey-decision-first-skills-to-design-first, not this step.)
 
 **Validity conditions (validity-conditions contract).** Before emitting, ask once:
-*"what must remain true for this decision to hold?"* — add 0–3
-`validity_conditions` to the body, each `{type, target, note?}`:
+*"what must remain true for this design to hold?"* — add 0–3
+`validity_conditions` to the design body, each `{type, target, note?}`:
 `depends-on-path` (a repo path/`path::symbol`), `depends-on-artifact` (a `D-*/T-*`
 id whose supersession would falsify this), or `depends-on-fact` (a short fact,
 with an optional `probe` grep pattern so the day-close sweep can check it). Prefer
 resolvable types over factless facts. An honest **none** is accepted — do not
 invent conditions. The day-close `validity_sweep.py` resolves these and flags the
-entry when a dependency changes.
+entry when a dependency changes (it reads the projected `decisions/` record).
 
-The emit lands one file at
-`devlab/runtime/memory/decisions/cc.0.D-<id>.<stamp>.json` (unique microsecond
-stamp — collisions are effectively impossible). The decision auto-closes when
-all spawned_tickets close (decision-rollup reads the store). To UPDATE it later
-(outcome, status-close), re-emit reusing the file's existing `<stamp>` — an
-atomic in-place overwrite, never a second node (see `/outcome`).
+The emit lands TWO files: the canonical design at
+`devlab/runtime/memory/designs/cc.0.Design-<id>.<stamp>.json` and its projected
+back-compat decision at `devlab/runtime/memory/decisions/cc.0.D-<id>.<stamp>.json`
+(same `<stamp>` — unique microsecond, collisions effectively impossible). The
+projected decision auto-closes when all spawned_tickets close (decision-rollup
+reads `decisions/`). To UPDATE later (outcome, status-close), re-emit the design
+reusing the file's existing `<stamp>` — an atomic in-place overwrite of BOTH
+files, never a second node (see `/outcome`).
 
 ### 8. Append to slate
 

@@ -54,7 +54,7 @@ MEMORY_ROOT = _memory_root()
 # exactly as Akien named them; renames are his call, not this helper's.
 CATEGORIES = {
     "architecture", "artifacts", "boot", "chat.cc.0", "chat.igor", "slates",
-    "sessions", "decisions", "builder_feedback", "judge", "notes",
+    "sessions", "decisions", "designs", "builder_feedback", "judge", "notes",
     "design_patterns", "projects/acurite", "projects/uu", "projects/swadl",
     "rules", "tickets", "proofs", "intentions",
 }
