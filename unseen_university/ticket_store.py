@@ -60,7 +60,9 @@ log = logging.getLogger(__name__)
 WORKABLE_STATUSES = {"sprint", "assigned"}
 
 # Default envelope link buckets (mirrors memory_emit).
-_LINK_KEYS = ("decisions", "tickets", "commits", "whys")
+# Must stay identical to memory_emit.LINK_KINDS — both write the same envelope.
+# `intentions` is the edge a ticket uses to name the intention it serves.
+_LINK_KEYS = ("decisions", "tickets", "commits", "whys", "intentions")
 
 
 # ── Paths (env read dynamically so tests can point UU_MEMORY_ROOT at a tmp dir) ──
@@ -161,6 +163,8 @@ def _envelope(body: dict) -> dict:
     links["tickets"] = [tid]
     if body.get("decision_id"):
         links["decisions"] = [body["decision_id"]]
+    if body.get("intention_id"):
+        links["intentions"] = [body["intention_id"]]
     # produced_by (feedback-edges contract): a ticket's backward edge is the
     # decision that produced it; absent a decision, the honest session fallback.
     # Additive — no reader may require it; legacy envelopes lack it.

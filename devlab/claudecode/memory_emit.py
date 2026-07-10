@@ -59,7 +59,10 @@ CATEGORIES = {
     "rules", "tickets", "proofs", "intentions",
 }
 
-LINK_KINDS = ("decisions", "tickets", "commits", "whys")
+# `intentions` replaces the `goals` edge that T-skills-goals-to-intentions removed
+# on 2026-06-26 without a successor. Its absence is why intentions accumulated as
+# prose in a ticket field instead of as entities anything could point at.
+LINK_KINDS = ("decisions", "tickets", "commits", "whys", "intentions")
 _STAMP_RE = re.compile(r"^\d{8}\.\d{12}$")
 
 

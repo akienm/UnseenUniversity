@@ -68,7 +68,8 @@ def test_envelope_schema_matches_memory_emit(_tmp_root):
     assert rec["category"] == "tickets"
     assert rec["kind"] == "ticket"
     assert rec["namespace"] == ["T-env"]
-    assert set(rec["links"]) == {"decisions", "tickets", "commits", "whys"}
+    assert set(rec["links"]) == {"decisions", "tickets", "commits", "whys",
+                                 "intentions"}
     assert rec["links"]["tickets"] == ["T-env"]
 
 
