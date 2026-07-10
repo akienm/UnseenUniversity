@@ -420,3 +420,4 @@ Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0
 - Capture pass 1: akien/inbox/20260709.IntentionsHarvest.txt (121 of Akien's typed statements, 06-01 on)
 - Capture pass 2: akien/inbox/20260709.IntentionsByDevice.txt (565 store-held intentions, 34 devices)
 - T-links-intentions-edge-kind: PROVEN, closed (bcb28a75) — links.intentions restored
+- Intentions outline redraft -> akien/inbox/20260709.CCReviewOfIntentionsOutline.txt (present-tense contract voice; 43 contract holes; 6 conflicts to reconcile; 18 [CC] lines to ratify or cut)
