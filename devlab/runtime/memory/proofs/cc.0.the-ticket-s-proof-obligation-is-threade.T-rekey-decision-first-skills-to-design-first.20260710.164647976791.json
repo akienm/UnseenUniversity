@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.the-ticket-s-proof-obligation-is-threade.T-rekey-decision-first-skills-to-design-first.20260710.164647976791",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-ticket-s-proof-obligation-is-threade",
+    "T-rekey-decision-first-skills-to-design-first"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-10T16:46:47.976791",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-rekey-decision-first-skills-to-design-first"
+    ],
+    "commits": [
+      "4158f4e40267639473e5b14b9285a7b519e8443b"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-rekey-decision-first-skills-to-design-first",
+  "body": {
+    "thing": "the ticket's proof-obligation is threaded into the deterministic build packet",
+    "intention": "build_packet surfaces a ticket's Proof obligation section into proof_plan.proof_obligation, so the proof-as-thread reaches the last deterministic layer before the LLM instead of being dropped",
+    "test": "tests/test_build_packet.py::test_proof_obligation_threaded_into_packet",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_build_packet.py::test_proof_obligation_threaded_into_packet",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            \"title\": \"Fixture carrying a proof-obligation\",\n            \"description\": (\n                \"**Affected files:** alpha.py\\n\"\n                \"**Test plan:** run pytest\\n\"\n                \"**Proof obligation:** emit(hollow) raises before any file is written\\n\"\n                \"**Scope boundary:** only alpha\\n\"\n            ),\n        }\n        p = build_packet(ticket, context_shortlist=_SHORTLIST, file_bodies=_BODIES)\n>       assert p[\"proof_plan\"][\"proof_obligation\"] == (\n            \"emit(hollow) raises before any file is written\"\n        )\nE       AssertionError: assert '' == 'emit(hollow)...le is written'\nE         \nE         - emit(hollow) raises before any file is written\n\ntests/test_build_packet.py:174: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_build_packet.py::test_proof_obligation_threaded_into_packet\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "4158f4e40267639473e5b14b9285a7b519e8443b",
+    "impl_paths": [
+      "devlab/claudecode/build_packet.py"
+    ],
+    "ticket": "T-rekey-decision-first-skills-to-design-first",
+    "narrative": "",
+    "why": "proof is a thread born at the sub-intention and carried intention->ticket->prereg->prove; the packet must name the obligation, not just the test plan",
+    "bootstrap": false
+  }
+}
