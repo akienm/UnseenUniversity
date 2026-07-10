@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.design-is-a-first-class-artifact-type-wh.T-design-first-artifact-type.20260710.150754723011",
+  "emitter": "cc.0",
+  "namespace": [
+    "design-is-a-first-class-artifact-type-wh",
+    "T-design-first-artifact-type"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-10T15:07:54.723011",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-design-first-artifact-type"
+    ],
+    "commits": [
+      "0e35c31130d162ed1e859c3c8251eb45dadf86ce"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-design-first-artifact-type",
+  "body": {
+    "thing": "design is a first-class artifact type whose contract refuses a hollow (fork-less) design",
+    "intention": "validate_design rejects a resolved design that records no fork-decision (the decision-folds-in-as-fork contract), so the Design->Ticket boundary cannot cross an unresolved design",
+    "test": "tests/test_design_store.py::test_forkless_design_rejected",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_design_store.py::test_forkless_design_rejected",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "Failed",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________________ test_forkless_design_rejected _________________________\n\n    def test_forkless_design_rejected():\n        \"\"\"A design that resolved no fork is not a design — it must be rejected.\"\"\"\n        forkless = _complete_design(forks=[])\n>       with pytest.raises(ds.DesignValidationError):\nE       Failed: DID NOT RAISE <class 'unseen_university.design_store.DesignValidationError'>\n\ntests/test_design_store.py:61: Failed\n=========================== short test summary info ============================\nFAILED tests/test_design_store.py::test_forkless_design_rejected - Failed: DI...\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "0e35c31130d162ed1e859c3c8251eb45dadf86ce",
+    "impl_paths": [
+      "unseen_university/design_store.py"
+    ],
+    "ticket": "T-design-first-artifact-type",
+    "narrative": "",
+    "why": "decision folds into design as forks[]; a design with no fork is a wish, not a design — proof-on-close CP1",
+    "bootstrap": false
+  }
+}
