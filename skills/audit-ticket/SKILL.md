@@ -92,6 +92,27 @@ Does the ticket description include an `audit-emphasis` directive?
 
 Note the tag (or absence) in output so downstream audit routing can act on it.
 
+### 15.5. `audit-skip-smell` justification (exemptions are earned, not self-declared)
+
+The `audit-skip-smell` tag makes audit-smell skip the ticket entirely. Because the
+ticket author declares it at filing time, a bare tag is an attacker-controlled
+exemption — the author exempts their own change from review (gate-attack G5,
+T-audit-smell-evasion-guards). This check makes the tag *earned*:
+
+1. **Is the ticket doc-only?** Doc-only = every entry in `Affected files` is a doc
+   path (`*.md`, `*.txt`, `docs/`), OR `audit-emphasis: doc-only` is present. A
+   doc-only ticket has nothing for audit-smell to catch, so the exemption is granted
+   automatically — treat the reason as "doc-only" even if none is stated.
+2. **Is the ticket code-touching?** If any `Affected files` entry is a code path
+   (anything not a doc path), then a bare `audit-skip-smell` is **stripped** and the
+   ticket is flagged **AMEND**: the author cannot self-exempt a code change from smell
+   audit. The tag survives on a code-touching ticket *only* if the description carries
+   an explicit stated reason for the exemption (e.g. `audit-skip-smell: reason: <why>`)
+   — a bare tag with no reason is never sufficient. Emit the warning:
+   `[skip-smell] audit-skip-smell stripped from code-touching ticket — exemption requires a stated reason, not a bare tag.`
+
+Record in output whether the tag was granted (doc-only / justified) or stripped.
+
 ### 16. Two-sided build for capability tickets
 
 Enforces unseenuniversity/rules/capability-protocol/two-sided-build: a ticket that
@@ -222,6 +243,7 @@ Findings:
 - [observability] no observable log line named
 - [split] 3+ verbs in one ticket (proposed: T-a + T-b)
 - [audit-emphasis] <tag or "none">
+- [skip-smell] <granted: doc-only | granted: justified | stripped: bare tag on code-touching ticket | none>
 - [feedback-loop] skills/<name>/ missing: <property list> (advisory — does not block)
 - [hold-gate] status=hold but no named dependency (T-xxx) or Akien: action found
 

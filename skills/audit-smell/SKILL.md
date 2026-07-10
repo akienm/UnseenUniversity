@@ -40,9 +40,23 @@ of these in practice. Default model: Sonnet.
 
 `audit-smell` does NOT run when:
 - Diff is doc-only (`*.md`, `*.txt`, `docs/`).
-- Ticket carries `audit-skip-smell` tag (declared at filing time).
-- Diff size is below the threshold (default: <30 lines changed AND no
-  new files). Override via env var `AUDIT_SMELL_MIN_LINES`.
+- Ticket carries a **justified** `audit-skip-smell` tag. The tag is only
+  honoured here if audit-ticket check 15.5 granted it (doc-only, or a stated
+  reason on a code-touching ticket). A bare self-declared tag on a code-touching
+  ticket is stripped at filing and must NOT skip the audit — the author does not
+  control their own exemption (gate-attack G5, T-audit-smell-evasion-guards).
+- The **cumulative** changed-line count for the *ticket* is below the threshold
+  (default: <30 lines AND no new files). Override via `AUDIT_SMELL_MIN_LINES`.
+
+**Cumulative, not per-run.** The threshold applies to the SUM of changed lines
+across every commit made for this ticket, not the single diff in front of you.
+A change sliced into three 15-line commits each passes a per-run threshold while
+accumulating 45 lines of unreviewed rot — the exact slicing attack G5 describes.
+Compute the ticket total from its commits, e.g.
+`git log --oneline --grep "<ticket-id>" --format=%H | xargs -r git show --stat`
+(or the sprint's per-ticket line tally), and gate on that sum. Once a ticket's
+cumulative diff crosses the threshold, audit-smell runs for the current commit even
+if this commit alone is small — the exemption does not reset per commit.
 
 Tickets can opt up via `audit-emphasis-smell` tag → run with stricter
 thresholds and Opus model.
