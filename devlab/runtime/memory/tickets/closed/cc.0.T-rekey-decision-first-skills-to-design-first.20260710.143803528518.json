@@ -34,9 +34,9 @@
     "created_at": "2026-07-10T20:37:39.853016+00:00",
     "worker": null,
     "created_by": null,
-    "result": "Re-keyed the decision-first skills to the settled INTENTION->DESIGN->TICKET stack. CODE (proven): proof-obligation threaded onto the ticket (**Proof obligation:** section) + surfaced by build_packet into proof_plan.proof_obligation (red->green @4158f4e4). PROSE: audit-design audits a DESIGN + fork-decidedness; audit-hypothesis checks proof-obligation-at-deconstruct + reads designs/; audit-ticket step 19 reads decision_id as the design's projected handle; /outcome + /weekly-retro read designs/ canonical (decisions/ fallback, dedup) asking 'did the intention/design hold?'; /ticket + /sorted thread the obligation. Non-audit reader migration + projection retirement remain in gated follow-on T-migrate-decision-readers-to-designs.",
+    "result": "Re-keyed the 5 decision-first skills (audit-design, audit-hypothesis, audit-ticket step 19, /outcome, /weekly-retro) + /ticket + /sorted to the settled INTENTION->DESIGN->TICKET stack, and fixed the /outcome->weekly-retro learning loop (write outcome to canonical design). PROVEN SUB-PART: proof-obligation threaded onto the ticket + surfaced by build_packet into proof_plan.proof_obligation (red->green @4158f4e4).",
     "dispatched_at": null,
-    "completed_at": "2026-07-10T22:47:04.170077+00:00",
+    "completed_at": "2026-07-10T22:52:36.150646+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,12 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-10T20:37:39.853069+00:00",
     "priority": 0.5,
-    "proven": true,
+    "proven": false,
     "proof_id": "cc.0.the-ticket-s-proof-obligation-is-threade.T-rekey-decision-first-skills-to-design-first.20260710.164647976791",
     "proof_commit": "4158f4e40267639473e5b14b9285a7b519e8443b",
     "input_tokens": 0,
     "cache_write_tokens": 0,
     "cache_read_tokens": 0,
-    "output_tokens": 0
+    "output_tokens": 0,
+    "unproven_reason": "The TITULAR re-key (5 skills now speak design/intention) is Haiku/prose with no executable filing-time gate to red->green against — a hollow re-key that only renames 'decision'->'design' passes the build_packet proof untouched. Missing lever: an executable audit-conformance harness that gates a re-keyed audit on a real design artifact (the ticket's own stated test plan). The build_packet threading is the proven sub-part; the prose re-key is not provable yet."
   }
 }
