@@ -12,7 +12,9 @@ NONE
 - T-watch-primitive-is-hollow: revive cross-day watch-for (Akien uses CC as HIS memory; watches expire by default)
 
 ## Done today
+- T-audit-smell-evasion-guards: CLOSED shipped-unproven — hardened smell-audit exemptions (cumulative per-ticket threshold + earned audit-skip-smell); doc-only skill prose, lever: no executable filing-time gate to prove against.
 - T-fix-igor-layer3-4-test-seed-imports: CLOSED proven (ff8c374e) — deleted 9 orphaned igor layer3/4 tests importing seed_layer* modules retired in 3fcfd070; added structural guard. Proof: guard red=AssertionError->green.
 - T-code-indexer-mutates-source: CLOSED proven (3a7f2b6f) — indexer no longer injects `# intent:` into tracked source; intent lives in clan.code_index DB row only. Proof: no-mutation red=AssertionError->green.
 
+- T-audit-smell-evasion-guards — audit-smell skips are attacker-controlled: sub-threshold slicing + self-declared skip tag (Both G5 evasions closed in skill logic: cumulative per-ticket threshold (audit-smell) + earned audit-skip-smell with doc)
 ## In-flight: Mid-review of the intentions markup master (Akien walking the [CC] ratify-or-cut list top-down, next unmarked line: 'The examiner is never the author'). This session's writes are all durable: 4 memory files created/updated (feedback_sonnet_1m_autocompact corrected to unconditional-1M, feedback_forgetful_restart_then_upstream new, project_two_memories_lean_against_each_other new, feedback_complexity_limit_confabulation cross-linked), MEMORY.md indexed. Filed T-watch-primitive-is-hollow (0.75, pending) — the cross-day watch-for primitive is a hollow build closed done 2026-04-29 (audit_telemetry.py never existed). About to compact, then close tickets while Akien reviews the document.

@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-audit-smell-evasion-guards",
-    "title": "[sprint] audit-smell skips are attacker-controlled: sub-threshold slicing + self-declared skip tag",
+    "title": "audit-smell skips are attacker-controlled: sub-threshold slicing + self-declared skip tag",
     "size": "S",
     "tags": [
       "Audits"
@@ -28,13 +28,13 @@
     "decision_id": "D-fable-window-altitude-agenda-2026-07-07",
     "gate": null,
     "priority": 0.45,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-07-08T01:09:32.581070+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Both G5 evasions closed in skill logic: cumulative per-ticket threshold (audit-smell) + earned audit-skip-smell with doc-only auto / code-touching strip+warn (audit-ticket 15.5). Attack-regression: three 15-line commits now sum to 45>30 and trigger; a bare skip tag on a code ticket is stripped.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-10T18:13:24.243956+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -43,6 +43,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-08T01:09:32.581117+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "29f8128f-52b0-4956-a10b-48af268124fe"
+    "inferred_intention_id": "29f8128f-52b0-4956-a10b-48af268124fe",
+    "proven": false,
+    "unproven_reason": "both guards are judgment-skill prose CC executes (both files SKILL.md, audit-emphasis:doc-only) — no executable filing-time gate in scope, so no red->green form; proving would require moving the exemption logic into an enforceable cc_queue add-path check (separate ticket).",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
