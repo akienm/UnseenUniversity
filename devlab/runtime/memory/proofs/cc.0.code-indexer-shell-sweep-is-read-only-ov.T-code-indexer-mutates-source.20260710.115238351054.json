@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.code-indexer-shell-sweep-is-read-only-ov.T-code-indexer-mutates-source.20260710.115238351054",
+  "emitter": "cc.0",
+  "namespace": [
+    "code-indexer-shell-sweep-is-read-only-ov",
+    "T-code-indexer-mutates-source"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-10T11:52:38.351054",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-code-indexer-mutates-source"
+    ],
+    "commits": [
+      "2766bd48536cd1cc996cf19c6d6964cf5d792f22"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-code-indexer-mutates-source",
+  "body": {
+    "thing": "code_indexer shell sweep is read-only over the source tree",
+    "intention": "Indexing a .sh file records its intent in clan.code_index but never modifies the source file's bytes",
+    "test": "tests/test_code_indexer.py::test_sweep_does_not_mutate_source",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_code_indexer.py::test_sweep_does_not_mutate_source",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        mock_cursor.fetchone.return_value = None  # no existing row\n    \n        with patch(\"devlab.claudecode.code_indexer._haiku_intent\", return_value=\"test script echoes test\"), \\\n             patch(\"psycopg2.connect\", return_value=mock_conn):\n            result = sweep_shell_files(repo, db_url=\"postgresql://test/db\")\n    \n        # The DB write still happens (intent recorded in clan.code_index) ...\n        assert result[\"inserted\"] == 1\n        assert result[\"errors\"] == 0\n        # ... but the source file is byte-for-byte unchanged — no in-band mutation.\n>       assert sh.read_bytes() == bytes_before\nE       AssertionError: assert b'#!/usr/bin/...\\necho test\\n' == b'#!/usr/bin/...\\necho test\\n'\nE         \nE         At index 20 diff: b'#' != b'e'\nE         Use -v to get more diff\n\ntests/test_code_indexer.py:148: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_code_indexer.py::test_sweep_does_not_mutate_source - Assert...\n1 failed in 0.12s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.09s"
+          }
+        }
+      }
+    ],
+    "commit": "2766bd48536cd1cc996cf19c6d6964cf5d792f22",
+    "impl_paths": [
+      "devlab/claudecode/code_indexer.py",
+      "devlab/runtime/memory/tickets/cc.0.T-code-indexer-mutates-source.20260622.200338166908.json"
+    ],
+    "ticket": "T-code-indexer-mutates-source",
+    "narrative": "",
+    "why": "A reindex silently editing tracked source produced dirty-tree surprises right after a clean commit/proof (CP6: no surprise mutation).",
+    "bootstrap": false
+  }
+}
