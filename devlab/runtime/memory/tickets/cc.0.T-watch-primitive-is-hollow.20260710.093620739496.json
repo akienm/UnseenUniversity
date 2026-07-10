@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-watch-primitive-is-hollow.20260710.093620739496",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watch-primitive-is-hollow"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T15:36:20.739496+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-watch-primitive-is-hollow"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-watch-primitive-is-hollow",
+    "title": "[pending] Revive the cross-day watch-for primitive — Akien asks CC to watch something, CC surfaces it later",
+    "status": "pending",
+    "priority": 0.75,
+    "tags": [
+      "sprint",
+      "memory",
+      "hollow-build",
+      "retroactive"
+    ],
+    "worker": "cc.0",
+    "intention_id": "I-self-improving-process",
+    "description": "intention: I intend that when Akien asks CC to keep an eye on something, CC surfaces it back to him later without being reminded of the topic — and that watches expire by default, so the list stays short enough to actually read.\nwhy: A memory is passive recall; it surfaces only when the topic recurs, which is exactly the case where Akien did not need CC watching. A watch must fire whether or not the topic recurs. And an accumulating watch list is noise nobody reads — which is how this primitive died the first time (closed done, never built).\n\nAkien (2026-07-10): he can use CC's memory as HIS memory — \"keep an eye on X and come back to me about it later.\" Distinct from remembering-for-CC: a memory is passive recall (surfaces only when the topic recurs); a watch must FIRE whether or not the topic recurs.\n\nThe primitive was already specified and closed done. It does not exist.\n  - T-audit-day-skill (closed `done`, pri 0.5, 2026-04-29) specifies: \"cross-day watch-for (yesterday's notes -- fire if hit, age if not, expire if stale)\".\n  - skills/audit-day/SKILL.md Step 3 documents it and calls `read_watch_next` / `emit_watch_next`.\n  - `devlab/claudecode/audit_telemetry.py` DOES NOT EXIST anywhere in the repo. The skill imports a phantom module.\n  - `/audit-day` is invoked by nothing. `/day-close` step 4 runs `/day-close-audit`, which has zero watch references.\nA hollow build closed `done`, predating proof-on-close (gate 2026-06-20 vs ticket 2026-04-29). Retroactive-proof candidate: the class is exactly what the gate exists to catch.\n\nAkien's binding constraint: \"i don't think we wanna keep a lot of those, because a lot of them would be noise.\" Scarcity is the DESIGN, not a caveat. The default fate of a watch is to expire unread; only repeat-hitters survive. An accumulating watch list is how this died the first time.\n\nTwo kinds of watch; only one is probeable:\n  - PROBEABLE (\"does file X still exist\", \"is the unproven count still climbing\") -> already served by `validity_conditions` + validity_sweep.py, which runs every day-close and is STARVED (0/130 proofs, 14/2734 records carry conditions). Do not build a second mechanism for this.\n  - OBSERVATIONAL (\"am I still making this mistake\") -> no probe can resolve it; it only accrues when CC notices an instance mid-work. This has no home. It is the kind Akien actually asked for.\n\n**Affected files:** devlab/claudecode/audit_telemetry.py (create), skills/day-close-audit/SKILL.md (add the watch step to the path that ACTUALLY runs), skills/audit-day/SKILL.md (reconcile or retire -- it is orphaned), devlab/runtime/memory/notes/ (watch record home, TBD vs a new watches/ category -- ASK AKIEN before creating a new store category)\n**Design rules:** no-sqlite (flat-file JSON in the store); canonical-memory-home (watch records live under devlab/runtime/memory/, nowhere else); proof-on-close; calm-signals (a watch surfacing is a list, never an urgency flag); no-silent-caps (if the watch list is capped, log what was dropped)\n**Scope boundary:** IN -- emit_watch/read_watch with ttl_days, fire/age/expire semantics, a hard cap on active watches, wiring into the day-close path that actually runs, and surfacing hits TO AKIEN (not annotating in place like validity_sweep does). OUT -- rebuilding probeable watches (use validity_conditions); OUT -- any auto-action on a hit; a watch reports, it never decides. OUT -- reviving /audit-day as a separate skill unless the reconcile step says so.\n**Test plan:** proof-on-close via mutation-red. Property: a watch emitted with ttl_days=N is returned by read_watch before N days and marked expired after; a watch that hits is reported and its age resets. Mutation: break the TTL comparison in the CURRENT tree -> the test must fail. Second node: an expired watch is NOT surfaced (guards the noise constraint -- this is the assertion that encodes Akien's \"don't keep a lot of those\"). Hermetic: monkeypatch the store root to tmp_path, never touch devlab/runtime/memory/ (see T-proof-emitter-tests-pollute-store).\n\n**Why it matters:** the watch primitive is the execution half of [[project_two_memories_lean_against_each_other]] -- Akien's pattern-sense points, CC's corpus confirms. Without an active watch, CC only ever confirms what Akien already thought to ask about.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:**\n- devlab/claudecode/audit_telemetry.py exists and exports emit_watch / read_watch with ttl_days.\n- A watch past its TTL is NOT returned by read_watch (test asserts this).\n- The day-close path that ACTUALLY runs (/day-close-audit) surfaces watch hits.\n- /audit-day is wired in or explicitly retired — no orphaned skill importing a phantom module.\n- A hard cap on active watches exists, and dropping any is logged (no silent caps).\n- Proof node passes mutation-red: break the TTL comparison in the current tree, test goes red.\n",
+    "created_at": "2026-07-10T15:35:49.233665+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-10T15:35:49.279232+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "69c43697-d230-4a32-9bc4-388deb470002",
+    "updated_at": "2026-07-10T15:37:00.624484+00:00"
+  }
+}

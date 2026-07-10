@@ -1,0 +1,15 @@
+# Slate 2026-07-10
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+- T-watch-primitive-is-hollow: revive cross-day watch-for (Akien uses CC as HIS memory; watches expire by default)
+
+## Done today
+
+## In-flight: Mid-review of the intentions markup master (Akien walking the [CC] ratify-or-cut list top-down, next unmarked line: 'The examiner is never the author'). This session's writes are all durable: 4 memory files created/updated (feedback_sonnet_1m_autocompact corrected to unconditional-1M, feedback_forgetful_restart_then_upstream new, project_two_memories_lean_against_each_other new, feedback_complexity_limit_confabulation cross-linked), MEMORY.md indexed. Filed T-watch-primitive-is-hollow (0.75, pending) — the cross-day watch-for primitive is a hollow build closed done 2026-04-29 (audit_telemetry.py never existed). About to compact, then close tickets while Akien reviews the document.
