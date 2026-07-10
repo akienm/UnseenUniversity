@@ -1,0 +1,23 @@
+{
+  "id": "cc.0.pipeline-walk-front-to-back.20260710.135639806053",
+  "emitter": "cc.0",
+  "namespace": [
+    "pipeline-walk-front-to-back"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-10T13:56:39.806053",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "human:akien",
+  "body": {
+    "title": "Build strategy: walk the workflow pipeline front-to-back, one level at a time (Akien, 2026-07-10)",
+    "status": "directional intent — captured; specifics for L1 Interviewer still incoming from Akien ('I shall tell the intent for Interviewer()')",
+    "text": "Akien's build strategy for the workflow-levels map (architecture/cc.0.workflow-levels.*):\n\nGUIDING PRINCIPLE (Akien, 2026-07-10): 'used correctly, intentions SIMPLIFY as they go.' A well-formed intention REDUCES downstream degrees of freedom — each level should have LESS to figure out because the level above it constrained the space, not more. This is both the point of carrying intent forward as a first-class artifact AND the test for whether the pipeline is working: if a downstream level gets MORE complex, the intention above it was mis-formed. (Echoes CLAUDE.md's opening: make cognition compile so only the irreducible is left for a mind; a good intention makes more of the work compile away.) So 'each level adds a LAYER' does not mean 'accretes complexity' — it means each layer tightens the intent so the remaining problem shrinks.\n\nWALK THE PIPELINE FRONT-TO-BACK, ONE LEVEL AT A TIME.\n  1. Build/use L1 INTERVIEWER for real to do the initial intention extraction + review — part of the intentions review, part of our skillset, part of building the pipeline. CC handles EVERYTHING DOWNSTREAM (L2..L12) manually until Interviewer is really solid.\n  2. When Interviewer is solid, focus moves to the NEXT layer — L2 intention-extraction + subintention-creation ('whatever should really be the next layer'). CC STILL handles downstream.\n  3. Continue level by level along the map, using the feedback-LEARNING-LOOP design Fable gave us (architecture/feedback-edges + D-feedback-edge-every-emission). Fable designed it in the Fable window; SOME parts Fable implemented, some he LEFT FOR CC (impl-gated: T-produced-by-emission-sweep, T-escalation-dispatch-producer-review).\n\nLEVEL <-> DEVICE/NAME MAPPING (Akien clarified 2026-07-10):\n  - L1 Interviewer() = a NET-NEW device, the people-reader/intake role. Discworld codename Moist von Lipwig; functional class name 'Interviewer'. NOT Vetinari (Vetinari = governance/admin). Does not exist yet.\n  - L3 Designer() = Hubert (functional name 'Designer'), exists.\n  These are functional names per the de-Discworld intention.\n\nRESOLVES an OPEN QUESTION: D-agent-subclass-and-de-discworld-2026-07-02 open item B4 asked whether the interviewer/intake role (people-reader, NOT Granny, NOT Vetinari; Moist von Lipwig does not exist as a device yet) is in scope for the rename or a separate future device. ANSWER (Akien 2026-07-10): it IS in scope — built as a net-new device under its functional name 'Interviewer', as the first step of walking the pipeline.\n\nGUARDRAILS this respects:\n  - De-Discworld standing instruction 'do NOT mass-file the rename' (Akien) still holds: this builds ONE net-new level (Interviewer), it does NOT rename the 6 existing character classes. The de-discworld decision remains gated behind stream A for the mass rename.\n  - CC keeps handling all downstream levels manually — we are NOT trying to build the whole pipeline at once, and we are NOT touching the LLM-MIDDLE (build/inference step) yet (explicitly out of scope until both surrounds are solid).\n\nSTILL INCOMING from Akien: the specific INTENT for Interviewer() (and Designer()). That intent feeds the L1 slice of the carried-intent-artifact contract (T-workflow-levels-front-intent-artifact-contract) and will scope the Interviewer build ticket.\n\nRelated: architecture/cc.0.workflow-levels.*, D-agent-subclass-and-de-discworld-2026-07-02 (B4), architecture/cc.0.feedback-edges.*, note staged-intention-compiler-pipeline, T-skills-review-prune-rearrange-intention-compat, T-workflow-levels-front-intent-artifact-contract."
+  }
+}

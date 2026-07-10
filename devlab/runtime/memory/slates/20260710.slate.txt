@@ -28,3 +28,5 @@ Done: Done: closed 2 proven (T-code-indexer-mutates-source 3a7f2b6f; T-fix-igor-
 Next: Next: after compact, /context-load then BUILD — pick from the 3 new tickets (workflow-levels-breakdown is the map the others consume; skills-review; memory+CLAUDE.md compact) or continue substantive queue. LLM-middle stays out of scope; scaffold both sides first.
 
 ## In-flight: In-flight: NONE — tree clean, all work pushed to 35dc8425. Session was intent->tickets + 3 clean ticket dispositions; ready for compact then build.
+
+## In-flight: Closed T-workflow-levels-breakdown shipped-unproven — filed architecture/cc.0.workflow-levels.* (unified L1-L12 level map, LLM-middle bracketed out). Filed follow-on T-workflow-levels-front-intent-artifact-contract (triage). Next: T-skills-review-prune-rearrange-intention-compat — consumes the new level map; CC's own abilities (Fable not needed).
