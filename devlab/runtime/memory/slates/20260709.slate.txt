@@ -423,3 +423,4 @@ Next: 1. THE FRONTIER DECISION (above). 2. T-aider-gate-passed-a-hollow-build (0
 - Intentions outline redraft -> akien/inbox/20260709.CCReviewOfIntentionsOutline.txt (present-tense contract voice; 43 contract holes; 6 conflicts to reconcile; 18 [CC] lines to ratify or cut)
 - T-proofs-carry-conditions-and-decay: proofs record conditions; validity_sweep demotes to provisional (retroactive proven/unproven)
 - T-mutation-red-retroactive-proof: red from mutation not git history -> late proofs possible + echo-tests detected
+- T-rename-lever-to-proof-method: "lever" is a metaphor of force -> it made CC weld "backlog earns removal" onto "corpus earns removal". Define proof/proof-method/proof-corpus in rules/.
