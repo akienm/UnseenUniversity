@@ -4,8 +4,9 @@ code_indexer.py — Multi-language code index sweep.
 
 Dispatches to language-specific extractors and writes to clan.code_index:
   - Python: AST symbol extraction via devices.nanny.sweeps.code_sweep
-  - Shell/bash (.sh): Haiku intent extraction via OpenRouter; writes
-    a  # intent: <one-liner>  comment to the file header (idempotent).
+  - Shell/bash (.sh): Haiku intent extraction via OpenRouter; the intent is
+    stored in the clan.code_index DB row only — the indexed source file is
+    never modified (indexing is read-only over the tree; T-code-indexer-mutates-source).
 
 Usage:
     python3 devlab/claudecode/code_indexer.py [--dry-run] [--repo-root PATH]
@@ -16,7 +17,7 @@ clan.code_index schema for file_intent rows:
     symbol        = "__file_intent__"
     kind          = "file_intent"
     summary       = the intent sentence (≤500 chars)
-    content_hash  = MD5 of file content AFTER intent comment injection
+    content_hash  = MD5 of the file content as indexed (the file is not mutated)
 """
 
 from __future__ import annotations
@@ -95,21 +96,6 @@ def read_existing_intent(path: Path) -> str:
     return ""
 
 
-def inject_intent_comment(path: Path, intent: str) -> None:
-    """Write/replace the # intent: line in the file header. Idempotent."""
-    content = path.read_text(encoding="utf-8", errors="ignore")
-    lines = content.splitlines(keepends=True)
-
-    # Strip any existing # intent: line
-    lines = [l for l in lines if not l.startswith("# intent:")]
-
-    # Insert after shebang if present, else at the top
-    insert_pos = 1 if lines and lines[0].startswith("#!") else 0
-    lines.insert(insert_pos, f"# intent: {intent}\n")
-
-    path.write_text("".join(lines), encoding="utf-8")
-
-
 def file_hash(path: Path) -> str:
     """MD5 of current file content."""
     return hashlib.md5(path.read_bytes()).hexdigest()
@@ -125,10 +111,11 @@ def sweep_shell_files(
     files: list[Path] | None = None,
 ) -> dict:
     """
-    Find .sh files, extract Haiku intent, inject # intent: header, upsert to clan.code_index.
+    Find .sh files, extract Haiku intent, upsert to clan.code_index.
 
     When files is provided, only those paths are processed (targeted re-index).
-    content_hash stored in DB is the hash of the file AFTER intent injection.
+    The source file is never modified — the intent lives in the DB row only.
+    content_hash stored in DB is the hash of the file as indexed.
     """
     counters = {"inserted": 0, "updated": 0, "unchanged": 0, "errors": 0}
 
@@ -182,9 +169,9 @@ def sweep_shell_files(
                 content = sh_path.read_text(encoding="utf-8", errors="ignore")
                 intent = _haiku_intent(content, rel_path) or existing_intent or f"shell script: {sh_path.name}"
 
-                inject_intent_comment(sh_path, intent)
-                final_hash = file_hash(sh_path)  # hash after intent injection
-                log.info("CODE_INDEXER|action=intent_written|path=%s|intent=%r", rel_path, intent)
+                # Intent is recorded in the DB row only; the source file is not mutated.
+                final_hash = current_hash
+                log.info("CODE_INDEXER|action=intent_extracted|path=%s|intent=%r", rel_path, intent)
 
                 summary = intent[:500]
                 with conn.cursor() as cur:

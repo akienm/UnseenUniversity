@@ -2,10 +2,10 @@
 Tests for devlab/claudecode/code_indexer.py — multi-language code index sweep.
 
 Tests:
-- read_existing_intent: extracts # intent: line or returns ''
-- inject_intent_comment: idempotent; respects shebang; replaces existing
+- read_existing_intent: extracts a legacy # intent: line or returns ''
 - file_hash: consistent MD5
 - sweep_shell_files dry_run: counts files without writing
+- sweep_shell_files: indexing a source file does NOT mutate its bytes
 - run_sweep dry_run: Python + shell combined counters
 - multi-language dispatch: both python and shell paths exercised
 """
@@ -23,7 +23,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from devlab.claudecode.code_indexer import (
     _INTENT_SYMBOL,
     file_hash,
-    inject_intent_comment,
     read_existing_intent,
     run_sweep,
     sweep_shell_files,
@@ -46,43 +45,6 @@ def test_read_existing_intent_missing(tmp_path):
 
 def test_read_existing_intent_nonexistent(tmp_path):
     assert read_existing_intent(tmp_path / "ghost.sh") == ""
-
-
-# ── inject_intent_comment ─────────────────────────────────────────────────────
-
-def test_inject_after_shebang(tmp_path):
-    f = tmp_path / "a.sh"
-    f.write_text("#!/usr/bin/env bash\necho hi\n")
-    inject_intent_comment(f, "does the thing")
-    lines = f.read_text().splitlines()
-    assert lines[0].startswith("#!")
-    assert lines[1] == "# intent: does the thing"
-
-
-def test_inject_no_shebang(tmp_path):
-    f = tmp_path / "a.sh"
-    f.write_text("echo hi\n")
-    inject_intent_comment(f, "does the thing")
-    lines = f.read_text().splitlines()
-    assert lines[0] == "# intent: does the thing"
-
-
-def test_inject_replaces_existing(tmp_path):
-    f = tmp_path / "a.sh"
-    f.write_text("#!/usr/bin/env bash\n# intent: old intent\necho hi\n")
-    inject_intent_comment(f, "new intent")
-    content = f.read_text()
-    assert "# intent: new intent" in content
-    assert "# intent: old intent" not in content
-    assert content.count("# intent:") == 1
-
-
-def test_inject_idempotent(tmp_path):
-    f = tmp_path / "a.sh"
-    f.write_text("#!/usr/bin/env bash\necho hi\n")
-    inject_intent_comment(f, "same intent")
-    inject_intent_comment(f, "same intent")
-    assert f.read_text().count("# intent:") == 1
 
 
 # ── file_hash ─────────────────────────────────────────────────────────────────
@@ -155,11 +117,16 @@ def test_run_sweep_dry_run_counts_both(tmp_path):
 
 # ── DB write (mocked psycopg2) ────────────────────────────────────────────────
 
-def test_sweep_inserts_new_shell_file(tmp_path):
+def test_sweep_does_not_mutate_source(tmp_path):
+    """Proof node (T-code-indexer-mutates-source): indexing a shell file records
+    the intent in the DB row but leaves the source file's bytes untouched. Red form:
+    restore the old inject_intent_comment call and the file is rewritten -> this fails."""
     repo = tmp_path / "repo"
     repo.mkdir()
     sh = repo / "test.sh"
-    sh.write_text("#!/usr/bin/env bash\necho test\n")
+    original = "#!/usr/bin/env bash\necho test\n"
+    sh.write_text(original)
+    bytes_before = sh.read_bytes()
 
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
@@ -174,10 +141,12 @@ def test_sweep_inserts_new_shell_file(tmp_path):
          patch("psycopg2.connect", return_value=mock_conn):
         result = sweep_shell_files(repo, db_url="postgresql://test/db")
 
+    # The DB write still happens (intent recorded in clan.code_index) ...
     assert result["inserted"] == 1
     assert result["errors"] == 0
-    # File should now have # intent: comment
-    assert "# intent: test script echoes test" in sh.read_text()
+    # ... but the source file is byte-for-byte unchanged — no in-band mutation.
+    assert sh.read_bytes() == bytes_before
+    assert "# intent:" not in sh.read_text()
 
 
 def test_sweep_skips_unchanged_file(tmp_path):

@@ -18,13 +18,13 @@
   },
   "body": {
     "id": "T-code-indexer-mutates-source",
-    "title": "[triage] code_indexer.py injects '# intent:' comments into tracked source as a side effect",
+    "title": "[in_progress] code_indexer.py injects '# intent:' comments into tracked source as a side effect",
     "size": "S",
     "tags": [
       "DevTooling",
       "Debt"
     ],
-    "status": "triage",
+    "status": "in_progress",
     "priority": 0.4,
     "decision_id": null,
     "gate": null,
