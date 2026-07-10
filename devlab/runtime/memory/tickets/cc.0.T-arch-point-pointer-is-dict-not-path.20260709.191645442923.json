@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-arch-point-pointer-is-dict-not-path.20260709.191645442923",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-arch-point-pointer-is-dict-not-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T01:16:45.442923+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-arch-point-pointer-is-dict-not-path"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-arch-point-pointer-is-dict-not-path",
+    "title": "[sprint] test_architecture_intention_points red: an implementing_files entry is a dict, not a path string",
+    "status": "sprint",
+    "priority": 0.2,
+    "size": "S",
+    "worker": "claude",
+    "tags": [
+      "tests",
+      "architecture",
+      "preexisting"
+    ],
+    "intention": "I intend that every architecture intention-point's pointers resolve to real files, so an intention-point always leads a reader from intent to the code that implements it.",
+    "intention_id": "I-self-improving-process",
+    "description": "Pre-existing failure, confirmed at a clean worktree on the stub commit — NOT introduced by T-links-intentions-edge-kind.\n\n`tests/test_architecture_intention_points.py::test_every_intention_point_pointer_resolves` raises `TypeError: unsupported operand type(s) for /: 'PosixPath' and 'dict'` at line 45. The test does `_REPO / rel` for every entry in `implementing_files` / `reference_docs`, assuming each is a path string. At least one intention-point stores a dict instead — schema drift in the intention-point envelope.\n\nDistinct from T-arch-points-stale-impl-paths, which is about pointers that are strings but stale. This one is about a pointer that is the wrong TYPE, so the test cannot even check whether it resolves.\n\n**Affected files:** tests/test_architecture_intention_points.py, the offending devlab/runtime/memory/architecture/*.json record(s), whatever writer emitted a dict.\n**Design rules:** canonical memory home; JSON flat-file; intention-points are intent->implementation pointers.\n**Scope boundary:** IN — find the offending record(s), decide whether the dict form is intended (and if so teach the test to read it) or a writer bug (and if so fix the writer + record). OUT — the stale-path sweep (T-arch-points-stale-impl-paths); adding new intention-points.\n**Test plan:** the existing node is the test. Red today (TypeError); green when every pointer resolves. A TypeError is not a verdict — the node must fail on a missing path, not on a type error, so first make it type-correct, then let it report real misses.\n**Completion criteria:** test_every_intention_point_pointer_resolves passes, or fails with a genuine list of unresolved paths rather than a TypeError.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "The node no longer raises TypeError; every pointer is a path string and either resolves or is reported as missing.",
+    "created_at": "2026-07-10T01:16:21.261885+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-10T01:16:21.261990+00:00"
+  }
+}

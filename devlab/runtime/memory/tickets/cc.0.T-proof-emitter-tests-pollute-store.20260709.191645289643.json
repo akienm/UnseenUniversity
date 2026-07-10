@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-proof-emitter-tests-pollute-store.20260709.191645289643",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proof-emitter-tests-pollute-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-10T01:16:45.289643+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proof-emitter-tests-pollute-store"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-proof-emitter-tests-pollute-store",
+    "title": "[sprint] Running the test suite writes junk proof records into the canonical memory store",
+    "status": "sprint",
+    "priority": 0.6,
+    "size": "S",
+    "worker": "claude",
+    "tags": [
+      "tests",
+      "memory",
+      "hygiene"
+    ],
+    "intention": "I intend that running the test suite leaves the canonical memory store byte-identical, so a dirty tree after pytest always means real work and never test debris.",
+    "intention_id": "I-self-improving-process",
+    "description": "Observed 2026-07-09: `pytest tests/test_proof_emitter.py tests/test_proof_close_gate.py` wrote 5 untracked records into devlab/runtime/memory/proofs/ — cc.0.add-sums.T-proof-emitter-harness.*, cc.0.add-sums.T-x.*, cc.0.add-sums.T-ticket-close-requires-proof.*, cc.0.add-sums-two-numbers.*, cc.0.flag-removed.*. They are harness fixtures escaping into the real store.\n\nTwo harms. (1) proof_emitter refuses a dirty tree, so a test run silently blocks the next proof until someone notices and deletes files by hand — I hit exactly that today. (2) A store that accumulates fake proofs is a store whose proof corpus cannot be trusted, and the proof corpus is what earns the gates' eventual removal.\n\n**Affected files:** tests/test_proof_emitter.py, tests/test_proof_close_gate.py, devlab/claudecode/proof_emitter.py (root resolution), possibly unseen_university/memory_root.py.\n**Design rules:** hermetic proofs (never touch live state); canonical memory home devlab/runtime/memory/; UU_MEMORY_ROOT already exists as the redirect used by tests/test_ticket_store.py — the pattern is there, these tests just do not use it.\n**Scope boundary:** IN — redirect these tests' emissions to tmp_path via UU_MEMORY_ROOT (or the equivalent monkeypatched root), and add a guard that the store is unchanged after the suite runs. OUT — reworking proof_emitter's dirty-tree check (it is correct); auditing historical proofs for fakes.\n**Test plan:** run the two suites with the real store under git; assert `git status --porcelain devlab/runtime/memory/proofs/` is empty afterwards. Red form: at HEAD it is non-empty (5 files).\n**Completion criteria:** after a full `pytest tests/`, `git status --porcelain devlab/runtime/memory/` is empty; no test writes outside tmp_path.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "completion_criteria": "git status --porcelain devlab/runtime/memory/ is empty after a full test run; the two proof suites emit only under tmp_path.",
+    "created_at": "2026-07-10T01:15:55.701623+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-07-10T01:15:55.750201+00:00"
+  }
+}
