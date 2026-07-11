@@ -58,3 +58,11 @@ Done: Done: Shipped the full settled INTENTION->DESIGN->TICKET stack into the sk
 Next: Next: RESUME by taking T-migrate-decision-readers-to-designs (un-gated, take FRESH) — retire the decision projection + repoint the non-audit readers (context-load, validity_sweep, web_server, igor) AND remaining /outcome writer paths to designs/; completes the -1-decision delta. Boundary contract = architecture/workflow-levels (COMPLETE). LLM-middle stays OUT.
 
 ## In-flight: NONE — tree clean, all work pushed to adafde1e. Full INTENTION->DESIGN->TICKET artifact stack built into skills this session (2 proven + 1 shipped-unproven); ready for compact then resume on T-migrate-decision-readers-to-designs.
+
+
+## In-flight
+T-migrate-decision-readers-to-designs — BUILT + committed+pushed to BRANCH `migrate-decision-readers-to-designs` (commit c4dc543e). NOT on main, NOT closed. Focused suite green (20 passing incl. end-to-end context-load reader proof). Full suite deferred (Hex/inference host offline for power work → ~314 `No route to host` failures, environmental).
+
+## Session close → Next
+Done: Retired the write-time decision projection; decision record now projected ON READ via design_store.iter_decision_view. Readers repointed: context-load(2a/3), validity_sweep(+designs), /outcome(list+D->Design resolution). design_emit default project_decision=False. Scope-corrected: web_server/cc_nightly/igor read adc.palace(Postgres)/nothing — retired-palace follow-on, not this ticket (note decision-readers-migration-scope-correction-2026-07-10). architecture/workflow-levels reconciled (delta COMPLETE). Fixed advisor-caught /outcome D-<slug>-can't-find-Design-<slug> glob bug + empty-glob [0]-crash.
+Next: (1) When Hex up — run full suite network-isolated, confirm only environmental+ticketed-stale failures remain. (2) Take T-modernize-skill-writepath-tests-design-first (S) — the pre-existing stale skill-write-path + context-load-violation tests (last-session T-design-first debt). (3) Then merge branch → main + close T-migrate-decision-readers-to-designs proven. Proof already in tests/test_readers_migrated_to_designs.py.
