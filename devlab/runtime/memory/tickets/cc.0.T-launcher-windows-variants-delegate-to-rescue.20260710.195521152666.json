@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-launcher-windows-variants-delegate-to-rescue.20260710.195521152666",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-launcher-windows-variants-delegate-to-rescue"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-11T01:55:21.152666+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-launcher-windows-variants-delegate-to-rescue"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-launcher-windows-variants-delegate-to-rescue",
+    "title": "[triage] superclaude.ps1/.bat carry pre-merge 1M-default/no-delegation behavior — reconcile to 200K + rescueclaude delegation",
+    "status": "triage",
+    "size": "S",
+    "tags": [
+      "launcher",
+      "windows",
+      "cleanup"
+    ],
+    "intention": "I intend that the Windows launcher variants match the bash launchers' contract (200K default, single rescueclaude chokepoint), so a Windows launch does not silently diverge on context-window mode or the OpenRouter strip.",
+    "description": "The bash launchers were merged (superclaude delegates to rescueclaude, the single chokepoint; default flipped 1M->200K; OpenRouter-var strip moved into rescueclaude). The Windows variants were NOT touched (Linux-only that session) and still carry the old behavior: bin/superclaude.ps1, superclaude.ps1 (repo root), bin/superclaude.bat.\n\n**Proposed shape:** mirror the bash design on Windows — 200K default with --1m opt-in, and (if a rescueclaude.ps1 is warranted) a single launch chokepoint; at minimum flip the default and ensure the OpenRouter routing vars are stripped before invoking claude.\n**Affected files:** bin/superclaude.ps1, superclaude.ps1, bin/superclaude.bat.\n**Scope boundary:** IN -- reconcile the Windows variants to the merged bash contract. OUT -- the bash launchers (done).\n**Test plan:** on Windows (or pwsh), a bare launch reports/uses 200K, --1m opts into 1M, and the claude invocation has no ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY leaking.\n**Completion criteria:** Windows variants default to 200K + strip the OpenRouter vars, matching bin/rescueclaude.\n\nRelated: bin/rescueclaude, bin/superclaude, incident_superclaude_401, commit 24151630.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-11T01:55:17.459287+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-11T01:55:17.512868+00:00"
+  }
+}
