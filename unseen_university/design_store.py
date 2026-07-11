@@ -165,3 +165,120 @@ def get_design(design_id: str) -> Optional[dict]:
         if (rec.get("body") or {}).get("design_id") == design_id:
             return rec
     return None
+
+
+# ── The decision read-model (retires the write-time projection) ─────────────────
+#
+# A DESIGN is the source of truth; a *decision* is a fork folded into it. The
+# broad decisions/ reader surface (context-load, validity_sweep, the /outcome
+# list, …) predates design-first, so it reads decision-shaped records. Rather
+# than MATERIALIZE a back-compat ``D-*`` file per design at write time (a second
+# home that drifts — CLAUDE.md "one home"), we project on READ: this module owns
+# the field-map, and ``iter_decision_view()`` merges live design-projections with
+# the historical ``decisions/`` records (which stay readable — scope boundary).
+#
+# design_emit imports these two helpers so the projection has ONE definition,
+# whether it's ever materialised or (default now) only ever viewed.
+
+
+def decision_id_from_design(design_id: str) -> str:
+    """Derive the projected decision id from a design id.
+
+    ``Design-<slug>`` -> ``D-<slug>``; a bare ``D-*`` passes through; anything
+    else is prefixed ``D-`` so the projection always has the ``D-`` handle the
+    legacy readers key on.
+    """
+    if design_id.startswith("Design-"):
+        return "D-" + design_id[len("Design-"):]
+    if design_id.startswith("D-"):
+        return design_id
+    return "D-" + design_id
+
+
+def project_decision_body(design_body: dict) -> dict:
+    """Field-map a design body onto the legacy decision body every reader expects.
+
+    Pure projection — the design already SUBSUMES these fields (see the module
+    docstring), so nothing is invented here. Returns just the body; envelope
+    framing (namespace/emitted_at) is added by ``iter_decision_view``/the emitter.
+    """
+    decision_id = decision_id_from_design(design_body.get("design_id", ""))
+    return {
+        "decision_id": decision_id,
+        "title": design_body.get("title", ""),
+        "status": design_body.get("status", "open"),
+        "date": design_body.get("date", ""),
+        "author": design_body.get("author"),
+        "spawned_tickets": design_body.get("spawned_tickets", []),
+        "validity_conditions": design_body.get("validity_conditions", []),
+        # The narrative readers render. Prefer the design's own text; fall back to
+        # the shape so a projection is never empty.
+        "text": design_body.get("text") or design_body.get("shape", ""),
+        # Outcome fields (written by /outcome onto the design) must ride the
+        # projection too, or the decision-first outcome readers miss an outcome
+        # the design already records.
+        "outcome_date": design_body.get("outcome_date"),
+        # Provenance breadcrumb: this decision is a projection, not a source.
+        "projected_from_design": design_body.get("design_id"),
+    }
+
+
+def _decision_key(rec: dict) -> str:
+    """The identity a decision record dedups on: namespace[0], else body.decision_id."""
+    ns = rec.get("namespace")
+    if isinstance(ns, list) and ns and isinstance(ns[0], str) and ns[0].strip():
+        return ns[0]
+    return (rec.get("body") or {}).get("decision_id") or ""
+
+
+def iter_decision_view() -> Iterator[dict]:
+    """Yield envelope-shaped decision records: every design projected once, plus
+    the historical ``decisions/`` records that aren't a projection of some design.
+
+    Each yielded record carries top-level ``namespace``/``emitted_at`` (what the
+    readers sort + key on) and a ``body`` in decision shape — a design-projection
+    is framed to look exactly like a materialised ``D-*`` envelope, so a reader
+    can't tell (and needn't care) whether the record came from a design or a
+    historical decision file.
+
+    Dedup (advisor trap #2): a historical record is suppressed when it is a
+    materialised projection (``body.projected_from_design`` set) OR its id equals
+    a design's derived ``D-*`` id — so a design that was re-keyed from a former
+    decision surfaces once (via the live design), never twice.
+    """
+    # 1. Project every design; remember the derived D-* ids to suppress dupes.
+    projected_ids: set[str] = set()
+    for rec in iter_designs():
+        dbody = rec.get("body") or {}
+        did = dbody.get("design_id")
+        if not isinstance(did, str) or not did.strip():
+            continue
+        dec_id = decision_id_from_design(did)
+        projected_ids.add(dec_id)
+        yield {
+            "id": rec.get("id"),
+            "emitter": rec.get("emitter"),
+            "namespace": [dec_id],
+            "kind": "decision",
+            "emitted_at": rec.get("emitted_at", ""),
+            "links": rec.get("links"),
+            "body": project_decision_body(dbody),
+        }
+
+    # 2. Historical decisions/ records that aren't a design's projection.
+    d = _memory_root() / "decisions"
+    if not d.exists():
+        return
+    for p in sorted(d.glob("*.json")):
+        try:
+            rec = json.loads(p.read_text(encoding="utf-8"))
+        except Exception as exc:
+            log.warning("design_store: unreadable decision %s: %s", p.name, exc)
+            continue
+        if not isinstance(rec, dict) or not isinstance(rec.get("body"), dict):
+            continue
+        if rec["body"].get("projected_from_design"):
+            continue  # a materialised projection — the design yields it above
+        if _decision_key(rec) in projected_ids:
+            continue  # a design re-keyed from this decision now owns the id
+        yield rec

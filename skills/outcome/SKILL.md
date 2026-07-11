@@ -36,11 +36,28 @@ TICKET; a decision is a fork inside a design). Read the canonical **design** fir
 back to the projected/legacy `decisions/` record — both carry the same `## Hypothesis`
 section (the design SUBSUMES the decision's fields, so this loop is unchanged in substance):
 
+The id you pass is the decision-shaped `D-<slug>` (what the list surfaces). A design
+file is named `Design-<slug>`, so `*D-<slug>*` does NOT substring-match it — resolve
+via the inverse map (`D-<slug>` → `Design-<slug>`), design first, decision fallback:
+
 ```bash
-DESIGN_FILE=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/designs/*<D-id>*.json 2>/dev/null | head -1)
-DESIGN_FILE=${DESIGN_FILE:-$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)}
-python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('text',''))" "$DESIGN_FILE" \
-  | grep -A 20 "## Hypothesis"
+python3 - "<D-id>" <<'PY'
+import glob, json, re, sys
+from unseen_university.design_store import get_design
+from unseen_university.memory_root import memory_root
+did = sys.argv[1]
+# Inverse of the emitter's derivation: D-<slug> came from Design-<slug>.
+design_id = ("Design-" + did[2:]) if did.startswith("D-") else did
+rec = get_design(design_id)
+if rec is None:  # legacy decision with no design
+    hits = glob.glob(str(memory_root() / "decisions" / f"*{did}*.json"))
+    rec = json.load(open(hits[0])) if hits else None
+if rec is None:
+    print(f"(no design or decision found for {did})"); sys.exit(0)
+text = rec.get("body", {}).get("text", "")
+m = re.search(r"## Hypothesis.*", text, re.S)
+print(m.group(0)[:1000] if m else "(no ## Hypothesis section — general assessment)")
+PY
 ```
 
 If the design/decision predates hypothesis tracking (no `## Hypothesis` section), note that and skip to a general outcome assessment.
@@ -76,12 +93,13 @@ Append an `## Outcome` section to `body.text` + set `outcome_date`, reusing the
 file's existing stamp so it's an atomic in-place overwrite — never a second node
 (D-canonical-memory-consolidation-2026-06-23).
 
-**Write to the CANONICAL artifact.** A design is the source of truth and its
-projected `D-*` is a read-model — writing the outcome only to the projection would
-leave the design (which `/weekly-retro` reads first) perpetually unreviewed. So:
+**Write to the CANONICAL artifact.** A design is the source of truth; the
+decision-shaped record is projected on READ (`design_store.iter_decision_view`), so
+the outcome only ever needs to land on the design. So:
 - **design exists** → re-emit the DESIGN via `design_emit.py` reusing the design's
-  stamp. That overwrites the design AND re-projects the decision, so both carry the
-  outcome and every reader (design-first or decision-first) agrees.
+  stamp. That overwrites the design in place; every decision-first reader picks the
+  outcome up through the read-model, so no separate projection write is needed
+  (the write-time projection was retired — T-migrate-decision-readers-to-designs).
 - **no design (legacy `D-*`)** → re-emit the decision via `memory_emit.py` as before.
 
 Fill the verdict fields (from Step 3) into `OUTCOME` before running:
@@ -105,8 +123,16 @@ sys.path.insert(0, TOOLS)
 from memory_emit import parse_filename
 did = sys.argv[1]
 root = memory_root()
-designs = glob.glob(str(root / "designs" / f"*{did}*.json"))
-path = designs[0] if designs else glob.glob(str(root / "decisions" / f"*{did}*.json"))[0]
+# D-<slug> -> Design-<slug> (a design file is NOT substring-matched by *D-<slug>*).
+design_id = ("Design-" + did[2:]) if did.startswith("D-") else did
+designs = glob.glob(str(root / "designs" / f"*{design_id}*.json"))
+decisions = glob.glob(str(root / "decisions" / f"*{did}*.json"))
+if designs:
+    path = designs[0]
+elif decisions:
+    path = decisions[0]
+else:
+    sys.exit(f"/outcome: no design or decision found for {did}")
 rec = json.load(open(path)); body = rec["body"]
 body["text"] = body.get("text", "") + os.environ["OUTCOME"]
 body["outcome_date"] = __import__("datetime").date.today().isoformat()
@@ -146,14 +172,17 @@ If **too_early**: set a calendar note or slate entry for the re-check date.
 ## Steps — /outcome (list mode)
 
 ```bash
-# Decisions in the flat-file store with no ## Outcome / outcome_date yet.
+# Decisions with no ## Outcome / outcome_date yet, from the decision READ-model
+# (design_store.iter_decision_view): every design projected as a decision-shaped
+# record PLUS the historical decisions/ records that aren't a design's projection.
+# Globbing decisions/ directly would miss design-first records — designs no longer
+# materialise a D-* file (T-migrate-decision-readers-to-designs).
 python3 - <<'PY'
-import json, glob, os
-root = os.environ.get("UU_ROOT", os.path.expanduser("~/dev/src/UnseenUniversity"))
+from unseen_university.design_store import iter_decision_view
 rows = []
-for f in glob.glob(f"{root}/devlab/runtime/memory/decisions/*.json"):
-    b = json.load(open(f)).get("body", {})
-    if not b.get("outcome_date") and "## Outcome" not in b.get("text", ""):
+for rec in iter_decision_view():
+    b = rec.get("body", {})
+    if not b.get("outcome_date") and "## Outcome" not in (b.get("text") or ""):
         rows.append((b.get("decision_id", "?"), b.get("title", "")))
 for did, title in sorted(rows)[:20]:
     print(f"{did}: {title}")

@@ -105,10 +105,21 @@ def test_design_roundtrips_fork_with_why():
     assert "attacker-controlled" in fork["why"]
 
 
-def test_projection_lands_backcompat_decision():
-    """emit projects a derived decision so the legacy decisions/ readers keep
-    working (design is the source of truth; the D-* is a read-model)."""
+def test_default_emit_does_not_materialise_a_decision(_tmp_root):
+    """The write-time projection is RETIRED (T-migrate-decision-readers-to-designs):
+    a default emit lands ONLY the design — no back-compat D-* file. The decision
+    view is projected on READ (see test_readers_migrated_to_designs)."""
     out = design_emit.emit_design(_complete_design())
+    assert out["decision_path"] is None
+    # decisions/ has no materialised projection for this design.
+    decisions = _tmp_root / "decisions"
+    assert not decisions.exists() or not list(decisions.glob("*sample*.json"))
+
+
+def test_optin_projection_still_materialises():
+    """The opt-in path (project_decision=True) is retained for the rare caller that
+    wants a materialised D-*; it field-maps via the shared design_store projector."""
+    out = design_emit.emit_design(_complete_design(), project_decision=True)
     dec_path = Path(out["decision_path"])
     assert dec_path.exists()
     body = json.loads(dec_path.read_text())["body"]

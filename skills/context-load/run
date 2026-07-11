@@ -13,6 +13,7 @@ from pathlib import Path
 
 from unseen_university import slate_store
 from unseen_university._uu_root import uu_home, uu_root
+from unseen_university.design_store import iter_decision_view
 
 IGOR_HOME = Path(uu_home())
 # uu_root() resolves UU_ROOT regardless of cwd (env var first, then the package
@@ -172,24 +173,23 @@ def step_1_today_slate() -> None:
 
 # ─── shared: decisions newest-first by emitted_at ───
 def _decisions_newest_first(limit: int) -> list:
-    """Return up to `limit` decision records, newest first by emitted_at.
+    """Return up to `limit` decision-shaped records, newest first by emitted_at.
 
-    Sorting by emitted_at (not the filename glob) is load-bearing: the glob
-    sorts alphabetically by D-slug, which is NOT chronological — 'recent'
-    would surface the alphabetically-last decisions, defeating orientation.
+    Source is ``design_store.iter_decision_view()`` — the read-model that projects
+    every design as a decision-shaped envelope AND yields the historical
+    ``decisions/`` records that aren't a design's projection. This is what retired
+    the write-time D-* projection (T-migrate-decision-readers-to-designs): a design
+    emitted with no materialised decision still surfaces here, because the view
+    projects it on read. The records are envelope-shaped (top-level ``emitted_at`` /
+    ``namespace``, decision-shaped ``body``), so the 2a/3 renderers are unchanged.
+
+    Sorting by emitted_at (not the filename glob) is load-bearing: the glob sorts
+    alphabetically by slug, which is NOT chronological — 'recent' would surface the
+    alphabetically-last records, defeating orientation.
     """
-    decisions_dir = UU_ROOT / "devlab" / "runtime" / "memory" / "decisions"
-    if not decisions_dir.exists():
-        return []
-    records = []
-    for f in decisions_dir.glob("*.json"):
-        try:
-            data = json.loads(f.read_text(encoding="utf-8"))
-            records.append((data.get("emitted_at", ""), data))
-        except Exception:
-            pass
-    records.sort(key=lambda r: r[0], reverse=True)
-    return [data for _, data in records[:limit]]
+    records = list(iter_decision_view())
+    records.sort(key=lambda d: d.get("emitted_at", "") or "", reverse=True)
+    return records[:limit]
 
 
 # ─── Step 2a: Recent decision titles (filesystem store) ───

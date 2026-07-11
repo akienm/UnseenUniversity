@@ -37,8 +37,14 @@ def test_sorted_emits_decision_to_canonical_store_not_lab():
 def test_outcome_updates_the_decision_json_not_an_md_file():
     o = _skill("outcome")
     assert "lab/design_docs" not in o, "/outcome still reads/writes a lab/ .md file"
-    assert "devlab/runtime/memory/decisions" in o
-    assert "memory_emit.py" in o  # update via the one chokepoint, reusing the stamp
+    # Design-first (T-migrate-decision-readers-to-designs): /outcome writes the
+    # verdict onto the canonical DESIGN via design_emit.py (legacy-decision fallback
+    # via memory_emit.py), and resolves records through the canonical resolver
+    # (memory_root / iter_decision_view) — NOT a hardcoded decisions/ path literal.
+    assert "design_emit.py" in o, "/outcome must write the outcome onto the canonical design"
+    assert "memory_emit.py" in o, "/outcome legacy-decision fallback via the one chokepoint"
+    assert "iter_decision_view" in o or "memory_root" in o, \
+        "/outcome must resolve via the canonical resolver, not a hardcoded path"
 
 
 def test_day_close_stages_the_canonical_store_not_lab():

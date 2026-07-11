@@ -198,11 +198,12 @@ dev-process stack is `INTENTION -> DESIGN -> TICKET`. A design is the *shape* th
 realizes the intention, and each decision you made in the block folds in as a
 **fork-resolution inside the design** (`forks[]`, each carrying its `why` — CP3).
 There is no standalone `D-*` type any more: `design_emit.py` validates the design
-and **projects** a back-compat `D-*` read-model into `decisions/` so the existing
-decision readers (context-load, validity_sweep, decision-rollup auto-close) keep
-working during the cut-over. You go through `design_emit.py`, not `memory_emit`
-directly — validation is enforced in code (a hollow, fork-less design is refused
-before any write).
+and lands it in `designs/`. The decision-shaped `D-*` is projected **on read** by
+`design_store.iter_decision_view` (no back-compat file is written to `decisions/`
+by default — T-migrate-decision-readers-to-designs retired that write; the readers
+context-load, validity_sweep, /outcome-list now read the view). You go through
+`design_emit.py`, not `memory_emit` directly — validation is enforced in code (a
+hollow, fork-less design is refused before any write).
 
 **Promote the draft, don't duplicate.** If `/design` opened the block it wrote a
 DRAFT design; read `$HOME/.unseen_university/cc_channel/design_mode.json` and
