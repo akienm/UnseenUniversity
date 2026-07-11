@@ -1,30 +1,51 @@
 #!/bin/bash
-# rescueclaude — the "everything's borked" recovery launcher.
+# rescueclaude — the SINGLE canonical Claude Code launch chokepoint, and the
+# "everything's borked" recovery launcher. One script, two entry modes.
 #
-# CONTRACT: must start Claude Code even when the DB is down/absent, our services
-# are dead, our package won't import, or the repo dir is missing. It is the path
-# back to a working system, so it depends on NOTHING of ours but the claude CLI.
-# No DB check, no service check, no python import, no `set -e`.
+# CONTRACT (recovery): must start Claude Code even when the DB is down/absent, our
+# services are dead, our package won't import, or the repo dir is missing. It is
+# the path back to a working system, so it depends on NOTHING of ours but the
+# claude CLI. No DB check, no service check, no python import, no `set -e`.
+#
+# CONTRACT (chokepoint): superclaude does the EXTRAS (setup wizard, credential
+# loading, rack server, hostname_cc_N session naming, tmux orchestration), sets
+# CC_TMUX_SESSION, and delegates the actual claude launch to THIS script. So the
+# ONE definition of "how we exec claude" — the OpenRouter-var strip, the 1M/200K
+# mode, the claude flags — lives here, not duplicated in superclaude.
 #
 # NO injected credentials. UU_HOME_DB_URL comes from the environment (bashrc /
 # credential manager) or not at all — if it's absent, claude still starts so it
 # can fix things. Baking a connection string in here would (a) defeat the
 # start-even-without-the-DB contract and (b) commit a credential to the repo. Both no.
 
-# Session name: <hostname>_cc_RESCUE — derived, not hardcoded, so recovery is
-# portable across boxes. Underscores not dots: tmux mangles dotted session names
+_CC_HOST="$(hostname 2>/dev/null | cut -d. -f1 | tr '[:upper:]' '[:lower:]')"
+
+# Session name: a caller (superclaude) hands its computed hostname_cc_N name down
+# via CC_TMUX_SESSION — honor it. Standalone recovery (no caller) derives its own
+# <hostname>_cc_RESCUE. Underscores not dots: tmux mangles dotted session names
 # ('.' -> '_'), which breaks targeting (T-cc-tmux-session-dot-naming-broken).
 # Fallback to 'localhost' keeps the launch unfailable if `hostname` is unavailable.
-_CC_HOST="$(hostname 2>/dev/null | cut -d. -f1 | tr '[:upper:]' '[:lower:]')"
-CC_TMUX_SESSION="${_CC_HOST:-localhost}_cc_RESCUE"
+# Whether we were delegated also decides the cwd policy below.
+if [ -n "${CC_TMUX_SESSION:-}" ]; then
+  _CC_DELEGATED=1
+else
+  CC_TMUX_SESSION="${_CC_HOST:-localhost}_cc_RESCUE"
+  _CC_DELEGATED=0
+fi
+
 # Repo dir is overridable ONLY for hermetic chaos-testing of the recovery path;
 # defaults to the real location. A read-only path select with a safe default —
 # it cannot make the launch fail. (T-launcher-unfailable-recovery)
 UU_DIR="${UU_RESCUE_DIR:-/home/akien/dev/src/UnseenUniversity}"
 RECOVERY_NOTES=()
 
-# Best-effort cd; fall back to HOME so claude still launches if the repo is gone.
-cd "$UU_DIR" 2>/dev/null || cd "$HOME" 2>/dev/null || true
+# cwd policy: STANDALONE recovery positions itself in the repo (best-effort; fall
+# back to HOME) so CC lands ready to work. When DELEGATED, superclaude has already
+# cd'd the pane to the user's PWD — respect it, don't override. (venv activation
+# below uses the ABSOLUTE ${UU_DIR}/.venv, so it works regardless of cwd.)
+if [ "$_CC_DELEGATED" = "0" ]; then
+  cd "$UU_DIR" 2>/dev/null || cd "$HOME" 2>/dev/null || true
+fi
 
 # Best-effort venv so CC's Bash subshells inherit it (venv python, pytest,
 # editable package, cwd-independent imports). UNFAILABLE: every step is guarded so
@@ -49,39 +70,46 @@ if [ -f "${_venv}/bin/activate" ]; then
 else
   RECOVERY_NOTES+=("venv unavailable at ${_venv} (python3 missing or venv creation failed). CC is starting anyway — rebuild from inside, e.g.  python3 -m venv .venv && pip install -e .")
 fi
+
+# ── Context-window mode: 200K DEFAULT ─────────────────────────────────────────
+# CLAUDE_CODE_DISABLE_1M_CONTEXT=1 is the documented kill-switch. We set it here
+# EXPLICITLY (not leaning on .bashrc's hygiene export) because this script is the
+# self-sufficient chokepoint: the send-keys fresh-tmux-server path and other boxes
+# can't assume bashrc ran. 200K is the default; --1m opts INTO the 1M Opus window
+# (auto-included on the Max plan). The [1m] model suffix is real and documented —
+# the control is this env var, not an ANTHROPIC_MODEL suffix.
+export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
+
 # ── Wrapper flags (consumed here, never forwarded to claude) ──────────────────
 # Recovery ALWAYS starts a fresh conversation (no resume-picker) so it boots with
-# the current tool set, not a stale one — the old --new flag was the only reason
-# to override a resuming default, and since we no longer resume, it is removed
-# (T-launcher-1m-default-fresh-session).
-# 1M context is ON BY DEFAULT: the launcher clears the CLAUDE_CODE_DISABLE_1M_CONTEXT=1
-# that .bashrc exports for hygiene, so the 1M Opus window is allowed (auto-included
-# on the Max plan). The [1m] model suffix IS real and documented — the control here
-# is the kill-switch env var (the prior "there is no opus[1m] model" comment was wrong).
-# --1m           : explicitly ensure 1M (redundant now — kept for muscle memory).
-# --200k/--no-1m : disable 1M for this launch (restores the 200K window; A/B lever).
-# --help         : print these wrapper flags, then claude's own --help.
+# the current tool set, not a stale one (T-launcher-1m-default-fresh-session).
+#   --1m            : opt into the 1M-token context window for this launch.
+#   --200k / --no-1m: keep the 200K window (the default — explicit A/B lever).
+#   --dry-run / --print-cmd : print the resolved launch line instead of exec'ing
+#                     (lets the launch be verified without hijacking a session).
+#   --help          : print these wrapper flags, then claude's own --help.
 # Flags may appear in any order; everything else is forwarded to claude.
-RESUME_ARGS=()                          # always fresh — no resume-picker.
-unset CLAUDE_CODE_DISABLE_1M_CONTEXT    # 1M on by default; --200k re-sets it below.
+DRY_RUN=0
 PASS_ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --1m)   unset CLAUDE_CODE_DISABLE_1M_CONTEXT ;;
     --200k|--no-1m) export CLAUDE_CODE_DISABLE_1M_CONTEXT=1 ;;
+    --dry-run|--print-cmd) DRY_RUN=1 ;;
     --help|-h)
       cat <<'HELP'
-rescueclaude — the "everything's borked" recovery launcher.
+rescueclaude — the single Claude Code launch chokepoint / recovery launcher.
 
   Wrapper flags (consumed by rescueclaude, NOT passed to claude):
-    --1m            Explicitly ensure the 1M-token context window. 1M is now the
-                    DEFAULT (a bare `rescueclaude` already gets it) — redundant,
-                    kept for muscle memory.
-    --200k, --no-1m Disable the 1M window for this launch (restores 200K).
+    --1m            Opt into the 1M-token context window for this launch.
+    --200k, --no-1m Keep the 200K window (the DEFAULT — a bare `rescueclaude`
+                    gets 200K). Explicit A/B lever.
+    --dry-run       Print the resolved launch command instead of running it.
     --help, -h      Show this message, then claude's own --help below.
 
-  Recovery always starts a fresh conversation (the old --new is now the default).
-  All other arguments are forwarded to claude.
+  Recovery always starts a fresh conversation. All other arguments are
+  forwarded to claude. Honors CC_TMUX_SESSION if set (superclaude passes its
+  hostname_cc_N name down); otherwise uses <hostname>_cc_RESCUE.
 ──────────────────────────────────────────────────────────────────────────────
 HELP
       exec claude --help
@@ -102,4 +130,26 @@ if [ "${#RECOVERY_NOTES[@]}" -gt 0 ]; then
   } >&2 || true
 fi
 
-exec claude --dangerously-skip-permissions "${RESUME_ARGS[@]}" -n "$CC_TMUX_SESSION" --remote-control "$CC_TMUX_SESSION" "$@"
+# ── The ONE claude launch ─────────────────────────────────────────────────────
+# OpenRouter routing vars are stripped HERE (moved out of superclaude): after
+# delegation superclaude calls us with ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY in
+# the environment (its require_api_key() sourced igor.credentials.cfg). Leaving
+# them set routes CC to OpenRouter ("401 User not found") and bills paid API
+# tokens instead of the x5max subscription (incident_superclaude_401). `env -u`
+# on an already-unset var is a no-op, so this is safe in standalone recovery too.
+_CLAUDE_CMD=(env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY
+  claude --dangerously-skip-permissions
+  -n "$CC_TMUX_SESSION" --remote-control "$CC_TMUX_SESSION" "$@")
+
+if [ "$DRY_RUN" = "1" ]; then
+  if [ "${CLAUDE_CODE_DISABLE_1M_CONTEXT:-}" = "1" ]; then _mode="200K"; else _mode="1M"; fi
+  echo "rescueclaude dry-run (no launch):"
+  echo "  context window : ${_mode}  (CLAUDE_CODE_DISABLE_1M_CONTEXT=${CLAUDE_CODE_DISABLE_1M_CONTEXT:-<unset>})"
+  echo "  tmux session   : ${CC_TMUX_SESSION}  (delegated=${_CC_DELEGATED})"
+  printf '  launch line    : '
+  printf '%q ' "${_CLAUDE_CMD[@]}"
+  printf '\n'
+  exit 0
+fi
+
+exec "${_CLAUDE_CMD[@]}"

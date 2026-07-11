@@ -207,37 +207,34 @@ start_rack_server() {
 
 # ─ Main ──────────────────────────────────────────────────────────────────────
 
-# ─ Wrapper flags (consumed by superclaude, never forwarded to claude) ─────────
-# 1M context is ON BY DEFAULT (T-launcher-1m-default-fresh-session). The launcher
-# clears the CLAUDE_CODE_DISABLE_1M_CONTEXT=1 that .bashrc sets for hygiene, so a
-# bare `superclaude` gets the 1M Opus window (auto-included on the Max plan). The
-# control is the documented kill-switch env var — NOT ANTHROPIC_MODEL=opus[1m]
-# (the prior approach never cleared the kill-switch, so it was fragile/masked).
-# --1m           : explicitly ensure 1M (redundant now — kept for muscle memory).
-# --200k/--no-1m : disable 1M for this launch (restores the 200K window; A/B lever).
-# --help         : print these wrapper flags, then claude's own --help. Short-circuits
-#                  before the rack server and tmux setup, so it stays cheap and hermetic.
-unset CLAUDE_CODE_DISABLE_1M_CONTEXT   # 1M on by default; --200k re-sets it below.
+# ─ Wrapper flags ──────────────────────────────────────────────────────────────
+# superclaude is now ONLY the extras (rack server, wizard, hostname_cc_N session
+# naming, tmux orchestration). The actual claude launch — context-window mode,
+# the OpenRouter-var strip, the exec — is delegated to rescueclaude, the single
+# chokepoint. So superclaude does NOT parse --1m/--200k or touch
+# CLAUDE_CODE_DISABLE_1M_CONTEXT any more: those flags ride through to
+# rescueclaude untouched, which is the sole parser (200K default; --1m opts in).
+# Only --help is intercepted here (to describe the extras), then it hands off to
+# rescueclaude --help for the launch flags + claude's own --help.
 _UU_PASS_ARGS=()
 for _arg in "$@"; do
     case "$_arg" in
-        --1m) unset CLAUDE_CODE_DISABLE_1M_CONTEXT ;;
-        --200k|--no-1m) export CLAUDE_CODE_DISABLE_1M_CONTEXT=1 ;;
         --help|-h)
             cat <<'HELP'
-superclaude — UnseenUniversity Claude Code launcher (starts the rack server, then claude).
+superclaude — UnseenUniversity Claude Code launcher: extras (rack server, setup
+wizard, hostname_cc_N tmux session), then delegates the launch to rescueclaude.
 
-  Wrapper flags (consumed by superclaude, NOT passed to claude):
-    --1m            Explicitly ensure the 1M-token context window. 1M is now the
-                    DEFAULT (a bare `superclaude` already gets it) — redundant,
-                    kept for muscle memory.
-    --200k, --no-1m Disable the 1M window for this launch (restores 200K).
-    --help, -h      Show this message, then claude's own --help below.
+  superclaude adds the rack server + tmux session, then calls rescueclaude — the
+  single launch chokepoint. Context-window flags are rescueclaude's:
+    --1m            Opt into the 1M-token context window for this launch.
+    --200k, --no-1m Keep the 200K window (the DEFAULT).
+    --dry-run       Print the resolved launch command instead of running it.
+    --help, -h      This message, then rescueclaude's + claude's --help below.
 
-  All other arguments are forwarded to claude.
+  All other arguments are forwarded through rescueclaude to claude.
 ──────────────────────────────────────────────────────────────────────────────
 HELP
-            exec claude --help
+            exec "${SCRIPT_DIR}/rescueclaude" --help
             ;;
         *) _UU_PASS_ARGS+=("$_arg") ;;
     esac
@@ -340,17 +337,12 @@ printf '%s\n' "$_CC_SESSION" > "$_CC_SESSION_FILE"
 SESSION_NAME="$_CC_SESSION"
 
 if [[ -n "${TMUX:-}" ]] && [[ "$(tmux display-message -p '#{session_name}')" == "$_CC_SESSION" ]]; then
-    # Already inside the correct CC session — launch directly; CC_TMUX_SESSION already in env.
-    # Strip OpenRouter routing vars (ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY) that
-    # require_api_key() exported from igor.credentials.cfg — those are for Igor's
-    # inference layer, not Claude Code. Leaving them set routes CC to OpenRouter
-    # ("401 User not found") and bills paid API tokens instead of the x5max
-    # subscription. See incident_superclaude_401. (T-superclaude-openrouter-leak)
-    exec env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
-        claude --dangerously-skip-permissions \
-        -n "$SESSION_NAME" \
-        --remote-control "$SESSION_NAME" \
-        "$@"
+    # Already inside the correct CC session — delegate straight to the chokepoint.
+    # CC_TMUX_SESSION is exported above, so rescueclaude honors this session name;
+    # it also does the OpenRouter-var strip (require_api_key() left those in env —
+    # incident_superclaude_401) and applies the 1M/200K mode from --1m/--200k in
+    # "$@". Nothing about the launch is duplicated here.
+    exec "${SCRIPT_DIR}/rescueclaude" "$@"
 else
     # Either outside tmux, or we killed a stale session — create session and launch Claude inside it.
     # Kill the server to clear any leftover state (the server only runs CC, so killing it is safe).
@@ -360,30 +352,19 @@ else
     # Create a fresh session from scratch.
     tmux new-session -d -s "$CC_TMUX_SESSION" 2>/dev/null || true
 
-    # Build the command string with proper quoting.
-    # Strip OpenRouter routing vars at the claude invocation (env -u ...) so the
-    # CC session uses the x5max subscription, not OpenRouter. The send-keys command
-    # runs in a fresh tmux server that inherits superclaude's env (where
-    # require_api_key() exported these), so stripping at exec time is required.
-    # See incident_superclaude_401. (T-superclaude-openrouter-leak)
-    # Carry env through the fresh tmux server explicitly — the env-inheritance path
-    # is not guaranteed across tmux server environments. A user-set ANTHROPIC_MODEL
-    # and the 1M context state both ride the command string.
+    # Build the command string with proper quoting. The pane runs rescueclaude —
+    # the single launch chokepoint — which does the OpenRouter-var strip (so the
+    # CC session uses the x5max subscription, not OpenRouter — incident_superclaude_401),
+    # applies the 1M/200K mode from the forwarded --1m/--200k flags, and adds the
+    # -n/--remote-control session flags. CC_TMUX_SESSION is baked so rescueclaude
+    # honors this session name (and, seeing it set, respects the `cd $PWD` below
+    # instead of forcing the repo dir). ANTHROPIC_MODEL is baked because the
+    # env-inheritance path is not guaranteed across a fresh tmux server.
     _UU_MODEL_ENV=""
     if [[ -n "${ANTHROPIC_MODEL:-}" ]]; then
         _UU_MODEL_ENV="ANTHROPIC_MODEL=$(printf '%q' "$ANTHROPIC_MODEL") "
     fi
-    # 1M is on by default (kill-switch cleared above); --200k re-set it to 1.
-    if [[ "${CLAUDE_CODE_DISABLE_1M_CONTEXT:-}" == "1" ]]; then
-        _UU_1M_ENV="CLAUDE_CODE_DISABLE_1M_CONTEXT=1 "    # 200K: set the kill-switch
-        _UU_1M_UNSET=""
-    else
-        _UU_1M_ENV=""
-        _UU_1M_UNSET="-u CLAUDE_CODE_DISABLE_1M_CONTEXT "  # 1M: explicitly clear it
-    fi
-    CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") && cd $(printf '%q' "$PWD") && env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY ${_UU_1M_UNSET}${_UU_MODEL_ENV}${_UU_1M_ENV}claude --dangerously-skip-permissions"
-    CLAUDE_CMD+=" -n $(printf '%q' "$SESSION_NAME")"
-    CLAUDE_CMD+=" --remote-control $(printf '%q' "$SESSION_NAME")"
+    CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") && cd $(printf '%q' "$PWD") && ${_UU_MODEL_ENV}$(printf '%q' "${SCRIPT_DIR}/rescueclaude")"
     for arg in "$@"; do
         CLAUDE_CMD+=" $(printf '%q' "$arg")"
     done
