@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.weekly-retro-20260710.20260710.221918697414",
+  "emitter": "cc.0",
+  "namespace": [
+    "weekly-retro-20260710"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-10T22:19:18.697414",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "weekly-retro 2026-07-10",
+    "text": "## Week ending 2026-07-10\n\n### Hypothesis confirmation rate\n0 outcomes recorded this week (0 confirmed / 0 falsified). 269 designs+decisions\ncarry no /outcome at all. Normally this would flag \"the outcome loop has stopped\nclosing\" — and it HAD stopped, but with a now-diagnosed root cause: the\n/outcome -> /weekly-retro loop bug (outcome_date written to decisions/ while retro\nreads designs/-first + dedup -> the canonical design was perpetually unreviewed).\nThat bug was FIXED today (@193653aa): /outcome now writes to the canonical design\n(re-projecting the decision), verified end-to-end. So the zero is explained, not\nmysterious — the machinery that would record outcomes was mis-wired until today.\n\n### Priority changes for next week\nThe outcome loop is now mechanically capable of closing for the first time. Next\nweek: start actually running /outcome on recently-shipped designs (begin with this\nweek's INTENTION->DESIGN->TICKET stack once they've had a few days to show whether\nthe intention held) so the confirmation-rate signal becomes real rather than\nstructurally-zero. No bet looks wrong yet — we simply have no outcome data because\nthe recorder was broken; fixing that is the unblock.\n\n### Needs /outcome\n269 records carry no outcome — but the meaningful, actionable subset is this week's\nshipped designs (design-first artifact type, intention capture/deconstruct, reader\nmigration). The long legacy tail predates the outcome-loop machinery and is not\nindividually overdue in a useful sense. Do NOT bulk-/outcome the tail; run it going\nforward on freshly-shipped designs."
+  }
+}

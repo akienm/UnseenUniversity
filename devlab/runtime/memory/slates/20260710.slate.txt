@@ -1,90 +1,86 @@
-# Slate 2026-07-10
-
-## Notes
-
-## In-flight
-NONE
-
-## Planned
-- T-compact-memory-index: EXPANDED scope — now all Claude memories + topic files + CLAUDE.md (was MEMORY.md-only); sibling of the skills review.
-- T-skills-review-prune-rearrange-intention-compat: NEW — review all skills: prune / rearrange / make intention-workflow-compatible.
-- T-workflow-levels-breakdown: NEW — define optimal workflow LEVELS front (interviewer->prebuild) + back (build-output->testing->verification->learning); LLM-middle deferred.
-
-## Ad hoc
-- T-arch-point-pointer-is-dict-not-path: KICKED BACK to open_questions (Q1-Q3) — type-correcting the test surfaces ~100 misses spanning the OUT-of-scope stale-path sweep + a reference_docs-are-not-paths schema question; needs a design call on the intention-point pointer contract before it's buildable.
-- T-watch-primitive-is-hollow: revive cross-day watch-for (Akien uses CC as HIS memory; watches expire by default)
+# Slate 2026-07-10  ✅ CLOSED
 
 ## Done today
-- T-audit-smell-evasion-guards: CLOSED shipped-unproven — hardened smell-audit exemptions (cumulative per-ticket threshold + earned audit-skip-smell); doc-only skill prose, lever: no executable filing-time gate to prove against.
-- T-fix-igor-layer3-4-test-seed-imports: CLOSED proven (ff8c374e) — deleted 9 orphaned igor layer3/4 tests importing seed_layer* modules retired in 3fcfd070; added structural guard. Proof: guard red=AssertionError->green.
-- T-code-indexer-mutates-source: CLOSED proven (3a7f2b6f) — indexer no longer injects `# intent:` into tracked source; intent lives in clan.code_index DB row only. Proof: no-mutation red=AssertionError->green.
+The big day: the full **INTENTION → DESIGN → TICKET** artifact stack shipped into the
+skills (45 commits), plus the launcher merge and the decision-readers migration.
 
-- T-audit-smell-evasion-guards — audit-smell skips are attacker-controlled: sub-threshold slicing + self-declared skip tag (Both G5 evasions closed in skill logic: cumulative per-ticket threshold (audit-smell) + earned audit-skip-smell with doc)
-- T-workflow-levels-breakdown — Define the optimal breakdown of workflow LEVELS — interviewer->prebuild AND post-build->testing->verification->learning (NOT the LLM middle yet) (Filed architecture/cc.0.workflow-levels.* — the unified level map (L1 interviewer -> L5 prebuild [LIVE]; [MIDDLE out]; L)
-- T-skills-review-prune-rearrange-intention-compat — Detailed review of ALL skills — prune, rearrange for effectiveness, make intention-workflow-compatible (Review of all 48 skills delivered; findings durable in body.review_findings (prune / rearrange / stale-substrate / inten)
-- T-design-first-artifact-type — Make `design` a first-class artifact type (decision folds in as a fork); rework /sorted + /design to emit it (Made design a first-class artifact type. design_store.py (contract+validate_design+read helpers), design_emit.py (valida)
-- T-intention-capture-deconstruct-skill — New skill: capture the intention contract + deconstruct into sub-intentions ⊗ proof-obligations (front boundary, no device) (Built the front-boundary intention capture+deconstruct as a SKILL (no device). intention_store.py (two-tier contract: ba)
-- T-rekey-decision-first-skills-to-design-first — Re-key the decision-first skills to design-first; thread the proof-obligation field through (Re-keyed the decision-first skills to the settled INTENTION->DESIGN->TICKET stack. CODE (proven): proof-obligation threa)
-## In-flight: Mid-review of the intentions markup master (Akien walking the [CC] ratify-or-cut list top-down, next unmarked line: 'The examiner is never the author'). This session's writes are all durable: 4 memory files created/updated (feedback_sonnet_1m_autocompact corrected to unconditional-1M, feedback_forgetful_restart_then_upstream new, project_two_memories_lean_against_each_other new, feedback_complexity_limit_confabulation cross-linked), MEMORY.md indexed. Filed T-watch-primitive-is-hollow (0.75, pending) — the cross-day watch-for primitive is a hollow build closed done 2026-04-29 (audit_telemetry.py never existed). About to compact, then close tickets while Akien reviews the document.
+- T-design-first-artifact-type — CLOSED **PROVEN** @0e35c311 (pushed c672fe99). `design` is
+  first-class: `unseen_university/design_store.py` (contract + validate_design + draft + read
+  helpers) + `devlab/claudecode/design_emit.py` (validated writer + back-compat decision
+  projection) + `designs/` category. /sorted emits a DESIGN (decision folds in as forks[]);
+  /design emits a DRAFT. Reader-gap bridged by projection. Proof: forkless design rejected, red→green.
+- T-intention-capture-deconstruct-skill — CLOSED **PROVEN** @517105fa. `intention_store.py`
+  (two-tier: base flat I-*, deconstructed sub-intentions each carrying a proof-obligation) +
+  `intention_emit.py` + `/intend`. Proof: sub-intention without proof-obligation rejected, red→green.
+- T-rekey-decision-first-skills-to-design-first — CLOSED **shipped-unproven** @adafde1e. The
+  build_packet proof-obligation threading is a PROVEN sub-part @4158f4e4; the titular 5-skill
+  prose re-key has no red form. Lever named: executable audit-conformance harness gating a
+  re-keyed audit on a real design. Also fixed an advisor-caught latent loop bug: /outcome wrote
+  to decisions/ while /weekly-retro read designs/-first → design perpetually unreviewed; now
+  /outcome writes to the canonical design (re-projects decision), verified end-to-end @193653aa.
+- T-migrate-decision-readers-to-designs — MERGED to main (merge @7f74f649, work @c4dc543e).
+  Retired the write-time decision projection; decision record now projected ON READ via
+  `design_store.iter_decision_view`. Readers repointed: context-load(2a/3), validity_sweep,
+  /outcome. 20 focused tests green on merged main. Proof in tests/test_readers_migrated_to_designs.py.
+- LAUNCHER MERGE — DONE @24151630 + @31feec96. rescueclaude is the SINGLE claude-launch
+  chokepoint; superclaude = extras that delegate to it. DEFAULT context window flipped 1M→200K
+  (env CLAUDE_CODE_DISABLE_1M_CONTEXT=1 ⇒ 200K; flags --1m / --200k; rescueclaude sole parser).
+  OpenRouter-var strip moved into rescueclaude (guards the 401 regression). --dry-run/--print-cmd
+  added and verified. NOT live-launch-tested (see In-flight).
+- T-workflow-levels-breakdown — CLOSED shipped-unproven — filed architecture/cc.0.workflow-levels.*
+  (unified L1–L12 level map, LLM-middle bracketed out; L1 Interviewer = net-new Moist von Lipwig).
+- T-skills-review-prune-rearrange-intention-compat — CLOSED — review of all 48 skills; verdict
+  durable in body.review_findings.
+- T-audit-smell-evasion-guards — CLOSED shipped-unproven — hardened smell-audit exemptions.
+- T-fix-igor-layer3-4-test-seed-imports — CLOSED **proven** (ff8c374e / 257f8652).
+- T-code-indexer-mutates-source — CLOSED **proven** (3a7f2b6f).
+
+## Notes
+- Reader-gap resolution for the design keystone: emit_design projects a derived back-compat
+  decision read-model (design = source of truth). Transitional projection now retired by the
+  merged reader-migration; decision view projected on read.
+- Filed follow-ons: T-launcher-windows-variants-delegate-to-rescue, T-modernize-skill-writepath-
+  tests-design-first, T-workflow-levels-front-intent-artifact-contract.
+- Filed T-watch-primitive-is-hollow (0.75) — cross-day watch-for primitive was a hollow build
+  closed done 2026-04-29 (audit_telemetry.py never existed).
 
 ## Session close 2026-07-10
-Done: Done: closed 2 proven (T-code-indexer-mutates-source 3a7f2b6f; T-fix-igor-layer3-4-test-seed-imports 257f8652), 1 shipped-unproven (T-audit-smell-evasion-guards 03c352a1). Kicked T-arch-point-pointer-is-dict-not-path back to design (triage — open_questions is folded into triage). Captured Akien's staged-intention-compiler-pipeline note. Filed 3 tickets: expanded T-compact-memory-index to ALL Claude memories + CLAUDE.md, new T-skills-review-prune-rearrange-intention-compat, new T-workflow-levels-breakdown. Confirmed deterministic prebuild IS live (constraint decoration + build_packet.py + prereg in sprint preflight).
-Next: Next: after compact, /context-load then BUILD — pick from the 3 new tickets (workflow-levels-breakdown is the map the others consume; skills-review; memory+CLAUDE.md compact) or continue substantive queue. LLM-middle stays out of scope; scaffold both sides first.
+Done: Shipped the full settled INTENTION→DESIGN→TICKET stack into the skills — 2 PROVEN + 1
+SHIPPED-UNPROVEN — plus the launcher merge and the decision-readers migration (merged to main).
+Fixed the advisor-caught /outcome→/weekly-retro loop bug. All pushed to aee972b8.
+Next: When Hex is back up, run the FULL suite network-isolated on main to confirm the ~317
+failures are all environmental + the 3 ticketed network-free ones, then take
+T-modernize-skill-writepath-tests-design-first (S) and close T-migrate-decision-readers-to-designs
+PROVEN (proof already in tests/test_readers_migrated_to_designs.py). Boundary contract =
+architecture/workflow-levels (COMPLETE). LLM-middle stays OUT. Also: user live-tests the launcher
+(fresh terminal `superclaude` → 200K; `--1m` → 1M; confirm NOT on OpenRouter).
 
-## In-flight: In-flight: NONE — tree clean, all work pushed to 35dc8425. Session was intent->tickets + 3 clean ticket dispositions; ready for compact then build.
+## In-flight (at close)
+NONE — tree clean, all work pushed to aee972b8. Two items pending, both external-dependency:
+- **Launcher live-test** (user action): superclaude does `tmux kill-server` outside tmux, so it
+  couldn't be tested without killing the session. FALLBACK if broken:
+  `git checkout HEAD~2 -- bin/superclaude bin/rescueclaude` (rescueclaude standalone recovery verified-good).
+- **Full-suite green confirmation** (blocked on Hex): Hex (10.0.0.100 inference host) DOWN for
+  power work tonight; back tomorrow. Day-close audit ran the full suite — 317 failed = ~314
+  environmental (Hex down, no live inference) + 3 network-free, ALL ticketed
+  (T-arch-point-pointer-is-dict-not-path, T-modernize-skill-writepath-tests-design-first,
+  T-lab-refsweep-excludes-notes-dir). Today's shipped work is GREEN (43 passed in isolation).
 
-## In-flight: Closed T-workflow-levels-breakdown shipped-unproven — filed architecture/cc.0.workflow-levels.* (unified L1-L12 level map, LLM-middle bracketed out). Filed follow-on T-workflow-levels-front-intent-artifact-contract (triage). Next: T-skills-review-prune-rearrange-intention-compat — consumes the new level map; CC's own abilities (Fable not needed).
+## Env/ops
+- gh is now git's credential helper (`gh auth setup-git` ran) — pushes no longer pop the GUI prompt.
+- Hex (10.0.0.100) DOWN tonight for power work; back tomorrow.
 
-## In-flight: Skills review IN FLIGHT: 4 read-only extractor agents sweeping all 48 skills (audits / sprint-build / state-session / device-misc) for dead steps, stale-substrate markers, overlap, intention-era fit. CC synthesizes prune+rearrange when they return; intention-compat mapping PROVISIONAL pending stack-shape decision (note stack-shape-open-question). Parked coherently: workflow-levels map corrected (L1 Interviewer=net-new Moist, not Vetinari; resolves de-discworld B4), doc docs/20260710.Akien.CC0.WorkflowLevels.md, notes pipeline-walk-front-to-back + stack-shape-open-question. All pushed (31c1812a).
+## Planned (carried forward)
+- T-compact-memory-index: EXPANDED — all Claude memories + topic files + CLAUDE.md.
+- T-arch-point-pointer-is-dict-not-path: in design (Q1-Q3) — intention-point pointer contract.
+- T-watch-primitive-is-hollow: revive cross-day watch-for.
 
-## Session close 2026-07-10
-Done: Done: SETTLED the workflow boundary contract (architecture/workflow-levels COMPLETE) — artifact stack = Intention->Design->Ticket, decision=fork-within-design, proof=thread; delta = +1 artifact (design first-class), +1 skill (intention capture/deconstruct), -1 (decision), re-key ~5 decision-first skills; devices NOT required. Reviewed all 48 skills (verdict durable in T-skills-review body.review_findings; closed shipped-unproven). Filed 3 execution tickets. Corrected map (L1 Interviewer=net-new Moist von Lipwig, not Vetinari; resolved de-discworld B4). Wrote feedback_resist_artifact_proliferation (baked-in). Memory index compacted 20.8->16KB (158 entries preserved).
-Next: Next: after reboot, EXECUTE the settled skills rework — START T-design-first-artifact-type (keystone: make design first-class; /sorted+/design emit it; decision folds to fork). Then T-intention-capture-deconstruct-skill (front-boundary gap) + T-rekey-decision-first-skills-to-design-first (GATED on keystone). Boundary contract=architecture/workflow-levels (settled, complete). Prune/rearrange/stale hygiene items in T-skills-review body for later. Build contracts into SKILLS, no devices; LLM-middle stays OUT.
+## Day-close 2026-07-10 (Friday)
+- Audit: PASS — today's work green; failures environmental/ticketed; no new regression. Log:
+  ~/.unseen_university/logs/day-close/20260710.code_maintenance_reviews.log
+- Gate sweep: 3 cleared. Validity sweep: flagged=2 (probeless). Stash: empty. Path-moves: clean.
+  Consequence overdue: 0. Cap-map: fresh.
+- Friday: /weekly-retro ran. /eval-run DEFERRED (Hex down — cannot measure Hex-hosted models;
+  run when Hex returns). /audit-expert: see roll-up.
 
-## In-flight: In-flight: NONE — boundary contract settled+captured, skills review closed, 3 execution tickets filed for post-reboot. All pushed.
-
-- note: Reader-gap decision for T-design-first-artifact-type keystone: /sorted emits a first-class DESIGN artifact to devlab/runtime/memory/designs/ (canonical; decision folded in as a fork). The decisions/ reader surface is broad (context-load 2a/3, validity_sweep, decision-rollup auto-close, web_server, igor cognition) and NONE is covered by the gated re-key ticket (audit-* + /outcome + /weekly-retro only), so a hard cutover would strand those readers — the CLAUDE.md #1 split-source-of-truth hazard. Resolution: emit_design ALSO projects a derived back-compatible decision record into decisions/ (design=source of truth, projected decision=read-model). Zero stranding, bounded scope. Transitional projection retired by a filed follow-on once readers migrate. Advisor-reviewed. | T-design-first-artifact-type
-
-## In-flight: KEYSTONE DONE — T-design-first-artifact-type CLOSED PROVEN (proof: forkless design rejected, red->green @0e35c311; pushed c672fe99). `design` is first-class: unseen_university/design_store.py (contract+validate_design+draft path+read helpers) + devlab/claudecode/design_emit.py (validated writer + back-compat decision projection) + designs/ category. /sorted emits a DESIGN (decision folded in as forks[]); /design emits a DRAFT capturing the intention. Reader-gap resolved by projection (transitional) — follow-on T-migrate-decision-readers-to-designs filed (gated on re-key). Closing this UNGATED T-rekey-decision-first-skills-to-design-first (now claimable). Next: T-intention-capture-deconstruct-skill (front-boundary, ungated) OR T-rekey-decision-first-skills-to-design-first (now open). Both build the settled Intention->Design->Ticket stack into SKILLS; LLM-middle stays OUT.
-
-## In-flight: TWO LEVELS SHIPPED this session — design keystone + intention front-boundary, both CLOSED PROVEN. T-intention-capture-deconstruct-skill: intention_store.py (two-tier contract, base=existing flat I-*, deconstructed=sub-intentions each with proof-obligation) + intention_emit.py + /intend skill (capture present-tense contract + deconstruct; IntentionsOutline stays Akien source). Proof @517105fa. Artifact triad now exists: INTENTION (/intend) -> DESIGN (/design+/sorted) -> TICKET. Only READY level left of the settled stack: T-rekey-decision-first-skills-to-design-first (L, un-gated) — re-key audit-design/hypothesis/ticket + /outcome/weekly-retro to design/intention, thread proof-obligation through /ticket+/sorted+prebuild. Also ready+un-gated: T-migrate-decision-readers-to-designs (gated on the re-key). LLM-middle stays OUT.
-
-## In-flight: THREE LEVELS SHIPPED PROVEN this session — the full settled INTENTION->DESIGN->TICKET stack is now built into the skills. (1) T-design-first-artifact-type: design_store + design_emit + /design draft + /sorted design-emit, decision folds in as forks, reader-gap bridged by projection (@0e35c311). (2) T-intention-capture-deconstruct-skill: intention_store two-tier + intention_emit + /intend, sub-intentions each carry a proof-obligation (@517105fa). (3) T-rekey-decision-first-skills-to-design-first: proof-obligation threaded onto ticket + surfaced by build_packet (@4158f4e4), 5 skills re-keyed to design/intention. All pushed to 9077a497. ONE ready level left: T-migrate-decision-readers-to-designs (un-gated) — retire the decision projection + repoint the non-audit readers (context-load, validity_sweep, web_server, igor) to designs/; completes the -1-decision delta. Best taken FRESH (broad careful reader sweep). LLM-middle stays OUT.
-
-## In-flight: CORRECTION (advisor) — session shipped 2 PROVEN + 1 SHIPPED-UNPROVEN (not 3 proven). T-design-first-artifact-type PROVEN (@0e35c311), T-intention-capture-deconstruct-skill PROVEN (@517105fa). T-rekey-decision-first-skills-to-design-first RE-CLOSED shipped-unproven: the build_packet proof-obligation threading is a PROVEN sub-part (@4158f4e4) but the titular 5-skill re-key is Haiku prose with no red form — lever named = executable audit-conformance harness gating a re-keyed audit on a real design. Also FIXED a latent loop bug the advisor traced: /outcome wrote outcome to decisions/ while /weekly-retro read designs/-first+dedup -> design perpetually unreviewed; now /outcome writes to the canonical design (re-projects decision, both carry outcome_date), verified end-to-end. The full INTENTION->DESIGN->TICKET stack is built. Last ready level: T-migrate-decision-readers-to-designs (un-gated) — take FRESH; scope now includes moving remaining reader/writer paths off the projection. LLM-middle OUT.
-
-## Session close 2026-07-10
-Done: Done: Shipped the full settled INTENTION->DESIGN->TICKET stack into the skills — 2 PROVEN + 1 SHIPPED-UNPROVEN. T-design-first-artifact-type PROVEN @0e35c311 (design_store+design_emit, /design draft + /sorted design-emit, decision folds in as forks, reader-gap bridged by decision projection). T-intention-capture-deconstruct-skill PROVEN @517105fa (intention_store two-tier + intention_emit + /intend; sub-intentions each carry a proof-obligation). T-rekey-decision-first-skills-to-design-first SHIPPED-UNPROVEN (build_packet proof-obligation threading PROVEN @4158f4e4 as sub-part; titular 5-skill prose re-key has no red form — lever named: executable audit-conformance harness). Fixed advisor-caught latent loop bug: /outcome wrote to decisions/ while /weekly-retro read designs/-first+dedup -> design perpetually unreviewed; now /outcome writes to canonical design (re-projects decision), verified end-to-end. Updated feedback_cooperative_not_hierarchical (vocabulary tell: un-blocked/ready NOT claimable). All pushed to adafde1e.
-Next: Next: RESUME by taking T-migrate-decision-readers-to-designs (un-gated, take FRESH) — retire the decision projection + repoint the non-audit readers (context-load, validity_sweep, web_server, igor) AND remaining /outcome writer paths to designs/; completes the -1-decision delta. Boundary contract = architecture/workflow-levels (COMPLETE). LLM-middle stays OUT.
-
-## In-flight: NONE — tree clean, all work pushed to adafde1e. Full INTENTION->DESIGN->TICKET artifact stack built into skills this session (2 proven + 1 shipped-unproven); ready for compact then resume on T-migrate-decision-readers-to-designs.
-
-
-## Session close → Next  (2026-07-10 late — written on MAIN before restart)
-
-TWO work streams tonight. This hand-off lives on MAIN so /context-load surfaces it.
-
-### A) LAUNCHER MERGE — DONE, on MAIN (commits 24151630 + 31feec96, pushed). Pending live test.
-- rescueclaude is now the SINGLE claude-launch chokepoint; superclaude = extras (wizard, creds, rack server, hostname_cc_N naming, tmux) that delegates to it.
-- DEFAULT context window flipped 1M -> 200K. Env var = CLAUDE_CODE_DISABLE_1M_CONTEXT (=1 means 200K). Flags: --1m opts into 1M, --200k explicit default. rescueclaude is the SOLE parser; superclaude forwards.
-- OpenRouter-var strip MOVED into rescueclaude (was in superclaude) — prevents the 401/OpenRouter-billing regression after delegation (incident_superclaude_401). Verified present via --dry-run with creds in env.
-- Added rescueclaude --dry-run/--print-cmd. Verified: 200K default, --1m/--200k toggle, strip present, session-name honored. bash -n clean.
-- NOT live-launch-tested (superclaude outside-tmux does `tmux kill-server`; couldn't test without killing the session). USER live-tests: from a fresh terminal run `superclaude` (bare->200K, --1m->1M); confirm session comes up + NOT on OpenRouter.
-- FALLBACK if broken: `git checkout HEAD~2 -- bin/superclaude bin/rescueclaude`. rescueclaude standalone recovery is verified-good.
-- Windows .ps1/.bat still carry old behavior -> ticket T-launcher-windows-variants-delegate-to-rescue (deferred).
-
-### B) DECISION-READERS MIGRATION — on BRANCH `migrate-decision-readers-to-designs` (commit c4dc543e, pushed). Testing DEFERRED to tomorrow (Hex offline for power work).
-- Retired the write-time decision projection; decision record projected ON READ via design_store.iter_decision_view. design_emit default project_decision=False. Readers repointed: context-load(2a/3), validity_sweep(+designs), /outcome(list + D->Design resolution fix). Scope-corrected: web_server/cc_nightly/igor read adc.palace(Postgres)/nothing (retired-palace follow-on). architecture/workflow-levels reconciled.
-- Focused suite green (20). Full suite has ~314 environmental `No route to host` failures (Hex/services down) + pre-existing stale tests ticketed as T-modernize-skill-writepath-tests-design-first.
-- RESUME (when Hex up): checkout the branch -> run full suite network-isolated -> confirm only environmental+ticketed failures -> take T-modernize-skill-writepath-tests-design-first (S) -> merge branch to main + close T-migrate-decision-readers-to-designs proven (proof already in tests/test_readers_migrated_to_designs.py).
-
-### Env/ops
-- gh is now git's credential helper (gh auth setup-git ran) — pushes no longer pop the GUI password prompt.
-- Hex (10.0.0.100 inference host) is DOWN tonight for power work; won't be up till tomorrow.
-
-### UPDATE (late): branch B MERGED to main.
-The decision-readers migration branch was merged to main (merge commit 7f74f649) and the
-branch deleted (local+remote). 20 focused tests green on merged main. Only remaining step:
-when Hex is back, run the FULL suite network-isolated on main to confirm the ~314 failures
-are all environmental, then take T-modernize-skill-writepath-tests-design-first (S) and
-close T-migrate-decision-readers-to-designs proven. No branch to check out — it's all on main now.
+✅ CLOSED

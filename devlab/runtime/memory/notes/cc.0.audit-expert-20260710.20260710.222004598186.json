@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.audit-expert-20260710.20260710.222004598186",
+  "emitter": "cc.0",
+  "namespace": [
+    "audit-expert-20260710"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-10T22:20:04.598186",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "audit-expert weekly 2026-07-10",
+    "text": "## Expert audit — week ending 2026-07-10 (weekly, 3 day-seeded experts)\n\nContext: research project, single-host dev rack, no production (per standing guidance).\nReliability/Security lenses read against the DEV rack, not a prod deployment.\n\n### Product Manager — \"delivering value toward the factory goal?\"\n- STRONG week for product, not just infra: the INTENTION->DESIGN->TICKET compiler stack\n  shipped into the skills (design first-class, /intend front boundary, re-key). This IS the\n  factory-of-factories thesis made concrete, not scope creep.\n- ROOT-CAUSE finding: the outcome loop had NEVER closed (0 outcomes ever recorded) because\n  /outcome wrote to decisions/ while /weekly-retro read designs/-first. \"Measure don't declare\"\n  was structurally impossible until today's fix (@193653aa). Capability claims this week rest on\n  proofs (good) but have zero outcome-validation history — that starts next week.\n- BLOCKED: full-suite verification + capability eval both gated on Hex (single inference host,\n  down tonight). LLM-middle deliberately deferred (correct scoping).\n\n### Reliability Engineer — \"operational story when things break?\"\n- SINGLE POINT OF FAILURE: Hex (10.0.0.100) is the only live inference source. Down => 314 tests\n  fail, /eval-run cannot run, DS/aider builders can't build. No live fallback (OpenRouter stripped\n  for cost — intentional, but it means zero inference redundancy). Known constraint\n  (DS-off-until-free-inference), re-flagged as the dominant fragility.\n- 124 SILENT_EXCEPT handlers swallow errors => longer diagnosis when a device breaks. Concentrated\n  in third-party (ebook_drm) but present in live devices (web_server, inference, granny, postgres).\n  These are gaps in the \"log every interface crossing\" (AR-009) reconstruct-incident guarantee.\n- POSITIVE: the dev-process itself now has strong operational observability — path-moves monitor,\n  consequence-aging, validity-sweep, gate-sweep all ran clean/near-clean in this day-close.\n\n### Security Engineer — \"adversarial inputs / trust boundaries?\"\n- Creds clean: only hit is a third-party Kindle-DRM constant; no live keys in source (.env gitignored).\n- HARDENED this week: OpenRouter-var strip moved into rescueclaude (the single launch chokepoint),\n  closing the 401/credential-leak regression (incident_superclaude_401). Good trust-boundary work.\n- STANDING GAP (low risk on single-host research rack, named each pass): PgBus envelopes carry\n  from/to_device but there's no evident channel auth / replay-protection; the audit trail's\n  completeness is undercut by the 124 silent-excepts. Acceptable now; would need attention before\n  any multi-tenant / networked deployment.\n\n### Net\nNo new tickets warranted — findings are either shipped-this-week wins, known/intentional\nconstraints (Hex SPOF, LLM-middle deferral), or pre-existing debt already tracked\n(silent-excepts overlap the IMAP purge + general hygiene). The one genuinely actionable\nitem is next week's: START closing the outcome loop now that it mechanically can."
+  }
+}

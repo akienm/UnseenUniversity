@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.day-20260710.20260710.222015407730",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260710"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-10T22:20:15.407730",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Day 2026-07-10",
+    "text": "## Done\n- T-design-first-artifact-type — CLOSED **PROVEN** @0e35c311 (pushed c672fe99). `design` is\n- T-intention-capture-deconstruct-skill — CLOSED **PROVEN** @517105fa. `intention_store.py`\n- T-rekey-decision-first-skills-to-design-first — CLOSED **shipped-unproven** @adafde1e. The\n- T-migrate-decision-readers-to-designs — MERGED to main (merge @7f74f649, work @c4dc543e).\n- LAUNCHER MERGE — DONE @24151630 + @31feec96. rescueclaude is the SINGLE claude-launch\n- T-workflow-levels-breakdown — CLOSED shipped-unproven — filed architecture/cc.0.workflow-levels.*\n- T-skills-review-prune-rearrange-intention-compat — CLOSED — review of all 48 skills; verdict\n- T-audit-smell-evasion-guards — CLOSED shipped-unproven — hardened smell-audit exemptions.\n- T-fix-igor-layer3-4-test-seed-imports — CLOSED **proven** (ff8c374e / 257f8652).\n- T-code-indexer-mutates-source — CLOSED **proven** (3a7f2b6f).\n"
+  }
+}
