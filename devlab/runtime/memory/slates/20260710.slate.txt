@@ -58,3 +58,26 @@ Done: Done: Shipped the full settled INTENTION->DESIGN->TICKET stack into the sk
 Next: Next: RESUME by taking T-migrate-decision-readers-to-designs (un-gated, take FRESH) — retire the decision projection + repoint the non-audit readers (context-load, validity_sweep, web_server, igor) AND remaining /outcome writer paths to designs/; completes the -1-decision delta. Boundary contract = architecture/workflow-levels (COMPLETE). LLM-middle stays OUT.
 
 ## In-flight: NONE — tree clean, all work pushed to adafde1e. Full INTENTION->DESIGN->TICKET artifact stack built into skills this session (2 proven + 1 shipped-unproven); ready for compact then resume on T-migrate-decision-readers-to-designs.
+
+
+## Session close → Next  (2026-07-10 late — written on MAIN before restart)
+
+TWO work streams tonight. This hand-off lives on MAIN so /context-load surfaces it.
+
+### A) LAUNCHER MERGE — DONE, on MAIN (commits 24151630 + 31feec96, pushed). Pending live test.
+- rescueclaude is now the SINGLE claude-launch chokepoint; superclaude = extras (wizard, creds, rack server, hostname_cc_N naming, tmux) that delegates to it.
+- DEFAULT context window flipped 1M -> 200K. Env var = CLAUDE_CODE_DISABLE_1M_CONTEXT (=1 means 200K). Flags: --1m opts into 1M, --200k explicit default. rescueclaude is the SOLE parser; superclaude forwards.
+- OpenRouter-var strip MOVED into rescueclaude (was in superclaude) — prevents the 401/OpenRouter-billing regression after delegation (incident_superclaude_401). Verified present via --dry-run with creds in env.
+- Added rescueclaude --dry-run/--print-cmd. Verified: 200K default, --1m/--200k toggle, strip present, session-name honored. bash -n clean.
+- NOT live-launch-tested (superclaude outside-tmux does `tmux kill-server`; couldn't test without killing the session). USER live-tests: from a fresh terminal run `superclaude` (bare->200K, --1m->1M); confirm session comes up + NOT on OpenRouter.
+- FALLBACK if broken: `git checkout HEAD~2 -- bin/superclaude bin/rescueclaude`. rescueclaude standalone recovery is verified-good.
+- Windows .ps1/.bat still carry old behavior -> ticket T-launcher-windows-variants-delegate-to-rescue (deferred).
+
+### B) DECISION-READERS MIGRATION — on BRANCH `migrate-decision-readers-to-designs` (commit c4dc543e, pushed). Testing DEFERRED to tomorrow (Hex offline for power work).
+- Retired the write-time decision projection; decision record projected ON READ via design_store.iter_decision_view. design_emit default project_decision=False. Readers repointed: context-load(2a/3), validity_sweep(+designs), /outcome(list + D->Design resolution fix). Scope-corrected: web_server/cc_nightly/igor read adc.palace(Postgres)/nothing (retired-palace follow-on). architecture/workflow-levels reconciled.
+- Focused suite green (20). Full suite has ~314 environmental `No route to host` failures (Hex/services down) + pre-existing stale tests ticketed as T-modernize-skill-writepath-tests-design-first.
+- RESUME (when Hex up): checkout the branch -> run full suite network-isolated -> confirm only environmental+ticketed failures -> take T-modernize-skill-writepath-tests-design-first (S) -> merge branch to main + close T-migrate-decision-readers-to-designs proven (proof already in tests/test_readers_migrated_to_designs.py).
+
+### Env/ops
+- gh is now git's credential helper (gh auth setup-git ran) — pushes no longer pop the GUI password prompt.
+- Hex (10.0.0.100 inference host) is DOWN tonight for power work; won't be up till tomorrow.
