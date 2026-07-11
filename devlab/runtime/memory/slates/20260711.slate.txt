@@ -4,12 +4,34 @@
 A rewind rolls your CONVERSATION back but NOT git/this slate — so your memory is now BEHIND reality. Read this slate + `git log --oneline -10`, trust slate+git over your memory, and `git status` for working-tree divergence (a code-rewind can delete committed files — `git restore` fixes it) before acting.
 
 ## Summary
-(empty — session just started)
+Cleared the two actionable items from yesterday's hand-off: closed
+T-migrate-decision-readers-to-designs (shipped-unproven — proof buried, see below) and
+did T-modernize-skill-writepath-tests-design-first (tests green). All pushed to a1e420a3.
+Third hand-off item (full-suite run) DEFERRED — see In-flight.
 
 ## Notes
+- **Reader-migration close correction:** yesterday's Next: said "close PROVEN — proof
+  already in the test file." That was a factual error: a green test ≠ the gate can certify
+  it. iter_decision_view / project_decision_body are net-new in the buried impl c4dc543e
+  (absent at parent 60d989ff) on pushed main → HEAD~1 red is vacuous, wider parent_ref
+  yields AttributeError (rejected). Closed shipped-unproven; lever = the thing-start..HEAD
+  proof-span already flagged in proof_emitter docstring line 67.
+- **violation_summary disposition (decide+do):** feature is NOT in the canonical 10-step
+  context-load spec (dropped @52f9dd42; CLAUDE.md table + SKILL.md have no violation step).
+  DELETED the stale tests/test_context_load_violation_summary.py; folded/closed the dup
+  T-context-load-violation-summary-missing; re-homed the idea as follow-on
+  T-restore-context-load-violation-rollup (pri 0.25, Akien prioritizes).
+- **Hex:** host 10.0.0.100 PINGS again, but ollama/inference is still DOWN (HealthMonitor
+  'ollama' DOWN; :11434/api/tags no response). So the ~314 environmental failures persist.
 
 ## In-flight
-NONE
+- **Full-suite network-isolated run — DEFERRED (overnight-scoped).** Rationale: (1) overnight-
+  tests-not-mid-session; (2) ollama still DOWN so env failures unchanged; (3) 2 of the 3
+  network-free ticketed failures (the T-modernize clusters) are now FIXED. Remaining network-
+  free tickets: T-arch-point-pointer-is-dict-not-path, T-lab-refsweep-excludes-notes-dir.
+- **Launcher live-test** (user action, carried from yesterday): fresh terminal `superclaude`
+  → 200K; `--1m` → 1M; confirm NOT on OpenRouter. Fallback if broken:
+  `git checkout HEAD~N -- bin/superclaude bin/rescueclaude`.
 
 ## Planned
 
