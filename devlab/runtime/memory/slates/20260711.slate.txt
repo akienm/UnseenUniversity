@@ -1,0 +1,19 @@
+# Slate — 2026-07-11
+
+## Rewound? (read this if you were rewound, not compacted)
+A rewind rolls your CONVERSATION back but NOT git/this slate — so your memory is now BEHIND reality. Read this slate + `git log --oneline -10`, trust slate+git over your memory, and `git status` for working-tree divergence (a code-rewind can delete committed files — `git restore` fixes it) before acting.
+
+## Summary
+(empty — session just started)
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+- T-migrate-decision-readers-to-designs — Migrate decisions/ readers to designs/ and retire the emit_design decision projection (Substance DONE and green: work merged @7f74f649 (impl @c4dc543e); readers repointed to designs/ via design_store.iter_de)
