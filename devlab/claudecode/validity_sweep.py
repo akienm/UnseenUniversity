@@ -37,10 +37,18 @@ import subprocess
 import sys
 
 _REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _REPO not in sys.path:
+    sys.path.insert(0, _REPO)
+
+from unseen_university.design_store import decision_id_from_design  # noqa: E402
 
 CLEAR, BROKEN, UNRESOLVABLE = "clear", "broken", "unresolvable"
 _STALE_STATUS = ("superseded", "rejected", "cancelled")
-_STORE_CATEGORIES = ("decisions", "tickets", "architecture", "rules", "notes", "proofs")
+# ``designs`` is swept alongside ``decisions``: a design is now the source of
+# truth and the decision projection is a read-model (no materialised D-* file),
+# so a design's own validity_conditions must be swept here or they'd go unchecked.
+# ``decisions`` stays — historical decision records remain readable and sweepable.
+_STORE_CATEGORIES = ("designs", "decisions", "tickets", "architecture", "rules", "notes", "proofs")
 
 
 def _memory_root() -> str:
@@ -78,8 +86,15 @@ def build_store_index(memory_root: str) -> dict:
             except (OSError, ValueError):
                 continue
             body = rec.get("body", {})
-            for key in (body.get("id"), body.get("decision_id"),
-                        body.get("subsystem"), rec.get("id")):
+            keys = [body.get("id"), body.get("decision_id"),
+                    body.get("subsystem"), rec.get("id")]
+            # A design resolves under BOTH its own id and the derived ``D-*`` a
+            # ``depends-on-artifact`` used to reach via the retired projection, so
+            # those conditions keep resolving once the materialised D-* is gone.
+            design_id = body.get("design_id")
+            if design_id:
+                keys += [design_id, decision_id_from_design(design_id)]
+            for key in keys:
                 if key:
                     index.setdefault(key, body)
     return index

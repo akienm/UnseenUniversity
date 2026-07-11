@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-modernize-skill-writepath-tests-design-first.20260710.193545634135",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-modernize-skill-writepath-tests-design-first"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-11T01:35:45.634135+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-modernize-skill-writepath-tests-design-first"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "[triage] Modernize skill-write-path + context-load-violation tests to design-first (stale literal-path assertions)",
+    "status": "triage",
+    "size": "S",
+    "tags": [
+      "tests",
+      "skills",
+      "designs",
+      "cleanup"
+    ],
+    "intention": "I intend that the skill-write-path and context-load tests assert the design-first canonical reality (design_emit + memory_root resolver + iter_decision_view), so a passing suite reflects the shipped INTENTION->DESIGN->TICKET stack instead of retired hardcoded-path proxies.",
+    "description": "Surfaced while landing T-migrate-decision-readers-to-designs. Three test clusters assert PRE-design-first contracts and now fail independent of the network-down (Hex offline) failures:\n\n1. tests/test_skill_write_paths_canonical.py::test_sorted_emits_decision_to_canonical_store_not_lab AND ::test_no_writing_skill_misfiles_to_lab_design_docs (sorted portion). These assert /sorted contains 'memory_emit.py' + '--category decisions' + writes decisions/ directly. FALSE since last session's T-design-first-artifact-type rewrote /sorted to emit a DESIGN via design_emit.py (verified: both strings absent at HEAD, count 0). The test's real intent (never lab/, always canonical) is still valid; the literal-path proxy is stale.\n\n2. tests/test_context_load_violation_summary.py (4 tests) call context-load/run's `violation_summary()` -- but `def violation_summary` does not exist in skills/context-load/run at HEAD (count 0). The function was removed/renamed; the tests were never updated. Pre-existing, unrelated to the reader migration.\n\n3. test_no_writing_skill_misfiles_to_lab_design_docs (outcome portion): the reader migration replaced /outcome's hardcoded 'devlab/runtime/memory/decisions' literal with the memory_root() resolver + iter_decision_view, so that literal proxy no longer matches (the sibling test_outcome_updates_the_decision_json_not_an_md_file was already modernized in the migration commit; this combined proof node was left because its sorted half is cluster #1).\n\n**Proposed shape:** update the assertions to check design-first canonical usage -- design_emit.py / memory_emit.py / memory_root / iter_decision_view + the anti-lab/ and anti-.md guards -- instead of hardcoded store-path string literals. For context-load: either restore violation_summary or delete the stale tests (decide which after checking whether the feature was intentionally dropped).\n\n**Scope boundary:** IN -- modernize these test assertions to design-first + resolve the missing violation_summary. OUT -- the ~314 network-dependent inference/bus test failures (Hex/live-services down; environmental, not code).\n**Test plan:** proof-on-close -- the three named test files pass against the design-first skills without asserting any retired hardcoded store-path literal; red on the current stale assertions, green after.\n**Completion criteria:** test_skill_write_paths_canonical + test_context_load_violation_summary green on a network-isolated run.\n\nRelated: T-migrate-decision-readers-to-designs, T-design-first-artifact-type.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "id": "T-modernize-skill-writepath-tests-design-first",
+    "created_at": "2026-07-11T01:35:41.980768+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-11T01:35:42.028261+00:00"
+  }
+}

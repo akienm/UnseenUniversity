@@ -1,0 +1,23 @@
+{
+  "id": "cc.0.decision-readers-migration-scope-correction-2026-07-10.20260710.191024810040",
+  "emitter": "cc.0",
+  "namespace": [
+    "decision-readers-migration-scope-correction-2026-07-10"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-10T19:10:24.810040",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-migrate-decision-readers-to-designs",
+  "body": {
+    "title": "Decision-readers migration: web_server + igor + cc_nightly are the RETIRED-palace pipeline (follow-on, not this ticket)",
+    "text": "T-migrate-decision-readers-to-designs named five reader surfaces (context-load, validity_sweep, decision-rollup/auto-close, web_server, igor). A reader-surface sweep corrected the scope:\n\nMIGRATED here (the real filesystem decisions/ readers):\n- skills/context-load/run _decisions_newest_first -> design_store.iter_decision_view (Step 2a/3).\n- devlab/claudecode/validity_sweep.py -> 'designs' added to _STORE_CATEGORIES (keeps 'decisions'); build_store_index also indexes a design under its derived D-* so depends-on-artifact conditions that used to reach the projection keep resolving.\n- skills/outcome/SKILL.md list-mode -> iter_decision_view (writer path was already design-first; step-1 read is design-first with a decisions/ fallback, unchanged).\n\nOUT BY PREMISE (do NOT read the filesystem decisions/ store at all):\n- unseen_university/devices/web_server/server.py _page_decisions reads adc.palace (Postgres) via 'path LIKE palace.decisions.%' -- never on decisions/.\n- igor cognition (bliss_integrator, self_inspect, resource_manager, pursuits, cortex) -- only docstrings/comments mention decisions/; NONE read the store. 'routing_decisions' is reasoner-tier routing, unrelated.\n- cc_queue.py _decision_rollup / outcome_check.py -- operate on the ticket queue + adc.palace, not decision files.\n\nRETIRED-PALACE PIPELINE (the real follow-on): decisions/*.json --(cc_nightly_palace_updates.py, live via nanny/device.py:757)--> adc.palace --(web_server _page_decisions)--> web UI decisions page. This whole chain feeds a Postgres store CLAUDE.md calls RETIRED (canonical memory is the filesystem store). After the projection default flipped to False, design-first decisions no longer materialise a D-* in decisions/, so cc_nightly won't pick them up and they won't reach the web decisions page. That is acceptable and deliberate: routing design-first records INTO a retired store would be polishing a dead path. FOLLOW-ON: retire cc_nightly's decision scan + web_server _page_decisions onto iter_decision_view (or delete the adc.palace decisions page). Not this ticket -- advisor-scoped OUT.\n\nOPTIONAL / not forced: decision_manager.py show/get still globs decisions/ (legacy authoring CLI, folded into design-first via /sorted design-emit). It reads historical decisions fine; design lookups go through get_design. Left as-is (ticket: 'if you want').\n\nThe write-time projection is retired: design_emit.emit_design defaults project_decision=False; the field-map + read-model live in design_store (project_decision_body, iter_decision_view); the opt-in --project-decision path is retained for the rare materialise-a-D-* caller.",
+    "conditions": []
+  }
+}
