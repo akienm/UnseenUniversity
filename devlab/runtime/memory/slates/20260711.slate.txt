@@ -17,3 +17,4 @@ NONE
 
 ## Done today
 - T-migrate-decision-readers-to-designs — Migrate decisions/ readers to designs/ and retire the emit_design decision projection (Substance DONE and green: work merged @7f74f649 (impl @c4dc543e); readers repointed to designs/ via design_store.iter_de)
+- T-context-load-violation-summary-missing — BUG (pre-existing): context-load run lacks violation_summary() its test expects (DISPOSITIONED (decide+do): the violation_summary feature is NOT in the canonical context-load spec (CLAUDE.md /context-l)

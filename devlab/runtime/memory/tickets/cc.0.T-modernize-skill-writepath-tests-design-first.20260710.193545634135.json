@@ -18,8 +18,8 @@
   },
   "produced_by": "session:cc.0",
   "body": {
-    "title": "[triage] Modernize skill-write-path + context-load-violation tests to design-first (stale literal-path assertions)",
-    "status": "triage",
+    "title": "[in_progress] Modernize skill-write-path + context-load-violation tests to design-first (stale literal-path assertions)",
+    "status": "in_progress",
     "size": "S",
     "tags": [
       "tests",
@@ -43,6 +43,7 @@
     "gate": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-07-11T01:35:42.028261+00:00"
+    "scraps_validated": "2026-07-11T01:35:42.028261+00:00",
+    "priority": 0.5
   }
 }

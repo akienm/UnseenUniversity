@@ -22,14 +22,17 @@ def _skill(name: str) -> str:
 
 
 def test_sorted_emits_decision_to_canonical_store_not_lab():
-    """/sorted Step 6 emits the decision JSON via memory_emit to the canonical store."""
+    """/sorted emits a DESIGN via design_emit.py to the canonical store, which
+    projects the back-compat decision read-model. Design-first (T-design-first-
+    artifact-type): there is no standalone D-* write via memory_emit any more."""
     s = _skill("sorted")
-    # Canonical write-path present (a reverted Step 6 lacks all three):
-    assert "memory_emit.py" in s
-    assert "--category decisions" in s
+    # Canonical design-first write-path present (a reverted skill lacks these):
+    assert "design_emit.py" in s, "/sorted must emit the design via the design_emit chokepoint"
+    assert "devlab/runtime/memory/designs" in s, "/sorted writes the design to the canonical designs/ store"
+    # The projected back-compat decision read-model still lands in the canonical store:
     assert "devlab/runtime/memory/decisions" in s
     # The misfiling write-paths are gone:
-    assert "lab/design_docs/decisions/D-" not in s, "still writing a .md stub to lab/"
+    assert "lab/design_docs" not in s, "still writing to the retired lab/design_docs/"
     assert "migrate_one(" not in s, "still projecting via the stale lab/claudecode migrator"
     assert "decisions_log.dsb" not in s, "still appending to the retired .dsb log"
 
@@ -62,12 +65,16 @@ def test_audit_skills_read_the_decision_json_not_md():
 
 def test_no_writing_skill_misfiles_to_lab_design_docs():
     """Proof node (one intention): every decision writer/reader targets the canonical
-    store, never lab/design_docs/. RED on the pre-consolidation skills, GREEN after."""
+    store via the design-first chokepoints, never lab/design_docs/. RED on the
+    pre-consolidation / pre-design-first skills, GREEN after."""
     sorted_s, outcome_s, day_s = _skill("sorted"), _skill("outcome"), _skill("day-close")
     ad, ah = _skill("audit-design"), _skill("audit-hypothesis")
-    # canonical write/read present (a reverted skill lacks these)
-    assert "memory_emit.py" in sorted_s and "devlab/runtime/memory/decisions" in sorted_s
-    assert "memory_emit.py" in outcome_s and "devlab/runtime/memory/decisions" in outcome_s
+    # canonical design-first write/read present (a reverted skill lacks these):
+    # /sorted emits a DESIGN; /outcome writes the verdict onto the canonical design
+    # (memory_emit legacy fallback) and resolves via the canonical resolver.
+    assert "design_emit.py" in sorted_s and "devlab/runtime/memory/designs" in sorted_s
+    assert "design_emit.py" in outcome_s and "memory_emit.py" in outcome_s
+    assert "iter_decision_view" in outcome_s or "memory_root" in outcome_s
     assert "git add devlab/runtime/memory/" in day_s
     assert "devlab/runtime/memory/decisions" in ad and "devlab/runtime/memory/decisions" in ah
     # the misfiling write/read paths are gone

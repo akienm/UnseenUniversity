@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-restore-context-load-violation-rollup.20260711.154941836505",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-restore-context-load-violation-rollup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-11T21:49:41.836505+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-restore-context-load-violation-rollup"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-restore-context-load-violation-rollup",
+    "title": "[triage] Restore session-start skill-violation rollup in context-load (dropped in 10-step rewrite)",
+    "size": "M",
+    "priority": 0.25,
+    "status": "triage",
+    "tags": [
+      "context-load",
+      "observability",
+      "skills",
+      "feature"
+    ],
+    "target_difficulty": 1,
+    "intention": "I intend that context-load surfaces recent skill-rule violations at session start again, so rule-drift is visible on resume, with the feature, its spec entry, and its tests in agreement.",
+    "description": "FEATURE (follow-on to T-modernize-skill-writepath-tests-design-first; folds the disposition of T-context-load-violation-summary-missing). context-load/run originally surfaced a session-start skill-violation rollup (feat @3b0118e8) but the function violation_summary() was dropped during the 10-step orchestration rewrite @52f9dd42, and it is NOT in the current canonical spec (CLAUDE.md /context-load table + skills/context-load/SKILL.md both define exactly 10 steps with no violation step). During test-modernization the stale tests/test_context_load_violation_summary.py (which called a non-existent violation_summary()) was DELETED rather than kept red, so the feature idea is captured here instead of lost.\n\nShape: add a violation-rollup step to skills/context-load/run that reads the skill-violation telemetry log (see D-skill-telemetry-2026-05-20 and T-skill-telemetry-logger for the log source/format), wire it into the run's main() briefing pipeline, add the step to CLAUDE.md's /context-load table + skills/context-load/SKILL.md so spec matches the executor, and re-author the 4 tests (empty-log-silent, absent-log-silent, shows-top-violations, respects-days-window).\n\n**Scope boundary:** IN — restore the feature + spec entry + tests, agreeing with each other. OUT — changes to the skill-telemetry logger itself (its own ticket).\n**Test plan:** proof-on-close — a test drives the restored rollup over a seeded telemetry log (top-N violations within the days window shown; empty/absent log stays silent), red before the feature exists, green after.\n**Completion criteria:** context-load surfaces the rollup; CLAUDE.md table + SKILL.md list the step; the 4 behavior tests pass network-isolated.\n\nPriority low (0.25): observability nice-to-have — Akien prioritizes. Related: T-context-load-violation-summary-missing (folded), T-skill-telemetry-logger, D-skill-telemetry-2026-05-20.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Note [2026-07-11 15:49]:** **Affected files:** skills/context-load/run, skills/context-load/SKILL.md, CLAUDE.md (/context-load table), tests/test_context_load_violation_summary.py (re-author).",
+    "created_at": "2026-07-11T21:49:41.202843+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-11T21:49:41.262865+00:00",
+    "updated_at": "2026-07-11T21:49:56.038424+00:00"
+  }
+}
