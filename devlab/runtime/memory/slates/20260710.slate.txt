@@ -81,3 +81,10 @@ TWO work streams tonight. This hand-off lives on MAIN so /context-load surfaces 
 ### Env/ops
 - gh is now git's credential helper (gh auth setup-git ran) — pushes no longer pop the GUI password prompt.
 - Hex (10.0.0.100 inference host) is DOWN tonight for power work; won't be up till tomorrow.
+
+### UPDATE (late): branch B MERGED to main.
+The decision-readers migration branch was merged to main (merge commit 7f74f649) and the
+branch deleted (local+remote). 20 focused tests green on merged main. Only remaining step:
+when Hex is back, run the FULL suite network-isolated on main to confirm the ~314 failures
+are all environmental, then take T-modernize-skill-writepath-tests-design-first (S) and
+close T-migrate-decision-readers-to-designs proven. No branch to check out — it's all on main now.
