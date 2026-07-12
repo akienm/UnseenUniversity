@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-typed-no-path-result",
-    "title": "[sprint] resolve() must return a TYPED no-path result: NoCapableModel vs NoAvailableProvider",
+    "title": "resolve() must return a TYPED no-path result: NoCapableModel vs NoAvailableProvider",
     "size": "M",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.9,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T02:59:34.563039+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "resolve() returns a typed no-path (NO_CAPABLE_MODEL vs NO_AVAILABLE_PROVIDER); dispatch stamps the typed finish_reason + gates the chokepoint alarm behind escalation_driven; all three loops map no_capable_model→capability (escalate) via one helper. The walk now escalates a rung on a capability ceiling and retries the same rung on an availability outage, with exactly one alarm per walk — the CP3 bug fixed. Proof: tests/inference/test_typed_no_path.py::test_walk_escalates_a_rung_on_no_capable_model (red=AssertionError→green). 497 inference tests + reader/evaluator/summarizer/intent/igor consumer suites green.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-12T19:01:51.111462+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T02:59:34.563125+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "1d93c901-ee70-4912-89c7-ce3c44ae26c9"
+    "inferred_intention_id": "1d93c901-ee70-4912-89c7-ce3c44ae26c9",
+    "proven": true,
+    "proof_id": "cc.0.resolve-returns-a-typed-no-path-so-the-e.T-inference-typed-no-path-result.20260712.130053228809",
+    "proof_commit": "e35e4af06487eab55435d1a66fb5f199252c0bba",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
