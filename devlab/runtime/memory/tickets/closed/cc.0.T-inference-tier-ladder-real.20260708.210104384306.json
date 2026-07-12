@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-tier-ladder-real",
-    "title": "[sprint] Make the escalation ladder's rungs real — a model must declare which role-tier stack it can stand in",
+    "title": "Make the escalation ladder's rungs real — a model must declare which role-tier stack it can stand in",
     "size": "L",
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.95,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T02:59:05.432314+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Made the escalation ladder's rungs real. Two-half fix: (1) injective role->measured-bucket projection (apprentice->classify, builder->code, creator->design, master->frontier) in dimensions._TIER_DIFFICULTY; guru is the human terminal (resolve() short-circuits to rules_engine.HUMAN_TERMINAL, above master). (2) least-over-provisioned selector tiebreak in resolve() (equal cost -> lowest bucket clearing the floor), so raising the rung strictly raises the selected bucket; cost still dominates (cloud fleet not re-stranded). Removed stale guru-work-is-design policy. Measured real registry (coding): classify<code<design<frontier<terminal, all distinct; builder!=creator confirmed. Proof: tests/inference/test_tier_ladder_real.py::test_ladder_rungs_are_real_and_strictly_increasing (red=AssertionError->green), cert @586bea81. Full inference suite 494 passed; 3 remaining fails are pre-existing/environmental (capability_evidence x2, dicksimnel live smoke), confirmed on clean HEAD. Ordering traces only to measured difficulty_capable, no phantom rung.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-12T17:07:32.687689+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-07-09T02:59:05.478943+00:00",
     "inferred_intention": "replace_routing_rule_shape_with_policy_based_dimensions",
-    "inferred_intention_id": "1bfe1b40-8faa-42a7-a863-722ea4ce6b01"
+    "inferred_intention_id": "1bfe1b40-8faa-42a7-a863-722ea4ce6b01",
+    "proven": true,
+    "proof_id": "cc.0.the-escalation-ladder-s-rungs-are-real-e.T-inference-tier-ladder-real.20260712.110720165918",
+    "proof_commit": "586bea81e34c20b697ef414e14832bc93ae0470a",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

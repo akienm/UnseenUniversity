@@ -1,0 +1,63 @@
+{
+  "id": "cc.0.the-escalation-ladder-s-rungs-are-real-e.T-inference-tier-ladder-real.20260712.110720165918",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-escalation-ladder-s-rungs-are-real-e",
+    "T-inference-tier-ladder-real"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-12T11:07:20.165918",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-tier-ladder-real"
+    ],
+    "commits": [
+      "586bea81e34c20b697ef414e14832bc93ae0470a"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-inference-tier-ladder-real",
+  "body": {
+    "thing": "the escalation ladder's rungs are real — each role rung resolves to a strictly-more-capable measured bucket",
+    "intention": "resolve() maps the four model role-rungs (apprentice<builder<creator<master) onto four strictly-increasing MEASURED difficulty buckets so no rung resolves identically to the one below",
+    "test": "tests/inference/test_tier_ladder_real.py::test_ladder_rungs_are_real_and_strictly_increasing",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_tier_ladder_real.py::test_ladder_rungs_are_real_and_strictly_increasing",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n        # Every model rung resolves to a model at its EXACT expected bucket (the projection +\n        # least-over-provisioned selector together pick just-enough capability).\n        for tier in _MODEL_RUNGS:\n            d = decs[tier]\n            assert d is not None and d.model is not None, f\"{tier} must resolve to a model\"\n>           assert d.model.difficulty_bucket == _EXPECTED_BUCKET[tier], (\n                f\"{tier} resolved to bucket {d.model.difficulty_bucket!r}, \"\n                f\"expected {_EXPECTED_BUCKET[tier]!r}\"\n            )\nE           AssertionError: apprentice resolved to bucket 'code', expected 'classify'\nE           assert 'code' == 'classify'\nE             \nE             - classify\nE             + code\n\ntests/inference/test_tier_ladder_real.py:110: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_tier_ladder_real.py::test_ladder_rungs_are_real_and_strictly_increasing\n1 failed in 0.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.13s"
+          }
+        }
+      }
+    ],
+    "commit": "586bea81e34c20b697ef414e14832bc93ae0470a",
+    "impl_paths": [
+      "tests/inference/test_dimensions_contract.py",
+      "tests/inference/test_escalation_leaves_the_local_box.py",
+      "tests/inference/test_rules_as_policy.py",
+      "unseen_university/devices/inference/dimensions.py",
+      "unseen_university/devices/inference/policy.py",
+      "unseen_university/devices/inference/rules_engine.py"
+    ],
+    "ticket": "T-inference-tier-ladder-real",
+    "narrative": "",
+    "why": "D-domains-general-with-device-owned-specializations: a default/domain escalation policy has nothing to walk until each rung selects a strictly more capable stack",
+    "bootstrap": false
+  }
+}
