@@ -24,6 +24,38 @@
 : "${UU_ROOT:=$HOME/dev/src/UnseenUniversity}"
 TOOLS="${CC_WORKFLOW_TOOLS:-$UU_ROOT/devlab/claudecode}"
 
+# INTERPRETER LADDER (CP6 rescue floor — a view MUST still run when the venv is
+# gone; "runs in a bare shell" is a floor, not a ban on the venv). The handler
+# scripts import `unseen_university`, which lives only in the editable venv OR in
+# the source tree — a bare `python3` on PATH imports NEITHER, which is the
+# ModuleNotFoundError this fixes (T-uu-launcher-uses-venv-python). Degrade down
+# the rungs, using as much as the pieces allow:
+#   1/2. venv present (activated or not) → its python carries the editable install
+#     ([[reference_editable_finder_beats_pythonpath]]); call it by ABSOLUTE path so
+#     a scrubbed PATH can't hide it.
+#   3.   no venv, source tree present → run the raw source via PYTHONPATH=$UU_ROOT
+#     (no install needed; ticket_store imports with zero heavy deps).
+#   4.   neither → fail SOFT with what's missing, never a raw traceback.
+# One resolution for ALL verbs (homogeneity, not a per-verb patch).
+_UU_VENV_PY="$UU_ROOT/.venv/bin/python3"
+if [ -x "$_UU_VENV_PY" ]; then
+    _UU_PY=("$_UU_VENV_PY")
+elif command -v python3 >/dev/null 2>&1; then
+    _UU_PY=(env "PYTHONPATH=$UU_ROOT${PYTHONPATH:+:$PYTHONPATH}" python3)
+else
+    _UU_PY=()
+fi
+
+_uu_run() {   # _uu_run <script> [args...] — exec the resolved interpreter, or fail soft
+    if [ "${#_UU_PY[@]}" -eq 0 ]; then
+        echo "uu: no usable python3 found." >&2
+        echo "uu: looked for '$_UU_VENV_PY' and 'python3' on PATH." >&2
+        echo "uu: create the venv at $UU_ROOT/.venv (pip install -e .) or install python3." >&2
+        exit 1
+    fi
+    exec "${_UU_PY[@]}" "$@"
+}
+
 _uu_help() {
     cat <<EOF
 uu — zero-inference views/controls (no CC process). Usage: uu <verb> [args]
@@ -43,11 +75,11 @@ verb="${1:-help}"
 [ "$#" -gt 0 ] && shift   # drop the verb; "$@" is now the verb's own args
 
 case "$verb" in
-    mytickets)        exec python3 "$TOOLS/uu_tickets.py" --mine "$@" ;;
-    opentickets)      exec python3 "$TOOLS/uu_tickets.py" "$@" ;;
-    recall)           exec python3 "$TOOLS/uurecall.py" "$@" ;;
-    research)         exec python3 "$TOOLS/uuresearch.py" "$@" ;;
-    device)           exec python3 "$TOOLS/uu_device.py" "$@" ;;
+    mytickets)        _uu_run "$TOOLS/uu_tickets.py" --mine "$@" ;;
+    opentickets)      _uu_run "$TOOLS/uu_tickets.py" "$@" ;;
+    recall)           _uu_run "$TOOLS/uurecall.py" "$@" ;;
+    research)         _uu_run "$TOOLS/uuresearch.py" "$@" ;;
+    device)           _uu_run "$TOOLS/uu_device.py" "$@" ;;
     help|-h|--help)   _uu_help ;;
     *)
         echo "uu: unknown verb '$verb'" >&2
