@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-audit-resolve-consumers-human-terminal.20260712.111211270530",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-audit-resolve-consumers-human-terminal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-12T17:12:11.270530+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-audit-resolve-consumers-human-terminal"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-inference-audit-resolve-consumers-human-terminal",
+    "title": "[triage] Audit resolve() consumers for model-less HUMAN_TERMINAL decisions",
+    "size": "S",
+    "priority": 0.4,
+    "status": "triage",
+    "role": "master",
+    "tags": [
+      "inference",
+      "resolver",
+      "human-terminal",
+      "robustness",
+      "follow-up"
+    ],
+    "intention": "I intend that no resolve() consumer crashes on a model-less RoutingDecision, so the guru human-terminal path is safe for any future caller, not just today's live path that cannot reach it.",
+    "description": "FOLLOW-UP from T-inference-tier-ladder-real. resolve() can now return rules_engine.HUMAN_TERMINAL \u2014 a truthy RoutingDecision with source=None/model=None (the guru human terminal). Today this is contained: the live device._route path maps task_class->tier and maxes at 'master', so guru never reaches resolve() live (verified). But any FUTURE caller doing `if decision: decision.model.model_id` crashes on it (AttributeError on None.model_id) \u2014 a latent landmine. This surfaced in the sweep test (test_escalation_leaves_the_local_box), which had to add an `is not None` guard on d.model.\n\nProposed shape: pick ONE of \u2014 (a) make HUMAN_TERMINAL falsy (__bool__ -> False) so `if decision:` correctly routes it to the no-model branch while `decision is HUMAN_TERMINAL` / `.is_human_terminal` gives the explicit signal; OR (b) audit every resolve() consumer and add explicit model-less handling; OR (c) fold into T-inference-typed-no-path-result's typed-result model (HUMAN_TERMINAL becomes a typed variant alongside NoCapableModel/NoAvailableProvider). Option (c) is likely the cleanest since that sibling ticket is already introducing typed no-path results.\n\n**Affected files:** unseen_university/devices/inference/rules_engine.py (HUMAN_TERMINAL definition + RoutingDecision.__bool__ if option a), device.py (dispatch consumer at ~line 568), any other resolve() consumer. tests/inference/.\n**Design rules:** homogeneity-over-special-case (one model-less contract, not per-consumer patches). Coordinate with T-inference-typed-no-path-result (overlapping surface).\n**Scope boundary:** IN \u2014 making the model-less resolve() outcome safe for all consumers. OUT \u2014 the tier ladder itself (done); the typed NoCapableModel/NoAvailableProvider split (sibling ticket, though this may fold into it).\n**Test plan:** a consumer-contract test: every resolve() consumer path handles a HUMAN_TERMINAL/model-less decision without AttributeError. If option (a): a test that `bool(HUMAN_TERMINAL) is False` and `if decision:` skips it.\n**Proof obligation:** a hollow build cannot pass a test that feeds a model-less decision through the live dispatch path and asserts no crash + correct human-handoff branch.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] \u26d4 NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory \u2014 one home, no exceptions. Every dev-process artifact \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven \u2014 no discriminator. A ticket that \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n\u2026and 39 more (lower-severity or capped) \u2014 query constraints_get for the full set\n**Completion criteria:** a chosen model-less contract (falsy sentinel, audited consumers, or typed variant) is in place; a consumer-contract test proves the live dispatch path handles a HUMAN_TERMINAL/model-less decision without AttributeError and takes the human-handoff branch; no resolve() consumer does unguarded decision.model access.",
+    "created_at": "2026-07-12T17:12:02.350560+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-12T17:12:02.396589+00:00"
+  }
+}

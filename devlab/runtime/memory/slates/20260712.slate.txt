@@ -1,0 +1,1 @@
+- T-inference-audit-resolve-consumers-human-terminal: audit resolve() consumers for model-less HUMAN_TERMINAL (follow-up from tier-ladder)
