@@ -36,6 +36,8 @@ Third hand-off item (full-suite run) DEFERRED — see In-flight.
 ## Planned
 
 ## Ad hoc
+- T-uu-launcher-uses-venv-python: uu <verb> must degrade to the source tree when venv is gone (rescue-net ladder, not venv-dependent)
+- T-rescueclaude-stale-session-name: Standalone rescueclaude uses inherited CC_TMUX_SESSION (cc_0) instead of _cc_RESCUE
 
 ## Done today
 - T-migrate-decision-readers-to-designs — Migrate decisions/ readers to designs/ and retire the emit_design decision projection (Substance DONE and green: work merged @7f74f649 (impl @c4dc543e); readers repointed to designs/ via design_store.iter_de)

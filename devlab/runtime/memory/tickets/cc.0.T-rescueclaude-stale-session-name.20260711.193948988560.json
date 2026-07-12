@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-rescueclaude-stale-session-name.20260711.193948988560",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rescueclaude-stale-session-name"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-12T01:39:48.988560+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-rescueclaude-stale-session-name"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-rescueclaude-stale-session-name",
+    "title": "[triage] Standalone rescueclaude uses inherited CC_TMUX_SESSION (cc_0) instead of _cc_RESCUE",
+    "size": "S",
+    "priority": 0.5,
+    "status": "triage",
+    "tags": [
+      "launcher",
+      "rescueclaude",
+      "superclaude",
+      "session-naming",
+      "bug"
+    ],
+    "target_difficulty": 1,
+    "intention": "I intend that a standalone rescueclaude launch always names its session <hostname>_cc_RESCUE, honoring a superclaude-passed name only on a genuine delegation, so a stale inherited CC_TMUX_SESSION cannot mislabel a rescue session.",
+    "description": "BUG. Akien launches via `rescueclaude` (deliberately, to avoid tmux) expecting session `akiendelllinux_cc_RESCUE`, but gets `akiendelllinux_cc_0`. Root cause: `bin/rescueclaude:29` uses \"is CC_TMUX_SESSION set?\" as its proxy for \"was I delegated by superclaude.\" That proxy is unreliable \u2014 a stale/inherited `CC_TMUX_SESSION=akiendelllinux_cc_0` in the environment (it survives in the parent shell; note `~/.bashrc:152` still carries a `#UUMOVED#`-commented `export CC_TMUX_SESSION=akiendelllinux_cc_0`) makes standalone rescueclaude take the delegated branch (_CC_DELEGATED=1) and skip its own `_cc_RESCUE` naming.\n\nProposed shape: make delegation EXPLICIT rather than inferred. superclaude sets a dedicated marker (e.g. `CC_LAUNCH_DELEGATED=1`) at the moment it execs/send-keys rescueclaude; rescueclaude treats a bare inherited `CC_TMUX_SESSION` WITHOUT that marker as standalone and derives `<hostname>_cc_RESCUE`. Also scrub the stale source so it stops leaking: remove the dead `#UUMOVED#` line at `~/.bashrc:152` (env hygiene, out of the repo \u2014 call out to Akien, don't silently edit).\n\n**Affected files:** bin/rescueclaude (delegation detection at line 29-34), bin/superclaude (set the explicit delegation marker before handing off, near lines 326/341/353/359), tests/test_cc_session_naming.py (or a new test targeting the launcher naming logic). Out-of-repo: ~/.bashrc:152 stale export (flag to Akien).\n**Design rules:** ticket_design_checks (test-plan-or-why-not applies). no-sqlite N/A. no-escape-hatch: fix the detection root cause, don't add a rescue-only override flag that papers over it.\n**Scope boundary:** IN \u2014 explicit delegation signal from superclaude + rescueclaude honoring it (marker present -> honor passed name; marker absent -> _cc_RESCUE regardless of inherited CC_TMUX_SESSION); the naming test. OUT \u2014 the reload-harness fragility already tracked in T-cc-session-naming-reload-harness-fragility; the Windows variants in T-launcher-windows-variants-delegate-to-rescue; any tmux-orchestration change.\n**Test plan:** proof-on-close. A test invokes rescueclaude's session-name resolution with (a) CC_TMUX_SESSION set but NO delegation marker -> asserts the resolved name ends in `_cc_RESCUE`; (b) CC_TMUX_SESSION set WITH the marker -> asserts it honors the passed name. Case (a) is RED on today's code (returns the inherited cc_0 name) and GREEN after.\n**Proof obligation:** a hollow build cannot pass case (a) \u2014 inheriting CC_TMUX_SESSION without a genuine delegation must NOT hijack the rescue session name; the standalone path must produce `_cc_RESCUE`. This discharges the sub-intention that delegation be a signal superclaude actually sends, not an ambient env var any prior launch can leave behind.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] \u26d4 NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory \u2014 one home, no exceptions. Every dev-process artifact \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven \u2014 no discriminator. A ticket that \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n\u2026and 39 more (lower-severity or capped) \u2014 query constraints_get for the full set\n**Completion criteria:** standalone `rescueclaude` (no delegation marker, even with a stale CC_TMUX_SESSION in env) produces `<hostname>_cc_RESCUE`; a genuine superclaude delegation still honors the passed `hostname_cc_N` name; the naming test passes (case (a) red-before/green-after).",
+    "created_at": "2026-07-12T01:39:15.788135+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-12T01:39:15.833489+00:00"
+  }
+}
