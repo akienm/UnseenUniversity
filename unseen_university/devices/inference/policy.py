@@ -120,12 +120,12 @@ _DEFAULT_POLICIES: list[PolicyRule] = [
         required_features=("tools",),
         required_domain="coding",
     ),
-    # Guru-tier work is design-difficulty at minimum (a policy floor above the seed).
-    PolicyRule(
-        label="guru-work-is-design",
-        when={"ticket_tier_in": ["guru"]},
-        min_difficulty="design",
-    ),
+    # (Removed 'guru-work-is-design': guru is the HUMAN terminal — Akien, not a model rung —
+    # so it never selects a model; the resolver short-circuits it to HUMAN_TERMINAL before the
+    # envelope is consulted. A policy floor pinning "guru work is design-difficulty" encoded
+    # the old collapse where guru was a design-tier model rung; under the real ladder guru
+    # sits ABOVE the top model bucket, so the floor was both stale and contradictory.
+    # T-inference-tier-ladder-real.)
 ]
 
 

@@ -30,12 +30,19 @@ def test_build_envelope_seeds_from_request_and_applies_policy():
 
 
 def test_policy_tightens_never_loosens():
-    """A guru request lands at design difficulty; tighten is monotone (max, never lower)."""
-    req = RouteRequest(ticket_tier="guru", builder_tier="guru", domain="prose")
+    """Tightening is monotone (max, never lower): a floor raised above the seed stays raised,
+    and tightening with a LOWER difficulty cannot loosen it.
+
+    (Uses a builder/coding request — seed 'code' — rather than guru: guru is now the human
+    terminal, short-circuited before the envelope, so it is no longer a build_envelope example.
+    T-inference-tier-ladder-real.)"""
+    req = RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding")
     env = build_envelope(req)
-    assert env.min_difficulty == "design"
+    assert env.min_difficulty == "code"                     # seed from ticket_tier=builder
+    tightened = env.tighten(min_difficulty="design")         # raise the floor above the seed
+    assert tightened.min_difficulty == "design"
     # tighten with a LOWER difficulty must not loosen an already-strict envelope.
-    loosened = env.tighten(min_difficulty="classify")
+    loosened = tightened.tighten(min_difficulty="classify")
     assert loosened.min_difficulty == "design"
 
 

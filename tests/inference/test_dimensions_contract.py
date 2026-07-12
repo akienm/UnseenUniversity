@@ -35,12 +35,22 @@ def test_escalation_allowed_can_be_pinned_false():
 
 
 def test_difficulty_seed_is_deterministic_and_tier_driven():
-    """difficulty_seed maps ticket_tier -> a difficulty bucket, driven by the WORK tier."""
+    """difficulty_seed maps ticket_tier -> a difficulty bucket, driven by the WORK tier.
+
+    The four MODEL rungs map INJECTIVELY onto the four measured buckets (each strictly higher
+    than the one below) — no two rungs share a bucket, so an escalation policy has a real
+    strictly-more-capable stack to walk to (T-inference-tier-ladder-real). guru is the human
+    terminal (seeds 'frontier' defensively but is short-circuited to HUMAN_TERMINAL in
+    resolve)."""
     assert difficulty_seed("apprentice") == "classify"
     assert difficulty_seed("builder") == "code"
-    assert difficulty_seed("creator") == "code"
-    assert difficulty_seed("master") == "design"
-    assert difficulty_seed("guru") == "design"
+    assert difficulty_seed("creator") == "design"
+    assert difficulty_seed("master") == "frontier"
+    # The four model rungs seed four DISTINCT buckets (injective — the fix).
+    seeds = [difficulty_seed(t) for t in ("apprentice", "builder", "creator", "master")]
+    assert len(set(seeds)) == 4, f"model rungs must seed distinct buckets, got {seeds}"
+    # guru is the human terminal (no model rung); defensive seed is the top bucket.
+    assert difficulty_seed("guru") == "frontier"
     # unknown tier -> safe middle
     assert difficulty_seed("nonesuch") == "code"
 

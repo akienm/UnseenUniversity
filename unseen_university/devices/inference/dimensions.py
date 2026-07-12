@@ -40,15 +40,36 @@ from unseen_university.devices.inference.routing_buckets import (
 # The tier vocabulary (mirrors the canonical role hierarchy; see module docstring).
 ROLE_TIERS: tuple[str, ...] = ("apprentice", "builder", "creator", "master", "guru")
 
-# A-priori map from a tier to the difficulty bucket its WORK demands. Five tiers collapse
-# onto three difficulty buckets (classify < code < design). This is only the SEED — the
-# escalation walk refines it upward at resolve time.
+#: The human terminal at the top of the role ladder — guru is Akien (human-only tickets;
+#: project_role_hierarchy, cc_queue VALID_ROLES). No MODEL stands at this rung: it is where
+#: the escalation ladder hands off to a person. So guru is NOT a difficulty bucket; the
+#: resolver short-circuits it to a human-terminal decision (rules_engine.HUMAN_TERMINAL)
+#: rather than selecting a model. Keeping it off the difficulty axis is what makes the ladder
+#: rungs real — every model rung below traces to a MEASURED capability bucket, and the top is
+#: a person, not a phantom model (T-inference-tier-ladder-real).
+HUMAN_TERMINAL_TIER = "guru"
+
+
+def is_human_terminal(ticket_tier: str) -> bool:
+    """True iff this tier is the human terminal (guru) — resolves to a person, no model."""
+    return ticket_tier == HUMAN_TERMINAL_TIER
+
+
+# A-priori map from a tier to the difficulty bucket its WORK demands. The FOUR model rungs
+# (apprentice < builder < creator < master) map INJECTIVELY onto the four MEASURED difficulty
+# buckets (classify < code < design < frontier) — each rung seeds a strictly higher bucket
+# than the one below, so an escalation policy has a real, strictly-more-capable stack to walk
+# to at every step (was: builder==creator=='code', master==guru=='design' — a collapse that
+# left creator dead and gave escalation nothing to walk; T-inference-tier-ladder-real). The
+# ordering is legitimate ONLY because each bucket is grounded in a model's MEASURED
+# difficulty_capable (never a declared tier label) — see models_registry capability_evidence.
+# This is only the SEED; the escalation walk refines it upward at resolve time. guru is absent
+# here on purpose (the human terminal — see HUMAN_TERMINAL_TIER).
 _TIER_DIFFICULTY: dict[str, str] = {
     "apprentice": "classify",
     "builder": "code",
-    "creator": "code",
-    "master": "design",
-    "guru": "design",
+    "creator": "design",
+    "master": "frontier",
 }
 
 
@@ -56,10 +77,15 @@ def difficulty_seed(ticket_tier: str) -> str:
     """A-priori difficulty bucket for a ticket_tier (the resolution START point).
 
     Driven by ticket_tier alone (the WORK's demand), NOT by builder_tier — the two axes
-    stay orthogonal. Unknown tier -> 'code' (the safe middle, matching
-    routing_buckets.task_class_to_difficulty's default). The escalation walk may bump
-    this up; it never seeds above the work's demand.
+    stay orthogonal. The human terminal (guru) has no difficulty bucket — it is not a model
+    rung — so it seeds at the top MEASURED bucket ('frontier') as a defensive floor; in
+    practice the resolver short-circuits guru to HUMAN_TERMINAL before any seed is used.
+    Any other unknown tier -> 'code' (the safe middle, matching
+    routing_buckets.task_class_to_difficulty's default). The escalation walk may bump this
+    up; it never seeds above the work's demand.
     """
+    if is_human_terminal(ticket_tier):
+        return "frontier"
     return _TIER_DIFFICULTY.get(ticket_tier, "code")
 
 

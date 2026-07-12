@@ -155,7 +155,9 @@ def test_the_sweep_reaches_more_than_the_local_box():
             RouteRequest(ticket_tier=tt, builder_tier=bt, domain="", urgency=urg),
             required_difficulty=rd,
         )
-        if d:
+        # A guru request resolves to the HUMAN_TERMINAL (model is None) — a hand-off to a
+        # person, not a model reach — so it does not count toward the reachable model set.
+        if d and d.model is not None:
             reached.add((d.model.model_id, d.source.name))
     sources_reached = {src for _, src in reached}
     assert "cloud" in sources_reached, (

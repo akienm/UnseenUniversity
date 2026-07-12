@@ -31,7 +31,7 @@ from unseen_university.devices.inference.connections import (
     ConnectionsRegistry,
     default_connections,
 )
-from unseen_university.devices.inference.dimensions import RouteRequest
+from unseen_university.devices.inference.dimensions import RouteRequest, is_human_terminal
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
 from unseen_university.devices.inference.policy import PolicyRule, build_envelope
 from unseen_university.devices.inference.routing_buckets import (
@@ -59,10 +59,28 @@ def _difficulty_rank(bucket: str) -> int:
 
 @dataclass
 class RoutingDecision:
-    source: Source
-    model: ModelSpec
+    # source/model are None ONLY for the HUMAN_TERMINAL decision (guru — a person, no model);
+    # every model-selecting decision fills both.
+    source: Source | None
+    model: ModelSpec | None
     rule_label: str
     session_affinity: bool = False
+
+    @property
+    def is_human_terminal(self) -> bool:
+        """True iff this decision is the guru/human terminal (no model, no source)."""
+        return self.model is None
+
+
+#: The top of the role ladder resolves to a PERSON, not a model. `resolve()` returns this
+#: singleton for the human-terminal tier (guru) — strictly above the top model rung (master),
+#: and distinguishable from both a model decision and a None no-path (which means "no capable
+#: model here", a different thing owned by T-inference-typed-no-path-result). This is what
+#: lets the ladder be strictly monotone all the way up without inventing a phantom top model
+#: (T-inference-tier-ladder-real).
+HUMAN_TERMINAL = RoutingDecision(
+    source=None, model=None, rule_label="human-terminal→guru (no model stands here)",
+)
 
 
 class RulesEngine:
@@ -137,8 +155,20 @@ class RulesEngine:
         groups, minion — keep model consistency across a run). Empty = no affinity (the live
         coding loop passes none, so its escalation walk is never pinned).
 
-        Returns None when no capable+available connection serves the request.
+        Returns None when no capable+available connection serves the request. Returns the
+        HUMAN_TERMINAL singleton for the guru rung — the top of the role ladder is a person,
+        not a model, so it is resolved (strictly above master) rather than left as an
+        undifferentiated None (T-inference-tier-ladder-real).
         """
+        # Human terminal (guru) — the top of the role ladder is Akien, not a model. Resolve it
+        # to the terminal decision BEFORE anything else (before session affinity, before the
+        # envelope): no model stands at this rung, so there is nothing to select or pin. This
+        # keeps the ladder strictly monotone at the top (guru > master) without a phantom
+        # frontier+1 model.
+        if is_human_terminal(req.ticket_tier):
+            log.info("rules: resolve human-terminal (guru) — no model, hand off to person")
+            return HUMAN_TERMINAL
+
         # Session affinity — same session stays on the same model while it is reachable.
         # Mirrors route(): a hit returns EARLY (before the envelope), so a pinned session is
         # not re-resolved. The live coding loop passes session_id='' so its escalation walk
@@ -200,14 +230,25 @@ class RulesEngine:
                     eligible.append((conn, source, spec))
 
         if eligible:
-            # Cheapest capable connection: (cost_class, per-connection marginal dollars,
-            # stable tiebreak). Connections carry no rule.priority, so the final
-            # tiebreak is (model_id, source_name) for determinism — this is the ONE
-            # intended parity divergence from route()'s (…, rule.priority) tiebreak.
+            # Cheapest capable connection, then LEAST OVER-PROVISIONED: (cost_class,
+            # per-connection marginal dollars, difficulty proximity to the floor, stable
+            # tiebreak). Cost still dominates — cheapest always wins first, so the cloud
+            # fleet is never re-stranded (T-inference-cost-first-sort-strands-cloud-fleet).
+            # The proximity term (ascending difficulty rank = prefer the LOWEST bucket that
+            # still clears the floor) breaks EQUAL-COST ties by capability instead of by
+            # spelling: without it, a $0-heavy local registry hands a classify-floor task
+            # whatever $0 model sorts first alphabetically (measured: apprentice AND builder
+            # both landed on deepseek-r1:14b@code), collapsing adjacent rungs and making the
+            # ladder's distinctness hostage to model-name spelling. With it, each rung selects
+            # the just-enough-capable model, so raising the floor strictly changes the pick —
+            # the escalation ladder's rungs are real (T-inference-tier-ladder-real). Connections
+            # carry no rule.priority, so the final tiebreak is (model_id, source_name) for
+            # determinism — the ONE intended parity divergence from route()'s tiebreak.
             eligible.sort(
                 key=lambda x: (
                     cost_class_rank(getattr(x[1], "cost_class", "token_direct")),
                     x[0].dollars_per_unit,
+                    _difficulty_rank(x[2].difficulty_bucket),
                     x[0].model_id,
                     x[0].source_name,
                 )
