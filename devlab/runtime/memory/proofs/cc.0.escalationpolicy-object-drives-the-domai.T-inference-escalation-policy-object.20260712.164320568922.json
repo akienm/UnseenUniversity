@@ -1,0 +1,67 @@
+{
+  "id": "cc.0.escalationpolicy-object-drives-the-domai.T-inference-escalation-policy-object.20260712.164320568922",
+  "emitter": "cc.0",
+  "namespace": [
+    "escalationpolicy-object-drives-the-domai",
+    "T-inference-escalation-policy-object"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-12T16:43:20.568922",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-escalation-policy-object"
+    ],
+    "commits": [
+      "171e9d2f73be508042c7f72f22b0381ee0794286"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-inference-escalation-policy-object",
+  "body": {
+    "thing": "EscalationPolicy object drives the domain escalation walk",
+    "intention": "The same capability wall under DEFAULT vs NO_ESCALATION vs HARVEST yields three distinct terminals; one rung per wall; exactly one terminal alarm",
+    "test": "tests/inference/test_escalation_policy.py::test_three_policies_yield_distinct_walk_behavior",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_escalation_policy.py::test_three_policies_yield_distinct_walk_behavior",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \"\"\"PROOF: DEFAULT vs NO_ESCALATION vs HARVEST — same wall, three asserted-distinct outcomes.\n    \n        Pre-impl there is no EscalationPolicy object; the guarded import fails and this asserts a\n        clean RED. Post-impl the three policies drive the one walk to three different terminals.\n        \"\"\"\n        try:\n            from unseen_university.devices.inference.domains.escalation_policy import (\n                DEFAULT_POLICY,\n                HARVEST_POLICY,\n                NO_ESCALATION_POLICY,\n            )\n        except ImportError:\n>           assert False, \"EscalationPolicy object not implemented — no policy to drive the walk\"\nE           AssertionError: EscalationPolicy object not implemented — no policy to drive the walk\nE           assert False\n\ntests/inference/test_escalation_policy.py:81: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_escalation_policy.py::test_three_policies_yield_distinct_walk_behavior\n1 failed in 0.17s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.15s"
+          }
+        }
+      }
+    ],
+    "commit": "171e9d2f73be508042c7f72f22b0381ee0794286",
+    "impl_paths": [
+      "devlab/claudecode/harvest_batch.py",
+      "devlab/claudecode/harvest_run.py",
+      "tests/inference/test_harvest_batch.py",
+      "tests/inference/test_harvest_mode.py",
+      "tests/inference/test_harvest_toggle.py",
+      "unseen_university/devices/inference/domains/__init__.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/domains/escalation_policy.py",
+      "unseen_university/devices/inference/domains/general.py",
+      "unseen_university/devices/inference/run_record.py"
+    ],
+    "ticket": "T-inference-escalation-policy-object",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
