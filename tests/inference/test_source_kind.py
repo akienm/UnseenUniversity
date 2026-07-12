@@ -93,9 +93,11 @@ def test_cloud_source_yields_source_kind_cloud(device):
 
 
 def test_no_source_yields_source_kind_none(device):
-    # empty registry -> complete-inference-failure chokepoint -> error response
+    # empty registry -> complete-inference-failure chokepoint -> typed no-source response.
+    # Capable generalist models exist but no provider is up → 'no_provider' (was the
+    # undifferentiated 'error'; T-inference-typed-no-path-result). source_kind stays 'none'.
     resp = device.dispatch(
         InferenceRequest(messages=[{"role": "user", "content": "hi"}], task_class="worker")
     )
-    assert resp.finish_reason == "error"
+    assert resp.finish_reason == "no_provider"
     assert resp.source_kind == "none"

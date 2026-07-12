@@ -45,6 +45,7 @@ from unseen_university.devices.inference.domains.agentic_loop import (
     LOOP_DONE,
     LOOP_ESCALATE,
     LoopResult,
+    no_source_loop_outcome,
 )
 from unseen_university.devices.inference.domains.base import BaseDomain
 
@@ -170,6 +171,10 @@ class GeneralDomain(BaseDomain):
             temperature=0.0,
             escalation_hop=escalation_hop,
             prior_attempt=prior_attempt,
+            # This domain runs its own escalation walk → it owns the no-path outcome; dispatch
+            # suppresses its chokepoint alarm so exactly one mouth sounds per walk
+            # (T-inference-typed-no-path-result).
+            escalation_driven=True,
         )
 
         log.info("domain=%s crossing|step=dispatch|ticket=%s|hop=%d|tools=none",
@@ -184,9 +189,10 @@ class GeneralDomain(BaseDomain):
             return LoopResult(LOOP_AVAILABILITY, text=str(exc), turns=0)
 
         if response.finish_reason == "error" or response.source_kind == "none":
-            log.warning("domain=%s: no live source (finish=%s kind=%s) for %s — availability",
-                        self.name, response.finish_reason, response.source_kind, ticket_id)
-            return LoopResult(LOOP_AVAILABILITY, text=response.text or "", turns=0)
+            outcome = no_source_loop_outcome(response)
+            log.warning("domain=%s: no live source (finish=%s kind=%s) for %s — %s",
+                        self.name, response.finish_reason, response.source_kind, ticket_id, outcome)
+            return LoopResult(outcome, text=response.text or "", turns=0)
 
         text = response.text or ""
         passed = self._answer_check(text)

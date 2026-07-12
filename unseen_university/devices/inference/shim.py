@@ -77,6 +77,14 @@ class InferenceRequest:
     # Hard ceiling: dispatch() rejects requests with escalation_hop >= 2.
     escalation_hop: int = 0
     prior_attempt: str = ""
+    # Set True by a caller that runs its OWN escalation walk (the agentic loop) and thus
+    # OWNS the no-path outcome — it reads the typed result and alarms once at its terminal.
+    # When True, dispatch's complete-inference-failure chokepoint SUPPRESSES its alarm for a
+    # routed no-path (the walk will sound the one mouth), retiring the triple-alarm's second
+    # site. When False (every non-walk consumer — reader, evaluator, summarizer, igor…),
+    # dispatch keeps the chokepoint alarm as their sole no-source signal
+    # (T-inference-typed-no-path-result).
+    escalation_driven: bool = False
     # Foreground flag: when True, rules engine prefers cloud (usage_based) over flat_rate.
     # Used for latency-sensitive tasks like sprint-ticket work that require high capability.
     foreground: bool = False
@@ -89,6 +97,15 @@ class InferenceRequest:
     role: str = ""
     turn: int = 0
     parent_id: str = ""
+
+
+# finish_reason values dispatch stamps on a no-source error response so the caller can tell
+# a capability ceiling from an availability outage WITHOUT re-deriving it (the CP3 bug was
+# the agentic loop reading every error/none response as availability). A capable-but-down
+# rung → FINISH_NO_PROVIDER (retry same rung); no-capable-model → FINISH_NO_CAPABLE_MODEL
+# (escalate a rung). Both still carry source_kind="none" (T-inference-typed-no-path-result).
+FINISH_NO_CAPABLE_MODEL = "no_capable_model"
+FINISH_NO_PROVIDER = "no_provider"
 
 
 @dataclass

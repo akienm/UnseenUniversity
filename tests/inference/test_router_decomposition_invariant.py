@@ -18,9 +18,11 @@ provider is one no rule ever named, so every model is initially unreachable; the
 single Connection — no rule, no ModelSpec, no code change — and the same dispatch call must
 now resolve to it.
 
-Deliberately constructs no ModelSpec and imports no post-cutover-only symbol, so the file is
-importable on the pre-cutover tree: its red there is a real AssertionError (dispatch returns
-None because route() cannot see the new connection), not a collection error.
+Deliberately constructs no ModelSpec, so the invariant is about an EXISTING model gaining a
+new provider edge. (It now reads the typed no-path contract — `is_path` /
+OUTCOME_NO_AVAILABLE_PROVIDER from T-inference-typed-no-path-result — since resolve() returns
+a typed RoutingDecision rather than None for an unreachable rack; the baseline assertion is
+the same fact, expressed on the current contract.)
 """
 
 from __future__ import annotations
@@ -30,7 +32,10 @@ from unittest.mock import MagicMock
 from unseen_university.devices.inference.connections import Connection
 from unseen_university.devices.inference.device import _default_models
 from unseen_university.devices.inference.dimensions import route_request
-from unseen_university.devices.inference.rules_engine import RulesEngine
+from unseen_university.devices.inference.rules_engine import (
+    OUTCOME_NO_AVAILABLE_PROVIDER,
+    RulesEngine,
+)
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
 #: An existing model in the default registry (code difficulty, coding domain). We never
@@ -70,9 +75,15 @@ def test_new_connection_needs_zero_rule_edits():
     def _dispatch():
         return engine.resolve(route_request(task_class="worker", domain="coding"))
 
-    # Baseline: nothing is reachable — no connection lands on the only live provider.
-    assert _dispatch() is None, (
+    # Baseline: nothing is reachable — no connection lands on the only live provider. The
+    # models ARE capable, just unreachable → a typed NO_AVAILABLE_PROVIDER no-path (not None;
+    # T-inference-typed-no-path-result). is_path is the property under test here.
+    baseline = _dispatch()
+    assert not baseline.is_path, (
         "baseline must be unreachable: no model has a connection on the only available provider"
+    )
+    assert baseline.kind == OUTCOME_NO_AVAILABLE_PROVIDER, (
+        f"capable-but-unreachable must be NO_AVAILABLE_PROVIDER, got {baseline.kind}"
     )
 
     # THE INVARIANT: add ONE connection for an EXISTING model on the new provider.
@@ -83,9 +94,9 @@ def test_new_connection_needs_zero_rule_edits():
 
     decision = _dispatch()
 
-    assert decision is not None, (
+    assert decision.is_path, (
         "adding a connection for an existing model must make it dispatchable with ZERO rule "
-        "edits — a None here means dispatch is still reading a rule stack that names models"
+        "edits — a no-path here means dispatch is still reading a rule stack that names models"
     )
     assert decision.model.model_id == EXISTING_MODEL
     assert decision.source.name == NEW_PROVIDER

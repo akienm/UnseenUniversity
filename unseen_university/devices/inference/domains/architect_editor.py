@@ -43,6 +43,7 @@ from unseen_university.devices.inference.domains.agentic_loop import (
     AgenticLoop,
     LoopResult,
     NativeToolCodec,
+    no_source_loop_outcome,
 )
 from unseen_university.devices.inference.domains.block_apply import (
     apply_blocks_to_dir,
@@ -484,6 +485,9 @@ class ArchitectEditorFlow:
                 foreground=foreground,
                 escalation_hop=escalation_hop if turn == 0 else 0,
                 prior_attempt=prior_attempt if turn == 0 else "",
+                # Owns its escalation walk → dispatch suppresses the chokepoint alarm; one
+                # mouth per walk (T-inference-typed-no-path-result).
+                escalation_driven=True,
                 role="editor",
                 turn=turn,
             )
@@ -498,11 +502,12 @@ class ArchitectEditorFlow:
                     break  # keep the edits already on disk; report them as the attempt's result
                 return LoopResult(LOOP_AVAILABILITY, text=str(exc), turns=turn)
             if response.finish_reason == "error" or response.source_kind == "none":
-                log.warning("architect_editor: block-editor no live source (finish=%s kind=%s) %s",
-                            response.finish_reason, response.source_kind, ticket_id)
+                outcome = no_source_loop_outcome(response)
+                log.warning("architect_editor: block-editor no live source (finish=%s kind=%s) %s — %s",
+                            response.finish_reason, response.source_kind, ticket_id, outcome)
                 if applied_total:
                     break
-                return LoopResult(LOOP_AVAILABILITY, text=response.text or "", turns=turn)
+                return LoopResult(outcome, text=response.text or "", turns=turn)
 
             in_tok += getattr(response, "input_tokens", 0)
             out_tok += getattr(response, "output_tokens", 0)
@@ -561,6 +566,7 @@ class ArchitectEditorFlow:
                 system=WHOLEFILE_EDITOR_PROMPT + "\n\n" + system_prompt,
                 tools=None, task_class=task_class, domain=domain, ticket_id=ticket_id,
                 agent_id=agent_id, max_tokens=4096, temperature=0.0, foreground=foreground,
+                escalation_driven=True,  # part of the walk — no chokepoint alarm here
                 role="editor", turn=0,
             )
             log.info("architect_editor: crossing|step=wholefile-fallback|ticket=%s", ticket_id)

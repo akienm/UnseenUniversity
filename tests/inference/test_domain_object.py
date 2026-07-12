@@ -26,7 +26,10 @@ from unseen_university.devices.inference.domains import (
     resolve_domain,
 )
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
-from unseen_university.devices.inference.rules_engine import RulesEngine
+from unseen_university.devices.inference.rules_engine import (
+    OUTCOME_NO_CAPABLE_MODEL,
+    RulesEngine,
+)
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
 
@@ -116,9 +119,10 @@ def test_resolve_unknown_domain_is_generalist_base_no_crash(monkeypatch):
     assert d.name == "no-such-domain"  # name passed through, NOT collapsed to ''
     assert d.prompts.system == ""  # no specialized prompt
     # Dispatching that passed-through name must not crash. The synthetic rack has only
-    # coding/prose models, so an unknown domain matches nothing → None.
+    # coding/prose models, so an unknown domain matches nothing → a typed NO_CAPABLE_MODEL
+    # no-path (not None; T-inference-typed-no-path-result).
     result = _engine().resolve(route_request(task_class="worker", domain=d.name))
-    assert result is None
+    assert not result.is_path and result.kind == OUTCOME_NO_CAPABLE_MODEL
 
 
 def test_resolve_empty_domain_is_generalist_base():

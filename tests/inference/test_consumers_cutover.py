@@ -36,7 +36,10 @@ from unseen_university.devices.inference.connections import default_connections
 from unseen_university.devices.inference.device import _default_models, _default_sources
 from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.models_registry import ModelSpec
-from unseen_university.devices.inference.rules_engine import RulesEngine
+from unseen_university.devices.inference.rules_engine import (
+    OUTCOME_NO_CAPABLE_MODEL,
+    RulesEngine,
+)
 
 #: The purpose-built agentic coding model the monolith curated as the coding floor.
 AGENTIC_CODER = "devstral-small-2:24b"
@@ -115,19 +118,21 @@ def test_consumers_cutover_proof():
 def test_coding_escalation_past_local_capability_is_an_honest_ceiling():
     """Bumping a CODING request to design difficulty finds no tool-capable design-level coder.
 
-    resolve() returns None rather than handing back a tool-less model that would confabulate.
-    This is a real capability ceiling, honestly surfaced — NOT a routing bug. (The monolith
-    escalated to deepseek-r1:32b here, which also has features=[] and also could not build;
-    matching that was matching a broken rung.)
+    resolve() returns a TYPED NO_CAPABLE_MODEL (not a tool-less model that would confabulate,
+    and not an undifferentiated None). This is a real capability ceiling, honestly surfaced —
+    NOT a routing bug. (The monolith escalated to deepseek-r1:32b here, which also has
+    features=[] and also could not build; matching that was matching a broken rung.)
 
-    NOTE: the domain walk currently misclassifies this None as an AVAILABILITY failure and
-    retries before halting with a message that names the wrong cause — tracked separately in
-    T-inference-capability-ceiling-misclassified-as-availability. That bug lives in the
-    domain's classifier, not in the resolver, and is out of scope here.
+    The typing is what lets the domain walk tell this capability ceiling APART from an
+    availability outage: it now maps NO_CAPABLE_MODEL to a capability failure (escalate a
+    rung), no longer laundering it into AVAILABILITY and retrying a doomed rung before halting
+    with a message that names the wrong cause. That was the CP3 bug
+    (T-inference-capability-ceiling-misclassified-as-availability), and it is FIXED by the
+    typed result this asserts (T-inference-typed-no-path-result).
     """
     engine, _ = _hermetic_engine()
     walked = RouteRequest(
         ticket_tier="builder", builder_tier="builder", domain="coding",
         urgency="normal", escalation_allowed=True,
     )
-    assert engine.resolve(walked, required_difficulty="design") is None
+    assert engine.resolve(walked, required_difficulty="design").kind == OUTCOME_NO_CAPABLE_MODEL

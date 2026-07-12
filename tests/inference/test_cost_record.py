@@ -115,7 +115,10 @@ def test_failed_call_records_outcome_error_with_cost(cost_log):
         messages=[{"role": "user", "content": "hi"}],
         task_class="worker", domain="coding", ticket_id="T-fail-1", agent_id="tester",
     ))
-    assert resp.finish_reason == "error"
+    # A capable model exists but its only provider is down → typed no_provider (was the
+    # undifferentiated 'error'; T-inference-typed-no-path-result). source_kind stays 'none'.
+    assert resp.finish_reason == "no_provider"
+    assert resp.source_kind == "none"
     recs = _cost_records(cost_log)
     assert recs, "a failed dispatch must still emit a cost_record"
     msg = recs[-1]

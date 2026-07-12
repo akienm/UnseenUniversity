@@ -29,6 +29,8 @@ from urllib.parse import urlparse
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from unseen_university.devices.inference.shim import (
+    FINISH_NO_CAPABLE_MODEL,
+    FINISH_NO_PROVIDER,
     SANCTIONED_PIN_REASONS,
     InferenceRequest,
     InferenceResponse,
@@ -42,7 +44,11 @@ from unseen_university.devices.inference.models_registry import (
     default_registry as _default_models,
 )
 from unseen_university.devices.inference.connections import default_connections
-from unseen_university.devices.inference.rules_engine import RoutingDecision, RulesEngine
+from unseen_university.devices.inference.rules_engine import (
+    OUTCOME_NO_CAPABLE_MODEL,
+    RoutingDecision,
+    RulesEngine,
+)
 from unseen_university.devices.inference.dimensions import route_request
 from unseen_university.devices.inference.routing_buckets import (
     DIFFICULTY_BUCKETS,
@@ -356,8 +362,12 @@ class InferenceDevice(BaseDevice):
 
     def _route(
         self, request: InferenceRequest, required_difficulty: str
-    ) -> RoutingDecision | None:
+    ) -> RoutingDecision:
         """Resolve this request's dimensions to a (Source, ModelSpec).
+
+        Always returns a RoutingDecision (never None) — its `kind` discriminates a real
+        path from a typed no-path (NO_CAPABLE_MODEL / NO_AVAILABLE_PROVIDER) or the human
+        terminal; dispatch switches on `kind` (T-inference-typed-no-path-result).
 
         The proxy owns routing and builds the RouteRequest itself, from the routing layer's
         own vocabulary bridge (dimensions.route_request). It must NOT reach up into a domain
@@ -565,7 +575,12 @@ class InferenceDevice(BaseDevice):
         else:
             decision = self._route(request, req_difficulty)
 
-        if decision is not None:
+        # `decision` is now one of: None (an explicit model was resolved directly above, so
+        # `source` is already set), an OUTCOME_PATH decision (select model+source), or a typed
+        # no-path / human-terminal decision (model is None — nothing to dispatch). We switch on
+        # `kind`, NEVER on `model is None` (T-inference-typed-no-path-result).
+        route_outcome = ""  # set to the typed no-path kind when routing found no dispatchable path
+        if decision is not None and decision.is_path:
             # Resolve model_id for the request
             request = InferenceRequest(
                 messages=request.messages,
@@ -586,6 +601,7 @@ class InferenceDevice(BaseDevice):
                 foreground=request.foreground,
                 domain=request.domain,
                 ticket_id=request.ticket_id,
+                escalation_driven=request.escalation_driven,
             )
             source = decision.source
             provider_name = source.name
@@ -596,16 +612,27 @@ class InferenceDevice(BaseDevice):
                 provider_name,
                 decision.rule_label,
             )
-        elif not request.model:
-            # No rules decision and no explicit model — last-ditch legacy _mode source.
-            # The complete-inference-failure chokepoint below catches it when _mode is a
-            # dead/disabled source (e.g. the now-disabled openrouter default).
-            log.warning(
-                "dispatch: rules engine returned no decision — trying legacy mode=%s",
-                self._mode,
-            )
-            source = self._sources.get(self._mode)
-            provider_name = self._mode
+        else:
+            if decision is not None:
+                # A typed no-path (NO_CAPABLE_MODEL / NO_AVAILABLE_PROVIDER) or the human
+                # terminal — no model to dispatch. Remember the kind so the chokepoint below
+                # stamps the RIGHT finish_reason (letting the loop tell a capability ceiling
+                # from an availability outage without re-guessing — the CP3 bug). No alarm
+                # here: the no-path is silent data the walk owns.
+                route_outcome = decision.kind
+                log.info(
+                    "dispatch: no dispatchable path (kind=%s rule=%s) — typed error response",
+                    decision.kind, decision.rule_label,
+                )
+            if source is None and not request.model:
+                # No path and no explicit model — last-ditch legacy _mode source. The
+                # complete-inference-failure chokepoint below catches it when _mode is a
+                # dead/disabled source (e.g. the now-disabled openrouter default).
+                log.warning(
+                    "dispatch: no rules path — trying legacy mode=%s", self._mode,
+                )
+                source = self._sources.get(self._mode)
+                provider_name = self._mode
 
         # ── Complete inference failure chokepoint ──────────────────────────────
         # Every routing path lands here. If no live source resolved (route() exhausted
@@ -617,18 +644,37 @@ class InferenceDevice(BaseDevice):
             from unseen_university import system_alarms
 
             tc = request.task_class or "worker"
-            system_alarms.raise_alarm(
-                signature=f"no-provider:{tc}",
-                caller=request.agent_id or "inference.device",
-                message=(
-                    f"complete inference failure — no live source for "
-                    f"task_class={tc!r} model={request.model!r}"
-                ),
-                fatal=False,
+            # TYPED finish_reason so the caller tells a capability ceiling from an availability
+            # outage without re-guessing (the CP3 bug: the loop read every no-source response
+            # as availability, retried a doomed rung, then halted 'no live source'). A routed
+            # NO_CAPABLE_MODEL → 'no_capable_model' (caller escalates a rung); everything else
+            # — NO_AVAILABLE_PROVIDER, a dead legacy _mode, an unavailable explicit model —
+            # → 'no_provider' (caller retries the same rung).
+            finish = (
+                FINISH_NO_CAPABLE_MODEL
+                if route_outcome == OUTCOME_NO_CAPABLE_MODEL
+                else FINISH_NO_PROVIDER
             )
+            # ONE alarm at ONE owner. A caller running its own escalation walk
+            # (escalation_driven) OWNS the no-path and sounds the single mouth at its terminal,
+            # so suppress the chokepoint's alarm for it — this retires the triple-alarm's
+            # device-chokepoint site (with resolve()'s own alarm already gone). Every non-walk
+            # consumer (reader, evaluator, summarizer, igor…) keeps this as its SOLE no-source
+            # signal (T-inference-typed-no-path-result).
+            if not request.escalation_driven:
+                system_alarms.raise_alarm(
+                    signature=f"no-provider:{tc}",
+                    caller=request.agent_id or "inference.device",
+                    message=(
+                        f"complete inference failure ({finish}) — no live source for "
+                        f"task_class={tc!r} model={request.model!r}"
+                    ),
+                    fatal=False,
+                )
             log.error(
-                "dispatch: complete inference failure — no live source for task_class=%s model=%s",
-                tc, request.model,
+                "dispatch: complete inference failure (%s, alarm=%s) — no live source for "
+                "task_class=%s model=%s",
+                finish, not request.escalation_driven, tc, request.model,
             )
             self._emit_cost_record(
                 request, provider_name or "none", request.model, 0, 0, 0.0, "error"
@@ -638,8 +684,8 @@ class InferenceDevice(BaseDevice):
                 source_kind="none", outcome="error",
             )
             return InferenceResponse(
-                text=f"[InferenceDevice: no live inference source for task_class={tc}]",
-                finish_reason="error",
+                text=f"[InferenceDevice: no live inference source for task_class={tc} ({finish})]",
+                finish_reason=finish,
                 source_kind="none",
             )
 

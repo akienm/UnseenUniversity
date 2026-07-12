@@ -26,6 +26,7 @@ from unseen_university.devices.inference.domains.agentic_loop import (
     LOOP_AVAILABILITY,
     LOOP_COST_EXCEEDED,
     LOOP_DONE,
+    LOOP_NO_CAPABLE_MODEL,
     AgenticLoop,
     LoopResult,
     NativeToolCodec,
@@ -447,6 +448,13 @@ class BaseDomain:
             return "cost"
         if result.outcome == LOOP_AVAILABILITY:
             return "availability"
+        if result.outcome == LOOP_NO_CAPABLE_MODEL:
+            # A routed capability ceiling — nothing capable exists at this rung. This is a
+            # CAPABILITY failure (escalate a rung), NOT availability. Making it explicit is
+            # the CP3 fix's landing point: without it a no-capable-model was laundered into
+            # availability upstream and the walk retried a doomed rung
+            # (T-inference-typed-no-path-result).
+            return "capability"
         return "capability"  # escalate / max_turns / error: the tier could not finish
 
     def _initial_message(self, ticket: dict) -> str:

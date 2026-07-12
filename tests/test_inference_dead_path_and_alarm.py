@@ -78,7 +78,11 @@ def test_unknown_model_routes_to_live_source_and_alarms_when_all_down():
         messages=[{"role": "user", "content": "hi"}],
         model="", task_class="worker", agent_id="igor",
     ))
-    assert resp2.finish_reason == "error"
+    # Capable generalist models exist but every provider is down → typed 'no_provider' (was the
+    # undifferentiated 'error'; T-inference-typed-no-path-result). source_kind stays 'none', and
+    # a non-walk caller (escalation_driven defaults False) still gets the chokepoint alarm.
+    assert resp2.finish_reason == "no_provider"
+    assert resp2.source_kind == "none"
     alarm = system_alarms.get_alarm("no-provider:worker")
     assert alarm is not None, "complete inference failure must raise a system alarm"
     assert alarm["callers"].get("igor") == 1  # caller punch-list names the failing caller

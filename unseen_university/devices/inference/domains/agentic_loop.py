@@ -57,6 +57,28 @@ LOOP_COST_EXCEEDED = "cost_exceeded"  # usage_based run hit its per-run cost cap
 LOOP_AVAILABILITY = "availability"    # no live source reached (down); NOT a model failure
 LOOP_MAX_TURNS = "max_turns"      # hit the turn cap without a terminal
 LOOP_ERROR = "error"              # unexpected loop failure
+LOOP_NO_CAPABLE_MODEL = "no_capable_model"  # routed capability ceiling — CAPABILITY (escalate),
+#                                             the CP3 signal that used to be laundered into
+#                                             LOOP_AVAILABILITY (T-inference-typed-no-path-result)
+
+
+def no_source_loop_outcome(response) -> str:
+    """Map a no-live-source dispatch response to the LoopResult outcome the walk reads.
+
+    Every loop impl catches a no-source response the same way (finish_reason=='error' or the
+    reliable source_kind=='none'); this is the ONE place that decides what it MEANS. dispatch
+    stamps a TYPED finish_reason: a routed capability ceiling → FINISH_NO_CAPABLE_MODEL, which
+    maps to LOOP_NO_CAPABLE_MODEL → the walk ESCALATES a rung. Anything else — an availability
+    outage, a dead legacy source, a mocked generic 'error' — maps to LOOP_AVAILABILITY → the
+    walk RETRIES the same rung. Not laundering the first into the second is the whole CP3 fix
+    (T-inference-typed-no-path-result); keeping it in one helper keeps the three loops honest
+    together (homogeneity over three drifting special-cases).
+    """
+    from unseen_university.devices.inference.shim import FINISH_NO_CAPABLE_MODEL
+
+    if getattr(response, "finish_reason", "") == FINISH_NO_CAPABLE_MODEL:
+        return LOOP_NO_CAPABLE_MODEL
+    return LOOP_AVAILABILITY
 
 # Bash commands blocked by the safety denylist (shared across both codecs).
 _BASH_DENYLIST = re.compile(
@@ -729,6 +751,10 @@ class AgenticLoop:
                 # Escalation params thread on turn 0 only — after that the live transcript is the context.
                 escalation_hop=escalation_hop if turn == 0 else 0,
                 prior_attempt=prior_attempt if turn == 0 else "",
+                # This loop OWNS the no-path outcome (it runs the escalation walk) — dispatch
+                # suppresses its chokepoint alarm so exactly one mouth sounds per walk, at the
+                # walk's terminal (T-inference-typed-no-path-result).
+                escalation_driven=True,
                 # Layer labels for corpus segmentation (T-corpus-visibility-gaps): which loop
                 # role this call plays and which turn it is within the attempt.
                 role=role,
@@ -743,12 +769,15 @@ class AgenticLoop:
                 return LoopResult(LOOP_AVAILABILITY, text=str(exc), turns=turn,
                                   tools_called=tools_called, input_tokens=in_tok,
                                   output_tokens=out_tok, cost_usd=running_cost)
-            # No live source: router returned a clean error response (finish=error / kind=none).
+            # No live source: router returned a clean error response (typed finish_reason /
+            # kind=none). The TYPE decides capability-ceiling (escalate) vs availability
+            # (retry) — no longer laundered to AVAILABILITY wholesale (the CP3 bug).
             if response.finish_reason == "error" or response.source_kind == "none":
-                log.warning("AgenticLoop turn %d: no live source (finish=%s kind=%s) for %s — availability",
-                            turn + 1, response.finish_reason, response.source_kind, ticket_id)
+                outcome = no_source_loop_outcome(response)
+                log.warning("AgenticLoop turn %d: no live source (finish=%s kind=%s) for %s — %s",
+                            turn + 1, response.finish_reason, response.source_kind, ticket_id, outcome)
                 self._finalize_critic(critic, critic_judgments, ticket_id)
-                return LoopResult(LOOP_AVAILABILITY, text=response.text or "", turns=turn,
+                return LoopResult(outcome, text=response.text or "", turns=turn,
                                   tools_called=tools_called, input_tokens=in_tok,
                                   output_tokens=out_tok, cost_usd=running_cost)
 

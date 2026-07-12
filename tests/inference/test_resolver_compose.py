@@ -23,7 +23,10 @@ from unittest.mock import MagicMock
 from unseen_university.devices.inference.connections import Connection, ConnectionsRegistry
 from unseen_university.devices.inference.dimensions import RouteRequest
 from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
-from unseen_university.devices.inference.rules_engine import RulesEngine
+from unseen_university.devices.inference.rules_engine import (
+    OUTCOME_NO_CAPABLE_MODEL,
+    RulesEngine,
+)
 from unseen_university.devices.inference.sources import Source, SourceRegistry
 
 
@@ -111,8 +114,10 @@ def test_resolver_compose_proof(monkeypatch):
         dec_walked.source.name, dec_walked.model.model_id
     )
 
-    # (3) No capable connection under escalation_allowed=True -> terminal system_alarm.
-    # A code-only rack asked (via override) for design capability: nothing serves.
+    # (3) No capable connection -> a TYPED no-path result, and resolve() itself raises NO
+    # alarm (the no-path is silent data the escalation walk owns; T-inference-typed-no-path-
+    # result moved the mouth out of resolve). A code-only rack asked (via override) for design
+    # capability: nothing capable exists → NO_CAPABLE_MODEL.
     fired = {}
 
     def _spy(**kwargs):
@@ -137,12 +142,13 @@ def test_resolver_compose_proof(monkeypatch):
         urgency="normal", escalation_allowed=True,
     )
     dec_alarm = code_only.resolve(alarm_req, required_difficulty="design")
-    assert dec_alarm is None, "no capable connection must resolve to None"
-    assert fired, "escalation_allowed=True + no capable connection must fire a system_alarm"
-    assert fired.get("level") == "WARNING"
+    assert dec_alarm.kind == OUTCOME_NO_CAPABLE_MODEL, (
+        "no capable model at the escalated floor must resolve to a typed NO_CAPABLE_MODEL"
+    )
+    assert not fired, "resolve() must NOT alarm — the no-path is silent data the walk owns"
 
-    # ...and escalation_allowed=False on the same rack is a silent deterministic None
-    # (no alarm) when even the seed rung cannot be served.
+    # ...and escalation_allowed=False on a rack whose only model is off-domain is ALSO a typed
+    # no-path with no alarm (resolve never alarms now).
     fired.clear()
     sources2 = SourceRegistry()
     sources2.register(_src("hex", "owned_local"))
@@ -157,8 +163,8 @@ def test_resolver_compose_proof(monkeypatch):
         ticket_tier="builder", builder_tier="builder", domain="coding",
         urgency="normal", escalation_allowed=False,
     )
-    assert det.resolve(det_req) is None
-    assert not fired, "escalation_allowed=False must NOT fire a system_alarm"
+    assert det.resolve(det_req).kind == OUTCOME_NO_CAPABLE_MODEL
+    assert not fired, "resolve() must NOT fire a system_alarm"
 
 
 # ── Granular tests for the module's own suite ─────────────────────────────────
@@ -243,4 +249,8 @@ def test_synthetic_model_needs_explicit_connection():
         ticket_tier="builder", builder_tier="builder", domain="coding",
         escalation_allowed=False,
     )
-    assert eng.resolve(req) is None  # no default-table edge for a synthetic model_id
+    # The synthetic model CLEARS the capability envelope (code/coding) but has no default-table
+    # connection edge, so it is capable-but-unreachable → NO_AVAILABLE_PROVIDER (a typed no-path,
+    # not None; T-inference-typed-no-path-result).
+    from unseen_university.devices.inference.rules_engine import OUTCOME_NO_AVAILABLE_PROVIDER
+    assert eng.resolve(req).kind == OUTCOME_NO_AVAILABLE_PROVIDER

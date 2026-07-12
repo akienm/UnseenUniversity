@@ -48,7 +48,10 @@ from unseen_university.devices.inference.routing_buckets import (
     URGENCY_LEVELS,
     bump_difficulty,
 )
-from unseen_university.devices.inference.rules_engine import RulesEngine
+from unseen_university.devices.inference.rules_engine import (
+    OUTCOME_NO_CAPABLE_MODEL,
+    RulesEngine,
+)
 
 
 class _Source:
@@ -247,8 +250,13 @@ def test_the_coding_ladder_still_tops_out_and_that_is_not_hidden():
             RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding"),
             required_difficulty=bump_difficulty("code", hop),
         )
-        assert d is None, (
-            f"coding now resolves at rung {hop} ({d.model.model_id}) — if a tool-capable "
-            f"coding model was MEASURED and added, delete this test; if a `tools` flag was "
-            f"asserted without measurement, revert it"
+        # Typed no-path now (not None): no tool-capable coding model clears the design/frontier
+        # floor, so this is a capability ceiling — NO_CAPABLE_MODEL (T-inference-typed-no-path-
+        # result). is_path stays False, which is the property that guards "did not silently
+        # hand back a bogus rung".
+        assert not d.is_path and d.kind == OUTCOME_NO_CAPABLE_MODEL, (
+            f"coding now resolves at rung {hop} (kind={d.kind}, "
+            f"model={d.model.model_id if d.model else None}) — if a tool-capable coding model "
+            f"was MEASURED and added, delete this test; if a `tools` flag was asserted without "
+            f"measurement, revert it"
         )

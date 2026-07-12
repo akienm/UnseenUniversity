@@ -57,29 +57,50 @@ def _difficulty_rank(bucket: str) -> int:
         return 0
 
 
+# ── resolve() outcome discriminator (T-inference-typed-no-path-result) ──────────────
+# Every resolve() return is a RoutingDecision carrying a `kind`. The discriminator is the
+# SINGLE thing consumers switch on — never `model is None` (which conflated the human
+# terminal with a capability ceiling, the landmine T-inference-audit-resolve-consumers-
+# human-terminal targeted; folded in here). The two no-path kinds are the whole point of
+# this ticket: a capability ceiling ("nothing capable exists") and an availability outage
+# ("something capable exists but its providers are down") used to BOTH collapse to None, so
+# the caller guessed — re-reading a ceiling as an outage, retrying a doomed rung, then
+# halting with a LYING 'no live source' (the CP3 bug).
+OUTCOME_PATH = "path"                              # a concrete (Source, ModelSpec) was selected
+OUTCOME_HUMAN_TERMINAL = "human_terminal"          # guru — hand off to a person, no model
+OUTCOME_NO_CAPABLE_MODEL = "no_capable_model"      # no model meets the envelope → ESCALATE a rung
+OUTCOME_NO_AVAILABLE_PROVIDER = "no_available_provider"  # capable model, no live provider → RETRY
+
+
 @dataclass
 class RoutingDecision:
-    # source/model are None ONLY for the HUMAN_TERMINAL decision (guru — a person, no model);
-    # every model-selecting decision fills both.
+    # source/model are non-None ONLY for an OUTCOME_PATH decision; every no-path / human-
+    # terminal kind leaves both None. Consumers MUST switch on `kind`, never on `model is None`.
     source: Source | None
     model: ModelSpec | None
     rule_label: str
     session_affinity: bool = False
+    kind: str = OUTCOME_PATH
+
+    @property
+    def is_path(self) -> bool:
+        """True iff this decision selected a concrete model+source to dispatch to."""
+        return self.kind == OUTCOME_PATH
 
     @property
     def is_human_terminal(self) -> bool:
-        """True iff this decision is the guru/human terminal (no model, no source)."""
-        return self.model is None
+        """True iff this decision is the guru/human terminal (a person, no model)."""
+        return self.kind == OUTCOME_HUMAN_TERMINAL
 
 
 #: The top of the role ladder resolves to a PERSON, not a model. `resolve()` returns this
 #: singleton for the human-terminal tier (guru) — strictly above the top model rung (master),
-#: and distinguishable from both a model decision and a None no-path (which means "no capable
-#: model here", a different thing owned by T-inference-typed-no-path-result). This is what
+#: and distinguishable (by `kind`) from both a model decision and a no-path. This is what
 #: lets the ladder be strictly monotone all the way up without inventing a phantom top model
 #: (T-inference-tier-ladder-real).
 HUMAN_TERMINAL = RoutingDecision(
     source=None, model=None, rule_label="human-terminal→guru (no model stands here)",
+    kind=OUTCOME_HUMAN_TERMINAL,
 )
 
 
@@ -123,7 +144,7 @@ class RulesEngine:
 
     def resolve(
         self, req: RouteRequest, required_difficulty: str = "", session_id: str = ""
-    ) -> RoutingDecision | None:
+    ) -> RoutingDecision:
         """Resolve a dimensional RouteRequest to a concrete (Source, ModelSpec).
 
         The dimensional pipeline of D-inference-router-stack-decomposition-2026-07-08,
@@ -145,9 +166,13 @@ class RulesEngine:
         `escalation_allowed` is True it raises the envelope's difficulty floor (never
         lowers it); when False the override is ignored and the pick is pinned to the
         seed+policy floor — a deterministic single pick for tests/proofs. A capability
-        failure under escalation_allowed=True (no capable connection at the requested
-        rung — the terminal past the top) fires a system_alarm; availability failures
-        are NOT escalation (a down provider simply drops out and the next-cheapest wins).
+        failure (no MODEL meets the envelope) and an availability failure (a capable
+        model exists but no live provider serves it) are returned as DISTINCT typed
+        no-path kinds — resolve() itself raises NO alarm. The no-path is silent DATA
+        that flows up to the ONE owner (the escalation walk), which alarms once at its
+        terminal; this retires resolve()'s own alarm, the triple-alarm bug's first mouth
+        (T-inference-typed-no-path-result). A down provider just drops out and the
+        next-cheapest wins; only when NOTHING serves is a no-path kind returned.
 
         `session_id` gives the same session affinity route() provides: a session stays on
         the model it was first assigned while that connection is still available (checked
@@ -155,10 +180,12 @@ class RulesEngine:
         groups, minion — keep model consistency across a run). Empty = no affinity (the live
         coding loop passes none, so its escalation walk is never pinned).
 
-        Returns None when no capable+available connection serves the request. Returns the
-        HUMAN_TERMINAL singleton for the guru rung — the top of the role ladder is a person,
-        not a model, so it is resolved (strictly above master) rather than left as an
-        undifferentiated None (T-inference-tier-ladder-real).
+        ALWAYS returns a RoutingDecision (never None). Its `kind` discriminates:
+        OUTCOME_PATH (source+model filled), OUTCOME_HUMAN_TERMINAL (guru — a person, no
+        model; strictly above master, T-inference-tier-ladder-real), OUTCOME_NO_CAPABLE_MODEL
+        (no model meets the envelope — the caller should ESCALATE a rung), or
+        OUTCOME_NO_AVAILABLE_PROVIDER (a capable model exists but every provider is down /
+        time-ineligible — the caller should RETRY the same rung, not spend up).
         """
         # Human terminal (guru) — the top of the role ladder is Akien, not a model. Resolve it
         # to the terminal decision BEFORE anything else (before session affinity, before the
@@ -211,6 +238,12 @@ class RulesEngine:
         # cost-optimizing selector's INPUT changed from triples to connections — the
         # routing_buckets eligibility filters are reused verbatim.
         eligible: list[tuple[Connection, Source, ModelSpec]] = []
+        # any_capable = did ANY model clear the capability envelope (difficulty/domain/
+        # features), regardless of whether a live provider serves it? This is the pivot for
+        # the typed no-path: capable-but-unreachable → NO_AVAILABLE_PROVIDER (retry the same
+        # rung — a down box is not a branch); nothing-capable → NO_CAPABLE_MODEL (escalate a
+        # rung). Conflating the two was the CP3 bug (T-inference-typed-no-path-result).
+        any_capable = False
         for spec in self._models.all():
             if not difficulty_meets(spec.difficulty_bucket, floor):
                 continue
@@ -218,6 +251,7 @@ class RulesEngine:
                 continue
             if not env.required_features.issubset(set(spec.features or ())):
                 continue
+            any_capable = True  # cleared capability; reachability is decided below.
             for conn in connections.by_model(spec.model_id):
                 source = self._sources.get(conn.source_name)
                 if (
@@ -263,42 +297,37 @@ class RulesEngine:
             )
             return RoutingDecision(source, spec, label)
 
-        # No capable+available connection at this rung.
-        if req.escalation_allowed:
-            # Terminal: the caller allowed escalation and even here nothing serves —
-            # sound the loud mouth (D-system-alarms-and-tier-requests) rather than
-            # silently returning a bad pick. Dedup'd by signature in raise_alarm.
-            from unseen_university import system_alarms
-
-            system_alarms.raise_alarm(
-                signature=(
-                    f"inference-no-capable-connection:"
-                    f"{req.domain or 'generalist'}:{floor}"
-                ),
-                caller="inference.rules_engine.resolve",
-                message=(
-                    f"resolve: no capable connection for domain="
-                    f"{req.domain or 'generalist'} at difficulty>={floor} "
-                    f"(ticket_tier={req.ticket_tier}, builder_tier={req.builder_tier}, "
-                    f"urgency={eff_urgency}) — escalated past available capability, "
-                    f"halting for analysis"
-                ),
-                level="WARNING",
-            )
-            log.warning(
-                "rules: resolve no capable connection → system_alarm "
-                "(domain=%s difficulty=%s)",
-                req.domain or "generalist",
-                floor,
-            )
-        else:
+        # No dispatchable connection at this rung — return the TYPED no-path (no alarm; the
+        # no-path is silent data the ONE owner acts on). The pivot is any_capable:
+        #   - any_capable (a model met the envelope but every provider is down / not
+        #     time-eligible / has no connection edge) → NO_AVAILABLE_PROVIDER. The caller
+        #     RETRIES the same rung — escalating would abandon a capability that DOES exist,
+        #     and 'Hex-DOWN is not a branch'. (A provider merely time-ineligible for the
+        #     urgency, or a capable model with zero edges, also lands here by design — the
+        #     rung is unreachable NOW, which is what the caller needs to know; a permanent
+        #     config gap surfaces when retries exhaust rather than being mislabelled a
+        #     capability ceiling.)
+        #   - not any_capable (nothing met the envelope) → NO_CAPABLE_MODEL. The caller
+        #     ESCALATES a rung: a more-capable tier may exist above.
+        domain_str = req.domain or "generalist"
+        if any_capable:
             log.info(
-                "rules: resolve no capable connection — deterministic None "
-                "(escalation off, domain=%s difficulty=%s)",
-                req.domain or "generalist",
-                floor,
+                "rules: resolve no AVAILABLE provider (capable model exists, provider down) "
+                "— domain=%s difficulty=%s",
+                domain_str, floor,
             )
-        return None
+            return RoutingDecision(
+                source=None, model=None, kind=OUTCOME_NO_AVAILABLE_PROVIDER,
+                rule_label=f"no-available-provider:{domain_str}:{floor}",
+            )
+        log.info(
+            "rules: resolve no CAPABLE model — domain=%s difficulty=%s",
+            domain_str, floor,
+        )
+        return RoutingDecision(
+            source=None, model=None, kind=OUTCOME_NO_CAPABLE_MODEL,
+            rule_label=f"no-capable-model:{domain_str}:{floor}",
+        )
 
     def clear_session(self, session_id: str) -> None:
         self._session_map.pop(session_id, None)
