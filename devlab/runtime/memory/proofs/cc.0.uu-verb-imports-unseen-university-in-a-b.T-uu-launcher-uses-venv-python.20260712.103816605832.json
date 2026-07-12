@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.uu-verb-imports-unseen-university-in-a-b.T-uu-launcher-uses-venv-python.20260712.103816605832",
+  "emitter": "cc.0",
+  "namespace": [
+    "uu-verb-imports-unseen-university-in-a-b",
+    "T-uu-launcher-uses-venv-python"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-12T10:38:16.605832",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-uu-launcher-uses-venv-python"
+    ],
+    "commits": [
+      "bc1fef2f9e48d93618c5fb48778869d20bced1b7"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-uu-launcher-uses-venv-python",
+  "body": {
+    "thing": "uu <verb> imports unseen_university in a bare shell (no activated venv)",
+    "intention": "A zero-inference uu view resolves an interpreter that can import unseen_university without an already-activated venv on PATH, so it never dies with ModuleNotFoundError in a plain terminal",
+    "test": "tests/test_uu_dispatcher.py::test_bare_shell_uses_venv_python_when_not_on_path",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_dispatcher.py::test_bare_shell_uses_venv_python_when_not_on_path",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "                f\"uu opentickets failed to import unseen_university in a bare shell:\\n{r.stderr}\"\n            )\nE           AssertionError: uu opentickets failed to import unseen_university in a bare shell:\nE             Traceback (most recent call last):\nE               File \"/home/akien/dev/src/UnseenUniversity/devlab/claudecode/uu_tickets.py\", line 21, in <module>\nE                 from unseen_university import ticket_store\nE             ModuleNotFoundError: No module named 'unseen_university'\nE             \nE           assert 'ModuleNotFoundError' not in \"Traceback (...niversity'\\n\"\nE             \nE             'ModuleNotFoundError' is contained here:\nE               ket_store\nE             ? ^^\nE               ModuleNotFoundError: No module named 'unseen_university'\nE             ? ^^^^^^  +++++++++++++++\n\ntests/test_uu_dispatcher.py:106: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_dispatcher.py::test_bare_shell_uses_venv_python_when_not_on_path\n1 failed in 0.19s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.24s"
+          }
+        }
+      }
+    ],
+    "commit": "bc1fef2f9e48d93618c5fb48778869d20bced1b7",
+    "impl_paths": [
+      "bin/uu",
+      "devlab/runtime/memory/slates/20260711.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-rescueclaude-stale-session-name.20260711.193948988560.json",
+      "devlab/runtime/memory/tickets/cc.0.T-uu-launcher-uses-venv-python.20260711.194147700245.json"
+    ],
+    "ticket": "T-uu-launcher-uses-venv-python",
+    "narrative": "",
+    "why": "CP6: a view must run in a bare shell and fail soft; the launcher must not depend on venv activation",
+    "bootstrap": false
+  }
+}

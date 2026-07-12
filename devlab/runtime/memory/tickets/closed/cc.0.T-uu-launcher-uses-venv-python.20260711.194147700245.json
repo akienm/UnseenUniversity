@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.T-uu-launcher-uses-venv-python.20260711.194147700245",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-launcher-uses-venv-python"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-12T01:41:47.700245+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-uu-launcher-uses-venv-python"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-uu-launcher-uses-venv-python",
+    "title": "uu <verb> must degrade to the source tree when the venv is gone — it's a rescue net, not a venv-dependent view",
+    "size": "S",
+    "priority": 0.6,
+    "status": "closed",
+    "tags": [
+      "uu-cli",
+      "launcher",
+      "venv",
+      "bare-shell",
+      "bug",
+      "CP6"
+    ],
+    "target_difficulty": 1,
+    "intention": "I intend that `uu <verb>` comes up on a degradation ladder — activated venv, else venv python, else the raw source tree via PYTHONPATH, else a soft 'here is what is missing' message — so the zero-inference view layer starts whenever ANY usable piece is present and never dies with a raw traceback, honoring CP6 (it is a rescue net).",
+    "description": "BUG (CP6 rescue-net floor). `uu opentickets` from a plain terminal tracebacks with `ModuleNotFoundError: No module named 'unseen_university'` (uu_tickets.py:21). `bin/uu` execs the BARE `python3`; the editable install lives only in `.venv/...site-packages`, so a shell without the venv activated gets system python and every verb dies at import.\n\nCORRECTED INTENT (per Akien 2026-07-11): \"runs in a bare shell\" is a FLOOR, not a demand to avoid the venv. `uu` is the rescue net — the thing you reach for exactly when the environment (or CC) is broken. So it must come up on a DEGRADATION LADDER, bringing up as much as the pieces allow:\n  1. venv present + activated -> use it as-is.\n  2. venv present, not activated -> resolve & exec `$UU_ROOT/.venv/bin/python3`.\n  3. venv gone/broken but SOURCE TREE present -> import straight from `$UU_ROOT` (system python3 + `PYTHONPATH=$UU_ROOT`),      NO install, NO venv. PROVEN VIABLE: `env -i PYTHONPATH=$UU_ROOT /usr/bin/python3 -c 'from unseen_university import      ticket_store, ticket_status'` imports clean and pulls ZERO heavy deps (no psycopg2/loguru/pydantic).\n  4. even that broken -> FAIL SOFT: print what is missing + the next step; never a raw traceback.\n\nMy first fix ('find venv, else system python3') only covers rungs 1-2 and still dies at rung 3 — the exact scenario that defines a rescue net. Reconciles with [[reference_editable_finder_beats_pythonpath]]: the editable venv install stays the PRIMARY path; PYTHONPATH-to-source is the RESCUE rung below it, not a replacement.\n\nProposed shape in `bin/uu`: resolve an interpreter+env once at the top — `PY=\"$UU_ROOT/.venv/bin/python3\"`; if executable run `exec \"$PY\" ...`; else `exec env PYTHONPATH=\"$UU_ROOT\" python3 ...`; if no python3 at all, print a soft diagnostic and exit nonzero. One resolver, homogeneous across all current+future verbs ([[feedback_homogeneity_over_special_case]]).\n\n**Affected files:** bin/uu (interpreter+env resolver; the `exec python3` lines for mytickets/opentickets/recall/research/device). No change to the handler scripts. tests/ — new rescue-ladder test.\n**Design rules:** ticket_design_checks (test-plan-or-why-not). no-sqlite N/A. homogeneity-over-special-case (one resolver). CP6 fail-soft.\n**Scope boundary:** IN — bin/uu degradation ladder (venv -> venv-python -> source-tree PYTHONPATH -> soft fail) + a test that proves rung 3 (no venv) still serves the view. OUT — the `.bashrc -> uu_bash_profile.sh` env migration (T-bashrc-uu-migration-finish); auto-CREATING/repairing the venv (rescueclaude owns venv bootstrap); the same ladder for superclaude/rescueclaude (their own tickets — note below); changing what verbs display.\n**Test plan:** proof-on-close. A test runs `bin/uu opentickets` in a subprocess with a scrubbed env AND the venv made unreachable (e.g. UU_ROOT pointed at a copy with no .venv, or venv dir hidden), asserting exit 0 and real ticket output with NO `ModuleNotFoundError` — i.e. it served off the source tree. RED on today's `exec python3` (import fails at rung 3), GREEN once uu falls through to `PYTHONPATH=$UU_ROOT`.\n**Proof obligation:** a hollow build cannot pass the no-venv subprocess test — the fix must serve the view from the raw source tree with the venv absent. This discharges the sub-intention that the rescue net start whenever the source is present, not only when the venv is healthy.\n**Completion criteria:** `uu opentickets` works from (a) a non-activated shell with venv and (b) a shell with NO venv at all (source-tree rung); a missing python3 yields a soft diagnostic, not a traceback; the no-venv test passes (red-before/green-after).",
+    "created_at": "2026-07-12T01:41:23.988429+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "Fixed: bin/uu resolves an interpreter down a rescue ladder (venv python by abs path -> source tree via PYTHONPATH=$UU_ROOT -> fail soft). uu opentickets now runs in a bare shell (shows 400 open tickets); old exec python3 tracebacked with ModuleNotFoundError. Proof: tests/test_uu_dispatcher.py::test_bare_shell_uses_venv_python_when_not_on_path (red=AssertionError->green), + rung-3 no-venv source-tree test. proof_emitter cert @bc1fef2f.",
+    "dispatched_at": null,
+    "completed_at": "2026-07-12T16:38:41.259703+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-12T01:41:24.034666+00:00",
+    "proven": true,
+    "proof_id": "cc.0.uu-verb-imports-unseen-university-in-a-b.T-uu-launcher-uses-venv-python.20260712.103816605832",
+    "proof_commit": "bc1fef2f9e48d93618c5fb48778869d20bced1b7",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}
