@@ -1,0 +1,72 @@
+{
+  "id": "cc.0.resolve-returns-a-typed-no-path-so-the-e.T-inference-typed-no-path-result.20260712.130053228809",
+  "emitter": "cc.0",
+  "namespace": [
+    "resolve-returns-a-typed-no-path-so-the-e",
+    "T-inference-typed-no-path-result"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-12T13:00:53.228809",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-typed-no-path-result"
+    ],
+    "commits": [
+      "e35e4af06487eab55435d1a66fb5f199252c0bba"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-inference-typed-no-path-result",
+  "body": {
+    "thing": "resolve() returns a typed no-path so the escalation walk escalates on a capability ceiling and retries on an availability outage (CP3)",
+    "intention": "A NO_CAPABLE_MODEL no-source response makes the walk climb difficulty rungs (0→1→2) and halt on ONE capability-ceiling alarm; laundering it into availability (retry hop 0) is red",
+    "test": "tests/inference/test_typed_no_path.py::test_walk_escalates_a_rung_on_no_capable_model",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_typed_no_path.py::test_walk_escalates_a_rung_on_no_capable_model",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            f\"a capability ceiling must ESCALATE the rung each hop (0→1→2), not retry the same \"\n            f\"rung — got dispatched hops {hops} (all-zero = the pre-fix availability laundering)\"\n        )\nE       AssertionError: a capability ceiling must ESCALATE the rung each hop (0→1→2), not retry the same rung — got dispatched hops [0, 0, 0] (all-zero = the pre-fix availability laundering)\nE       assert [0, 0, 0] == [0, 1, 2]\nE         \nE         At index 1 diff: 0 != 1\nE         Use -v to get more diff\n\ntests/inference/test_typed_no_path.py:236: AssertionError\n------------------------------ Captured log call -------------------------------\nWARNING  unseen_university.devices.inference.domains.agentic_loop:agentic_loop.py:748 AgenticLoop turn 1: no live source (finish=no_capable_model kind=none) for T-typed — availability\nWARNING  unseen_university.devices.inference.domains.base:base.py:324 domain=coding crossing|step=select|ticket=T-typed|retry=1/2|difficulty=code|reason=availability\nWARNING  unseen_university.devices.inference.domains.agentic_loop:agentic_loop.py:748 AgenticLoop turn 1: no live source (finish=no_capable_model kind=none) for T-typed — availability\nWARNING  unseen_university.devices.inference.domains.base:base.py:324 domain=coding crossing|step=select|ticket=T-typed|retry=2/2|difficulty=code|reason=availability\nWARNING  unseen_university.devices.inference.domains.agentic_loop:agentic_loop.py:748 AgenticLoop turn 1: no live source (finish=no_capable_model kind=none) for T-typed — availability\nERROR    unseen_university.devices.inference.domains.base:base.py:319 domain=coding crossing|step=select|ticket=T-typed|result=availability-exhausted-halt\n=========================== short test summary info ============================\nFAILED tests/inference/test_typed_no_path.py::test_walk_escalates_a_rung_on_no_capable_model\n1 failed in 0.17s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "e35e4af06487eab55435d1a66fb5f199252c0bba",
+    "impl_paths": [
+      "tests/inference/test_consumers_cutover.py",
+      "tests/inference/test_cost_record.py",
+      "tests/inference/test_domain_object.py",
+      "tests/inference/test_escalation_leaves_the_local_box.py",
+      "tests/inference/test_resolver_compose.py",
+      "tests/inference/test_router_decomposition_invariant.py",
+      "tests/inference/test_source_kind.py",
+      "tests/test_inference_dead_path_and_alarm.py",
+      "unseen_university/devices/inference/device.py",
+      "unseen_university/devices/inference/domains/agentic_loop.py",
+      "unseen_university/devices/inference/domains/architect_editor.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/domains/general.py",
+      "unseen_university/devices/inference/rules_engine.py",
+      "unseen_university/devices/inference/shim.py"
+    ],
+    "ticket": "T-inference-typed-no-path-result",
+    "narrative": "",
+    "why": "confabulation compounds: a capability ceiling misread as availability retries a doomed rung then lies 'no live source' (CP3, CP1)",
+    "bootstrap": false
+  }
+}
