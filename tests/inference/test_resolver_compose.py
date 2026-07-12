@@ -10,10 +10,11 @@ and ModelSpec carries no source_name. Reachability lives ONLY on the connections
 each synthetic rack here builds its ConnectionsRegistry EXPLICITLY (Connection edges), the
 pattern every resolver consumer now uses. The escalation contract mirrors the external
 driver (D-inference-domain-routing-2026-07-01): resolve() does ONE selection per call at a
-(possibly overridden) difficulty; the caller owns the hop counter and re-calls with a bumped
-required_difficulty. escalation_allowed=False pins the pick to the seed for deterministic
-proofs; escalation_allowed=True + a no-capable-connection outcome fires the terminal
-system_alarm.
+(possibly overridden) difficulty; the caller (the domain's escalation walk) owns the hop
+counter and re-calls with a bumped required_difficulty. Passing NO required_difficulty pins
+the pick to the seed — the deterministic single pick for proofs (the retired escalation_allowed
+flag's only real job; T-inference-escalation-policy-object). resolve() never fires an alarm; a
+no-capable-connection outcome is a typed no-path the escalation walk owns.
 """
 
 from __future__ import annotations
@@ -79,8 +80,8 @@ def _coding_rack():
 
 def test_resolver_compose_proof(monkeypatch):
     """The dimensional resolver composes the 4 stacks with NO hardcoded triple, the
-    escalation override genuinely changes the pick, and no-capable-connection under
-    escalation_allowed fires the terminal system_alarm."""
+    required_difficulty override genuinely changes the pick, and a no-capable-connection
+    outcome is a typed no-path that resolve() surfaces WITHOUT firing any alarm."""
 
     # (1) resolve returns a concrete (provider, model) from the connections stack.
     eng = _coding_rack()
@@ -93,22 +94,17 @@ def test_resolver_compose_proof(monkeypatch):
     assert dec.source.name == "hex"
     assert dec.model.model_id == "code-local"
 
-    # (2) The escalation override actually WALKS: escalation_allowed=True honors a
-    # required_difficulty override (picks the pricier design connection);
-    # escalation_allowed=False pins to the seed (picks the cheaper code connection).
-    # Same request shape, DIFFERENT (provider, model) — not merely alarm-vs-None.
-    pinned = RouteRequest(
-        ticket_tier="builder", builder_tier="builder", domain="coding",
-        urgency="normal", escalation_allowed=False,
+    # (2) The escalation override actually WALKS: a required_difficulty override raises the
+    # floor (picks the pricier design connection); passing NO override pins to the seed
+    # (picks the cheaper code connection). Same request shape, DIFFERENT (provider, model) —
+    # not merely alarm-vs-None. This is the determinism the retired escalation_allowed gave.
+    req_shape = RouteRequest(
+        ticket_tier="builder", builder_tier="builder", domain="coding", urgency="normal",
     )
-    walked = RouteRequest(
-        ticket_tier="builder", builder_tier="builder", domain="coding",
-        urgency="normal", escalation_allowed=True,
-    )
-    dec_pinned = _coding_rack().resolve(pinned, required_difficulty="design")
-    dec_walked = _coding_rack().resolve(walked, required_difficulty="design")
+    dec_pinned = _coding_rack().resolve(req_shape)                             # no override → seed
+    dec_walked = _coding_rack().resolve(req_shape, required_difficulty="design")  # override → walks up
     assert dec_pinned is not None and dec_walked is not None
-    assert dec_pinned.model.model_id == "code-local"   # override ignored — seed pin
+    assert dec_pinned.model.model_id == "code-local"   # no override — seed pin
     assert dec_walked.model.model_id == "design-cloud"  # override honored — walked up
     assert (dec_pinned.source.name, dec_pinned.model.model_id) != (
         dec_walked.source.name, dec_walked.model.model_id
@@ -138,8 +134,7 @@ def test_resolver_compose_proof(monkeypatch):
     )
 
     alarm_req = RouteRequest(
-        ticket_tier="builder", builder_tier="builder", domain="coding",
-        urgency="normal", escalation_allowed=True,
+        ticket_tier="builder", builder_tier="builder", domain="coding", urgency="normal",
     )
     dec_alarm = code_only.resolve(alarm_req, required_difficulty="design")
     assert dec_alarm.kind == OUTCOME_NO_CAPABLE_MODEL, (
@@ -160,8 +155,7 @@ def test_resolver_compose_proof(monkeypatch):
         sources2, models2, connections=_conns(("prose-only", "hex", 0.0)), policies=[],
     )
     det_req = RouteRequest(
-        ticket_tier="builder", builder_tier="builder", domain="coding",
-        urgency="normal", escalation_allowed=False,
+        ticket_tier="builder", builder_tier="builder", domain="coding", urgency="normal",
     )
     assert det.resolve(det_req).kind == OUTCOME_NO_CAPABLE_MODEL
     assert not fired, "resolve() must NOT fire a system_alarm"
@@ -245,10 +239,7 @@ def test_synthetic_model_needs_explicit_connection():
                   difficulty_capable="code", domains=["coding"]),
     ])
     eng = RulesEngine(sources, models, policies=[])  # no connections passed
-    req = RouteRequest(
-        ticket_tier="builder", builder_tier="builder", domain="coding",
-        escalation_allowed=False,
-    )
+    req = RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding")
     # The synthetic model CLEARS the capability envelope (code/coding) but has no default-table
     # connection edge, so it is capable-but-unreachable → NO_AVAILABLE_PROVIDER (a typed no-path,
     # not None; T-inference-typed-no-path-result).

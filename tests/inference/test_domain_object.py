@@ -109,9 +109,8 @@ def test_resolve_registered_domain_is_specialized_subclass():
 def test_resolve_unknown_domain_is_generalist_base_no_crash(monkeypatch):
     """An unknown name resolves to a BaseDomain carrying that name — empty prompt, no crash."""
     import unseen_university.system_alarms as sa
-    # route_request defaults escalation_allowed=True; an unknown domain has no eligible model,
-    # so resolve() fires the terminal system_alarm (a filesystem drop). Stub it — the
-    # assertion here is about the domain object, not the alarm path.
+    # Stub the alarm defensively — the assertion here is about the resolved domain OBJECT, not
+    # any routing/alarm path (this constructs a domain, it does not dispatch).
     monkeypatch.setattr(sa, "raise_alarm", lambda **kw: None)
 
     d = resolve_domain("no-such-domain")

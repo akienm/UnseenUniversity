@@ -83,10 +83,9 @@ def test_consumers_cutover_proof():
             )
 
     # ── (C) THE ANTI-CONFABULATION INVARIANT: coding resolves to a TOOL-CAPABLE model.
-    # escalation_allowed=False pins the pick to the seed rung: deterministic, no alarm.
+    # No required_difficulty passed pins the pick to the seed rung: deterministic, no alarm.
     coding = RouteRequest(
-        ticket_tier="builder", builder_tier="builder", domain="coding",
-        urgency="normal", escalation_allowed=False,
+        ticket_tier="builder", builder_tier="builder", domain="coding", urgency="normal",
     )
     dec = engine.resolve(coding)
     assert dec is not None, "the live coding path must resolve a model"
@@ -132,7 +131,6 @@ def test_coding_escalation_past_local_capability_is_an_honest_ceiling():
     """
     engine, _ = _hermetic_engine()
     walked = RouteRequest(
-        ticket_tier="builder", builder_tier="builder", domain="coding",
-        urgency="normal", escalation_allowed=True,
+        ticket_tier="builder", builder_tier="builder", domain="coding", urgency="normal",
     )
     assert engine.resolve(walked, required_difficulty="design").kind == OUTCOME_NO_CAPABLE_MODEL

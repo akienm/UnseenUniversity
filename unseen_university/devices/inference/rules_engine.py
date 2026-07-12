@@ -162,10 +162,11 @@ class RulesEngine:
 
         ESCALATION (one selection per call — the caller owns the walk;
         D-inference-domain-routing-2026-07-01). `required_difficulty` is the external
-        driver's override (device.py bumps it one rung per capability failure). When
-        `escalation_allowed` is True it raises the envelope's difficulty floor (never
-        lowers it); when False the override is ignored and the pick is pinned to the
-        seed+policy floor — a deterministic single pick for tests/proofs. A capability
+        driver's override (the domain's escalation walk bumps it one rung per capability
+        failure). It raises the envelope's difficulty floor whenever it is above the floor,
+        and never lowers it. Pass no required_difficulty for a deterministic single pick
+        pinned to the seed+policy floor (the retired escalation_allowed flag's only real
+        job; T-inference-escalation-policy-object). A capability
         failure (no MODEL meets the envelope) and an availability failure (a capable
         model exists but no live provider serves it) are returned as DISTINCT typed
         no-path kinds — resolve() itself raises NO alarm. The no-path is silent DATA
@@ -221,12 +222,14 @@ class RulesEngine:
 
         env = build_envelope(req, self._policies)
         floor = env.min_difficulty
-        # The external escalation driver may bump the required difficulty UP one rung
-        # per capability failure; honor it only when escalation is allowed, and never
-        # let it LOWER the policy/seed floor (monotone, mirrors route()).
+        # The external escalation driver (the domain's escalation walk) may bump the required
+        # difficulty UP one rung per capability failure; honor it whenever it is above the
+        # policy/seed floor, and never let it LOWER that floor (monotone, mirrors route()). A
+        # caller wanting a deterministic single pick simply passes no required_difficulty (floor
+        # stays the seed); the old escalation_allowed pin is retired
+        # (T-inference-escalation-policy-object).
         if (
-            req.escalation_allowed
-            and required_difficulty
+            required_difficulty
             and _difficulty_rank(required_difficulty) > _difficulty_rank(floor)
         ):
             floor = required_difficulty

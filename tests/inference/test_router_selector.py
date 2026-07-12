@@ -153,8 +153,7 @@ def test_every_production_tier_resolves_a_candidate():
     for tier in ROLE_TIERS:
         req = RouteRequest(
             ticket_tier=tier, builder_tier="builder", domain="", urgency="normal",
-            escalation_allowed=False,  # deterministic: no alarm, no walk
-        )
+        )  # no required_difficulty override → deterministic seed pick, no walk
         assert engine.resolve(req) is not None, f"tier {tier} stranded — no candidate resolves"
 
 

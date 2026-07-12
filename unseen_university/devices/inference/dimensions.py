@@ -8,9 +8,14 @@ describes its request as DIMENSIONS and never names a model or provider:
   - builder_tier     the requesting WORKER's capability tier
   - domain           WHAT KIND of task ('coding', 'prose', ...); '' = generalist
   - urgency          how slow a source may be ('interactive'|'normal'|'batch')
-  - escalation_allowed  whether the within-domain escalation walk may bump difficulty
-                        up on capability failure (default True; set False to pin a
-                        resolve deterministic for tests/proofs)
+
+Escalation is NOT a routing dimension. The escalation walk lives on the DOMAIN (see
+domains/escalation_policy.EscalationPolicy) — the resolver just honors the `required_difficulty`
+the walk passes it (raises the floor, never lowers it). The old `escalation_allowed` flag was
+retired (T-inference-escalation-policy-object): its only live effect was to make the resolver
+IGNORE required_difficulty for a deterministic single pick, and no production caller ever set
+it — determinism now comes from simply not passing required_difficulty (floor stays the seed),
+and the walk's own NO_ESCALATION_POLICY expresses "pin to one rung" at the domain layer.
 
 ORTHOGONALITY (the redesign's core thesis — do not fuse independent axes):
 ticket_tier drives the a-priori DIFFICULTY seed (what model capability the WORK needs).
@@ -102,7 +107,6 @@ class RouteRequest:
     builder_tier: str
     domain: str = ""
     urgency: str = "normal"
-    escalation_allowed: bool = True
 
     def __post_init__(self) -> None:
         if self.ticket_tier not in ROLE_TIERS:
@@ -148,7 +152,6 @@ def route_request(
     domain: str = "",
     urgency: str | None = None,
     foreground: bool = False,
-    escalation_allowed: bool = True,
     builder_tier: str = "builder",
 ) -> RouteRequest:
     """Build a RouteRequest from a caller's task_class/domain/urgency.
@@ -165,7 +168,6 @@ def route_request(
         builder_tier=builder_tier,
         domain=domain,
         urgency=urgency or ("interactive" if foreground else "normal"),
-        escalation_allowed=escalation_allowed,
     )
 
 

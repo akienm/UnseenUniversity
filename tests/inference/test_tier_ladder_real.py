@@ -89,10 +89,10 @@ def _ladder_rack() -> RulesEngine:
 
 
 def _resolve(eng, tier):
-    # escalation_allowed=False pins to the SEED floor — a deterministic single pick per rung,
-    # so this proves the SEED ladder (not the escalation walk).
+    # No required_difficulty override → the pick is pinned to the SEED floor: a deterministic
+    # single pick per rung, so this proves the SEED ladder (not the escalation walk).
     return eng.resolve(RouteRequest(
-        ticket_tier=tier, builder_tier="builder", domain="coding", escalation_allowed=False,
+        ticket_tier=tier, builder_tier="builder", domain="coding",
     ))
 
 

@@ -1,10 +1,11 @@
 """Tests for the dimensional caller contract (T-inference-dimensions-contract).
 
 The contract (D-inference-router-stack-decomposition-2026-07-08): callers describe a
-request as dimensions {ticket_tier, builder_tier, domain, urgency, escalation_allowed}
-and can NEVER name a model or provider. ticket_tier drives the a-priori difficulty seed;
-builder_tier is a separate axis. These tests pin the field shape, the deterministic seed,
-the default escalation flag, structural rejection of a model/provider, and validation.
+request as dimensions {ticket_tier, builder_tier, domain, urgency} and can NEVER name a
+model or provider. ticket_tier drives the a-priori difficulty seed; builder_tier is a
+separate axis. Escalation is NOT a dimension — it lives on the domain (escalation_allowed
+was retired, T-inference-escalation-policy-object). These tests pin the field shape, the
+deterministic seed, structural rejection of a model/provider/escalation flag, and validation.
 """
 
 from __future__ import annotations
@@ -18,20 +19,24 @@ from unseen_university.devices.inference.dimensions import (
 )
 
 
-def test_route_request_accepts_dimensions_escalation_defaults_true():
-    """A RouteRequest carries the five dimensions; escalation_allowed defaults True."""
+def test_route_request_accepts_dimensions():
+    """A RouteRequest carries the four routing dimensions and nothing about escalation."""
     req = RouteRequest(ticket_tier="builder", builder_tier="master", domain="coding")
     assert req.ticket_tier == "builder"
     assert req.builder_tier == "master"
     assert req.domain == "coding"
     assert req.urgency == "normal"
-    assert req.escalation_allowed is True
 
 
-def test_escalation_allowed_can_be_pinned_false():
-    """escalation_allowed=False is honored — the determinism lever for tests/proofs."""
-    req = RouteRequest(ticket_tier="builder", builder_tier="builder", escalation_allowed=False)
-    assert req.escalation_allowed is False
+def test_escalation_is_not_a_route_dimension():
+    """escalation_allowed was retired — the resolver has no escalation flag to set.
+
+    Escalation is the DOMAIN's concern (escalation_policy.EscalationPolicy); a deterministic
+    single pick comes from passing no required_difficulty, not from a resolver flag
+    (T-inference-escalation-policy-object). Passing the retired flag is a structural TypeError.
+    """
+    with pytest.raises(TypeError):
+        RouteRequest(ticket_tier="builder", builder_tier="builder", escalation_allowed=False)
 
 
 def test_difficulty_seed_is_deterministic_and_tier_driven():

@@ -77,9 +77,10 @@ def _rack(models: list[ModelSpec], *, source_up: bool) -> RulesEngine:
     return RulesEngine(sources, ModelsRegistry(models), connections=conns, policies=[])
 
 
-def _coding_req(*, escalation_allowed: bool = False) -> RouteRequest:
-    return RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding",
-                        escalation_allowed=escalation_allowed)
+def _coding_req() -> RouteRequest:
+    # A deterministic single pick comes from passing no required_difficulty at resolve time
+    # (the retired escalation_allowed flag's only job; T-inference-escalation-policy-object).
+    return RouteRequest(ticket_tier="builder", builder_tier="builder", domain="coding")
 
 
 # ── resolve() returns the two no-path kinds DISTINCTLY (test plan parts 1 & 2) ──
@@ -101,8 +102,7 @@ def test_resolve_no_capable_model_is_no_capable_model():
     # nothing capable stands there, though the provider is UP — so this is capability, not
     # availability.
     eng = _rack([_coding_model("classify-m", "classify")], source_up=True)
-    dec = eng.resolve(RouteRequest(ticket_tier="master", builder_tier="builder", domain="coding",
-                                   escalation_allowed=False))
+    dec = eng.resolve(RouteRequest(ticket_tier="master", builder_tier="builder", domain="coding"))
     assert dec.kind == OUTCOME_NO_CAPABLE_MODEL
     assert not dec.is_path and dec.model is None
 
@@ -121,7 +121,7 @@ def test_resolve_never_alarms_on_a_no_path():
     the triple-alarm's first mouth)."""
     with patch("unseen_university.system_alarms.raise_alarm") as alarm:
         _rack([_coding_model("code-m", "code")], source_up=False).resolve(
-            _coding_req(escalation_allowed=True), required_difficulty="frontier")
+            _coding_req(), required_difficulty="frontier")
     assert alarm.call_count == 0
 
 
