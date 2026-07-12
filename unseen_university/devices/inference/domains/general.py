@@ -86,7 +86,7 @@ class GeneralDomain(BaseDomain):
         self,
         name: str | None = None,
         *,
-        harvest_mode: bool = False,
+        escalation_policy=None,
         answer_check: Callable[[str], bool] | None = None,
         inference_device=None,
         # A reasoning model spends its budget inside <think> before writing a word of answer.
@@ -102,7 +102,7 @@ class GeneralDomain(BaseDomain):
         # default starts wide. Cheap to wait, expensive to misread.
         timeout: int = 300,
     ) -> None:
-        super().__init__(name, harvest_mode=harvest_mode)
+        super().__init__(name, escalation_policy=escalation_policy)
         self._answer_check = answer_check or _any_nonempty_reply_is_done
         self._inference_device = inference_device
         self._max_tokens = max_tokens

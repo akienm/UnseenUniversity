@@ -71,7 +71,8 @@ RESOLUTION_CAPABILITY_CEILING = "capability_ceiling"      # escalated past the t
 RESOLUTION_AVAILABILITY_EXHAUSTED = "availability_exhausted"
 RESOLUTION_AVAILABILITY_WALL = "availability_midrun_wall"
 RESOLUTION_COST_CAP = "cost_cap"
-RESOLUTION_HARVEST_WALL = "harvest_wall"                  # harvest_mode: the wall is the wanted outcome
+RESOLUTION_HARVEST_WALL = "harvest_wall"                  # harvest policy: the wall is the wanted outcome
+RESOLUTION_NO_ESCALATION_WALL = "no_escalation_wall"      # no-escalation policy: pinned single shot, silent halt
 RESOLUTION_ERROR = "error"                                # an unexpected raise escaped the walk
 
 

@@ -21,6 +21,10 @@ from unittest.mock import patch
 
 from unseen_university.devices.inference.domains.agentic_loop import LOOP_ESCALATE, LoopResult
 from unseen_university.devices.inference.domains.base import BaseDomain, DomainPrompts
+from unseen_university.devices.inference.domains.escalation_policy import (
+    DEFAULT_POLICY,
+    HARVEST_POLICY,
+)
 
 _TICKET = {"id": "T-harvest-proof", "title": "always-fails", "tags": [], "description": "d"}
 
@@ -33,7 +37,7 @@ class _RecordingDomain(BaseDomain):
     """
 
     def __init__(self, *, harvest_mode: bool = False) -> None:
-        super().__init__(name="", harvest_mode=harvest_mode)
+        super().__init__(name="", escalation_policy=(HARVEST_POLICY if harvest_mode else DEFAULT_POLICY))
         self.hops_seen: list[int] = []
 
     @property
@@ -95,7 +99,7 @@ def test_harvest_mode_off_walks_the_escalation_ladder():
 
 
 def test_harvest_mode_logs_escalation_disabled_at_entry(caplog, tmp_path, monkeypatch):
-    """The mode is observable: an INFO line at loop entry names harvest_mode + escalation disabled."""
+    """The mode is observable: an INFO line at loop entry names the policy + escalation disabled."""
     import logging
 
     monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))  # wall writes a rung record — redirect it
@@ -105,6 +109,6 @@ def test_harvest_mode_logs_escalation_disabled_at_entry(caplog, tmp_path, monkey
         d.run(_TICKET)
 
     assert any(
-        "harvest_mode=on" in r.getMessage() and "escalation disabled" in r.getMessage()
+        "escalation disabled" in r.getMessage() and "policy=harvest" in r.getMessage()
         for r in caplog.records
-    ), f"expected harvest_mode entry log, got: {[r.getMessage() for r in caplog.records]}"
+    ), f"expected escalation-disabled entry log, got: {[r.getMessage() for r in caplog.records]}"

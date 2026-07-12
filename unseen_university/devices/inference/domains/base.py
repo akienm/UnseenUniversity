@@ -32,6 +32,13 @@ from unseen_university.devices.inference.domains.agentic_loop import (
     NativeToolCodec,
 )
 from unseen_university.devices.inference.domains.domain_prompts import domain_prompt
+from unseen_university.devices.inference.domains.escalation_policy import (
+    DEFAULT_POLICY,
+    ON_WALL_CEILING,
+    ON_WALL_HARVEST,
+    ON_WALL_SILENT,
+    EscalationPolicy,
+)
 from unseen_university.devices.inference.domains.reply_text import extract_answer
 
 log = logging.getLogger(__name__)
@@ -80,20 +87,24 @@ class BaseDomain:
     #: minion-tier ACI (windowed Read + edit-centric tools) for this domain's attempts. The
     #: generalist base is a strong-tier passthrough → off; CodingDomain (weak local tier) → on.
     aci_mode: bool = False
-    #: harvest-testing mode (T-ds-harvest-mode-escalation-off). When True, a CAPABILITY wall
-    #: does NOT bump to a pricier tier — the escalation walk terminates at the fixed tier so the
-    #: wall itself is the harvested signal (the builder starve-curve wants 'the cheap tier
-    #: couldn't', unmixed with 'a stronger one could'). Default False = production escalates as
-    #: before. A FLAG, not deletion: the walk below is untouched, only gated at the bump point.
-    #: The operator on-switch (turning this on for a real harvest session) is deferred to the
-    #: stuck-ladder ticket that consumes the wall; here the flag is set explicitly (proof + the
-    #: next ticket's driver).
-    harvest_mode: bool = False
+    #: HOW this domain's escalation walk handles a capability wall — escalation as DATA, not a
+    #: scatter of bools (T-inference-escalation-policy-object). The default is the standard
+    #: ladder everyone inherits (Amendment 2 of D-domains-general-with-device-owned-
+    #: specializations: the default IS the general domain; there is always a domain). This one
+    #: object collapses two retired flags: the old harvest_mode bool → HARVEST_POLICY (fixed
+    #: tier, the wall is the harvested signal), and the pin-to-one-rung determinism that the old
+    #: RouteRequest.escalation_allowed=False gave the resolver → NO_ESCALATION_POLICY (the walk
+    #: never bumps the hop, so it never sends a raised difficulty — deterministic without a
+    #: resolver flag). Availability/cost handling in the walk stays UNIVERSAL, not policy-driven.
+    escalation_policy: EscalationPolicy = DEFAULT_POLICY
 
-    def __init__(self, name: str | None = None, *, harvest_mode: bool = False) -> None:
+    def __init__(
+        self, name: str | None = None, *, escalation_policy: EscalationPolicy | None = None,
+    ) -> None:
         if name is not None:
             self.name = name
-        self.harvest_mode = harvest_mode
+        if escalation_policy is not None:
+            self.escalation_policy = escalation_policy
 
     @property
     def prompts(self) -> DomainPrompts:
@@ -169,13 +180,22 @@ class BaseDomain:
           - Past the top difficulty rung: inference failure → system_alarm → HALT. Checked
             BEFORE dispatch so the walk terminates cleanly and never loops.
           - COST_EXCEEDED (a paid run hit its per-run cost cap): halt — a pricier tier costs more.
-          - HARVEST MODE (self.harvest_mode): a CAPABILITY failure does NOT bump — the walk
-            terminates at the fixed tier (escalation_hop stays 0), returning None with NO
-            system_alarm (the wall is the wanted outcome, not an incident). The worker_listener
-            declines the ticket back to sprint. Testing-phase flag; production stays escalating.
 
-        Returns the DONE result text, or None to HALT (a system_alarm has fired). Every hop
-        logs WHICH step failed (loop/select/escalate) at the crossing.
+        Only the CAPABILITY-wall disposition is set by the domain's escalation_policy — the
+        availability and cost branches above are UNIVERSAL money-safety behavior, identical for
+        every policy (T-inference-escalation-policy-object). On a capability wall:
+          - policy.escalates (DEFAULT): bump difficulty one rung; the top-of-loop terminal check
+            fires the capability-ceiling alarm when the shared ladder runs out.
+          - not escalates + ON_WALL_HARVEST (HARVEST_POLICY): route the wall to the cost-ordered
+            stuck-ladder and halt with NO alarm (the wall is the harvested builder-starve signal,
+            not an incident); escalation_hop stays 0. The worker_listener declines to sprint.
+          - not escalates + ON_WALL_SILENT (NO_ESCALATION_POLICY): halt with NO alarm — a pinned,
+            deterministic single shot (proofs/tests); escalation_hop stays 0.
+          - not escalates + ON_WALL_CEILING: halt WITH the capability-ceiling alarm at hop 0 (a
+            pinned rung whose wall is still a genuine incident).
+
+        Returns the DONE result text, or None to HALT (a system_alarm has fired, unless the
+        policy's terminal is silent). Every hop logs WHICH step failed at the crossing.
         """
         from unseen_university.devices.inference.routing_buckets import (
             bump_difficulty,
@@ -191,6 +211,7 @@ class BaseDomain:
             RESOLUTION_COST_CAP,
             RESOLUTION_DONE,
             RESOLUTION_HARVEST_WALL,
+            RESOLUTION_NO_ESCALATION_WALL,
         )
 
         ticket_id = ticket.get("id", "?")
@@ -200,10 +221,10 @@ class BaseDomain:
         prior_attempt = ""
         availability_retries = 0
 
-        if self.harvest_mode:
+        if not self.escalation_policy.escalates:
             log.info(
-                "domain=%s: harvest_mode=on — escalation disabled, fixed tier ('%s') | ticket=%s",
-                self.name or "(generalist)", base_difficulty, ticket_id,
+                "domain=%s: escalation disabled (policy=%s) — fixed tier ('%s') | ticket=%s",
+                self.name or "(generalist)", self.escalation_policy.name, base_difficulty, ticket_id,
             )
 
         while True:
@@ -326,17 +347,29 @@ class BaseDomain:
                             self.name, ticket_id, availability_retries, self.max_availability_retries, required)
                 continue  # same hop → selector skips the down source, picks next-cheapest
 
-            # cls == 'capability': reached a terminal but never DONE.
-            # NB the prior-attempt handoff is built by _summarize_attempt (below), NOT by
-            # slicing result.text — see that method for what the naive slice actually sent.
-            if self.harvest_mode:
-                # Harvest mode: do NOT escalate. Hand the wall to the cost-ordered stuck-ladder,
-                # which picks the cheapest viable rung (answer / drop / halt / call-CC) and records
-                # the choice — the distribution over rungs IS the builder starve-curve. Terminal
-                # stays None: rung 1's answer is data-starved today and a bare answer string would
-                # fail the completion gate → escalate (see stuck_ladder module doc); the rung-choice
-                # RECORD is what distinguishes call-CC from halt from drop. No system_alarm — a
-                # harvested wall is the wanted outcome, not an incident.
+            # cls == 'capability': reached a terminal but never DONE. The escalation POLICY owns
+            # this disposition and ONLY this one — availability/cost above are universal. NB the
+            # prior-attempt handoff is built by _summarize_attempt (below), NOT by slicing
+            # result.text — see that method for what the naive slice actually sent.
+            policy = self.escalation_policy
+            if policy.escalates:
+                # DEFAULT: bump difficulty one rung. The top-of-loop terminal check fires the
+                # capability-ceiling alarm when the shared ladder runs out (past the top rung).
+                prior_attempt = self._summarize_attempt(result)
+                escalation_hop += 1
+                log.info("domain=%s crossing|step=escalate|ticket=%s|hop→%d|reason=capability",
+                         self.name, ticket_id, escalation_hop)
+                continue
+
+            # A non-escalating policy stays at the seed rung (hop 0); its on_wall is the terminal.
+            if policy.on_wall == ON_WALL_HARVEST:
+                # HARVEST_POLICY: hand the wall to the cost-ordered stuck-ladder, which picks the
+                # cheapest viable rung (answer / drop / halt / call-CC) and records the choice —
+                # the distribution over rungs IS the builder starve-curve. Terminal stays None:
+                # rung 1's answer is data-starved today and a bare answer string would fail the
+                # completion gate → escalate (see stuck_ladder module doc); the rung-choice RECORD
+                # is what distinguishes call-CC from halt from drop. No system_alarm — a harvested
+                # wall is the wanted outcome, not an incident.
                 from unseen_university.devices.inference.domains.stuck_ladder import (
                     DEFAULT_DOMAIN,
                     StuckEvent,
@@ -353,11 +386,35 @@ class BaseDomain:
                 if record is not None:
                     record.resolution = RESOLUTION_HARVEST_WALL
                 return None
-            # otherwise bump difficulty one rung.
-            prior_attempt = self._summarize_attempt(result)
-            escalation_hop += 1
-            log.info("domain=%s crossing|step=escalate|ticket=%s|hop→%d|reason=capability",
-                     self.name, ticket_id, escalation_hop)
+
+            if policy.on_wall == ON_WALL_SILENT:
+                # NO_ESCALATION_POLICY: a pinned, deterministic single shot (proofs/tests). A
+                # capability failure at a deliberately pinned rung is the asked-for result, not
+                # an incident — halt with NO system_alarm.
+                log.info("domain=%s crossing|step=escalate|ticket=%s|hop=%d|"
+                         "result=no-escalation-wall|reason=capability (escalation disabled)",
+                         self.name, ticket_id, escalation_hop)
+                if record is not None:
+                    record.resolution = RESOLUTION_NO_ESCALATION_WALL
+                return None
+
+            # ON_WALL_CEILING with escalates=False: a pinned rung whose wall is still a genuine
+            # incident — fire the capability-ceiling alarm at hop 0 and halt.
+            system_alarms.raise_alarm(
+                signature=f"inference-capability-ceiling:{ticket_id}",
+                caller=self.name or "domain",
+                message=(
+                    f"capability ceiling for ticket {ticket_id}: pinned at difficulty "
+                    f"'{required}' (policy={policy.name}, non-escalating) and still no DONE "
+                    f"— inference failure, halting for analysis"
+                ),
+                fatal=False,
+            )
+            log.error("domain=%s crossing|step=escalate|ticket=%s|hop=%d|result=capability-ceiling-halt-pinned",
+                      self.name, ticket_id, escalation_hop)
+            if record is not None:
+                record.resolution = RESOLUTION_CAPABILITY_CEILING
+            return None
 
     def _run_attempt(
         self,

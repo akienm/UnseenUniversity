@@ -206,8 +206,9 @@ def _preflight_route_ok(endpoint: str) -> bool:
 
     dev = InferenceDevice()
     dom = resolve_domain("coding")
-    if not dom.harvest_mode:
-        print("ABORT: UU_HARVEST_MODE did not take — resolved domain is not in harvest mode.")
+    from unseen_university.devices.inference.domains.escalation_policy import HARVEST_POLICY
+    if dom.escalation_policy is not HARVEST_POLICY:
+        print("ABORT: UU_HARVEST_MODE did not take — resolved domain is not on the harvest policy.")
         return False
     dec = dom.select(dev._rules, task_class="worker", required_difficulty="code")
     route_src = getattr(getattr(dec, "source", None), "name", "?")

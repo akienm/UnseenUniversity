@@ -22,11 +22,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "devlab" / "claudec
 
 import harvest_batch  # noqa: E402
 
+from unseen_university.devices.inference.domains.escalation_policy import HARVEST_POLICY  # noqa: E402
+
 
 class _StubDomain:
     """A domain whose .run captures one canned io_corpus transcript for the ticket, then declines."""
 
-    harvest_mode = True
+    escalation_policy = HARVEST_POLICY
 
     def run(self, ticket, *, cwd=None, agent_id="", urgency="normal"):
         from unseen_university.devices.inference import io_corpus

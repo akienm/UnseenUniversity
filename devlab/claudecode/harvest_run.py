@@ -126,8 +126,9 @@ def main() -> int:
     from unseen_university.devices.inference.device import InferenceDevice
     dev = InferenceDevice()
     dom = resolve_domain("coding")
-    if not dom.harvest_mode:
-        print("ABORT: UU_HARVEST_MODE did not take — resolved domain is not in harvest mode.")
+    from unseen_university.devices.inference.domains.escalation_policy import HARVEST_POLICY
+    if dom.escalation_policy is not HARVEST_POLICY:
+        print("ABORT: UU_HARVEST_MODE did not take — resolved domain is not on the harvest policy.")
         return 2
     dec = dom.select(dev._rules, task_class="worker", required_difficulty="code")
     route_src = getattr(getattr(dec, "source", None), "name", "?")

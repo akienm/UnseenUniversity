@@ -15,6 +15,10 @@ import os
 
 from unseen_university.devices.inference.domains.base import BaseDomain, DomainPrompts
 from unseen_university.devices.inference.domains.coding import CodingDomain
+from unseen_university.devices.inference.domains.escalation_policy import (
+    DEFAULT_POLICY,
+    HARVEST_POLICY,
+)
 from unseen_university.devices.inference.domains.general import GeneralDomain
 
 log = logging.getLogger(__name__)
@@ -37,10 +41,10 @@ def _harvest_mode_from_env() -> bool:
     """The operator on-switch for harvest mode (T-ds-harvest-mode-operator-toggle).
 
     A harvest session runs the DS process with UU_HARVEST_MODE set truthy; every domain that
-    process resolves is then constructed with harvest_mode=True, so the escalation walk
+    process resolves is then constructed with the HARVEST_POLICY, so the escalation walk
     terminates at the fixed tier (see BaseDomain.run). Unset/empty/falsey = default OFF
-    (production escalates as before). .select() ignores the flag, so a routing-side resolve is
-    unaffected — only the .run() walk reads it.
+    (production escalates as before). Only the .run() walk reads the policy; a routing-side
+    resolve is unaffected.
     """
     return os.environ.get("UU_HARVEST_MODE", "").strip().lower() in _TRUTHY
 
@@ -57,13 +61,14 @@ def resolve_domain(name: str) -> BaseDomain:
     unregistered name is not an error and not a collapse to '': it is the general domain
     wearing that name, until someone writes the specialization.
 
-    harvest_mode is set from the UU_HARVEST_MODE env toggle at this single construction
-    chokepoint (default OFF); see ``_harvest_mode_from_env``.
+    The escalation policy is set from the UU_HARVEST_MODE env toggle at this single
+    construction chokepoint (default = DEFAULT_POLICY; truthy = HARVEST_POLICY); see
+    ``_harvest_mode_from_env`` (T-inference-escalation-policy-object).
     """
-    harvest = _harvest_mode_from_env()
-    if harvest:
-        log.info("resolve_domain: harvest_mode ON (UU_HARVEST_MODE) for domain=%s", name or "(generalist)")
+    policy = HARVEST_POLICY if _harvest_mode_from_env() else DEFAULT_POLICY
+    if policy is HARVEST_POLICY:
+        log.info("resolve_domain: harvest policy ON (UU_HARVEST_MODE) for domain=%s", name or "(generalist)")
     cls = _REGISTRY.get(name)
     if cls is not None:
-        return cls(harvest_mode=harvest)
-    return GeneralDomain(name=name, harvest_mode=harvest)
+        return cls(escalation_policy=policy)
+    return GeneralDomain(name=name, escalation_policy=policy)
