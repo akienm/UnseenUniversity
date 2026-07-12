@@ -1,1 +1,2 @@
 - T-inference-audit-resolve-consumers-human-terminal: audit resolve() consumers for model-less HUMAN_TERMINAL (follow-up from tier-ladder)
+- T-inference-escalation-policy-object: escalation is now a POLICY object (DEFAULT/NoEscalation/Harvest); harvest_mode + escalation_allowed retired. Proven red→green @171e9d2f.

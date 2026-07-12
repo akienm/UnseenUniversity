@@ -18,9 +18,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-inference-escalation-policy-object",
-    "title": "[dependency] Escalation becomes a POLICY object with a proxy-side default; retire escalation_allowed and harvest_mode flags",
+    "title": "Escalation becomes a POLICY object with a proxy-side default; retire escalation_allowed and harvest_mode flags",
     "size": "L",
-    "status": "dependency",
+    "status": "closed",
     "priority": 0.85,
     "tags": [
       "inference",
@@ -31,9 +31,9 @@
     "created_at": "2026-07-09T02:59:48.062041+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "proof OK — tests/inference/test_escalation_policy.py::test_three_policies_yield_distinct_walk_behavior red=AssertionError green=passed @ 171e9d2f; escalation is DATA (EscalationPolicy: escalates+on_wall); harvest_mode→HARVEST_POLICY, escalation_allowed retired (behavior-neutral, separate commit 63c09e33); 508 inference tests green. Discovered+ticketed pre-existing test_inference_via_bus gap (T-inference-via-bus-tests-typed-no-path-gap).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-12T22:58:22.993682+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "scraps_validated": "2026-07-09T02:59:48.062093+00:00",
     "inferred_intention": "restructure_inference_router_to_use_policy_based Routing",
     "inferred_intention_id": "feefd3a6-a883-43a6-9134-bcd95f0ea7e3",
-    "updated_at": "2026-07-09T04:08:31.766598+00:00"
+    "updated_at": "2026-07-09T04:08:31.766598+00:00",
+    "proven": true,
+    "proof_id": "cc.0.escalationpolicy-object-drives-the-domai.T-inference-escalation-policy-object.20260712.164320568922",
+    "proof_commit": "171e9d2f73be508042c7f72f22b0381ee0794286",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
