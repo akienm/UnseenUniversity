@@ -73,9 +73,32 @@ DEGENERATE_INTENTIONS = frozenset({
 
 
 def intention_is_declared(intention: object) -> tuple[bool, str]:
-    """STUB — the gate exists but does not yet discriminate. Accepts anything."""
-    return True, "ok"
+    """Is this ticket's ``intention`` a real declared contract?
 
+    Returns ``(ok, reason)``. The reason NAMES THE CAUSE and the causes are kept
+    DISTINCT — ``missing`` (never authored), ``empty`` (whitespace), and
+    ``degenerate: <value>`` (a placeholder) are three different failures, and
+    collapsing them into one signal would reproduce, inside the gate itself, the
+    exact defect the gate exists to catch: a cause->signal map that is not
+    injective (see R-feedback-is-unconditional-silence-is-never-success).
+    """
+    if intention is None:
+        return False, "missing"
+
+    text = str(intention).strip()
+    if not text:
+        return False, "empty"
+
+    # Strip surrounding punctuation so "TBD." / "unknown!" / "N/A…" do not sneak
+    # past. A value that is punctuation ALL THE WAY DOWN ("?", "-", "...") strips
+    # to nothing — that is degenerate, not empty: someone typed something, and it
+    # named no property. Keeping the two causes distinct is the point of the
+    # reason string.
+    token = text.lower().strip(".!?,;:…-_ ")
+    if not token or token in DEGENERATE_INTENTIONS:
+        return False, f"degenerate: {text!r} names no property"
+
+    return True, "ok"
 
 # Ticket-id token in a gate string. Case-insensitive after the ``T-`` prefix so
 # ids like ``T-consequence-D-constraints`` (embedded uppercase) round-trip.
