@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.the-intent-extractor-s-crash-refusal-dis.T-intent-extractor-crash-masquerades-as-refusal.20260713.163821354085",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-intent-extractor-s-crash-refusal-dis",
+    "T-intent-extractor-crash-masquerades-as-refusal"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-13T16:38:21.354085",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-intent-extractor-crash-masquerades-as-refusal"
+    ],
+    "commits": [
+      "305bc07f46e622240f3dd32d4628083099e29bf3"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-intent-extractor-crash-masquerades-as-refusal",
+  "body": {
+    "thing": "the intent extractor's crash/refusal discriminator",
+    "intention": "I intend that a device's FAILURE is never indistinguishable from its HONEST REFUSAL — a crash that looks like epistemic humility is a lie the system tells about itself, and nothing downstream can detect it.",
+    "test": "tests/intent/test_intent_crash_vs_refusal.py::test_a_crash_and_an_honest_refusal_are_stored_as_different_records",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/intent/test_intent_crash_vs_refusal.py::test_a_crash_and_an_honest_refusal_are_stored_as_different_records",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            f\"to kill.\\n  crash:   {crash}\\n  refusal: {refusal}\"\n        )\n        # NOT ENOUGH, and the reason matters. Pre-fix, these two records already differed\n        # — by `confidence` (0.0 vs 0.7). That difference is ACCIDENTAL, not semantic: 0.0\n        # is a legal confidence a model may genuinely return (see the test below), and\n        # nothing downstream read it anyway. The record must STATE ITS CAUSE, not leave it\n        # to be inferred from a coincidence of values.\n>       assert crash[\"provenance_class\"] == \"error\", \"a crash must be RECORDED as an error\"\nE       AssertionError: a crash must be RECORDED as an error\nE       assert 'model' == 'error'\nE         \nE         - error\nE         + model\n\ntests/intent/test_intent_crash_vs_refusal.py:100: AssertionError\n------------------------------ Captured log call -------------------------------\nWARNING  unseen_university.devices.intent.device:device.py:191 IntentExtractorDevice.predict: inference failed: 'list' object has no attribute 'get'\n=========================== short test summary info ============================\nFAILED tests/intent/test_intent_crash_vs_refusal.py::test_a_crash_and_an_honest_refusal_are_stored_as_different_records\n1 failed in 0.13s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "305bc07f46e622240f3dd32d4628083099e29bf3",
+    "impl_paths": [
+      "unseen_university/devices/intent/device.py"
+    ],
+    "ticket": "T-intent-extractor-crash-masquerades-as-refusal",
+    "narrative": "Two-path discriminating fixture: (a) a crashing inference (model emits a JSON list -> parse raises) and (b) a model that legitimately answers {'intent':'unknown','confidence':0.7}. RED (a69e7f85): both store provenance_class='model' -> AssertionError 'model' == 'error'. GREEN (305bc07f): the crash stores provenance_class='error' with the cause in error_detail; the honest refusal stores 'model'. The fixture deliberately does NOT rest on 'the records differ' — pre-fix they already differed by confidence (0.0 vs 0.7), an ACCIDENTAL tell that collapses the moment a model legitimately answers with confidence 0.0 (pinned as its own case). A build that merely fixes the parse bug fails this outright.",
+    "why": "2,435 of 2,504 stored predictions were the except-block's fallback (intent='unknown', confidence=0.0) — BYTE-IDENTICAL to what a well-behaved CP1 device writes when it honestly doesn't know. The device's total failure was being read as its virtue; it fooled CC for twenty minutes on the day CC was writing the rule against it. An error may collapse into a success shape at an INTERFACE (it can be re-called); it may NEVER collapse into a RECORD OF TRUTH (it cannot be un-written).",
+    "bootstrap": false
+  }
+}
