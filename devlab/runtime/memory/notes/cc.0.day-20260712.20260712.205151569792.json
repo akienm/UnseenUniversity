@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.day-20260712.20260712.205151569792",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260712"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-12T20:51:51.569792",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Day 2026-07-12",
+    "text": "## Done\n- T-inference-tier-ladder-real, T-inference-typed-no-path-result, T-inference-escalation-policy-object (closed proven)\n- T-agentic-primitives-package (closed proven @b9fecd9a) — the 4 shared execution primitives get a home: unseen_university/agentic/ (loop, architect_editor, block_apply, edit_format). Ran BEFORE the domains package ON PURPOSE: the dependency runs agentic <- domains (verified by dumping the intra-package import graph — the primitive set is CLOSED), so domains-first would have made a top-level package import upward into a device's guts and moved all 4 files twice.\n- Un-blinded a layering guard (@b1e2420d): test_proxy_domain_layering's ABOVE_THE_PROXY banned the module NAME 'agentic_loop', matched against dotted import components. The moment that file became agentic/loop.py, that string stopped being a component of anything — a routing-core module could have imported the loop from its new home and the guard would have said NOTHING. EVERY TEST WAS GREEN while it checked nothing. Now bans the package; verified it bites with a canary import.\n- Emitted I-reader-reads-an-address-into-domain-trees: the reader belongs to the LIBRARIAN; routing-domain (picks a MODEL) and knowledge-domain (owns TREES) are TWO AXES sharing a word. Three findings verified in code rather than assumed: librarian research(depth='deep') is a longer SYNTHESIS not learning; THREE unaware tree-loading paths exist; and identity.home_db_url() vs db_proxy.make_home_proxy() make OPPOSITE claims about the same env var — the privacy rule rests on that boundary.\n- 3 follow-ons filed: T-foldback-apparatus-out-of-the-proxy, T-test-tier-cascade-hangs (PRE-EXISTING), T-test-capability-evidence-red (PRE-EXISTING).\n\n## Open\n- DAY-CLOSE AUDIT STEP 1 UNRESOLVED: full suite 304 failed / 7737 passed, triage PENDING. Not established whether those are mine or environmental (rack DOWN). Every suite in the blast radius passes independently (inference 507, dicksimnel+minion 94, agentic, capability mixin) so they are almost certainly rack noise — but ALMOST IS NOT MEASURED. Two detached full-suite runs (HEAD vs pre-agentic baseline) write to ~/.unseen_university/logs/day-close/. Tomorrow: diff the FAILED sets; anything at HEAD and not at baseline is MINE.\n- Amendment 3 (COMPENSATION vs INTRINSIC specialization) awaiting Akien: the fold-back rule would eventually try to graduate Igor's emotional valence into the shared epistemic trees, which are purely epistemic by contract.\n\n## Next\n- T-domains-global-package (descent boundary already design-passed; recorded on the slate — do not re-derive). First landmine: reply_text.py is imported by proxy-side run_record.py.\n"
+  }
+}
