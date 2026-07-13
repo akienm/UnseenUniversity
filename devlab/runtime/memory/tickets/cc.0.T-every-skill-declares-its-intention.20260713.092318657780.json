@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-every-skill-declares-its-intention.20260713.092318657780",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-every-skill-declares-its-intention"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T15:23:18.657780+00:00",
+  "links": {
+    "decisions": [
+      "D-intentions-are-the-root-2026-07-13"
+    ],
+    "tickets": [
+      "T-every-skill-declares-its-intention",
+      "T-write-the-intentions-down",
+      "T-orphan-skills-invisible-to-every-audit"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "D-intentions-are-the-root-2026-07-13",
+  "body": {
+    "id": "T-every-skill-declares-its-intention",
+    "title": "[sprint] Every skill declares its INTENTION and WHY at the top. MEASURED: 55 installed skills, ZERO declare one.",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.85,
+    "tags": [
+      "skills",
+      "intentions",
+      "canonicity",
+      "audit"
+    ],
+    "decision_id": "D-intentions-are-the-root-2026-07-13",
+    "description": "Akien 2026-07-13: 'because everything is designed around it, and because getting you to do things in the right order involves having them in skills, that's why the skills intentions have to be made as perfect as we can do. and every intention should have a feedback that comes back to it. that's the proof. or the learning.'\n\nEvery skill states its INTENTION (what it is FOR) and its WHY (why it exists / why it is shaped this way) at the top of the skill. A skill is an instruction to CC about what to do IN WHAT ORDER; it is therefore one of the highest-leverage places an intention can live, and today it is one of the emptiest.\n\nMEASURED 2026-07-13 (not estimated):\n  - 55 skills INSTALLED at ~/.claude/skills; 49 have a repo source under skills/; 8 are ORPHANS with NO repo source (concept, debug, diagnose, health, migrate-decisions, question, recall, recover); 48 have a SKILL.md (the 49th, `questions`, is a data dir with no SKILL.md).\n  - ZERO skills declare their own intention. Four (audit-design, audit-hypothesis, design, intend) merely CONTAIN the word because they are ABOUT intentions.\n\nSHAPE: add two keys to the YAML frontmatter, alongside the existing name/description/model:\n    intention: <one line, PRESENT-TENSE contract — what this skill IS FOR. An I-* store id once one exists.>\n    why:       <one line — why it exists / why it is shaped this way. CP3.>\nFrontmatter, not prose body: machine-readable, greppable, one place, and it is the header a reader hits first.\nRISK TO VERIFY IN SPRINT: confirm the Claude Code skill loader ignores unknown frontmatter keys. If it rejects them, fall back to an `## Intention` / `## Why` block immediately under the H1 and keep the check pointed there instead.\n\nTHE FEEDBACK EDGE (Akien, same breath): 'every intention should have a feedback that comes back to it. that's the proof. or the learning.' A skill's feedback is: DID RUNNING IT ACHIEVE THE INTENTION? Per Akien the feedback belongs to the INTENTION, not to the skill — so the skill points AT an intention and the intention carries the feedback edge. Q1 (OPEN, do not guess): while most skills' intentions are prose-only (no I-* record yet), the feedback edge has nowhere to hang. Either (a) skills get prose intentions now and the feedback edge lands when the I-* records do, or (b) writing a skill's intention MEANS emitting an I-* record, and this ticket is the forcing function that starts populating the intention store. Akien rules.\n\nDEPENDENCY / HONESTY (CP1): this ticket IS a slice of T-write-the-intentions-down, scoped to the skill surface. The store holds THREE intentions. You cannot write `intention: I-xxx` on 48 skills when 3 intentions exist. Phase 1 (prose intention + why, authored WITH Akien — this is his North Star, not CC's to invent) can proceed independently; phase 2 (the I-* id edge) lands with the intention store. Do NOT let CC confabulate 48 intentions alone: an invented intention is worse than a missing one, because it will be READ AS THE NORTH STAR (R-canonicity-is-granted-not-asserted).\n\n**Affected files:** skills/*/SKILL.md (48), ~/.claude/skills (the 55 INSTALLED — the scan target), a new check in devlab/claudecode/ (or folded into validity_sweep.py / the auditor device — homogeneity over special-case; do NOT birth a new tool if an existing sweep can host it), skills/skills-sync.\n\n**Design rules:** R-canonicity-is-granted-not-asserted (a skill that cannot name its intention is unmoored); D-intentions-are-the-root-2026-07-13; homogeneity-over-special-case (fold the check into an existing sweep); resist-artifact-proliferation.\n\n**Scope boundary:** IN — the header schema (intention + why); authoring the headers for the 48 repo skills WITH Akien; an audit check that scans the INSTALLED set and reports skills with no intention. OUT — writing the store-level I-* intention records (T-write-the-intentions-down); REPAIRING the 8 orphan skills' broken bodies (T-orphan-skills-invisible-to-every-audit). This ticket only requires the orphans be SCANNED and REPORTED, not fixed.\n\n**Test plan:** red -> green. RED on today's tree: the check reports 55 installed skills, 0 with an intention. GREEN after the headers land: 0 without. Plus TWO fixtures a hollow build could not pass: (1) a skill with `intention:` but no `why:` is FLAGGED (both keys required — CP3); (2) a skill that exists ONLY in the installed set with no repo source is STILL SCANNED and reported. Fixture (2) is the load-bearing one.\n\n**Proof obligation:** the hollow build here is obvious and tempting: paste `intention:` lines that are restatements of `description:`, run a green check, declare done. Two things a hollow build could NOT pass: (a) the check scans the INSTALLED set (~/.claude/skills), NOT the repo tree — this is the EXACT failure that made every prior skills audit useless ('we fixed all the skills' was true, and useless: it was scoped to a tree that did not contain the broken ones); (b) both keys required, so a description-restatement with no WHY fails. The deeper obligation — that the intention is TRUE and not confabulated — is NOT dischargeable by a check, and is why the authoring step is Akien's, not CC's.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:**\n  1. The frontmatter schema is decided and VERIFIED against the actual skill loader (unknown keys tolerated, or the documented fallback in place). No guessing.\n  2. All 48 repo SKILL.md files carry a non-empty `intention:` AND `why:`, authored WITH Akien — not auto-generated from `description:`.\n  3. A check exists that scans the INSTALLED set (~/.claude/skills, 55 today) and reports every skill with no intention. It is FOLDED INTO AN EXISTING SWEEP (validity_sweep / auditor), not a new tool.\n  4. The check is RED today (55 installed / 0 with intention) and GREEN at close, and its red run is recorded.\n  5. The 8 orphan skills are REPORTED by the check (not repaired here) — proving the scan is pointed at what actually runs.\n  6. Q1 (feedback edge: prose-now vs emit-I-*-now) is ANSWERED by Akien and the answer recorded, not assumed.",
+    "worker": "CC.0",
+    "role": "builder",
+    "target_difficulty": 2,
+    "related_to": "T-write-the-intentions-down",
+    "created_at": "2026-07-13T15:23:11.261209+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "gate": null,
+    "intention": "I intend that every skill state, at the top and in the reader's first glance, WHAT IT IS FOR and WHY it is shaped that way — so that a skill can never quietly instruct CC to act in service of nothing.",
+    "scraps_validated": "2026-07-13T15:23:11.315006+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c0df090b-056c-445f-b1aa-c3c8c89ea152"
+  }
+}

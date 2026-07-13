@@ -1,0 +1,91 @@
+{
+  "id": "cc.0.I-cognition-questions-are-the-nexus-between-layers.20260713.092802902921",
+  "emitter": "cc.0",
+  "namespace": [
+    "I-cognition-questions-are-the-nexus-between-layers"
+  ],
+  "category": "intentions",
+  "kind": "intention",
+  "emitted_at": "2026-07-13T09:28:02.902921",
+  "links": {
+    "decisions": [
+      "D-intentions-are-the-root-2026-07-13"
+    ],
+    "tickets": [
+      "T-questions-corpus-two-homes",
+      "T-cognition-questions-canonical-home"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-compiled-inference-residue",
+      "I-self-improving-process"
+    ]
+  },
+  "produced_by": "human:akien",
+  "body": {
+    "intention_id": "I-cognition-questions-are-the-nexus-between-layers",
+    "title": "The pipeline is LAYERS; a cognition question is an EDGE between two of them; every nexus has a feedback loop",
+    "statement": "I intend that the pipeline is a stack of LAYERS — intention-extraction, design, build, test, deliver — where each layer cannot proceed until a set of questions has been answered; that the questions asked at a layer BOUNDARY (the NEXUS) exist to fill exactly what the next layer down needs in order to do its job; that each layer draws on its own domain specialties, which the layers above it do not need; that the cognition questions accumulate in ONE bucket from which every nexus draws its working set; and that every nexus carries a FEEDBACK LOOP, so its questions get better every time the layer below it had to go looking for something the nexus should have handed it. This pattern recurs at every boundary, all the way down.",
+    "status": "active",
+    "date": "2026-07-13",
+    "origin": "Akien, 2026-07-13, verbatim: 'every layer we've been looking at, the intention extractor, the designer, and so on... are layers. they are a set of questions that need to be answered before the workflow can proceed to the next layer. each layer also introduces its own domain specialties. like we don't need design patterns at the intention extraction level, although sometimes having a few of them can be useful when talking with the humans. but that intention layer needs to provide input to the next layer down. and it needs to fill the needs of the next layer down so it can do its job. the questions that we ask at that Nexus are the cognitive questions. I've been noticing my cognitive questions for years. I've been noticing them a lot more in the last few months as we've begun to talk about them. so we need a bucket to throw them in that we can extract them from later as we dive deeper and deeper into those layers and their questions. every question Nexus also has to have a feedback loop, so that it's questions can improve. and this pattern will occur over and over.'",
+    "what_this_changes": {
+      "a_cognition_question_is_not_a_heuristic": "It was being treated as a free-floating thinking move that a good thinker applies anywhere. It is not. It is an EDGE — it lives at a specific boundary and its job is to elicit, from the layer above, exactly what the layer below needs. That gives every question a LOCATION and a PURPOSE it did not have yesterday.",
+      "the_question_set_becomes_derivable": "If layer N+1 declares its input contract (what it needs to do its job), then the questions at the nexus above it are largely DERIVABLE from that contract — i.e. COMPILABLE. This is the mechanism by which the interview stage (the hardest step) stops being magic.",
+      "the_bucket_vs_the_working_set": "The BUCKET (Akien's word) is the accreting corpus — every cognition question he has ever noticed, authored once, reusable, domain-general. A NEXUS WORKING SET is a SELECTION from the bucket plus that layer's own specialties. One question appears at many nexuses. The bucket is a library; a nexus is a checkout.",
+      "layers_carry_domains": "'each layer also introduces its own domain specialties' — design patterns belong to the DESIGN layer, not the intention-extraction layer (except a few, for talking to humans). This is the knowledge-domain axis (D-domains-general-with-device-owned-specializations) landing on the LAYER, not on the device. A layer = (nexus question set) + (domain knowledge it draws on) + (output contract to the next layer)."
+    },
+    "the_feedback_loop_has_a_concrete_signal": {
+      "claim": "THE FEEDBACK SIGNAL AT A NEXUS IS ESCALATION.",
+      "mechanism": "Every time layer N+1 gets stuck, has to go back up, or has to ask a human for something — that is a question the nexus ABOVE it failed to ask. The escalation is not just a cost; it is the miss report that improves the question set. This makes 'so its questions can improve' MEASURABLE rather than aspirational: count what the layer below had to go fetch for itself.",
+      "this_is_not_new_it_is_a_home_for_something_old": "Akien has said for months: 'escalation is spec-quality data — specify upstream' (feedback_escalation_is_spec_quality_data). That was a slogan with no mechanism. THIS IS THE MECHANISM. Upstream == the nexus above. The spec-quality data == the missing question.",
+      "same_shape_as_teach_on_miss": "In the graph tree, a miss makes the GRAPH permanently better. At a nexus, a miss makes the QUESTION SET permanently better. Same loop, one level up — which is what 'this pattern will occur over and over' means.",
+      "the_completeness_check_is_already_in_the_corpus": "Q-cog-011 'does that leave any gaps?' — the miss detector — IS the nexus's self-check, turned on its own question set: does this set of questions produce everything the next layer needs? Akien's own most-load-bearing question is the one that audits the nexus."
+    },
+    "THE HAZARD — named, not solved (CP1)": {
+      "problem": "Escalation catches MISSING input. It does NOT catch WRONG input.",
+      "detail": "If a nexus hands the layer below a plausible-but-wrong answer, that layer proceeds HAPPILY. Nothing escalates. No feedback fires. The question set is never corrected, and the nexus goes on confidently producing the same wrong thing — and because the loop only learns from escalations, THE ABSENCE OF FEEDBACK READS AS SUCCESS. Silent success and silent corruption are indistinguishable on the escalation signal, which is the ONLY signal in the design as stated.",
+      "why_this_is_the_same_bug_we_keep_finding": "This is the ossification hazard again (note novelty-is-compilable-2026-07-12), and it is the fifth-time-this-week shape: A PASSING CHECK AND AN ABSENT CHECK LOOK IDENTICAL. Here it is localized precisely — it lives at EVERY nexus, one instance per boundary.",
+      "what_the_design_therefore_needs": "A nexus needs a VALIDITY check on what it passes DOWN, not only a COMPLETENESS check on what it collected. Completeness asks 'did I get everything?'; validity asks 'is what I got TRUE?'. The escalation loop gives completeness for free and gives validity NOT AT ALL. Open — do not paper over."
+    },
+    "consequence_this_answers_the_cognition_question_home": {
+      "q1_was": "Where do the cognition questions live, such that the things that USE them read from that home rather than carrying their own copy? (Four homes found 2026-07-13: devlab/runtime/memory/questions/ 21 questions 0 consumers; skills/questions/questions.json 8 questions 0 consumers, self-declared canonical; ebook_reader.py:860 _INTERP_CANDIDATES 13 candidates WITH a consumer; reading_indexer.py:40 6 candidates WITH a consumer, cognition questions ABSENT.)",
+      "the_layer_model_answers_it": "_INTERP_CANDIDATES IS A NEXUS WORKING SET. The reading-extraction prompt is a nexus — the boundary between 'raw text' and 'graph nodes' — and its candidate list is the selection of questions asked AT that boundary. It was never a rival canonical home; it is a CHECKOUT that got hardcoded instead of drawn.",
+      "therefore": "BUCKET = devlab/runtime/memory/questions/ (authoring, accretion, one node per question, grep-able — CLAUDE.md-compliant). NEXUS WORKING SET = a selection drawn from the bucket at runtime. _INTERP_CANDIDATES becomes a CALL, not a literal. The drift between ebook_reader (13) and reading_indexer (6) dies for free, because there is one source and two checkouts.",
+      "and_it_explains_the_drift": "reading_indexer lost the cognition questions and kept only CP1-6 precisely because a hardcoded checkout has no way to notice it is missing anything. A nexus that DREW from the bucket could have asked 'does that leave any gaps?' of itself."
+    },
+    "why_the_corpus_cannot_be_compiled_out": "Two provenances. (1) CONTRACT-DERIVED questions: computable from the next layer's input contract. These COMPILE — they are mechanical and will eventually be generated. (2) GENERATIVE questions (Akien's — 'how might that work?', 'does that leave any gaps?', 'where is the lever?', 'how will us monkeys screw that up?'): these are NOT derivable from any contract, because their job is to find WHAT THE CONTRACT MISSED. If they were derivable from the contract, they would already be in set (1). This is an independent confirmation of note two-kinds-of-question-2026-07-13, reached from the other direction: OPEN QUESTIONS COMPILE OUT; COGNITION QUESTIONS ARE THE COMPILER — because the compiler cannot compile the thing that finds its own gaps.",
+    "feedback_edge": "Per Akien 2026-07-13: 'every intention should have a feedback that comes back to it. that's the proof. or the learning.' THE FEEDBACK FOR THIS INTENTION: the escalation count at each nexus. If the layer below stops having to go fetch things for itself, the nexus above is working. If it never escalates AND its output is wrong, see THE HAZARD — a falling escalation count is NOT sufficient proof, and treating it as such is the failure this intention must not commit.",
+    "related": {
+      "notes": [
+        "two-kinds-of-question-2026-07-13",
+        "novelty-is-compilable-2026-07-12"
+      ],
+      "decisions": [
+        "D-intentions-are-the-root-2026-07-13",
+        "D-domains-general-with-device-owned-specializations"
+      ],
+      "intentions": [
+        "I-compiled-inference-residue",
+        "I-self-improving-process",
+        "I-reader-reads-an-address-into-domain-trees"
+      ],
+      "tickets": [
+        "T-questions-corpus-two-homes",
+        "T-cognition-questions-canonical-home",
+        "T-every-skill-declares-its-intention"
+      ],
+      "questions": [
+        "Q-cog-011 (does that leave any gaps? — the nexus self-check)",
+        "Q-meta-001..003 (the LEVEL-2 ladder — the nexus's OWN escalation path)"
+      ],
+      "memories": [
+        "feedback_escalation_is_spec_quality_data",
+        "project_staged_intention_compiler_pipeline",
+        "project_build_packet_pre_inference_compiler"
+      ]
+    },
+    "status_note": "CAPTURED, NOT SETTLED. The hazard (validity vs completeness at a nexus) is open and must not be papered over. The nexus INVENTORY (what are the actual layers, and what is each one's input contract?) is not yet written — that is the next piece of work and it is the thing that makes the questions derivable."
+  }
+}
