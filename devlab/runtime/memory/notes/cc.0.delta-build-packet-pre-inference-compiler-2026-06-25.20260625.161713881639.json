@@ -17,7 +17,7 @@
     "whys": []
   },
   "body": {
-    "title": "MILESTONE — Delta's pre-inference compiler measured at 51% token reduction (build_packet.v1)",
+    "title": "MILESTONE \u2014 Delta's pre-inference compiler measured at 51% token reduction (build_packet.v1)",
     "date": "2026-06-25",
     "source": "Akien shared from Delta day-job (NOT mirrored into UU; informs it). Information only.",
     "headline": "First empirical proof that helper-first / pre-inference packaging pays for itself in tokens. Real isolated run: baseline 709 -> helper-first 347 tokens. Reduction 362 tokens / 51.06%. Status: improved. One step complete and tested in isolation.",
@@ -36,5 +36,13 @@
     "convergence": "Delta split deterministic-helpers vs LLM-generation; UU split zero-inference uu-CLI views vs reasoning skills (D-skills-two-products, Friday 2026-06-26). Same architecture, two directions, same week. The uu CLI is UU's first beachhead of the same principle.",
     "direction_of_travel": "UU's reasoning-bearing workflow skills are progressive-compilation candidates -> packet-builders that do deterministically what CC now does by hand. sufficiency_gate first (cheapest, most aligned with proof-on-close).",
     "disposition": "Information only per Akien. No UU ticket filed. Recorded as milestone for memory."
-  }
+  },
+  "stale_flags": [
+    {
+      "flag": "superseded-and-mislabeled",
+      "at": "2026-07-12",
+      "by": "cc.0 (Akien correction, live)",
+      "reason": "TITLE IS WRONG AND IT MISLEADS. This note says 'measured at 51% token reduction'. 51% was never a MEASUREMENT \u2014 it was an ESTIMATE, and only for the ORIENTATION STEP ALONE (709->347 projection). The real figure is the WHOLE-BUILD, ACTUALLY MEASURED before/after: 89.19% (1675 -> 181 tokens, 1494 saved; artifact token.compare.generated.json), Copilot generating a test case from an intention-only description at Delta. Akien cites it as ~89.3%. THE WHOLE-BUILD MEASUREMENT BEAT THE SINGLE-STEP ESTIMATE \u2014 compounding across every build step is bigger than the orientation slice suggested. THIS NOTE ALREADY MISLED A SESSION: on 2026-07-12 CC.0 cited 51% back to Akien as the measured savings while arguing the economics of the compiled-inference thesis, and had to be corrected \u2014 despite holding the correct 89.19% figure in its own memory. A stale headline beat a correct memory. Do not cite 51% as a measurement. Do not compare either number to the build_packet CLI's 98.64%, which is a within-artifact ORIENTATION-SLICE ratio, not end-to-end."
+    }
+  ]
 }
