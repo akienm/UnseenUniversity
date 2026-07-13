@@ -1,0 +1,79 @@
+{
+  "id": "cc.0.lever-definition.20260713.110401011843",
+  "emitter": "cc.0",
+  "namespace": [
+    "lever-definition"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-13T11:04:01.011843",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "rule_id": "R-a-lever-increases-ease-at-the-same-work",
+    "title": "A LEVER IS NOT A MEASURE OF FORCE. A lever increases EASE at the same work — and levers STACK.",
+    "status": "active",
+    "date": "2026-07-13",
+    "author": "Akien (definition) + CC.0 (capture)",
+    "definition": "A LEVER is a structural investment that reduces the cost of the SAME work. It does not do more work, and it does not push harder. It makes the identical job cheaper — to do, to maintain, to understand, and to come back to. Levers COMPOUND: a lever placed on a lever multiplies, and the second one is usually cheaper than the first because the first one made room for it.",
+    "origin": "Akien, 2026-07-13, verbatim: 'You are capable of being asked to automate a web page. you'd grab playwright and away you'd go. highly effective. but if i asked you to use an automation framework to do it, that's a lever. in multiple directions because now it's both more maintainable generally but also cheaper to do the maintenance. and if we document it well so you are faster to orient and so on, that's another lever we've added to the first one. a lever is not a measure of force, a lever increases ease at the same work.'",
+    "the_worked_example": {
+      "the_work": "Automate a web page.",
+      "not_a_lever": "Grab Playwright and go. HIGHLY EFFECTIVE — and this is the point: effectiveness is not the axis. A one-off can be completely effective and add no lever at all. It does the work; it does not make the work cheaper.",
+      "lever_1": "Being asked to use an automation FRAMEWORK instead. Same automation, but the cost falls in MULTIPLE DIRECTIONS at once: it is more maintainable in general, AND the maintenance itself is cheaper. One investment, several cost lines down.",
+      "lever_2_STACKED": "Document it well, so the next visitor orients faster. This is a SECOND lever placed on the FIRST — not a competing one. Orientation cost is a real cost, and cutting it is a real lever, even though nothing about the automation changed.",
+      "what_the_example_teaches": "Levers are not exotic and not rare. Framework-over-one-off and good docs are BOTH levers, and they are the ordinary furniture of good engineering. What makes the concept load-bearing is that it names WHY they are worth their up-front cost, in a single unit: EASE AT THE SAME WORK."
+    },
+    "WHY_THE_FORCE_READING_IS_A_BUG": "The physical lever is a force multiplier, so the metaphor invites 'a lever MOVES things' — and a sentence containing a lever therefore reads as causally COMPLETE even when steps are missing. That is not a theoretical worry: it produced a MEASURED error. CC wrote 'the gates are scaffolding; the missing-levers backlog earns their removal' — FALSE, and false precisely because the force-reading silently supplied the middle steps. NO LEVER EARNS ANYTHING BY BEING NAMED. A lever pays out only when it is BUILT and USED, and the payment is the reduced cost that follows. Naming a lever you have not built is naming a DEBT, not a credit.",
+    "GENUS_AND_SPECIES — this reconciles the 2026-07-09 rename": {
+      "the_tension": "On 2026-07-09 Akien said 'maybe we just need a different term to make it easier for you to catch it?' and CC filed T-rename-lever-to-proof-method to ABOLISH the word. On 2026-07-13 Akien defined the word as important and precise. These are NOT in conflict once the levels are separated.",
+      "LEVER = THE GENUS": "Any structural investment that reduces the cost of the same work. Domain-general. Stacks.",
+      "PROOF METHOD = THE SPECIES, in the proving domain": "The lever that makes a whole CLASS of claim provable. Not a proof (that is one instance) and not a test (that is an instrument).",
+      "PROOF CORPUS = THE PAYMENT": "The accumulated body of proofs a method produced once it was built and used. THIS is what earns a gate's removal — never the backlog, and never the method merely named.",
+      "therefore_the_2026_07_09_error_was_not_the_word": "It was using the GENUS where the SPECIES belonged, inside a CAUSAL sentence, with NEITHER term defined anywhere in rules/. The fix is to DEFINE the genus and keep both words — not to abolish the genus, which is one of the most useful concepts in the project.",
+      "consequence_for_the_ticket": "T-rename-lever-to-proof-method should be RE-SCOPED from 'abolish lever' to 'define the genus, name the species, and fix the causal sentence in CLAUDE.md'. AWAITING AKIEN'S RULING — do not act on this paragraph until he rules."
+    },
+    "the_levers_already_named_today_are_all_the_same_shape": [
+      "AN INTENTION AT THE TOP OF AN ARTIFACT (Akien 2026-07-13): 'when you have to fix it, the intention and the why are the first things you pick up. no deducing. this literally saves additional tool calls.' Same repair, fewer tool calls. A LEVER on the repair path — and a stacked one, since it works on devices, pages, skills, and rules alike.",
+      "A PROOF METHOD: same claim, now provable at all. A lever on the proving path.",
+      "A FRAMEWORK OVER A ONE-OFF: same automation, cheaper to maintain. A lever on the build path.",
+      "DOCUMENTATION: same system, faster orientation. A lever stacked on whatever it documents.",
+      "AND THE PROJECT ITSELF: 'making cognition compile' — turning an answered question into structure so the expensive resolver is needed only for the genuinely novel — is the GENERAL FORM OF ADDING A LEVER. Same cognition, less resolver. UnseenUniversity is a LEVER FACTORY, and that is the plainest statement of what it is for."
+    ],
+    "how_to_tell_a_lever_from_ordinary_good_work": "Ask: after this lands, is the NEXT instance of the same work cheaper? If yes, it is a lever. If it only made THIS instance succeed, it is work — possibly excellent work, but not a lever. (Playwright-and-go: excellent work, no lever. The framework: a lever.) This is also the honest test for whether a lever has PAID: the cost of the next instance is measurable, and if it did not fall, the lever did not work.",
+    "consequences": [
+      "A lever must be BUILT to pay. A named-but-unbuilt lever is a debt on the backlog — which is exactly why the backlog cannot earn a gate's removal.",
+      "Levers stack, so 'we already have a lever there' is never an argument against a second one.",
+      "EASE, not force, is the unit. When evaluating a proposal, the question is not 'how much does this accomplish?' but 'what does this make cheaper, and by how much, next time?'",
+      "The lever concept is domain-general, so it needs a HOME in rules/ — it was previously defined NOWHERE (grep 2026-07-09: 'lever' appears in no rules/ artifact; its only definition anywhere was a subordinate clause in CLAUDE.md). Undefined jargon in the document that arbitrates conflicts is how it drifted."
+    ],
+    "feedback_edge": "The falsifier for this rule: if, after it is written down, CC (or anyone) again writes a sentence in which a NAMED-but-unbuilt lever is treated as having already paid — then defining the word did not fix the error, and the 2026-07-09 instinct (change the term) was right after all. First check: the next unproven close that names a missing proof method. Does the close treat the naming as progress, or as debt?",
+    "related": {
+      "rules": [
+        "R-feedback-is-unconditional-silence-is-never-success"
+      ],
+      "tickets": [
+        "T-rename-lever-to-proof-method (RE-SCOPE PENDING AKIEN)",
+        "T-unproven-lever-hygiene",
+        "T-every-skill-declares-its-intention"
+      ],
+      "intentions": [
+        "I-compiled-inference-residue",
+        "I-self-improving-process"
+      ],
+      "memories": [
+        "reference_proof_method_not_lever (SUPERSEDED BY THIS if Akien rules genus/species — currently says 'proof method, NOT lever')"
+      ],
+      "core_values": [
+        "CP4 (a lever IS 'make everything suck less' with a unit attached)",
+        "CP3 (the lever's why is the cost it removes)"
+      ]
+    }
+  }
+}
