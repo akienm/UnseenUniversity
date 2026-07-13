@@ -1,0 +1,64 @@
+{
+  "id": "cc.0.R-feedback-is-unconditional-silence-is-never-success.20260713.093351106968",
+  "emitter": "cc.0",
+  "namespace": [
+    "R-feedback-is-unconditional-silence-is-never-success"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-13T09:33:51.106968",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "human:akien",
+  "body": {
+    "rule_id": "R-feedback-is-unconditional-silence-is-never-success",
+    "title": "EVERYTHING THAT GOES DOWN SENDS FEEDBACK BACK. A loop that reports only errors is a PARTIAL loop, and silence is never a success signal.",
+    "status": "active",
+    "date": "2026-07-13",
+    "author": "Akien (rule) + CC.0 (capture)",
+    "statement": "Every hand-down across a layer boundary MUST produce a report back to the nexus that made it — on SUCCESS as well as on failure. A feedback loop that fires only on error is a partial loop. Absence of feedback is a FAULT, never a pass.",
+    "origin": "Akien, 2026-07-13, verbatim: 'there can't be no feedback. everything that goes down must send feedback back. that's why I mentioned feedback loops. a feedback loop that only reports the errors is only a partial feedback loop.'",
+    "why": "CC.0 had proposed patching the nexus hazard (escalation catches MISSING input but never WRONG input) by ADDING a validity check. Akien's fix is structurally better and CC.0's was wrong at the root: the problem is not a missing check, it is that SUCCESS WAS BEING SIGNALLED BY SILENCE. Any design in which 'nothing came back' means 'it went fine' cannot distinguish a working check from an absent one — which is the exact failure that bit this project FIVE times on 2026-07-12 (a stale headline nobody re-read; fake proofs committed by day-close; 8 skills invisible to every skills audit; a credential scan pointed away from the credential; a duplicate canonical home built without looking). ALL FIVE WERE SILENT. Making feedback UNCONDITIONAL does not add another check that could itself go absent — it makes ABSENCE ITSELF DETECTABLE, which is the only way out of the regress.",
+    "the_success_report_is_a_USAGE_RECORD_not_an_ack": {
+      "problem_with_a_bare_ack": "'I got it, it was fine' is nearly free and nearly worthless — it carries no information the nexus can learn from, and a loop that only learns from failures still cannot GROW its question set from the successful runs, which are most of them.",
+      "the_report": "What the layer below returns, on EVERY hand-down, success included:",
+      "fields": {
+        "consumed": "What of the handoff did I actually USE? -> these questions EARNED their place at the nexus.",
+        "ignored": "What did you hand me that I never touched? -> the nexus is OVER-ASKING. Prune. (CP4: over-asking is real friction — with a human on the other end it is interview fatigue, and it is how you lose the interviewee.)",
+        "sourced_myself": "What did I have to go GET, that you should have handed me? -> the MISSING questions. The nexus is UNDER-ASKING. Grow.",
+        "wrong": "What did you hand me that was WRONG, discovered downstream? -> the validity signal that escalation alone could never produce."
+      },
+      "why_this_matters": "This makes the loop BIDIRECTIONAL — it PRUNES as well as GROWS. A feedback loop that can only add questions is also a partial loop: it converges on an interminable interview. `ignored` is the only signal that ever removes a question, and without it the nexus ratchets in one direction forever.",
+      "and_it_learns_from_SUCCESS": "A build can succeed completely and STILL have had the design layer look up three things the intention layer never asked about. Those three things are the missing questions — and on an error-only loop they are invisible, because nothing failed. THIS IS WHERE MOST OF THE SIGNAL LIVES, because most runs succeed."
+    },
+    "consequences": [
+      "Silence at a nexus is an ERROR STATE and must be reported as one. 'No feedback' is never 'no problem'.",
+      "Every layer boundary needs a RETURN CHANNEL, not just a forward contract. A one-way handoff is an unfinished design.",
+      "A falling escalation count is NOT proof a nexus is working (I-cognition-questions-are-the-nexus-between-layers, THE HAZARD). Only the usage record can tell a well-tuned nexus from a silently-corrupting one.",
+      "This generalizes past the pipeline: it is the same rule as proof-on-close (a ticket may not close on silence) and the same rule as CP1 (a resolver may not answer with confident nothing). One rule, three surfaces."
+    ],
+    "related": {
+      "intentions": [
+        "I-cognition-questions-are-the-nexus-between-layers",
+        "I-intentions-prove-on-their-own-clock",
+        "I-self-improving-process"
+      ],
+      "notes": [
+        "novelty-is-compilable-2026-07-12"
+      ],
+      "rules": [
+        "R-canonicity-is-granted-not-asserted"
+      ],
+      "core_values": [
+        "CP1 (no confident nothing)",
+        "CP2 (the miss is the data)",
+        "CP4 (over-asking is friction too)"
+      ]
+    }
+  }
+}

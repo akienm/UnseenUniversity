@@ -1,0 +1,74 @@
+{
+  "id": "cc.0.I-intentions-prove-on-their-own-clock.20260713.093351147948",
+  "emitter": "cc.0",
+  "namespace": [
+    "I-intentions-prove-on-their-own-clock"
+  ],
+  "category": "intentions",
+  "kind": "intention",
+  "emitted_at": "2026-07-13T09:33:51.147948",
+  "links": {
+    "decisions": [
+      "D-intentions-are-the-root-2026-07-13"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": [
+      "I-cognition-questions-are-the-nexus-between-layers",
+      "I-compiled-inference-residue"
+    ]
+  },
+  "produced_by": "human:akien",
+  "body": {
+    "intention_id": "I-intentions-prove-on-their-own-clock",
+    "title": "An intention is proven by VALIDATION, not by completion — and its clock can run for months, with multiple validations, long after every ticket under it has closed",
+    "statement": "I intend that every intention carries its own validation — the feedback that comes back to it, which IS its proof — and that this validation runs on the intention's own clock, not the ticket's. A long-running intention may carry SEVERAL validations, each with its own horizon and its own evidence. Finishing the build fulfils one intention. Finishing a piece of training fulfils another. The LARGER intention that both serve stays OPEN, unproven, and honestly so, until lived evidence proves it — which may take months.",
+    "status": "active",
+    "date": "2026-07-13",
+    "origin": "Akien, 2026-07-13, verbatim: 'long running intentions can have long running validations sometimes even multiple ones perhaps. because that's what it takes to really prove that. that if I come up with the perfect way to implement Igor, we won't know that for months. talking with him and training and working together until we can say yes, we fulfilled such and such an intention. so when we finish building that's going to fulfill one intention. perhaps when we finish some piece of training that fulfills another one. but the larger one is still ongoing until it's proven as well.'",
+    "the_claim": "SHIPPING IS NOT PROOF. Proof-on-close is a TICKET-level gate and it is correct at that level: a ticket closes against a test a hollow build could not pass. But an INTENTION is not proven by the closing of the tickets beneath it. 'We built Igor the way we said we would' and 'the way we said was RIGHT' are two different claims, and only the first one closes when the code lands. The second one is answered by living with the thing.",
+    "structure": {
+      "intentions_nest": "Child intentions fulfil on build/train events. The parent stays open. A parent's validation is NOT the conjunction of its children's — that is the whole point. Every child can be fulfilled and the parent still be WRONG.",
+      "an_intention_carries_validations_PLURAL": "Not one proof. A LIST. Each with: what would count as evidence; what the horizon is (when could we possibly know?); and what would FALSIFY it.",
+      "the_states_we_are_missing": {
+        "today": "proven | shipped-unproven. That is the whole vocabulary, and it is a TICKET vocabulary.",
+        "the_gap": "There is no state for 'built, and the proof is RUNNING, and it takes four months.' Calling that `shipped-unproven` is WRONG and it is corrosive: shipped-unproven means WE DO NOT KNOW HOW TO PROVE THIS — it names a missing proof-lever, and the whole point of the label is that the nuisance stays visible until someone finds the lever. A long-running validation has a lever. It is swinging. It just has not landed.",
+        "proposed": "PENDING-VALIDATION — the proof exists, is named, is accruing evidence, and has a horizon. Distinct from shipped-unproven (no known lever) and from proven (evidence in). Without this state, every long-horizon intention is either mislabelled as done or slandered as unprovable."
+      }
+    },
+    "THE GUARD — an unfalsifiable validation is a belief, not a proof (CP1)": {
+      "hazard": "A validation with a months-long horizon and no defined evidence is INDISTINGUISHABLE from a validation that will never happen. 'Still ongoing' becomes a permanent parking spot, and the intention is never tested — it is merely never contradicted.",
+      "the_test": "Every long-running validation MUST name: (a) the evidence that would fulfil it, and (b) THE EVIDENCE THAT WOULD FALSIFY IT. If nothing could falsify it, it is not a validation.",
+      "in_akiens_own_words": "From I-compiled-inference-residue (his essay, on functional myths): 'a myth chosen for usefulness can become one you can no longer inspect, because questioning it reintroduces the friction it was installed to remove. That's a cached answer with no warden on it. The discipline isn't choosing useful beliefs — it's NEVER LETTING ONE FORGET IT WAS CHOSEN.' An intention with an unfalsifiable validation is exactly that: a cached answer with no warden. The falsifier IS the warden.",
+      "second_hazard": "SURVIVORSHIP. 'We've been working with Igor for months and it's going fine' is not evidence — it is the absence of a complaint, and per R-feedback-is-unconditional-silence-is-never-success, ABSENCE OF FEEDBACK IS NEVER A PASS. A long-running validation needs an ACTIVE evidence stream (what did we observe, and when), not a quiet period."
+    },
+    "feedback_edge": "This intention's own validation, stated so it can be held to its own rule: (1) EVIDENCE — every intention in the store carries at least one validation with a named falsifier, and at least one long-horizon intention is actually FULFILLED by evidence rather than by its tickets closing. (2) FALSIFIER — if, after months, the store contains long-horizon intentions that have accrued NO evidence and been neither fulfilled nor falsified, then PENDING-VALIDATION has become the parking spot this intention exists to prevent, and the mechanism has failed. (3) HORIZON — first check at the first monthly design cadence after the intention corpus is written.",
+    "consequences": [
+      "The intention SCHEMA must change: `validations: [ {evidence, falsifier, horizon, status, observations[]} ]`. Today an intention has no validation field at all — the three in the store carry their proof, if anywhere, as prose.",
+      "The status vocabulary must gain PENDING-VALIDATION, and it must be distinguishable from shipped-unproven at a glance.",
+      "Something must PROMPT a long-horizon validation to be re-checked, or it will never be looked at again. The horizon field is useless unless something reads it. (consequence_aging.py already does exactly this shape for consequence tickets — homogeneity: extend it, do not birth a new tool.)",
+      "'Definition of done = zero tickets' (project_definition_of_done_tool_disappears) is now visibly INCOMPLETE: zero open tickets with every intention still unvalidated is not done, it is untested. DONE = the intentions are FULFILLED, not the tickets are CLOSED."
+    ],
+    "related": {
+      "intentions": [
+        "I-cognition-questions-are-the-nexus-between-layers",
+        "I-compiled-inference-residue",
+        "I-self-improving-process"
+      ],
+      "rules": [
+        "R-feedback-is-unconditional-silence-is-never-success",
+        "R-canonicity-is-granted-not-asserted"
+      ],
+      "decisions": [
+        "D-intentions-are-the-root-2026-07-13"
+      ],
+      "core_values": [
+        "CP1 (an unfalsifiable claim is a confident nothing)",
+        "CP2 (a falsified intention is the best data we will get)",
+        "CP3 (the validation IS the why, tested)"
+      ]
+    },
+    "status_note": "CAPTURED. The schema change and the PENDING-VALIDATION state are NOT yet built — ticketed as T-intentions-carry-validations. Do not treat the store's current intentions as validated: none of the four carries a falsifier today, INCLUDING THIS ONE UNTIL ITS feedback_edge IS HONOURED."
+  }
+}
