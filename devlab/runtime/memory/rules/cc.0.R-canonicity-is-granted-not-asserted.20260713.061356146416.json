@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.R-canonicity-is-granted-not-asserted.20260713.061356146416",
+  "emitter": "cc.0",
+  "namespace": [
+    "R-canonicity-is-granted-not-asserted"
+  ],
+  "category": "rules",
+  "kind": "rule",
+  "emitted_at": "2026-07-13T06:13:56.146416",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "rule_id": "R-canonicity-is-granted-not-asserted",
+    "title": "Canonicity is GRANTED, never self-asserted — and an aging canonicity claim gets checked against intentions",
+    "status": "proposed",
+    "date": "2026-07-13",
+    "author": "Akien (rule) + CC.0 (sharpening)",
+    "rule": "A file MAY NOT declare itself the canonical source of anything. Canonicity is a GRANT, recorded in an intention or a decision that NAMES the file. A file may only POINT AT its grant. Any file older than ~1 month that ASSERTS canonicity without a grant is flagged and checked against intentions.",
+    "akien_verbatim": "any file that's more than a month old that says it's the canonical source of anything should be checked against intentions",
+    "the_sharpening": "CC.0: today canonicity is SELF-APPOINTED. 67 files in the tree assert it ('canonical source', 'single source', 'source of truth', 'authoritative', 'master copy'); exactly 1 intention and 19 decisions even MENTION canonicity, and most of those name no file. A file that says 'I am the single canonical source' with no grant behind it is self-appointed authority — STRUCTURALLY IDENTICAL TO A CONFABULATION: a confident claim, no backing, believed by future readers PRECISELY BECAUSE it sounds authoritative.",
+    "why_this_makes_the_check_cheap": "It converts an expensive judgment ('is this claim still true?' — needs a human, so nobody does it) into a mechanical grep ('does an intention or decision NAME this file as canonical?'). Age becomes the TRIGGER FOR REVIEW, not the evidence of rot.",
+    "evidence_it_is_needed": [
+      "skills/questions/questions.json: '_meta.what: This is the SINGLE canonical source' — written 2026-06-25, WRONG within ~3 weeks (CLAUDE.md puts dev-process artifacts only under devlab/runtime/memory/). It fooled CC.0 on 2026-07-12, who built a second home before finding it.",
+      "A store note titled 'MILESTONE — Delta's pre-inference compiler MEASURED at 51% token reduction' — 51% was an ESTIMATE, not a measurement. On 2026-07-12 it made CC.0 argue 51% at Akien while holding the correct 89.19% in its own memory. A stale headline beat a correct memory.",
+      "identity.home_db_url() calls UU_HOME_DB_URL 'this instance's home DB'; db_proxy.make_home_proxy() calls the SAME env var the 'global truth DB shared across ALL Igor instances'. Two authoritative-sounding claims, mutually exclusive, and the employer-privacy rule rests on that boundary.",
+      "8 skills RUN with no repo source, so every skills audit was scoped to a tree that did not contain the broken ones."
+    ],
+    "how_to_implement": "FOLD INTO validity_sweep.py — do NOT build a new tool (homogeneity over special-case; it already runs at day-close and already flags stale entries, printing flagged/checked/unresolvable). Add a canonicity check: grep the tree for canonicity assertions; for each, look for a grant (an intention/decision naming that path); no grant OR grant older than the assertion -> FLAG (annotate, never delete — CP2).",
+    "the_deeper_point": "This is the same organ as everything else found on 2026-07-12: a claim that nothing verifies. A passing check and an ABSENT check look identical. The canonicity assertion is a claim the codebase makes about ITSELF, and until tonight nothing was checking it. In a system whose whole thesis is that answers become cached structure, an unverified authority claim is how a lie gets compiled in permanently (see note novelty-is-compilable-2026-07-12).",
+    "related": {
+      "tickets": [
+        "T-canonicity-claims-need-grants"
+      ],
+      "notes": [
+        "novelty-is-compilable-2026-07-12",
+        "two-kinds-of-question-2026-07-13"
+      ]
+    }
+  }
+}
