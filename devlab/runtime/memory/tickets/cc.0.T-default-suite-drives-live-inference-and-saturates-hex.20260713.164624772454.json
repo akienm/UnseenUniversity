@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-default-suite-drives-live-inference-and-saturates-hex.20260713.164624772454",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-default-suite-drives-live-inference-and-saturates-hex"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T22:46:24.772454+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-default-suite-drives-live-inference-and-saturates-hex"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-default-suite-drives-live-inference-and-saturates-hex",
+    "title": "[triage] `pytest tests/` drives LIVE 24B inference at Hex on every run \u2014 guarded only by a TCP-connect reachability probe \u2014 so runs pile up and saturate the single-slot server. TWO false diagnoses came out of this before the load was found to be OURS.",
+    "size": "M",
+    "priority": 0.9,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "inference",
+      "tests",
+      "hermetic",
+      "observability",
+      "non-injective-signal",
+      "hex",
+      "health-probe",
+      "self-inflicted",
+      "cp1",
+      "cp2"
+    ],
+    "intention": "I intend that the default test suite never drives a live shared service, and that any guard deciding whether it may do so probes the CAPABILITY THE SERVICE EXISTS FOR \u2014 not merely that it answers the phone. A probe that reads REACHABILITY to decide CAPACITY reports a saturated service as healthy and is indistinguishable from no probe at all. [intention_date: 2026-07-13]",
+    "description": "**MEASURED 2026-07-13** while closing T-intent-extractor-crash-masquerades-as-refusal.\n\n**\u26a0 THIS TICKET HAS BEEN WRONG TWICE AND IS CORRECTED IN PLACE. Both wrong turns are kept visible,\nnot overwritten (CP2: the wrong turn is data). They are the most useful thing here.**\n\n**WRONG DIAGNOSIS #1** \u2014 \"the route points at a model that is not installed, and dispatch buries\nollama's fast 404 under a 60s timeout.\" **FALSE.** I probed **localhost**, where `llama3.2:3b` is\ngenuinely absent and genuinely 404s in 0.03s \u2014 but the device never talks to localhost. It reads\n`INFERENCE_ENDPOINT` = **Hex, `http://10.0.0.100:11434`**, and I had hardcoded `127.0.0.1` into my\nrepro by reading a default out of the source instead of resolving the endpoint the way the code does.\n**I measured a different machine than the one under test.** The numbers were fast, clean, internally\nconsistent, and about nothing.\n\n**WRONG DIAGNOSIS #2** \u2014 \"Hex's ollama serves METADATA but cannot INFER; `/api/tags` 200 in 2ms,\n`/api/chat` hangs forever for every model; the local tier is 100% dead.\" **ALSO FALSE** \u2014 and this\ntime I *was* measuring the right machine, so \"run the repro in the failing config\" would NOT have\ncaught it. The observation was real; the **attribution** was invented. Hex was never wedged.\n\n**THE TRUE DIAGNOSIS \u2014 PROVEN BY CONTROLLED INTERVENTION.**\n`llama-server` on Hex runs with **`-np 1`: ONE slot.** Hex's own log shows what was in it:\n\n    slot launch_slot_: id 0 | task 11468 | processing task\n    slot operator(): id 0 | task 11468 | new prompt, n_ctx_slot = 32768, task.n_tokens = 31745\n    [GIN] POST \"/api/chat\" | 200 | 1m16s | 10.0.0.229\n    [GIN] POST \"/api/chat\" | 200 | 3m6s  | 10.0.0.229     <-- SUCCEEDING. Just slowly.\n    [GIN] POST \"/api/chat\" | 200 | 2m48s | 10.0.0.229\n\nThe requests were never hanging \u2014 **they were completing with 200 in one to three minutes**, behind\neach other, in a single slot. `/api/tags` is served by the Go parent and never touches the slot, so\nit kept answering in 300\u00b5s no matter how deep the queue got. **Metadata fast + inference never is the\nsignature of a QUEUE, not a corpse.**\n\n**AND THE LOAD WAS MINE.** `10.0.0.229` is the dev box. It had **NINE orphaned `pytest tests/`\nprocesses** \u2014 the oldest alive **1h57m** \u2014 each holding an open socket to Hex and driving a real\nmulti-turn ToolLoop against a 24B model. (The 31,745-token prompts are that ToolLoop legitimately\naccumulating conversation up to its `max_turns` cap \u2014 checked; it is NOT a runaway.)\n\n**THE INTERVENTION (this is the proof):** killed the nine orphans \u2192 connections 9 \u2192 0 \u2192 re-ran the\n*identical* calls that had just timed out:\n\n| model | with 9 orphans | with 0 orphans |\n|---|---|---|\n| `devstral-small-2:24b` | 90s \u2192 timeout / 500 | **10.5s, real answer** |\n| `llama3.2:3b`          | 65s \u2192 \"timed out\"   | **2.55s, real answer** |\n\n**Hex is healthy. Ollama is healthy. Both models work. Nothing was ever broken on that machine.**\n\n**THE DEFECT, WHICH IS OURS, AND HAS TWO FACES OF ONE SHAPE:**\n\n**(a) The default suite drives live inference.** `pyproject.toml` registers the marker \u2014\n`\"live: tests that drive real inference against a live host (e.g. Hex)\"` \u2014 but\n`addopts = \"--import-mode=importlib\"` **deselects nothing.** So `tests/inference/test_dicksimnel_live_smoke.py`\nfires a live 24B multi-turn build on **every** `pytest tests/`, including day-close Step 1 and every\novernight run. Each such run costs ~20 turns \u00d7 minutes-per-contended-call = **hours**, so the runs\nnever finish, never release their sockets, and pile up as I launch more.\n\n**(b) The guard that was supposed to prevent this reads the wrong property.** The only thing standing\nbetween the default suite and a live 24B load is:\n\n    def _hex_reachable() -> bool:\n        try:\n            with socket.create_connection((HEX_HOST, HEX_PORT), timeout=3):\n                return True          # <-- a bare TCP connect\n        except OSError:\n            return False\n\n**A TCP connect succeeds against a service whose queue is an hour deep.** REACHABILITY IS EXACTLY THE\nPROPERTY THAT STAYS TRUE WHILE CAPACITY IS ZERO. And `HealthMonitor` has the identical bug one level\nup: it probes `/api/tags` and calls a saturated source HEALTHY. The bitter joke is that\n`tests/inference/test_ollama_liveness.py` exists *specifically* to kill this bug \u2014 it upgraded\n`ping()` from a socket-connect to `GET /api/tags` \u2014 but **both are reachability**. The fix moved the\ngoalpost without leaving the field.\n\n**Scope boundary:** IN \u2014 (a) the default suite must not drive live inference: deselect `live` by\ndefault (`addopts` gains `-m \"not live\"`), opt in explicitly with `-m live`; (b) any guard admitting a\nlive run, and HealthMonitor, must probe CAPABILITY (a tiny real completion, `num_predict:1`, short\ntimeout) and refuse/mark-DOWN a source that answers metadata but cannot serve; (c) a live test must\ncarry a hard timeout so it can never orphan. OUT \u2014 model selection; the ToolLoop turn cap (checked,\nit exists and is fine); the extractor's record (done).\n\n**Test plan / discriminating fixture:** a fake source that answers `/api/tags` 200 but is saturated on\n`/api/chat` must be marked **DOWN** and must NOT admit a live test; a source that answers both is UP\nand does. **A probe that only checks reachability passes BOTH and fails this fixture \u2014 which is the\nentire point.** Plus: a default `pytest tests/` run must open ZERO connections to 10.0.0.100:11434\n(assert on the socket, not on the intent).\n\n**Completion criteria:**\n  1. `pytest tests/` (default invocation) opens **zero** sockets to Hex. Asserted, not assumed.\n  2. A source that answers metadata but cannot complete is reported DOWN (fixture above), and the\n     live-test guard refuses to run against it.\n  3. A live test cannot outlive a hard timeout \u2014 no orphan can accumulate.\n  4. `-m live` still runs the DS smoke against Hex and it still passes.\n\n**THE LESSON \u2014 and it is not the one I wrote yesterday.** I diagnosed a shared service as broken\nTHREE times, and the cause was **my own accumulated debris generating load on it.** An orphaned\nprocess is not like a stale file: it is invisible AND it keeps *acting*. The discipline that would\nhave caught this on the first try is not \"check your config\" \u2014 it is: **before you diagnose a shared\nservice as broken, account for your own footprint on it.** `ss -tnp | grep <service>` would have\nended this in ten seconds, on the first attempt, two false tickets ago.",
+    "created_at": "2026-07-13T22:45:24.127281+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-13T22:45:24.173337+00:00",
+    "scope_boundary": null
+  }
+}

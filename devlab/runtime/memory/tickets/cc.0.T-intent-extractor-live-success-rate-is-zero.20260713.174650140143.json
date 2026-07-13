@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-intent-extractor-live-success-rate-is-zero.20260713.174650140143",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intent-extractor-live-success-rate-is-zero"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T17:46:50.140143",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-intent-extractor-live-success-rate-is-zero",
+    "title": "[triage] The intent extractor's LIVE success rate is 0% — and the two causes are now NAMED: minion returns a JSON ARRAY (few-shot read as a batch), worker returns EMPTY (reasoning model truncated at max_tokens=256, finish_reason='length' unread)",
+    "size": "M",
+    "priority": 0.9,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "intent",
+      "inference",
+      "few-shot",
+      "reasoning-models",
+      "non-injective-signal",
+      "token-budget",
+      "cp1",
+      "cp3"
+    ],
+    "intention": "I intend that the intent extractor actually PRODUCES intents — and that when it cannot, the record distinguishes a model that answered wrongly from a model that was never allowed to finish answering. A response truncated mid-reasoning is a BUDGET failure, not a PARSE failure, and filing one as the other is the same two-causes-one-signal collapse this subsystem was just fixed for. [intention_date: 2026-07-13]",
+    "description": "**MEASURED LIVE 2026-07-13** against a clean, unloaded Hex (see\nT-default-suite-drives-live-inference-and-saturates-hex — the box had been saturated by our own\norphaned test runs; that is fixed and NOT the cause here).\n\nThis is **criterion 3** of the just-closed `T-intent-extractor-crash-masquerades-as-refusal`, finally\nmeasurable. **Result: 0 / 5. A 0% success rate.** All five live predictions were recorded\n`provenance_class='error'` — correctly, honestly, and *legibly*, which is exactly what that ticket\nbought. **That ticket fixed VISIBILITY, not FUNCTION — and that was the right scope. This ticket is\nthe function, and it is only diagnosable BECAUSE of the visibility fix.** Before today this was five\nidentical `unknown`s wearing CP1's clothes. Today the store says:\n\n    [5x] parse: not JSON (Expecting value: line 1 column 1 (char 0)) [tier=worker]\n\n**BOTH CAUSES ARE NOW CAPTURED RAW. They are different, and the escalation ladder runs from one\nstraight into the other.**\n\n**CAUSE 1 — minion (`llama3.2:3b`) reads the few-shot block as a BATCH and returns a JSON ARRAY.**\nHanded the exact prompt `predict()` builds (~1,938 tokens, 10 examples), it classifies **all eleven\ncontexts** and emits:\n\n    Here are the intents classified as JSON:\n    [ {\"intent\": \"Error handling\", \"confidence\": 0.9},\n      {\"intent\": \"Test reliability\", \"confidence\": 0.8},\n      ... one entry per few-shot example ...\n      {\"intent\": \"Escalation policy refinement\", \"confidence\": 0.82} ]\n\n**This is the original `parsed.get()`-on-a-list crash, reproduced live for the first time.**\n`device.py`'s own comment predicted it verbatim (\"a minion-tier model handed ten long few-shot\nexamples and asked for structured output returns a JSON *array*\") — now it is evidence, not a guess.\nThe real defect is the FORMAT: we stuff few-shot examples into a **single user message**, which is\ncompletion-style few-shot fed to a **chat** API. The chat-native form is alternating\n`user`/`assistant` message pairs, where an example is structurally an *exchange*, not text the model\nmust guess is illustrative. With a short prompt and no few-shot block, the SAME model returns clean,\nvalid JSON — proving the model is fine and the prompt shape is not.\n\n**CAUSE 2 — worker (`deepseek-r1:14b`) is a REASONING model and never gets to answer.**\nSame prompt, escalated tier:\n\n    text = ''\n    finish_reason = 'length'      <-- THE SIGNAL WAS ALWAYS THERE\n\n`max_tokens=256` is consumed *entirely* by its `<think>` trace; it is cut off before emitting a single\ntoken of answer. Empty string -> `json.loads(\"\")` -> `Expecting value: line 1 column 1 (char 0)`.\n\n**THE THIRD DEFECT, WHICH IS THE DAY'S PATTERN ONE MORE TIME: `finish_reason` IS NEVER READ.** A\nmodel that was TRUNCATED and a model that emitted PROSE are two entirely different failures with two\nentirely different fixes — and we file both as `parse: not JSON`. **Two causes, one signal.** The\nshape-injectivity work stopped a crash from impersonating a refusal; it did not stop a *budget*\nfailure from impersonating a *parse* failure. The map is still not injective, one level in.\n\n**Scope boundary:** IN — (a) few-shot examples become real chat-native `user`/`assistant` message\npairs, not a text blob in one user turn; (b) `finish_reason` is read, and `length` is recorded as its\nown cause (`truncated: hit max_tokens at tier=X`), never as a parse failure; (c) the token budget fits\nthe routed model — a reasoning model needs headroom for its trace, or must not be routed to a\nstructured-output task class at all. OUT — the crash-vs-refusal record (done); Hex capacity (separate\nticket); model selection policy generally.\n\n**Test plan / discriminating fixture:** feed a stub source that returns (1) a JSON array, (2) `''`\nwith `finish_reason='length'`, (3) valid JSON. The three must land as **three distinct records** —\n`parse`, `truncated`, and `model`. A build that collapses (1) and (2) into one `parse` error fails\nthis fixture, which is the entire point. Plus a live check: `predict()` against Hex must produce a\n`provenance_class='model'` row.\n\n**Completion criteria:**\n  1. A truncated response and an unparseable response are stored as DIFFERENT causes.\n  2. Live success rate on a clean Hex is measured again and is materially > 0 (state the number).\n  3. The few-shot corpus is delivered as chat message pairs; the array-batch output does not recur.\n  4. Whatever remains failing is NAMED — no silent 'unknown'.",
+    "created_at": "2026-07-13T23:50:00+00:00"
+  }
+}
