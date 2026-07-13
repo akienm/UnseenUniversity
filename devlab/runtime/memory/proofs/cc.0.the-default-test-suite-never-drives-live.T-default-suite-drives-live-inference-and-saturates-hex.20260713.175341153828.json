@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.the-default-test-suite-never-drives-live.T-default-suite-drives-live-inference-and-saturates-hex.20260713.175341153828",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-default-test-suite-never-drives-live",
+    "T-default-suite-drives-live-inference-and-saturates-hex"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-13T17:53:41.153828",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-default-suite-drives-live-inference-and-saturates-hex"
+    ],
+    "commits": [
+      "0ffe05909d3a7a21011abbba774fe880b7615a28"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-default-suite-drives-live-inference-and-saturates-hex",
+  "body": {
+    "thing": "the default test suite never drives live inference, and the guard admitting a live run probes CAPABILITY not reachability",
+    "intention": "I intend that the default test suite never drives a live shared service, and that any guard deciding whether it may do so probes the CAPABILITY THE SERVICE EXISTS FOR — not merely that it answers the phone. A probe that reads REACHABILITY to decide CAPACITY reports a saturated service as healthy and is indistinguishable from no probe at all.",
+    "test": "tests/inference/test_live_tests_are_opt_in.py::test_the_default_config_deselects_live_marked_tests",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_live_tests_are_opt_in.py::test_the_default_config_deselects_live_marked_tests",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        )\nE       AssertionError: the default pytest configuration COLLECTS a @pytest.mark.live test — so a bare `pytest tests/` drives real inference against a live host on every run. Registering the marker is not enough; addopts must deselect it.\nE         \nE         ::test_synthetic_live_case\nE         ::test_synthetic_ordinary_case\nE         \nE         2 tests collected in 0.08s\nE         \nE       assert 'test_synthetic_live_case' not in '::test_synt...d in 0.08s\\n'\nE         \nE         'test_synthetic_live_case' is contained here:\nE           ::test_synthetic_live_case\nE           ::test_synthetic_ordinary_case\nE           \nE           2 tests collected in 0.08s\n\ntests/inference/test_live_tests_are_opt_in.py:89: AssertionError\n=========================== short test summary info ============================\nFAILED tests/inference/test_live_tests_are_opt_in.py::test_the_default_config_deselects_live_marked_tests\n1 failed in 0.50s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.48s"
+          }
+        }
+      }
+    ],
+    "commit": "0ffe05909d3a7a21011abbba774fe880b7615a28",
+    "impl_paths": [
+      "pyproject.toml",
+      "tests/inference/test_dicksimnel_live_smoke.py",
+      "tests/support/__init__.py",
+      "tests/support/live_guard.py"
+    ],
+    "ticket": "T-default-suite-drives-live-inference-and-saturates-hex",
+    "narrative": "RED: with addopts = '--import-mode=importlib' the default pytest configuration COLLECTS a @pytest.mark.live test (asserted on a synthetic live-marked file, so the red cannot be faked by an import error elsewhere) -> AssertionError. GREEN: addopts gains -m 'not live' -> the live-marked test is deselected while the ordinary one is still collected (both halves asserted, so a config that collects NOTHING cannot pass). -m live still selects it. Separately the DS smoke's skip guard moved from socket.create_connection() to tests/support/live_guard.can_infer(), a real one-token completion. Measured: a default-mode run now opens ZERO sockets to Hex (0 of 40 one-second samples), in 30s.",
+    "why": "A registered-but-never-deselected marker is decoration. pytest tests/ fired a live 24B multi-turn build at Hex on EVERY run; under contention each took hours, never exited, never released its socket, and nine piled up — which then read as a broken server, twice. The only guard was a bare TCP connect, and reachability is exactly the property that stays true while capacity is zero.",
+    "bootstrap": false
+  }
+}

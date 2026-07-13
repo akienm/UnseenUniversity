@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-healthmonitor-probes-reachability-not-capability.20260713.175539047114",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-healthmonitor-probes-reachability-not-capability"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T17:55:39.047114",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-healthmonitor-probes-reachability-not-capability",
+    "title": "[triage] HealthMonitor calls a SATURATED inference source HEALTHY — it probes reachability (/api/tags 200), which is exactly the property that stays true while capacity is zero. Routing trusts this.",
+    "size": "M",
+    "priority": 0.8,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "inference",
+      "health-probe",
+      "routing",
+      "non-injective-signal",
+      "observability",
+      "design-tension"
+    ],
+    "intention": "I intend that a source's health signal reflects whether it can DO THE JOB, so that routing never sends work to a source that answers the phone and nothing else. [intention_date: 2026-07-13]",
+    "description": "**SPLIT OUT of T-default-suite-drives-live-inference-and-saturates-hex (closed proven).**\nThat ticket fixed the TEST side — live tests are now opt-in, and their admission guard\n(`tests/support/live_guard.can_infer`) does a real one-token completion instead of a TCP connect.\n**This ticket is the DEVICE side, which is untouched and still wrong.**\n\n`HealthMonitor` (unseen_university/devices/inference/health_monitor.py) pings each source via\n`source.ping()` on a daemon thread. `OllamaSource.ping()` probes **`GET /api/tags`** — and on\n2026-07-13, while Hex's single inference slot (`-np 1`) was hours deep and no completion could\nreturn, `/api/tags` kept answering **200 in 300µs**, because it is served by the Go parent and never\ntouches the slot. **HealthMonitor called that source HEALTHY the entire time, and the routing\nselector trusted it.**\n\nThe bitter part: `tests/inference/test_ollama_liveness.py` exists *specifically* to kill this bug. It\nupgraded `ping()` from a bare socket-connect to `GET /api/tags`. **Both are reachability.** The fix\nmoved the goalpost without leaving the field. **REACHABILITY IS EXACTLY THE PROPERTY THAT STAYS TRUE\nWHILE CAPACITY IS ZERO.**\n\n**⚠ A REAL DESIGN TENSION — DO NOT SKIP THIS, IT IS WHY THE TICKET WAS SPLIT RATHER THAN JUST DONE.**\nThe obvious fix — make `ping()` do a tiny real completion (`num_predict:1`) — is **not obviously\nright**, because HealthMonitor runs it **on a timer, for every source**. A periodic capability probe\n**adds load to the very slot whose scarcity it is measuring.** On a single-slot host under contention,\nthe probe joins the queue it is trying to detect. (This is exactly why the *test* guard was safe: it\nruns ONCE at collection, not on a timer.) The implementer must resolve this, not paper over it.\nCandidate directions, none yet chosen:\n  * a capability probe with a SHORT timeout, run at a LOW frequency, accepting that it queues (a\n    timed-out probe correctly reports DOWN — the added load is one tiny abandoned request per tick);\n  * infer capacity from data the host already exposes (`/api/ps` shows resident models; llama-server\n    exposes slot state) without submitting work;\n  * treat OBSERVED completion latency from real traffic as the health signal — the calls we are\n    already making are a free, perfectly-representative probe, and the request that times out is the\n    ground truth. (This is the most promising: it costs nothing and cannot lie.)\n  * a circuit breaker: N consecutive timeouts -> DOWN, without any probe at all.\n\n**Test plan / discriminating fixture:** a fake source that answers `/api/tags` 200 but never completes\n`/api/chat` must be reported **DOWN**; one that answers both is **UP**. A probe that checks only\nreachability passes BOTH and fails this fixture — that is the whole point. Plus: whatever mechanism is\nchosen must be shown NOT to add material load to a saturated host (state the added requests/tick).\n\n**Completion criteria:**\n  1. A source that serves metadata but cannot complete is reported DOWN (fixture above).\n  2. The routing selector does not choose such a source.\n  3. The design tension is RESOLVED and the resolution is stated — how much load the health signal\n     adds to a contended host, and why that is acceptable.\n  4. `test_ollama_liveness.py` is extended so the reachability-only probe can never come back.",
+    "created_at": "2026-07-13T23:58:00+00:00"
+  }
+}

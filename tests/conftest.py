@@ -57,3 +57,40 @@ def _preserve_igor_home_db_url():
         os.environ["UU_HOME_DB_URL"] = saved
     elif "UU_HOME_DB_URL" in os.environ:
         del os.environ["UU_HOME_DB_URL"]
+
+
+# ── live tests carry a HARD wall-clock ceiling ────────────────────────────────
+#
+# T-default-suite-drives-live-inference-and-saturates-hex. Deselecting `live` by default stops the
+# *unnoticed* live run, which is what let nine of them pile up. This is the second belt: even a run
+# you asked for (`-m live`) cannot become an orphan. On 2026-07-13 the oldest such orphan had been
+# alive 1h57m, still holding a socket to Hex and still adding load to the queue that everyone else —
+# including my own diagnosis of the problem — was measuring.
+#
+# An orphaned process is not like a stale file. It is invisible AND IT KEEPS ACTING.
+LIVE_TEST_CEILING_SECONDS = 600
+
+
+@pytest.fixture(autouse=True)
+def _live_tests_cannot_outlive_a_ceiling(request):
+    """Kill any @pytest.mark.live test that overruns. No dependency, no daemon — just SIGALRM."""
+    if request.node.get_closest_marker("live") is None:
+        yield
+        return
+
+    import signal
+
+    def _blow_up(_signum, _frame):
+        raise TimeoutError(
+            f"live test exceeded its {LIVE_TEST_CEILING_SECONDS}s ceiling and was killed. A live "
+            f"test that runs forever does not fail — it ORPHANS, holding its connection and adding "
+            f"load to the shared host it is measuring. That is how nine of them accumulated."
+        )
+
+    prev = signal.signal(signal.SIGALRM, _blow_up)
+    signal.alarm(LIVE_TEST_CEILING_SECONDS)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, prev)
