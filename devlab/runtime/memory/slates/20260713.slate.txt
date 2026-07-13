@@ -1,0 +1,119 @@
+# Slate 2026-07-13
+
+## Notes
+⛔ THE HIGHEST-PRIORITY TICKET IN THE QUEUE IS NOT A CODE TICKET.
+T-write-the-intentions-down (L, 0.95). D-intentions-are-the-root-2026-07-13: "intentions are the
+root of everything now" (Akien). 3 intentions exist. 67 files assert canonicity. You CANNOT check
+67 claims against 3 stars — building the canonicity/validity sweeps first yields a GREEN CHECK THAT
+MEANS NOTHING, which is the exact failure this whole line of work exists to kill.
+The North Star cannot be derived from the repo. That is the POINT of having intentions at all.
+METHOD (proven 2026-07-12 on the reader intention): Akien talks, CC captures, CC PUSHES BACK where a
+stated intention collides with another one or with what the code actually does. The pushback is the
+value. EXPECT CONFLICTS — Akien: intentions may conflict, and resolving the conflicts IS the work,
+not a defect. A conflict between two intentions is an OPEN QUESTION, which compiles out to a DECISION.
+
+## Done (overnight 2026-07-12 → 2026-07-13)
+- T-agentic-primitives-package — CLOSED PROVEN @ b9fecd9a. 4 shared execution primitives moved to
+  unseen_university/agentic/. git mv kept history; import sweep across 27 files.
+- fix @ b1e2420d — un-blinded the proxy layering guard (it banned the module NAME "agentic_loop",
+  which stopped being a path component the moment the file moved; every test was green while it
+  checked nothing). Verified it bites with a canary import.
+- ✅ THE 304-FAILURE TRIAGE IS RESOLVED — MY CHANGE CAUSED ZERO REGRESSIONS. Overnight full-suite
+  runs, HEAD vs pre-agentic baseline (logs in ~/.unseen_university/logs/day-close/):
+      BASELINE 3e05c274: 314 failed / 7725 passed
+      HEAD     b1e2420d: 310 failed / 7731 passed   ← FEWER failures WITH the change
+  Diffed the SETS, not just the counts. The 2 "new" failures are in test_librarian_curation.py and
+  test_librarian_persistent_inquiry.py — THE SAME TWO FILES THAT ALSO FAIL AT BASELINE, with
+  DIFFERENT TEST NAMES EACH RUN. Flaky/state-dependent, reference NOTHING in the blast radius
+  (zero matches for agentic/inference.domains), and fail on a data assertion (assert 0 >= 1), not
+  an import. Day-close audit Step 1 is now CLOSED.
+- Test junk swept (untracked, NOT committed). Baseline worktrees removed. Tree + worktrees clean.
+
+## Done — the design session (this is the substance of the night)
+- I-reader-reads-an-address-into-domain-trees — the reader belongs to the LIBRARIAN. Routing-domain
+  (picks a MODEL) vs knowledge-domain (owns TREES) are TWO AXES sharing a word.
+- note novelty-is-compilable-2026-07-12 — Akien: "I have figured out novelty." The questions to ask
+  in the face of novelty, PLUS the questions to sort the questions when those fail. Novelty was the
+  one thing that could not be compiled; it has structure, so the residue compiles too.
+  CONSEQUENCE: in a teach-on-miss system, CONFABULATION IS CORRUPTION, not a quality bug — a wrong
+  answer gets COMPILED IN, so the miss never fires and the graph defends a lie by never doubting it.
+  CP1 is therefore not a value bolted on: IT IS THE ENGINE. Honesty == data integrity.
+- questions/ — 21 COGNITION QUESTIONS seeded, VERBATIM (Q-cog-001..018, Q-meta-001..003). Primary
+  source: Akien's own self-titled list in ~/.unseen_university/akien/notes_as_i_go_along.txt:488-497.
+  ⭐ "does that leave any gaps?" (Q-cog-011) IS THE MISS DETECTOR — CP1 as a thinking move. He has
+  been running it in meatware for years; it was never written down because the tool meant to capture
+  it (/question) has been writing to a DEAD DATABASE since June.
+  ⭐ Q-meta-001..003 — the LEVEL-2 LADDER, in his own words (March 2026): "do i have tools for this?"
+  → "can i figure this out?" → "how?" → "at that point, it's prompting." THAT IS THE ESCALATION
+  BOUNDARY, described by Akien months before we built the identical walk in code.
+- note two-kinds-of-question-2026-07-13 — COGNITION questions vs OPEN questions.
+  ** OPEN QUESTIONS COMPILE OUT. COGNITION QUESTIONS ARE THE COMPILER. **
+  So "definition of done = zero tickets" applies to OPEN questions and MUST NEVER be applied to
+  cognition questions. Different lifecycles, different SCHEMAS (a cognition question has no answer
+  field; an open question's answer field promotes to a decision).
+- D-intentions-are-the-root-2026-07-13 + rule R-canonicity-is-granted-not-asserted — canonicity is a
+  GRANT (intention → decision → file), never self-asserted. 67 files self-appoint today.
+  The "~30 days" is an EPOCH BOUNDARY (when Akien started talking about intention), NOT an age
+  threshold. An age threshold rolls forward and never completes; an epoch boundary is a FIXED LINE
+  and the pre-intention corpus SHRINKS as it is reconciled. Measured: ~2026-06-13 (talking),
+  2026-06-26 (goals purged, concept lands), 2026-07-01 (first intention emitted — nothing before
+  this could have been checked against an intention even in principle).
+
+## The pattern of the night (worth reading before starting work)
+FIVE instances of ONE failure, all found in ~12 hours:
+  1. A stale store note titled "MEASURED at 51%" made CC.0 argue 51% at Akien while holding the
+     correct 89.19% in its own memory. A stale headline beat a correct memory.
+  2. The test suite writes FAKE PROOFS into the canonical store, and day-close COMMITS them.
+  3. EIGHT skills run with NO repo source — every skills audit was scoped to a tree that did not
+     contain the broken ones ("we fixed all the skills" was true, and useless).
+  4. The day-close CREDENTIAL SCAN greps for `choose_a_password` — and passes, because it scopes to
+     unseen_university/ and devices/, not to the skills that actually run. We built the right check
+     and pointed it away from the violation.
+  5. CC.0 built a duplicate home for the cognition corpus without checking whether one existed
+     (skills/questions/questions.json declares itself "the SINGLE canonical source"). I committed
+     the very failure I was cataloguing.
+ALL FIVE ARE: a confident claim with nothing behind it, believed because it sounded authoritative —
+and A PASSING CHECK AND AN ABSENT CHECK LOOK IDENTICAL. That is the ossification hazard, live, in the
+substrate we are using to build the machine that must never do it.
+
+## In-flight
+NONE. Tree clean, worktrees clean, everything committed and pushed.
+
+## Session close → Next
+Done: agentic primitives packaged + proven; layering guard un-blinded; 304-failure triage RESOLVED
+(zero regressions — baseline had MORE failures than HEAD); and a long design session that produced
+the novelty finding, the cognition-question corpus, the two-kinds-of-question distinction, and
+D-intentions-are-the-root.
+
+Next (Akien's call — CC.0's read is that the INTENTIONS session is worth more than the refactor):
+  A) T-write-the-intentions-down (L, 0.95) — the North Star is 3 stars and mostly in Akien's head.
+     Everything we build against it until it is written is building against nothing.
+  B) T-domains-global-package (M, 0.8) — the refactor. Descent boundary ALREADY design-passed:
+     merge base.py + general.py into ONE concrete GeneralDomain (walk + DEFAULT policy + completion
+     contract + _run_attempt = ONE DISPATCH). CodingDomain strips to prompt + contract. CapabilityMixin
+     holds a per-INSTANCE domain (a FACTORY — not a class-level shared object, which would share
+     escalation state across every agent). Retire resolve_domain + capability_domain:str.
+     NAMED DEFERRAL (CP1): no ground truth ⇒ NO real coding DONE-check exists. Do NOT invent a fake
+     completion contract. The provable claim is the stripping + the retire + instance-holding.
+     FIRST LANDMINE: reply_text.py is imported by PROXY-SIDE run_record.py — moving it into
+     unseen_university/domains/ makes the proxy import the domain layer. Place it deliberately.
+     Still awaiting placement: escalation_corpus, stuck_ladder, escalation_policy, domain_prompts, prompts/.
+
+## Awaiting Akien's ruling (none blocking)
+1. COGNITION-QUESTION HOME — devlab/runtime/memory/questions/ (CLAUDE.md-compliant, one node per
+   question = the graph-tree shape) vs skills/questions/questions.json (declares itself canonical,
+   has a real runtime consumer in ebook_reader.py). CC.0 recommends the former. (T-questions-corpus-two-homes)
+2. OPEN-QUESTION HOME — today they are Q1:/A1: inside ticket bodies. Still right, or their own store
+   with a promote-to-decision edge?
+3. AMENDMENT 3 to D-domains-general-with-device-owned-specializations — COMPENSATION vs INTRINSIC
+   specialization. The fold-back rule ("specialization is graduating debt") is right for a crutch
+   (critic_enabled, aci_mode) and WRONG for Igor's emotional valence, which must NEVER fold back —
+   folding it would contaminate the shared epistemic trees, which are purely epistemic by contract.
+   As written, the machinery would eventually come for it.
+
+## Open tickets filed this session (7)
+T-write-the-intentions-down (0.95) · T-orphan-skills-invisible-to-every-audit (0.85) ·
+T-questions-corpus-two-homes (0.85) · T-canonicity-claims-need-grants (0.8) ·
+T-tests-pollute-the-canonical-memory-store (0.8) · T-cognition-questions-canonical-home (0.75) ·
+T-test-tier-cascade-hangs (0.7) · T-test-capability-evidence-red (0.65) ·
+T-foldback-apparatus-out-of-the-proxy (triage)
