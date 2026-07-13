@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.two-kinds-of-question-2026-07-13.20260713.061154246999",
+  "emitter": "cc.0",
+  "namespace": [
+    "two-kinds-of-question-2026-07-13"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-13T06:11:54.246999",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "TWO KINDS OF QUESTION: cognition questions ARE THE COMPILER; open questions COMPILE OUT",
+    "text": "**Akien, 2026-07-13:** \"we appear to need two kinds of questions. cognition questions, and open questions.\"\n\nThis resolves a naming collision that had already done real damage (see below).\n\n## The distinction\n\n**COGNITION QUESTION** — a THINKING MOVE. Asked REPEATEDLY, of MANY subjects. It never gets\nanswered; it gets APPLIED. Its answer varies by SUBJECT, not by time. It is a LENS / an operator /\na function. Domain-independent by construction.\n  e.g. \"how might that work?\" · \"does that leave any gaps?\" · \"where is the lever?\"\n  Lifecycle: NEVER CLOSES. Reuse IS its value.\n  Home: devlab/runtime/memory/questions/ (Q-cog-*, Q-meta-*) — 21 seeded 2026-07-12/13.\n\n**OPEN QUESTION** — a project-specific thing NOT YET DECIDED. Asked ONCE, about ONE thing. It\nCLOSES when answered, and its answer BECOMES A DECISION. Its answer varies over TIME until it\nsettles. It is a VARIABLE AWAITING BINDING.\n  e.g. \"should the reader belong to the Librarian?\" · \"does reply_text go proxy-side or in agentic/?\"\n  Lifecycle: CLOSES. RESOLUTION is its value.\n  Home today: folded into TICKET BODIES as Q1:/A1: (feedback_open_questions_workflow). Whether that\n  stays the home is open.\n\n## WHY THIS IS THE LOAD-BEARING DISTINCTION, not a filing nicety\n\n  **OPEN QUESTIONS COMPILE OUT. COGNITION QUESTIONS ARE THE COMPILER.**\n\nAn open question, once answered, BECOMES STRUCTURE — a decision, a node, a thing the system never\nre-derives. That IS compiled inference working (project_compiled_inference_vision; the residue\nshrinking, I-compiled-inference-residue).\n\nA cognition question NEVER compiles away, because it is the thing DOING the compiling. It is not\nresidue to be eliminated; it is the mechanism that eliminates residue.\n\nCONSEQUENCE: 'definition of done = zero tickets' (project_definition_of_done_tool_disappears) applies\nto OPEN questions and MUST NEVER be applied to COGNITION questions. Zero open questions is the goal.\nZero cognition questions would mean the machine had lost the ability to think.\n\nSECOND CONSEQUENCE: they need different STORAGE SHAPES. A cognition question is a stable node with no\nanswer field (it has a FUNCTION and a set of applications). An open question is a node with an answer\nfield that starts empty and, when filled, promotes to a decision. Same word, opposite schema.\n\n## The damage the collision already did\n\n- skills/questions/questions.json's _meta declares 'Q-xxx open-questions: RETIRED parking-lot\n  experiment (the /question skill). These are NOT project-specific things-not-yet-decided.'\n- CC.0's own memory says '/question = cognition-questions, not dev'.\n- BOTH were written in good faith. They describe TWO DIFFERENT THINGS THAT GOT THE SAME NAME — and\n  the tooling collapsed them into ONE dead skill (/question) pointed at ONE dead database\n  (adc.palace, retired 2026-06-23). So BOTH kinds of question had no working capture path, and\n  Akien's cognition-question corpus had to be dug back out of chat logs on 2026-07-12.\n- A name collision at the tool layer silently destroyed the capture path for the single most valuable\n  artifact in the project. That is what an unresolved ambiguity costs when it reaches code.\n\n## Status\n\nAkien stated the distinction; CC.0 recorded it. Open: whether open questions keep their current home\n(Q1:/A1: in ticket bodies) or get their own store; and the reconciliation of the two cognition-corpus\nhomes (T-questions-corpus-two-homes). NOT YET A DECISION — needs Akien's ruling on the homes."
+  }
+}
