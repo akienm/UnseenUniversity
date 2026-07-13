@@ -43,8 +43,17 @@ ROUTING_CORE = [
     "routing_buckets.py",
 ]
 
-#: Modules that live ABOVE the proxy. The proxy must never name them.
-ABOVE_THE_PROXY = ("domains", "agentic_loop", "architect_editor")
+#: Import-path COMPONENTS that live ABOVE the proxy. The proxy must never name them.
+#: Matched against the dotted parts of an import, so `agentic` bans the WHOLE package
+#: (unseen_university.agentic.loop, .architect_editor, .block_apply, .edit_format, and
+#: anything added later) rather than a list of module names that rots.
+#:
+#: It rotted once already: this tuple used to read ("domains", "agentic_loop",
+#: "architect_editor"). When the loop moved to unseen_university/agentic/loop.py
+#: (T-agentic-primitives-package), "agentic_loop" stopped being a path component of
+#: anything — so a routing-core module could have imported the agentic loop from its new
+#: home and this guard would have said nothing. Ban the package, not the filenames.
+ABOVE_THE_PROXY = ("domains", "agentic")
 
 _INFERENCE_DIR = Path(device_mod.__file__).parent
 

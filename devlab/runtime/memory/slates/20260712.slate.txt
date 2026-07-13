@@ -1,14 +1,34 @@
 - T-inference-audit-resolve-consumers-human-terminal: audit resolve() consumers for model-less HUMAN_TERMINAL (follow-up from tier-ladder)
 - T-inference-escalation-policy-object: escalation is now a POLICY object (DEFAULT/NoEscalation/Harvest); harvest_mode + escalation_allowed retired. Proven red→green @171e9d2f.
 
-## In-flight / Session close → Next (RESCUE, 2026-07-12, pre-restart hand-off)
-Session = akiendelllinux_cc_RESCUE (paramedic; NO tmux, scroll-back OK, system NOT up).
-Rack services are DOWN — not needed: next ticket is an OFFLINE refactor, tests hermetic.
-Restarting to open the big refactor with a cold context (forgetfulness discriminator).
+## In-flight / Session close → Next (2026-07-12, post-agentic hand-off)
+Rack services are DOWN — not needed: the next ticket is an OFFLINE refactor, tests hermetic.
+
+✅ DONE + PUSHED this session:
+  T-agentic-primitives-package — CLOSED PROVEN @ b9fecd9a. The 4 shared execution primitives
+  now live in unseen_university/agentic/ (loop.py [was agentic_loop.py], architect_editor.py,
+  block_apply.py, edit_format.py). git mv (history kept) + import sweep across 27 files.
+  Proof: tests/agentic/test_agentic_primitives_package.py (structural/AST, red=AssertionError).
+  ALSO repaired a layering guard that had gone BLIND: test_proxy_domain_layering's
+  ABOVE_THE_PROXY banned the module NAME "agentic_loop", which stopped being a path component
+  the moment the file moved — a routing-core file could have imported the loop from its new
+  home and the guard would have said nothing. Now bans the PACKAGE ("agentic"), verified by
+  injecting a canary import into policy.py and watching it fail.
+  I-reader-reads-an-address-into-domain-trees emitted (Akien design session — reader belongs to
+  the Librarian; routing-domain vs knowledge-domain are TWO AXES).
+  3 follow-ons filed: T-foldback-apparatus-out-of-the-proxy (triage),
+  T-test-tier-cascade-hangs (sprint, PRE-EXISTING hang — makes the dicksimnel suite unrunnable),
+  T-test-capability-evidence-red (sprint, PRE-EXISTING 2 red).
 
 Next: T-domains-global-package (M, 0.8, status=sprint) — file:
   devlab/runtime/memory/tickets/cc.0.T-domains-global-package.20260708.210104799822.json
 Decision: D-domains-general-with-device-owned-specializations-2026-07-08 (READ Amendment 2).
+NOTE: the ordering hazard below is now RESOLVED — agentic landed first, so domains/ moves
+top-level → top-level with NO inversion. The descent-boundary design-pass is recorded below;
+do NOT re-derive it.
+FIRST LANDMINE when domains/ moves up: reply_text.py is imported by PROXY-SIDE run_record.py.
+Moving it into unseen_university/domains/ makes the proxy import the domain layer. Place it
+deliberately (candidates: leave it proxy-side as devices/inference/reply_text.py, or agentic/).
 
 Scope (heavier than "M"): move devices/inference/domains/ → unseen_university/domains/
   (top-level, precedent: unseen_university/capabilities/). Rename BaseDomain→GeneralDomain
