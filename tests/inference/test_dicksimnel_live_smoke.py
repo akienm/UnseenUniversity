@@ -13,25 +13,25 @@ without Hex stays green. It is a live integration probe, not a hermetic unit tes
 from __future__ import annotations
 
 import os
-import socket
 
 import pytest
+
+from tests.support.live_guard import can_infer
 
 HEX_HOST = "10.0.0.100"
 HEX_PORT = 11434
 HEX_ENDPOINT = f"http://{HEX_HOST}:{HEX_PORT}"
-
-
-def _hex_reachable() -> bool:
-    try:
-        with socket.create_connection((HEX_HOST, HEX_PORT), timeout=3):
-            return True
-    except OSError:
-        return False
+PROBE_MODEL = "llama3.2:3b"   # smallest resident model — the cheapest honest question we can ask
 
 
 @pytest.mark.live
-@pytest.mark.skipif(not _hex_reachable(), reason="Hex (10.0.0.100:11434) unreachable — live smoke skipped")
+@pytest.mark.skipif(
+    not can_infer(HEX_ENDPOINT, PROBE_MODEL),
+    reason=f"Hex ({HEX_HOST}:{HEX_PORT}) cannot COMPLETE right now (down, or its single slot is "
+           f"saturated) — live smoke skipped. Note this probes capability, not reachability: a "
+           f"bare TCP connect succeeds against a host whose queue is an hour deep, and joining "
+           f"that queue is what built the nine-deep pile-up on 2026-07-13.",
+)
 def test_dicksimnel_builds_on_hex(tmp_path, monkeypatch):
     """DS drives devstral@Hex through a real ToolLoop: tool_call → Write → DONE."""
     monkeypatch.setenv("INFERENCE_ENDPOINT", HEX_ENDPOINT)

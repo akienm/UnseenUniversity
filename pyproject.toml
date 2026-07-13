@@ -35,11 +35,17 @@ include = ["unseen_university*"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "tests", "devlab"]
-addopts = "--import-mode=importlib"
+# `live` is deselected BY DEFAULT. Driving a real shared inference host is something you must ASK
+# for (`-m live`) — never something a bare `pytest tests/` does behind your back. It used to: the
+# marker was registered and deselected nowhere, so every run (day-close, overnight) fired a live 24B
+# multi-turn build at Hex. The runs took hours under contention, never exited, never released their
+# sockets, and piled up nine deep — which then read as "the server is broken."
+# T-default-suite-drives-live-inference-and-saturates-hex.
+addopts = "--import-mode=importlib -m 'not live'"
 markers = [
     "docker: tests that require Docker installed and running (deselect with -m 'not docker')",
     "integration: tests that require live external services (deselect with -m 'not integration')",
-    "live: tests that drive real inference against a live host (e.g. Hex); skip-soft when unreachable",
+    "live: drives real inference against a live host (e.g. Hex). DESELECTED BY DEFAULT — opt in with -m live",
 ]
 
 [project.scripts]
