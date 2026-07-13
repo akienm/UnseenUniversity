@@ -93,6 +93,25 @@ ever differ, the file wins — fix this shim.**
   JSON sink (T-granny-dispatch-observability-gap), and `GrannyShim` was never even instantiated in
   a live process, so its shim-owns-startup watchdog was dead code. The Ground Loop stays passive
   (heartbeat + startup-error→rescue); the shim owns startup.*
+- **Provenance is the safety property — NOT authorship.** An assertion's authority does not live in
+  **who typed it**; it lives in **what evidence conditioned it**. Every stored assertion is headed for a
+  uniform envelope — `{claim, evidence, provenance_class, falsifier, horizon}` — set **mechanically at the
+  write path** (the `memory_emit.py` chokepoint), never hand-typed. (Ratified 2026-07-13,
+  `D-provenance-is-the-safety-property-2026-07-13`; the envelope itself is **ticketed, not yet built** —
+  `T-every-assertion-carries-its-provenance`.)
+  *Why: a ratified string and a machine-written string are **byte-identical**, so authority cannot live in
+  the typing — and ratification by a human who doesn't remember the artifact is a ritual, not a check. The
+  consequence that matters day to day: **a machine MAY write an intention** derived from evidence
+  causally **upstream** of the implementation (the ticket description, the decision, the conversation).
+  The ban is narrow and it is the whole rule: **an intention may never be derived SOLELY from the artifact
+  it is meant to falsify** — a spec taken from the code cannot judge the code it came from. An intention
+  extracted from upstream evidence is a **ratchet** (it goes red on future drift), not a **verdict** (it
+  cannot tell you today's build is hollow); only a `declared` intention is a SPEC for proof-on-close.
+  **Do not re-litigate this as "machines may not write intentions" — that ban was raised on 2026-07-12 and
+  repealed on 2026-07-13, and the argument for it was already false when it was made: the intent extractor
+  never read the code.** Corollary, from the same day's incident: **an error may collapse into a success
+  shape at an INTERFACE, never into a RECORD OF TRUTH** — an interface can be re-called; a record cannot
+  be un-written.*
 - **Single import root.** All code ships under one package, `unseen_university/`, discovered by
   pyproject `include = ["unseen_university*"]`. There is exactly one heart; no co-equal top-level
   `bus`/`skeleton`/`devices`/`diagnostic_base`/`config` trees. `bus` and `skeleton` are **devices**
