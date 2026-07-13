@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-inference-dispatch-buries-a-fast-true-error-under-a-60s-timeout.20260713.164624772454",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-dispatch-buries-a-fast-true-error-under-a-60s-timeout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T22:46:24.772454+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inference-dispatch-buries-a-fast-true-error-under-a-60s-timeout"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-hex-ollama-serves-metadata-but-cannot-infer",
+    "title": "[triage] Hex's ollama serves METADATA but cannot INFER \u2014 /api/tags 200 in 2ms, /api/chat hangs forever for EVERY model \u2014 and HealthMonitor calls it healthy. All local inference is dead.",
+    "size": "M",
+    "priority": 0.85,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "inference",
+      "observability",
+      "silent-failure",
+      "non-injective-signal",
+      "hex",
+      "health-probe",
+      "cp1"
+    ],
+    "intention": "I intend that a liveness probe tests the CAPABILITY THE SERVICE EXISTS FOR, not merely that the service answers the phone \u2014 because a probe that checks the wrong thing reports a dead service as healthy, and is indistinguishable from having no probe at all. [intention_date: 2026-07-13]",
+    "description": "**MEASURED 2026-07-13** while closing T-intent-extractor-crash-masquerades-as-refusal.\n\n**\u26a0 THIS TICKET WAS FILED WITH A WRONG DIAGNOSIS AND IS CORRECTED IN PLACE. The correction is\nkept visible, not silently overwritten (CP2: the wrong turn is data).** I first concluded \"the\nroute points at a model that is not installed, and dispatch buries ollama's fast 404 under a 60s\ntimeout.\" **THAT WAS FALSE**, and it was false for an instructive reason: I probed **localhost**,\nwhere `llama3.2:3b` is genuinely absent and genuinely 404s in 0.03s \u2014 but **the device never talks\nto localhost.** `sources.py:1067` reads `INFERENCE_ENDPOINT`, which `igor.credentials.cfg` sets to\n**`http://10.0.0.100:11434` (Hex)**. My repros ran without that env sourced; the device ran with it.\n**I measured a different machine than the one under test, and the numbers were beautifully consistent\nand entirely irrelevant.** The 60s timeout was never burying a 404 \u2014 there was no 404.\n\n**THE TRUE DIAGNOSIS (all measured against Hex, 10.0.0.100):**\n  * `GET /api/tags`  -> **200 in 0.002s**, lists 6 models: qwen3-coder:30b, deepseek-r1:32b,\n    qwen2.5-coder:14b, deepseek-r1:14b, devstral-small-2:24b, **llama3.2:3b** (it IS installed).\n  * `POST /api/chat` model=**llama3.2:3b** -> **HANGS. 65s, no response, no error.**\n  * `POST /api/chat` model=**qwen2.5-coder:14b** -> **HANGS. 85s, no response, no error.**\n  * Main-thread stack mid-hang (faulthandler): blocked in `socket.readinto` ->\n    `http.client._read_status` <- `sources.py:388 in call` <- `device.py:709 in dispatch`. The TCP\n    connection is ESTABLISHED and the request is SENT; Hex simply never sends a response line.\n    (HealthMonitor's thread is parked in `threading.wait` \u2014 it is NOT the culprit.)\n\n**SO: HEX'S OLLAMA SERVES METADATA BUT CANNOT INFER, FOR ANY MODEL.** It answers the phone\ninstantly and then says nothing, forever. This is not a slow model and not a missing model \u2014 the\ninference path is wedged. **Every local-inference call in the rack \u2014 every `minion` and every\nollama-routed `worker` \u2014 burns 60 seconds and fails. The local tier is 100% dead right now.**\n\n**THE DEFECT THAT IS OURS (the ops fault above is Hex's; this one is the code's):**\n**HealthMonitor reports the source HEALTHY.** It probes REACHABILITY \u2014 the port answers, `/api/tags`\nreturns 200 \u2014 and reachability is exactly the property that is still TRUE while the service is\nuseless. **A probe that tests whether a service ANSWERS THE PHONE, when what you need to know is\nwhether it can DO THE JOB, reports a corpse as healthy.** It is a check indistinguishable from an\nabsent one \u2014 the same shape as the intent extractor's crash-wearing-CP1's-clothes, and as the\nossification hazard generally. The one live consumer that noticed (the intent extractor, freshly\nfixed) reported `error_detail='inference: timed out'` \u2014 **which was TRUE, and was the only honest\nsignal anywhere in the stack.**\n\n**Affected files:** unseen_university/devices/inference/health_monitor.py (probes reachability, not\ncapability), sources.py:297-390 (`OllamaSource.call` \u2014 no fast-fail when a source accepts and never\nanswers), device.py:709 (dispatch), and NOTE `device.py:830-855` defines a SECOND `_ollama_chat`\nthat is not the live path (sources.py is) \u2014 a duplicate implementation worth chasing separately.\n\n**Scope boundary:** IN \u2014 (a) HealthMonitor must probe the CAPABILITY (a tiny real completion, e.g.\n`num_predict:1`, with a short timeout) and mark a source DOWN when it cannot infer, however cheerfully\nit answers /api/tags; (b) a source that accepts a connection and never responds must fail FAST and\nsay WHAT it did (`no response from <endpoint> after Ns`), not surface a bare `socket.timeout('timed\nout')`; (c) get Hex's ollama serving again (ops \u2014 restart; likely wedged/OOM on the Mac Studio).\nOUT \u2014 model selection, and the extractor's record (done).\n\n**Test plan / discriminating fixture:** a fake source that (1) answers `/api/tags` 200 but hangs on\n`/api/chat` must be marked **DOWN**, while (2) a source that answers both is **UP**. A probe that\nonly checks /api/tags passes BOTH and fails this fixture \u2014 which is the entire point. Plus: dispatch\nagainst (1) must return a named 'no response' error in well under the request timeout.\n\n**Completion criteria:**\n  1. A source that answers metadata but cannot complete is reported DOWN (fixture above).\n  2. A hang surfaces a NAMED error identifying the endpoint and what it did, not a bare 'timed out'.\n  3. Hex's ollama serves `/api/chat` again \u2014 VERIFIED by a real completion, not by /api/tags.\n  4. The blast radius is stated as a number: how many rack calls hit the dead tier and for how long.\n\n**BLOCKS:** the live success-rate re-measurement of the intent extractor (criterion 3 of\nT-intent-extractor-crash-masquerades-as-refusal) \u2014 no ollama-routed call can succeed until Hex infers.\n\n**THE LESSON, WHICH IS THE SAME LESSON AS THE TICKET IT CAME FROM:** I got a fast, clean, confident\nanswer from the wrong machine and nearly shipped it as the diagnosis. The evidence was internally\nconsistent and completely wrong. **What saved it was capturing the stack from the PROCESS UNDER TEST\ninstead of reasoning about a reproduction I had built myself** (instrument-don't-probe). A repro that\ndoes not run in the failing configuration is not a repro; it is a second experiment that happens to\nbe nearby.",
+    "created_at": "2026-07-13T22:45:24.127281+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-13T22:45:24.173337+00:00"
+  }
+}
