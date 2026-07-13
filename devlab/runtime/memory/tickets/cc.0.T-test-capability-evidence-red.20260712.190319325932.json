@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-test-capability-evidence-red.20260712.190319325932",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-capability-evidence-red"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T01:03:19.325932+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-test-capability-evidence-red"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-test-capability-evidence-red",
+    "title": "[sprint] PRE-EXISTING: 2 red in tests/inference/test_capability_evidence.py — a measured-capability claim is not backed by its measurement",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.65,
+    "tags": [
+      "tests",
+      "inference",
+      "pre-existing",
+      "capability"
+    ],
+    "description": "Found 2026-07-12 while running suites for T-agentic-primitives-package. VERIFIED PRE-EXISTING: both reproduce at HEAD in a clean worktree (2 failed, 6 passed), so NOT caused by the agentic move.\n\nRED:\n  test_a_measured_capability_claim_is_backed_by_its_measurement\n  test_the_top_bucket_claim_is_backed_by_a_clean_pass_of_the_top_band\n\nWHY THIS ONE IS NOT COSMETIC: these tests exist to enforce 'measure capability, never declare it' — a capability claim in the model registry must point at the measurement that backs it. Two red here means a claim is currently asserted WITHOUT its backing measurement, which is exactly the failure class the tests were written to catch (a tool-less model took the coding slot and confabulated completion — the unearned fold-back in D-domains-general-with-device-owned-specializations).\n\nSo: do NOT fix by relaxing the assertion. Either the measurement is missing (run it) or the claim is unearned (drop it).\n\n**Test plan:** red->green: both nodes green with the claim backed by a real measurement record, not by weakening the guard.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-13T01:03:15.006522+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-13T01:03:15.052819+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "597f052e-1f6d-4e14-9fdc-c52280bbbe11"
+  }
+}

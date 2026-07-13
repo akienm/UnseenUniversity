@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-test-tier-cascade-hangs.20260712.190314739479",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-tier-cascade-hangs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T01:03:14.739479+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-test-tier-cascade-hangs"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-test-tier-cascade-hangs",
+    "title": "[sprint] PRE-EXISTING: tests/dicksimnel/test_tier_cascade.py HANGS (>70s, never terminates) — blocks the dicksimnel suite",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.7,
+    "tags": [
+      "tests",
+      "inference",
+      "pre-existing"
+    ],
+    "description": "Found 2026-07-12 while running suites for T-agentic-primitives-package. VERIFIED PRE-EXISTING: reproduces at HEAD in a clean worktree, so it is NOT caused by the agentic move.\n\nSYMPTOM: tests/dicksimnel/test_tier_cascade.py never terminates. Every other file in tests/dicksimnel + tests/minion passes (94 tests, all under 1s). This one file alone made a 900s suite run time out TWICE — it is why the dicksimnel suite cannot be run at all today.\n\nLIKELY CAUSE (unverified — do not assume): it drives a real escalation walk against a DOWN rack. GeneralDomain defaults to timeout=300 with max_availability_retries=2, so a walk that treats a down source as AVAILABILITY and retries can consume ~900s+ without ever finishing. If so, the test is reaching for LIVE inference from what should be a hermetic suite — which is its own bug (hermetic proofs never build a live device).\n\nWHY IT MATTERS BEYOND THE TEST: a hang is worse than a failure. A failing test reports; a hanging test makes the whole suite unrunnable and silently trains everyone to skip it.\n\n**Test plan:** red->green: the file completes (pass or fail) in bounded time with the rack DOWN. Consider adding pytest-timeout (not installed today) so a future hang fails loudly instead of hanging.\n\n**Note:** pytest-timeout is NOT installed in this venv — that is why the hang presents as an indefinite stall rather than a timeout failure.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-13T01:03:10.402811+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-13T01:03:10.449982+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4a74ff92-bf1e-4c9b-8c62-4cad72c0110b"
+  }
+}

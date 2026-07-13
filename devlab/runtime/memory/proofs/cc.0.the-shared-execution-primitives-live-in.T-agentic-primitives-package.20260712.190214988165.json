@@ -1,0 +1,86 @@
+{
+  "id": "cc.0.the-shared-execution-primitives-live-in.T-agentic-primitives-package.20260712.190214988165",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-shared-execution-primitives-live-in",
+    "T-agentic-primitives-package"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-12T19:02:14.988165",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-agentic-primitives-package"
+    ],
+    "commits": [
+      "b9fecd9a81f3c3d9f01caabaac39cb1e59f48848"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-agentic-primitives-package",
+  "body": {
+    "thing": "The shared execution primitives live in unseen_university/agentic/, not inside the inference proxy",
+    "intention": "AgenticLoop/ArchitectEditorFlow/block_apply/edit_format are shared primitives a domain CONSUMES (minion imports them too); the proxy is a routing LEAF and contains none of them; nothing imports them from the retired path; and agentic never imports the domain layer",
+    "test": "tests/agentic/test_agentic_primitives_package.py::test_execution_primitives_live_in_agentic_not_the_proxy",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/agentic/test_agentic_primitives_package.py::test_execution_primitives_live_in_agentic_not_the_proxy",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \"\"\"\n        # (1) The package exists and actually exposes the primitives — a stub package fails here.\n        try:\n            from unseen_university.agentic import (\n                AgenticLoop,\n                ArchitectEditorFlow,\n                LoopResult,\n                NativeToolCodec,\n                apply_blocks_to_dir,\n            )\n        except ImportError as exc:\n>           raise AssertionError(\n                f\"unseen_university.agentic does not expose the execution primitives: {exc}\"\n            ) from exc\nE           AssertionError: unseen_university.agentic does not expose the execution primitives: cannot import name 'AgenticLoop' from 'unseen_university.agentic' (unknown location)\n\ntests/agentic/test_agentic_primitives_package.py:89: AssertionError\n=========================== short test summary info ============================\nFAILED tests/agentic/test_agentic_primitives_package.py::test_execution_primitives_live_in_agentic_not_the_proxy\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 2.84s"
+          }
+        }
+      }
+    ],
+    "commit": "b9fecd9a81f3c3d9f01caabaac39cb1e59f48848",
+    "impl_paths": [
+      "tests/dicksimnel/test_critic_wiring.py",
+      "tests/dicksimnel/test_tier_cascade.py",
+      "tests/dicksimnel/test_toolloop_envelope.py",
+      "tests/inference/test_agentic_loop_context.py",
+      "tests/inference/test_architect_read_window.py",
+      "tests/inference/test_block_apply.py",
+      "tests/inference/test_block_repair.py",
+      "tests/inference/test_clone_commit.py",
+      "tests/inference/test_corpus_visibility.py",
+      "tests/inference/test_dicksimnel_toolloop.py",
+      "tests/inference/test_domain_cwd.py",
+      "tests/inference/test_domain_loop_wiring.py",
+      "tests/inference/test_edit_format_ladder.py",
+      "tests/inference/test_edit_format_registry.py",
+      "tests/inference/test_escalation_handoff.py",
+      "tests/inference/test_escalation_policy.py",
+      "tests/inference/test_file_mention_handshake.py",
+      "tests/inference/test_flat_rate_routing.py",
+      "tests/inference/test_flat_rate_timeout_raise.py",
+      "tests/inference/test_harvest_mode.py",
+      "tests/inference/test_proxy_domain_layering.py",
+      "tests/inference/test_verdict_gate.py",
+      "tests/minion/test_minion_device.py",
+      "unseen_university/agentic/__init__.py",
+      "unseen_university/agentic/architect_editor.py",
+      "unseen_university/devices/inference/domains/base.py",
+      "unseen_university/devices/inference/domains/coding.py",
+      "unseen_university/devices/inference/domains/general.py",
+      "unseen_university/devices/minion/tool_loop.py"
+    ],
+    "ticket": "T-agentic-primitives-package",
+    "narrative": "",
+    "why": "The primitives were misplaced twice — wrong layer (inside the routing proxy, creating device->domains->agentic_loop->device) and wrong scope (hung off the domain base, asserting every coding consumer must be driven turn-by-turn, which is false for aider and for CC). Shared by two devices, owned by neither: that is a primitive, and it gets a home.",
+    "bootstrap": false
+  }
+}

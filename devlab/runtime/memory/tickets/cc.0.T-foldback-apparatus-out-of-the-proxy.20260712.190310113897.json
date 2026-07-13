@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-foldback-apparatus-out-of-the-proxy.20260712.190310113897",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-foldback-apparatus-out-of-the-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T01:03:10.113897+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-foldback-apparatus-out-of-the-proxy"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-foldback-apparatus-out-of-the-proxy",
+    "title": "[triage] The fold-back apparatus does not belong in the routing proxy — classify and relocate eval_slice/io_corpus/corpus_verdict/prereg/verdict_gate",
+    "size": "M",
+    "status": "triage",
+    "priority": 0.6,
+    "tags": [
+      "inference",
+      "architecture",
+      "domains"
+    ],
+    "description": "FOLLOW-ON from T-agentic-primitives-package, which said: 'The fold-back apparatus (eval_slice, io_corpus, corpus_verdict, prereg, verdict_gate) currently sits in the routing proxy and has no business there either — it is the machinery that decides GRADUATION. Classify and relocate it with this ticket or file a follow-on.' We kept the move ticket to the primitives; this is that follow-on.\n\nThe proxy is a routing LEAF. This machinery decides whether a specialization has GRADUATED (D-domains-general-with-device-owned-specializations: fold a compensation back only when the general case PROVES the property). That is a domain/eval-layer job, not a routing job.\n\nOPEN QUESTION this must answer first: WHERE does it go? unseen_university/agentic/ is for execution primitives (how one attempt runs) — this is not that. Candidates: a new unseen_university/eval/ (peer to agentic/ and capabilities/), or the domain layer. Classify before moving.\n\nBLOCKED-ISH: cheaper to land after T-domains-global-package, so the domain layer has settled into unseen_university/domains/ and 'the domain/eval layer' is a real address rather than a waypoint.\n\n**Test plan:** red->green: a structural/AST guard asserts the inference proxy package contains no graduation/eval machinery, and the consumers import it from its new home. Same shape as tests/agentic/test_agentic_primitives_package.py.\n\n**Decision:** decision:D-domains-general-with-device-owned-specializations-2026-07-08\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-13T01:03:01.392879+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-13T01:03:01.439134+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "23778940-585a-4554-9adb-e29878180839"
+  }
+}
