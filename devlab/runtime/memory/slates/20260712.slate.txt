@@ -1,84 +1,125 @@
-- T-inference-audit-resolve-consumers-human-terminal: audit resolve() consumers for model-less HUMAN_TERMINAL (follow-up from tier-ladder)
-- T-inference-escalation-policy-object: escalation is now a POLICY object (DEFAULT/NoEscalation/Harvest); harvest_mode + escalation_allowed retired. Proven red→green @171e9d2f.
+# Slate 2026-07-12
 
-## In-flight / Session close → Next (2026-07-12, post-agentic hand-off)
-Rack services are DOWN — not needed: the next ticket is an OFFLINE refactor, tests hermetic.
+## Done today
+- T-inference-tier-ladder-real — the escalation ladder's rungs are real (closed proven, earlier session)
+- T-inference-typed-no-path-result — resolve() returns NoCapableModel vs NoAvailableProvider (closed proven)
+- T-inference-escalation-policy-object — escalation is a POLICY object (DEFAULT/NoEscalation/Harvest);
+  harvest_mode + escalation_allowed flags retired. Proven red→green @171e9d2f.
+- T-agentic-primitives-package — CLOSED PROVEN @ b9fecd9a. The 4 shared execution primitives now live
+  in unseen_university/agentic/ (loop.py [was agentic_loop.py], architect_editor.py, block_apply.py,
+  edit_format.py). git mv kept history; import sweep across 27 files; 634 tests collect, 0 errors;
+  pip install -e . clean. Proof: tests/agentic/test_agentic_primitives_package.py (structural/AST —
+  a stub package, a copy-not-move, a half-swept import, or an inverted import each fail it).
+- fix @ b1e2420d — un-blinded a layering guard. test_proxy_domain_layering's ABOVE_THE_PROXY banned the
+  module NAME "agentic_loop", matched against dotted import components. The moment that file became
+  agentic/loop.py, that string stopped being a component of anything: a routing-core module could have
+  imported the loop from its new home and the guard would have said NOTHING (block_apply/edit_format
+  were never covered at all). Now bans the PACKAGE. Verified it bites by injecting a canary import into
+  policy.py and watching it fail. EVERY TEST WAS GREEN while it was blind — caught on an advisor pass.
+- I-reader-reads-an-address-into-domain-trees — intention emitted (Akien design session).
 
-✅ DONE + PUSHED this session:
-  T-agentic-primitives-package — CLOSED PROVEN @ b9fecd9a. The 4 shared execution primitives
-  now live in unseen_university/agentic/ (loop.py [was agentic_loop.py], architect_editor.py,
-  block_apply.py, edit_format.py). git mv (history kept) + import sweep across 27 files.
-  Proof: tests/agentic/test_agentic_primitives_package.py (structural/AST, red=AssertionError).
-  ALSO repaired a layering guard that had gone BLIND: test_proxy_domain_layering's
-  ABOVE_THE_PROXY banned the module NAME "agentic_loop", which stopped being a path component
-  the moment the file moved — a routing-core file could have imported the loop from its new
-  home and the guard would have said nothing. Now bans the PACKAGE ("agentic"), verified by
-  injecting a canary import into policy.py and watching it fail.
-  I-reader-reads-an-address-into-domain-trees emitted (Akien design session — reader belongs to
-  the Librarian; routing-domain vs knowledge-domain are TWO AXES).
-  3 follow-ons filed: T-foldback-apparatus-out-of-the-proxy (triage),
-  T-test-tier-cascade-hangs (sprint, PRE-EXISTING hang — makes the dicksimnel suite unrunnable),
-  T-test-capability-evidence-red (sprint, PRE-EXISTING 2 red).
+## Notes
+THE ORDERING CALL (do not re-litigate): T-agentic-primitives-package ran BEFORE T-domains-global-package,
+reversing the slate's Next:. That was a PRIORITY call (0.8 > 0.75), not a dependency call, and the
+dependency runs the other way — domains import the loop; the loop imports no domain (VERIFIED by dumping
+the intra-package import graph: {loop, architect_editor, block_apply, edit_format} is CLOSED). Domains-first
+would have made a top-level package import UPWARD into a device's guts and moved all 4 files twice.
 
-Next: T-domains-global-package (M, 0.8, status=sprint) — file:
+## In-flight
+⚠️ DAY-CLOSE AUDIT IS INCOMPLETE — one step unresolved. Finish this FIRST tomorrow.
+
+Step 1 (full suite) came back **304 failed, 7737 passed** (11m10s). NOT yet triaged: I do not know
+whether those 304 are mine or environmental (the rack is DOWN — no Postgres, no Hex — and the failures
+are in igor/web/session areas, NOT in my blast radius). What IS known: every suite my change touched
+passes independently — tests/inference 507 passed, tests/dicksimnel+minion 94 passed, tests/agentic and
+test_capability_mixin green. So the 304 are almost certainly environmental. ALMOST IS NOT MEASURED.
+
+THE DISCRIMINATOR IS ALREADY RUNNING — two detached full-suite runs (they survive session exit):
+  ~/.unseen_university/logs/day-close/20260712_HEAD_b1e2420d.txt      (current tree)
+  ~/.unseen_university/logs/day-close/20260712_BASELINE_3e05c274.txt  (pre-agentic commit, in worktree
+                                                                       /home/akien/dev/src/uu-baseline-3e05c274)
+TOMORROW: diff the two FAILED sets.
+  grep "^FAILED" <file> | sed 's/ - .*//' | sort -u   → then `comm -13 baseline current`
+  Anything in CURRENT but not in BASELINE is MINE and must be fixed before anything else.
+  If the sets match → environmental, ticket the rack-down suite noise and move on.
+CLEAN UP AFTER: git worktree remove /home/akien/dev/src/uu-baseline-3e05c274
+
+## Audit findings (2026-07-12)
+Tests:            ⚠️ UNRESOLVED — 304 failed / 7737 passed; triage pending (see In-flight)
+Gate sweep:       5 gates cleared
+Validity sweep:   flagged=2 checked=7 unresolvable=2 (both the recurring probe-less
+                  "Igor is retired from authoring code tickets" rules — no machine probe exists)
+Code smells:      124 silent excepts. Already tracked by T-regression-silent-failures [ESCALATED].
+                  NOT a new finding — but note it REGREW after two prior cleanup passes (59, then 19).
+                  That regrowth is the recurring-debt signal, and it is why that ticket is escalated.
+Logs:             all files ≤10MB — nothing to rotate
+Memory store:     OK (all subdirs present)
+Credentials:      1 hit, FALSE POSITIVE — password = 'Thomsun was here!' in the VENDORED python-2
+                  Kindle DRM tool (devices/igor/tools/ebook_drm/). A published third-party constant,
+                  not a live credential. (Same file is the only unparseable py3 file in the tree.)
+Path-moves:       clean — every dev-process artifact is in the canonical home
+Consequence:      0 overdue
+Wiring:           OK — no enabled switches
+Cap-map drift:    fresh (0d)
+Completion audit: T-uu-launcher-uses-venv-python → PASS, verified live (uu opentickets works both in a
+                  non-activated shell with venv AND with PATH stripped to /usr/bin:/bin — the
+                  source-tree rescue rung holds)
+Simplification:   looked. The day's source change was a PURE RELOCATION — no new logic. The one
+                  simplification it exposes (BaseDomain/GeneralDomain are two classes that should be
+                  one; resolve_domain is a name-lookup that cannot work) IS T-domains-global-package.
+Stash:            empty ✓
+
+## Session close → Next
+Next: T-domains-global-package (M, 0.8, sprint) — AFTER the test triage above.
   devlab/runtime/memory/tickets/cc.0.T-domains-global-package.20260708.210104799822.json
 Decision: D-domains-general-with-device-owned-specializations-2026-07-08 (READ Amendment 2).
-NOTE: the ordering hazard below is now RESOLVED — agentic landed first, so domains/ moves
-top-level → top-level with NO inversion. The descent-boundary design-pass is recorded below;
-do NOT re-derive it.
-FIRST LANDMINE when domains/ moves up: reply_text.py is imported by PROXY-SIDE run_record.py.
-Moving it into unseen_university/domains/ makes the proxy import the domain layer. Place it
-deliberately (candidates: leave it proxy-side as devices/inference/reply_text.py, or agentic/).
 
-Scope (heavier than "M"): move devices/inference/domains/ → unseen_university/domains/
-  (top-level, precedent: unseen_university/capabilities/). Rename BaseDomain→GeneralDomain
-  (concrete, instantiable, IS the default; _run_attempt = ONE dispatch, NOT the full
-  AgenticLoop). GeneralDomain owns: DEFAULT EscalationPolicy + COMPLETION CONTRACT + core
-  coding prompt. DESCEND to DS (later, blocked ticket T-ds-coding-domain-specialization):
-  full AgenticLoop, critic_enabled, aci_mode, architect/editor split, harvest, stuck_ladder.
-  Retire resolve_domain(name) + CapabilityMixin.capability_domain:str — agent holds its OWN
-  domain INSTANCE. NOTE: between this ticket & the (blocked) DS ticket, DS's coding-loop
-  path goes DORMANT — acceptable (research substrate, nothing live), but it's the ordering call.
+DESCENT BOUNDARY — already design-passed with the advisor. DO NOT RE-DERIVE:
+  Merge base.py + general.py into ONE concrete GeneralDomain (walk + DEFAULT policy + completion
+  contract + _run_attempt = ONE DISPATCH). CodingDomain strips to prompt + contract (no _run_attempt,
+  no critic/aci/architect-editor — those DESCEND to the blocked T-ds-coding-domain-specialization).
+  CapabilityMixin holds a per-INSTANCE domain (a factory — NOT a class-level shared object, which
+  would share escalation state across every agent). Retire resolve_domain + capability_domain:str.
+  NAMED DEFERRAL (CP1): with _run_attempt = one dispatch and no ground truth there is NO real coding
+  DONE-check to write. Do NOT invent a fake completion contract. The provable claim is the stripping
+  + the retire + instance-holding.
+FIRST LANDMINE: reply_text.py is imported by PROXY-SIDE run_record.py. Moving it into
+  unseen_university/domains/ makes the proxy import the domain layer. Place it deliberately
+  (candidates: leave it proxy-side as devices/inference/reply_text.py, or put it in agentic/).
+ALSO still in domains/ awaiting placement: escalation_corpus, stuck_ladder, escalation_policy,
+  domain_prompts, prompts/.
 
-Orientation already done (callers mapped, do not re-derive):
-  resolve_domain callers: capabilities/base.py (ONLY prod caller, line 55), capabilities/coding.py
-    (docstring), harvest_run.py, harvest_batch.py, + tests (test_domain_object, test_harvest_toggle,
-    test_harvest_batch, test_general_domain_escalation, test_capability_mixin).
-  capability_domain: capabilities/base.py:43 (attr), capabilities/coding.py:18 (="coding").
-  DSCodingDomain consumer today: devices/dicksimnel/device.py (imports CodingDomain).
-  Precedent package: unseen_university/capabilities/ (base/coding/identity/__init__).
-FIRST STEP after restart: advisor design-pass on the descent boundary BEFORE editing.
+## Open for Akien (neither blocking)
+1. AMENDMENT 3 to D-domains-general-with-device-owned-specializations — COMPENSATION vs INTRINSIC
+   specialization. The decision says specialization is graduating debt with a graduation_proof, folded
+   back once the general case proves the property. That is right for a COMPENSATION (critic_enabled,
+   aci_mode, architect/editor — all present because a model is WEAK). Igor's emotional valence is NOT
+   that: it is not a crutch, it has no graduation_proof, and folding it back would CONTAMINATE the
+   shared epistemic trees (learning_pipeline.py already asserts "PURELY EPISTEMIC — no emotional
+   encoding"). As written, the fold-back machinery would eventually come for it. Recorded in the
+   intention; NOT amended into the decision without Akien's say-so.
+2. The reader intention's "and/or produces summaries" seam — summary and tree-deposit have DIFFERENT
+   completion contracts (a summary is judged by a reader; a deposited node by whether it survives the
+   encode pass). Left as Akien phrased it.
 
-## REORDER (CC.0 + advisor, 2026-07-12) — agentic FIRST, then domains
-T-agentic-primitives-package (M, 0.75, sprint) runs BEFORE T-domains-global-package (0.8).
-The slate's Next: was a PRIORITY call, not a dependency call — and the dependency runs the
-other way: domains import the loop; the loop imports no domain. VERIFIED by dumping the
-intra-package import graph: {agentic_loop, architect_editor, block_apply, edit_format} is
-CLOSED — it imports base/general/coding NOWHERE.
+## Ad hoc
+- 3 follow-ons filed: T-foldback-apparatus-out-of-the-proxy (triage — where does graduation machinery
+  live? agentic/ is for execution primitives; this is not that. Cheaper after domains lands),
+  T-test-tier-cascade-hangs (sprint, PRE-EXISTING — one file makes the whole dicksimnel suite
+  unrunnable; a hang is worse than a failure, it trains everyone to skip the suite),
+  T-test-capability-evidence-red (sprint, PRE-EXISTING 2 red in the guard that enforces "measure
+  capability, never declare it" — do NOT fix by relaxing the assertion).
+- Reader design session (Akien): the reader belongs to the LIBRARIAN. Routing-domain (picks a MODEL)
+  and knowledge-domain (owns TREES) are TWO AXES sharing a word. Two kinds of research: SUMMARY vs
+  DEEP LEARNING (loaded trees). Three findings verified in code, not assumed:
+    · librarian research(depth='deep') maps to 0.8 = a LONGER SYNTHESIS, not learning. The word "deep"
+      is already taken, by the wrong axis.
+    · THREE unaware tree-loading paths (persistent_inquiry, learning_pipeline, the reader's own deposit
+      path) — and the reader's is not in the Librarian at all.
+    · identity.home_db_url() calls UU_HOME_DB_URL "this instance's home DB"; db_proxy.make_home_proxy()
+      calls the SAME var the "global truth DB shared across ALL instances". Both cannot be true — and
+      the privacy rule (Igors share PATTERNS, never employer-specific information) RESTS on that
+      boundary. Resolve before the reader ever chooses where to deposit.
+  Deliberately NOT ticketed (Akien: "we're not reading yet... other gaps are for when we get to it").
 
-WHY the order matters (not a preference):
-  domains-first  → unseen_university/domains/ (top-level) imports agentic_loop from INSIDE
-                   devices/inference/ — a top-level package reaching up into a device's guts.
-                   That is a WORSE inversion than the waypoint the ticket exists to fix, and
-                   it double-moves all 4 primitive files (device → domains/ → agentic/).
-  agentic-first  → primitives land in their FINAL home (unseen_university/agentic/, the Q2
-                   resolution Akien confirmed). devices/inference/domains/ then imports
-                   device → top-level (correct direction). Domains ticket then moves
-                   top-level → top-level. NO inversion at any commit; nothing moves twice.
-
-Support files are NOT agentic and stay put for the domains ticket to place:
-  reply_text (also imported by proxy-side run_record.py), escalation_corpus, stuck_ladder,
-  escalation_policy, domain_prompts, prompts/.
-Fold-back apparatus (eval_slice, io_corpus, corpus_verdict, prereg, verdict_gate — sitting in
-the routing proxy): agentic ticket says "relocate with this ticket OR file a follow-on" → FILE
-A FOLLOW-ON, keep the move ticket to the primitives.
-
-Descent boundary (design-passed, for the domains ticket when it opens):
-  merge base.py + general.py → ONE concrete GeneralDomain (walk + DEFAULT policy + completion
-  contract + _run_attempt = one dispatch). CodingDomain strips to prompt + contract (no
-  _run_attempt, no critic/aci/architect-editor — those DESCEND to the blocked DS ticket).
-  CapabilityMixin holds a per-INSTANCE domain (factory, NOT a class-level shared object —
-  a shared instance would share escalation state across every agent).
-  NAMED DEFERRAL (CP1): with _run_attempt = one dispatch and no ground truth, there is no real
-  coding DONE-check to write. Do NOT invent a fake completion contract for CodingDomain; the
-  provable claim is the stripping + the retire + instance-holding.
+✅ CLOSED

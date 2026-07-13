@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.add-sums.T-proof-emitter-harness.20260712.203659832421",
+  "emitter": "cc.0",
+  "namespace": [
+    "add-sums",
+    "T-proof-emitter-harness"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-12T20:36:59.832421",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proof-emitter-harness"
+    ],
+    "commits": [
+      "4ca87fe5b92bc7b71f46cec3c0091b83f172c8ee"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-proof-emitter-harness",
+  "body": {
+    "thing": "add() sums",
+    "intention": "add(2,3)==5",
+    "test": "test_sample.py::test_adds",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "test_sample.py::test_adds",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________________________ test_adds ___________________________________\n\n    def test_adds():\n>       assert sample_thing.add(2, 3) == 5\nE       assert None == 5\nE        +  where None = <function add at 0x7adc9b4a91c0>(2, 3)\nE        +    where <function add at 0x7adc9b4a91c0> = sample_thing.add\n\ntest_sample.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED test_sample.py::test_adds - assert None == 5\n1 failed in 0.02s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.00s"
+          }
+        }
+      }
+    ],
+    "commit": "4ca87fe5b92bc7b71f46cec3c0091b83f172c8ee",
+    "impl_paths": [
+      "sample_thing.py"
+    ],
+    "ticket": "T-proof-emitter-harness",
+    "narrative": "git path",
+    "why": "CP1",
+    "bootstrap": false
+  }
+}
