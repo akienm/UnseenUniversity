@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-orphan-skills-invisible-to-every-audit.20260712.213704306354",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-orphan-skills-invisible-to-every-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T03:37:04.306354+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-orphan-skills-invisible-to-every-audit"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-orphan-skills-invisible-to-every-audit",
+    "title": "[sprint] 8 RUNNING skills have no repo source — invisible to every skills audit. 2 still psql the retired palace with hardcoded creds; 1 is a zombie CLAUDE.md says is DELETED.",
+    "size": "M",
+    "status": "sprint",
+    "priority": 0.85,
+    "tags": [
+      "skills",
+      "audit",
+      "canonical-home",
+      "credentials",
+      "blind-spot"
+    ],
+    "description": "Found 2026-07-12. Akien: 'we should fix the broken skills. we recently did an audit where we were supposed to have fixed all the skills.'\n\nTHE AUDIT DID NOT FAIL — IT WAS BLIND. ~/.claude/skills (55 skills) is what RUNS. The repo ships 51. EIGHT skills exist ONLY as running copies with NO source in the repo, so any sweep scoped to the repo's skills/ tree literally cannot see them:\n\n  concept  debug  diagnose  health  migrate-decisions  question  recall  recover\n\nAnd that is exactly where the rot is:\n  - question, concept — still `psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001` into adc.palace, the palace RETIRED by D-canonical-memory-consolidation (2026-06-23). Both invisible to the sweep that 'fixed all the skills'.\n  - migrate-decisions — A ZOMBIE. CLAUDE.md states verbatim: '/migrate-decisions is deleted'. It is NOT deleted. It is sitting in the running dir, invocable, pointed at the dead lab/design_docs write-path that CLAUDE.md itself names as the cause of the source-of-truth split.\n\nWHY THE CLOSED TICKETS ARE NOT FALSE CLOSES: T-uu-sweep-skill-psql-creds [closed] and T-skill-write-paths-canonical [closed] fixed every skill they could FIND. The orphans were never in the search space. Nothing was checking that the RUNNING set matches the REPO set — so a whole class of skills has been drifting, unaudited, for as long as the split has existed.\n\nROOT CAUSE (already known, never fixed): T-skills-dir-not-symlinked-drift [triage] — ~/.claude/skills is a PLAIN DIRECTORY, not a symlink to the repo. Per memory feedback_skills_location the rule is 'repo canonical, symlink NOT sync'. A copy drifts; a symlink cannot. As long as it is a copy, orphans are inevitable and every audit is scoped to the wrong tree.\n\nALSO UNDEPLOYED (repo has them, running dir does NOT): device, intend. Those two skills do not exist where skills actually run.\n\nFIX:\n1. Reconcile the 8 orphans: each one either (a) has a legitimate reason to exist -> MOVE ITS SOURCE INTO THE REPO, or (b) is dead -> DELETE IT. No skill runs without a source of truth.\n2. DELETE migrate-decisions outright — CLAUDE.md already says it is gone. Trust the doc; make it true.\n3. Fix question + concept: kill psql/adc.palace/hardcoded-creds; repoint at memory_emit (see T-cognition-questions-canonical-home for /question's target — devlab/runtime/memory/questions/).\n4. Make ~/.claude/skills a SYMLINK to the repo (T-skills-dir-not-symlinked-drift). This is the only fix that makes the class of bug impossible rather than merely absent today.\n5. Deploy device + intend.\n\n**Test plan:** red->green: a guard test asserts the RUNNING skills set == the REPO skills set (no orphans, no undeployed), and that no SKILL.md anywhere contains 'adc.palace', 'psql postgres', or 'choose_a_password'. That test is the thing that was missing — it is what makes an audit able to SEE the whole search space.\n\n**Why this matters beyond skills:** the day-close audit's own credential scan greps for the literal string 'choose_a_password'. It has been passing because it scopes to unseen_university/ and devices/ — not to the skills that actually run. We built the check and pointed it away from the violation.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-13T03:36:59.963126+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-13T03:37:00.010293+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1cfadb90-c4f3-4489-8efe-adf6fe25f2a3"
+  }
+}
