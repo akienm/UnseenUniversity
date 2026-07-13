@@ -18,7 +18,7 @@
   "body": {
     "rule_id": "R-canonicity-is-granted-not-asserted",
     "title": "Canonicity is GRANTED, never self-asserted \u2014 and every canonicity claim is checked against the INTENTIONS (not against its age)",
-    "status": "proposed",
+    "status": "adopted \u2014 see D-intentions-are-the-root-2026-07-13",
     "date": "2026-07-13",
     "author": "Akien (rule) + CC.0 (sharpening)",
     "rule": "A file MAY NOT declare itself the canonical source of anything. Canonicity is a GRANT that traces back to an INTENTION. The chain is intention -> decision -> file; a file may only POINT AT its grant. Any canonicity claim with no path back to an intention has NO AUTHORITY \u2014 regardless of its age.",
@@ -42,8 +42,14 @@
         "two-kinds-of-question-2026-07-13"
       ]
     },
-    "CORRECTION_2026_07_13": "CC.0's first draft made AGE (>1 month) the trigger. WRONG, and Akien corrected it. Age is not the signal \u2014 a file written YESTERDAY can assert a canonicity that contradicts the intentions. The real signal is that most of the tree PREDATES the intention concept and has therefore NEVER been checked against the North Star at all. The check is against INTENTIONS, full stop; age is not a gate, not a proxy, and not a priority key.",
+    "CORRECTION_2026_07_13": "TWO corrections, in sequence. (1) CC.0 first made AGE (>1mo) the trigger \u2014 a rolling decay curve. WRONG. (2) CC.0 then over-corrected and threw the number out entirely ('it's not age'). ALSO WRONG. Akien's ~30 days is an EPOCH BOUNDARY, not an age threshold: it is approximately when he STARTED TALKING ABOUT INTENTION. The distinction is operational \u2014 an age threshold ROLLS FORWARD (everything becomes suspect on its 31st day, forever, and the work never completes); an EPOCH BOUNDARY is a FIXED LINE (the pre-intention corpus is finite and SHRINKS as it is reconciled; the work COMPLETES).",
     "intentions_are_the_north_star": "Akien: the INTENTIONS, taken AS A BODY and once their internal conflicts are resolved, are where we are always going. They MAY conflict with one another \u2014 resolving those conflicts IS part of the work, not a defect. This makes intentions the ROOT of the authority graph: everything else (decisions, code, canonicity claims) derives its authority from them, and anything with no path back to an intention is unmoored.",
-    "the_hard_part": "THE CHECK CANNOT RUN YET, AND SAYING SO IS THE HONEST PART (CP1). There are 67 canonicity claims and only THREE intentions in the store (I-compiled-inference-residue, I-self-improving-process, I-reader-reads-an-address-into-domain-trees). You cannot check 67 claims against 3 stars. The North Star is barely mapped. So the PREREQUISITE is not tooling \u2014 it is WRITING THE INTENTIONS DOWN. The sweep is worthless until the body of intentions is rich enough to be checked against, and building the sweep first would produce a green check that means nothing \u2014 which is exactly the passing-check-that-checks-nothing failure this rule exists to kill."
+    "the_hard_part": "THE CHECK CANNOT RUN YET, AND SAYING SO IS THE HONEST PART (CP1). There are 67 canonicity claims and only THREE intentions in the store (I-compiled-inference-residue, I-self-improving-process, I-reader-reads-an-address-into-domain-trees). You cannot check 67 claims against 3 stars. The North Star is barely mapped. So the PREREQUISITE is not tooling \u2014 it is WRITING THE INTENTIONS DOWN. The sweep is worthless until the body of intentions is rich enough to be checked against, and building the sweep first would produce a green check that means nothing \u2014 which is exactly the passing-check-that-checks-nothing failure this rule exists to kill.",
+    "the_epoch_measured": {
+      "~2026-06-13": "Akien begins talking about intention (his '~30 days ago')",
+      "2026-06-26": "the concept lands in code \u2014 goals purged; `intentions` replaces the retired `goals` edge",
+      "2026-07-01": "the FIRST intention is emitted (I-compiled-inference-residue)",
+      "implication": "Anything before ~mid-June was authored in a world where intention was not the organizing idea. Anything before 2026-07-01 COULD NOT have been checked against an intention even in principle \u2014 there were none."
+    }
   }
 }

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.D-intentions-are-the-root-2026-07-13.20260713.061925354052",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-intentions-are-the-root-2026-07-13"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-13T06:19:25.354052",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "decision_id": "D-intentions-are-the-root-2026-07-13",
+    "title": "Intentions are the ROOT of everything — the authority graph is intention → decision → file, and nothing is canonical that cannot trace back to one",
+    "status": "open",
+    "date": "2026-07-13",
+    "author": "Akien (decision) + CC.0 (capture)",
+    "text": "# D-intentions-are-the-root-2026-07-13\n\n**Akien, 2026-07-13:** \"Yes, intentions are the root of everything now.\"\nAnd: \"the intentions are the North Star. even though they can conflict with one another, as a body, once their conflicts are resolved, that's where we're going always.\"\n\n## The claim\n\nINTENTIONS ARE THE ROOT OF THE AUTHORITY GRAPH.\n\n    intention  ->  decision  ->  file / code / canonicity claim\n\nEverything derives its authority from an intention. A file, a rule, a 'canonical source' claim, a\ndesign — anything with NO PATH BACK TO AN INTENTION is UNMOORED. It may still be correct, but it is\ncorrect by luck, and nothing can check it.\n\n## Why this is a decision and not a preference\n\nA canonicity claim is fundamentally a claim about WHAT SERVES THE INTENT. Only the intentions say what\nthe intent IS. So a file that declares itself canonical without an intention behind it has asserted an\nanswer to a question nobody asked it — SELF-APPOINTED AUTHORITY, which is structurally identical to a\nconfabulation: a confident claim, no backing, believed by future readers PRECISELY BECAUSE it sounds\nauthoritative.\n\nMEASURED 2026-07-13: **67 files in the tree assert canonicity. The store holds THREE intentions.**\n\n## Intentions CONFLICT, and resolving the conflicts IS the work\n\nAkien is explicit: intentions MAY conflict with one another. That is not a defect in the body of\nintentions — it is the design surface. Two intentions in tension pose a question that has not been\nanswered yet, and an unanswered question about what we MEAN is exactly an OPEN QUESTION (see note\ntwo-kinds-of-question-2026-07-13).\n\nSo the machine closes on itself:\n\n    intentions conflict  ->  OPEN QUESTION  ->  DECISION  ->  GRANT  ->  canonicity\n\nThat chain IS the authority graph, and it is the same chain the compiler walks. An open question\nCOMPILES OUT into a decision; a decision GRANTS authority; a file POINTS AT its grant. Nothing\nself-appoints anywhere along it.\n\n## THE EPOCH BOUNDARY (this is what the '30 days' actually meant)\n\nCC.0 first read Akien's '~30 days' as an AGE THRESHOLD and then, over-correcting, threw the number out\nentirely. Both were wrong. It is an **EPOCH BOUNDARY**, and the distinction is operational:\n\n  - An AGE THRESHOLD rolls forward. Every file becomes suspect on its 31st day, forever. The work never\n    finishes and eventually flags everything, including files already reconciled.\n  - An EPOCH BOUNDARY is a FIXED LINE. Everything authored before intentions existed has never been\n    checked against one; everything after should have been. The set is FINITE and it SHRINKS as it is\n    reconciled. The work COMPLETES.\n\nThe epoch, measured (not guessed):\n  ~2026-06-13  Akien begins talking about intention (his '~30 days ago')\n   2026-06-26  the concept lands in code — goals purged; `intentions` replaces the retired `goals` edge\n               (T-skills-goals-to-intentions / D-goals-purge-remaining-skills-2026-06-26)\n   2026-07-01  the FIRST intention is actually emitted (I-compiled-inference-residue)\n\nAnything written before ~mid-June was authored in a world where intention was not the organizing idea.\nAnything before 2026-07-01 COULD NOT have been checked against an intention even in principle — there\nwere none to check against.\n\n## THE ORDER OF WORK INVERTS (the honest part — CP1)\n\nYou cannot check 67 canonicity claims against 3 intentions. The North Star is barely mapped.\n\nBuilding the canonicity sweep FIRST would produce a GREEN CHECK THAT MEANS NOTHING — which is exactly\nthe passing-check-that-checks-nothing failure this decision exists to kill, and which bit us four times\non 2026-07-12 alone (questions.json's false canonicity claim, which fooled CC.0 into building a\nduplicate home; the '51% MEASURED' headline that beat a correct memory; identity.home_db_url vs\ndb_proxy.make_home_proxy asserting opposite things about the same env var, with the employer-privacy\nrule resting on that boundary; and 8 orphan skills invisible to every skills audit).\n\nSo:\n  STEP 1  WRITE THE INTENTIONS DOWN. Not a tooling task. The North Star is mostly still in Akien's head.\n          This is the prerequisite for every check that follows.\n  STEP 2  Resolve the conflicts BETWEEN intentions (they will conflict — that is expected and is where\n          the design actually happens).\n  STEP 3  Trace each canonicity claim to an intention: it either EARNS a grant, or LOSES the claim.\n  STEP 4  Fold the standing check into validity_sweep.py at day-close (no new tool).\n\n## Consequences\n\n- Every NEW canonicity claim must cite its grant at birth. No self-appointment.\n- `/sorted` and the decision flow should carry an `intention` edge — a decision with no parent intention\n  is a decision about nothing in particular.\n- The 3-intention store is now the single biggest gap in the project, and it is NOT a code gap.\n- FALSIFIABLE PREDICTION: as the intentions get written, some existing 'canonical' files will turn out to\n  serve NO intention. Those are not mis-filed — they are DEAD, and their existence is the evidence.\n\n## Related\n\nrule:R-canonicity-is-granted-not-asserted · ticket:T-canonicity-claims-need-grants ·\nnote:two-kinds-of-question-2026-07-13 · note:novelty-is-compilable-2026-07-12 ·\nI-compiled-inference-residue · I-self-improving-process · I-reader-reads-an-address-into-domain-trees",
+    "spawned_tickets": [
+      "T-canonicity-claims-need-grants",
+      "T-write-the-intentions-down"
+    ],
+    "validity_conditions": [
+      {
+        "type": "depends-on-fact",
+        "target": "The body of intentions is rich enough to check claims against",
+        "note": "TODAY IT IS NOT — 3 intentions vs 67 canonicity claims. Every check downstream of this decision is meaningless until that changes. If a canonicity sweep is ever reported GREEN while the intention count is still tiny, the sweep is lying."
+      }
+    ]
+  }
+}
