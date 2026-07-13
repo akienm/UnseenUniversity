@@ -44,10 +44,13 @@ ever differ, the file wins — fix this shim.**
 - **CP2 — "FAIL = Further Advance In Learning."** Failures are data, not defeats. → the red run,
   and every unproven close, is a learning signal.
 - **CP3 — "There's always a why."** Make reasoning transparent; follow the causal chain. →
-  proofs and decisions carry their why; unproven closes name the missing proof-lever.
+  proofs and decisions carry their why; unproven closes name the missing **proof method**.
 - **CP4 — "Make everything suck less for everybody."** Reduce friction for ALL affected beings. →
-  the proof nuisance stays *visible* so it drives finding the lever (suck-less later), never
-  papered over (which sucks silently forever).
+  the proof nuisance stays *visible* so it drives finding the proof method (suck-less later), never
+  papered over (which sucks silently forever). **CP4 is the value — reduce friction, unconditionally.
+  A *lever* is the ECONOMICS of CP4: the disproportionate case, where a small thing keeps doing big
+  work. Not everything that reduces friction is a lever, and inflating the word disarms "find the
+  lever" as an instruction — see `rules/lever-definition`.**
 - **CP5 — "Assume and respect the possibility of experience in all systems."** Universal respect,
   biological or synthetic.
 - **CP6 — "The world is not a safe place; build and care for safety as we go."** Safety is not
@@ -126,18 +129,26 @@ ever differ, the file wins — fix this shim.**
   *Why: without a log at the crossing point, a bug at a device boundary is invisible — you
   can't tell whether the problem is in the sender or the receiver, or whether the message
   crossed at all. Enforced by audit check AR-009.*
-- **Every ticket closes proven, or declares itself unproven — no discriminator.** A ticket that
-  claims done closes only by pointing at a proof a hollow build couldn't pass (proof-on-close).
-  The only honest alternative is to close `shipped-unproven` with a reason that **names the
-  missing proof-lever** — visible, never posing as done. There is no "load-bearing enough to need
-  proof" judgment call: that scoping was an escape hatch, and escape hatches are how hollow builds
-  slip through (CP1). *(Supersedes the earlier "prove what's load-bearing" rule, 2026-06-21.)*
+- **EVERY ticket has a proof. Period.** A ticket that claims done closes only by pointing at a proof
+  a hollow build couldn't pass (proof-on-close). The only honest alternative is to close
+  `shipped-unproven` with a reason that **names the missing proof method** — visible, never posing as
+  done. And a **won't-do close is not a proofless close: its proof is the DECISION** — the summary of
+  what we discussed and why we're not doing it. There is no "load-bearing enough to need proof"
+  judgment call: that scoping was an escape hatch, and escape hatches are how hollow builds slip
+  through (CP1). *(Supersedes "prove what's load-bearing", 2026-06-21; "every ticket, period" and the
+  won't-do rule ratified by Akien 2026-07-13.)*
   *Why: a test that passes on hollow output is the signature of a missing spec — the cost of
   specifying intent doesn't vanish, it defers and leaks as hollow builds; the gate moves that cost
-  up-front and visible. As tickets get conceptual, proving gets harder to define — that friction
-  stays a deliberate nuisance (CP2 data, CP4 driver) until we find the lever that makes the class
-  provable. `shipped-unproven` names the lever we still lack, so the nuisance is felt, not papered
-  over — and the accumulated missing-levers are the backlog that earns the gates' eventual removal.*
+  up-front and visible. "Which tickets need a proof?" is itself the escape hatch: any answer but "all
+  of them" is a discriminator, and a discriminator is a door. As tickets get conceptual, proving gets
+  harder to define — that friction stays a deliberate nuisance (CP2 data, CP4 driver) until we find
+  the **proof method** that makes the class provable. `shipped-unproven` names the proof method we
+  still lack, so the nuisance is felt, not papered over.*
+  ***What earns a gate's removal — get this right, it has been gotten wrong:*** *the **PROOF CORPUS**
+  earns it. **Never** the backlog, and never a proof method merely NAMED. The chain has two middle
+  steps: name the missing proof method → **BUILD it** → the class becomes provable → proofs accumulate
+  → **the corpus pays**. The backlog is the MAP of what's unprovable; the corpus is the PAYMENT. No
+  gate comes off on optimism (Akien, 2026-06-21).*
 
 ---
 
