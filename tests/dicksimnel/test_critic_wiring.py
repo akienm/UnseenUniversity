@@ -118,7 +118,7 @@ def _done_response(text: str = '{"status":"done","result":"ok","error_class":nul
 
 
 def _run_loop(responses, ticket_id, critic_enabled=True):
-    from unseen_university.devices.inference.domains.agentic_loop import AgenticLoop, NativeToolCodec
+    from unseen_university.agentic.loop import AgenticLoop, NativeToolCodec
 
     device = MagicMock()
     device.dispatch.side_effect = responses
@@ -134,7 +134,7 @@ def test_loop_calls_evaluate_decision_per_tool_call():
     mock_agent_eval = MagicMock(return_value=MagicMock(
         verdict="good", confidence=0.9, pattern="ok", improvement=None))
 
-    with patch("unseen_university.devices.inference.domains.agentic_loop.execute_tool", return_value="file1.py\n"), \
+    with patch("unseen_university.agentic.loop.execute_tool", return_value="file1.py\n"), \
          patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
          patch("unseen_university.devices.critic.agent.CriticAgent.evaluate_decision", mock_agent_eval), \
          patch("unseen_university.devices.critic.agent.CriticAgent.analyze_pattern", return_value={
@@ -156,7 +156,7 @@ def test_loop_logs_critic_advisory_when_rule_fires(caplog):
 
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
-    with patch("unseen_university.devices.inference.domains.agentic_loop.execute_tool", return_value="ok"), \
+    with patch("unseen_university.agentic.loop.execute_tool", return_value="ok"), \
          patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
          patch("unseen_university.devices.critic.device.CriticDevice.get_recommendation",
                return_value={"action": "try different tool", "confidence": 0.85,
@@ -168,7 +168,7 @@ def test_loop_logs_critic_advisory_when_rule_fires(caplog):
              "failure_count": 0, "improvement_opportunities": [],
          }), \
          patch("unseen_university.devices.critic.device.CriticDevice._save_rules"):
-        with caplog.at_level(logging.INFO, logger="unseen_university.devices.inference.domains.agentic_loop"):
+        with caplog.at_level(logging.INFO, logger="unseen_university.agentic.loop"):
             _run_loop(responses, "T-adv")
 
     assert "Critic advisory" in caplog.text
@@ -180,7 +180,7 @@ def test_loop_saves_rules_at_sprint_end():
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
     save_mock = MagicMock()
-    with patch("unseen_university.devices.inference.domains.agentic_loop.execute_tool", return_value="ok"), \
+    with patch("unseen_university.agentic.loop.execute_tool", return_value="ok"), \
          patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
          patch("unseen_university.devices.critic.agent.CriticAgent.evaluate_decision", return_value=MagicMock(
              verdict="good", confidence=0.9, pattern="ok", improvement=None)), \
@@ -198,7 +198,7 @@ def test_loop_continues_when_critic_unavailable():
     """The loop completes even if CriticDevice raises on init — critic is non-fatal."""
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
-    with patch("unseen_university.devices.inference.domains.agentic_loop.execute_tool", return_value="ok"), \
+    with patch("unseen_university.agentic.loop.execute_tool", return_value="ok"), \
          patch("unseen_university.devices.critic.device.CriticDevice.__init__",
                side_effect=RuntimeError("critic down")):
         result = _run_loop(responses, "T-nocrit")

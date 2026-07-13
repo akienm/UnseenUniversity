@@ -22,7 +22,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from unseen_university.devices.inference.domains.agentic_loop import (
+from unseen_university.agentic.loop import (
     LOOP_AVAILABILITY,
     LOOP_COST_EXCEEDED,
     LOOP_DONE,

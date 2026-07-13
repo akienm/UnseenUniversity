@@ -13,8 +13,8 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from unseen_university.devices.inference.domains.architect_editor import ArchitectEditorFlow
-from unseen_university.devices.inference.domains.block_apply import (
+from unseen_university.agentic.architect_editor import ArchitectEditorFlow
+from unseen_university.agentic.block_apply import (
     BlockApplyResult,
     build_repair_message,
 )

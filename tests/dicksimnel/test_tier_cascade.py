@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from unseen_university.devices.inference.domains.agentic_loop import (
+from unseen_university.agentic.loop import (
     LOOP_AVAILABILITY,
     LOOP_COST_EXCEEDED,
     LOOP_DONE,

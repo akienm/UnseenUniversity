@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock
 
-from unseen_university.devices.inference.domains.architect_editor import ArchitectEditorFlow
+from unseen_university.agentic.architect_editor import ArchitectEditorFlow
 
 
 def _resp(text: str) -> MagicMock:

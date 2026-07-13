@@ -40,7 +40,7 @@ import logging
 from collections.abc import Callable
 from pathlib import Path
 
-from unseen_university.devices.inference.domains.agentic_loop import (
+from unseen_university.agentic.loop import (
     LOOP_AVAILABILITY,
     LOOP_DONE,
     LOOP_ESCALATE,

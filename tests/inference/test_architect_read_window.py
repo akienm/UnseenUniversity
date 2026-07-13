@@ -25,12 +25,12 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from unseen_university.devices.inference.domains.agentic_loop import (
+from unseen_university.agentic.loop import (
     LOOP_DONE,
     LOOP_ESCALATE,
     LoopResult,
 )
-from unseen_university.devices.inference.domains.architect_editor import ArchitectEditorFlow
+from unseen_university.agentic.architect_editor import ArchitectEditorFlow
 
 
 # ── THE PROOF NODE ────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ def test_substantive_prose_plan_reaches_the_editor():
     not escaped JSON, so a build that depends on json.loads succeeding cannot pass this.
     """
     _StubLoop.editor_ran = False
-    with patch("unseen_university.devices.inference.domains.architect_editor.AgenticLoop", _StubLoop):
+    with patch("unseen_university.agentic.architect_editor.AgenticLoop", _StubLoop):
         result = ArchitectEditorFlow(aci_mode=True).run(
             system_prompt="sys",
             initial_message="do the thing",
@@ -94,7 +94,7 @@ def test_substantive_prose_plan_reaches_the_editor():
 
 def test_full_read_returns_the_whole_file(tmp_path):
     """plan_mode Read returns every line of a >100-line file (windowed mode returns only 100)."""
-    from unseen_university.devices.inference.domains.agentic_loop import _tool_read
+    from unseen_university.agentic.loop import _tool_read
 
     f = tmp_path / "big.py"
     f.write_text("\n".join(f"line{i}" for i in range(250)))
@@ -105,7 +105,7 @@ def test_full_read_returns_the_whole_file(tmp_path):
 
 def test_windowed_read_still_pages_without_full_read(tmp_path):
     """Regression guard: the editor's windowed read is unchanged (full_read defaults off)."""
-    from unseen_university.devices.inference.domains.agentic_loop import _tool_read
+    from unseen_university.agentic.loop import _tool_read
 
     f = tmp_path / "big.py"
     f.write_text("\n".join(f"line{i}" for i in range(250)))
@@ -118,7 +118,7 @@ def test_plan_mode_bash_deflects_the_full_suite():
     """plan_mode Bash deflects a broad pytest run without spawning a subprocess."""
     from pathlib import Path
 
-    from unseen_university.devices.inference.domains.agentic_loop import _tool_bash
+    from unseen_university.agentic.loop import _tool_bash
 
     out = _tool_bash("cd repo && .venv/bin/python3 -m pytest tests/ -q --tb=short", Path("."),
                      plan_mode=True)
@@ -130,7 +130,7 @@ def test_plan_mode_bash_deflects_the_full_suite():
 
 def test_select_tool_defs_swaps_read_in_plan_mode():
     """plan_mode offers the full-file Read def (no offset); the editor keeps the windowed one."""
-    from unseen_university.devices.inference.domains.agentic_loop import _select_tool_defs
+    from unseen_university.agentic.loop import _select_tool_defs
 
     plan_defs = _select_tool_defs(aci_mode=True, plan_mode=True, tool_names=["Read", "Bash"])
     read = next(t for t in plan_defs if t["function"]["name"] == "Read")
@@ -146,7 +146,7 @@ def test_select_tool_defs_swaps_read_in_plan_mode():
 
 def test_is_substantive_plan_rejects_garbage():
     """The salvage guard accepts a real plan but rejects empty/refusal prose."""
-    from unseen_university.devices.inference.domains.architect_editor import _is_substantive_plan
+    from unseen_university.agentic.architect_editor import _is_substantive_plan
 
     assert _is_substantive_plan("1. Edit /repo/foo.py: change A to B\n2. run tests")
     assert not _is_substantive_plan("I cannot do this.")

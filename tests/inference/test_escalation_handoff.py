@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from unseen_university.devices.inference.domains.agentic_loop import LoopResult
+from unseen_university.agentic.loop import LoopResult
 from unseen_university.devices.inference.domains.base import FAILED_MARKER
 from unseen_university.devices.inference.domains.general import GeneralDomain
 
@@ -173,7 +173,7 @@ def test_coding_domains_handoff_is_chat_shaped_and_wrong_for_coding():
 
     => T-escalation-handoff-transmits-the-confabulation (closing note) / CodingDomain override.
     """
-    from unseen_university.devices.inference.domains.agentic_loop import LOOP_MAX_TURNS
+    from unseen_university.agentic.loop import LOOP_MAX_TURNS
     from unseen_university.devices.inference.domains.coding import CodingDomain
 
     result = LoopResult(

@@ -95,32 +95,61 @@ def test_domain_object_has_no_routing_method():
     )
 
 
-#: Execution machinery — what it means to *do* the work. Owned by the domain object, never by
-#: the proxy. The proxy routes an inference request and dispatches it; it is not a coding agent.
-EXECUTION_MACHINERY = (
-    "agentic_loop.py",
+#: Shared execution PRIMITIVES — how one attempt is executed. They are neither the proxy nor a
+#: domain: a domain CONSUMES them, and minion imports them too. Their home is the top-level
+#: `unseen_university/agentic/` package (T-agentic-primitives-package; D-domains-general-with-
+#: device-owned-specializations Q2, confirmed by Akien). `devices/inference/domains/` was only
+#: ever a WAYPOINT for them — this tuple used to assert that waypoint AS the destination.
+AGENTIC_PRIMITIVES = (
+    "loop.py",  # was agentic_loop.py
     "architect_editor.py",
     "block_apply.py",
     "edit_format.py",
+)
+
+#: Domain-owned machinery — what a KIND of work MEANS. Stays in the domain layer; never the proxy.
+DOMAIN_MACHINERY = (
     "stuck_ladder.py",
     "domain_prompts.py",
 )
 
+_AGENTIC_DIR = Path(device_mod.__file__).parent.parent.parent / "agentic"
+
 
 def test_proxy_package_contains_no_execution_machinery():
-    """The agentic loop and its edit machinery live in the domain layer, not in the proxy.
+    """The agentic loop and its edit machinery live ABOVE the proxy, never inside it.
 
     'The agentic loops do not go in the proxy. They go in domain objects.' (Akien, 2026-07-08)
     A proxy that also contains a 900-line agentic loop, an architect/editor split, and an edit
     dialect engine is not a proxy — it is a coding agent wearing a router as a hat.
+
+    The primitives are checked against the WHOLE proxy subtree, not just its top level: they
+    used to sit one directory down (in `domains/`), which is inside the proxy package and so
+    never satisfied this invariant in the first place — the old assertion pinned that waypoint
+    as if it were the destination.
     """
-    stray = [m for m in EXECUTION_MACHINERY if (_INFERENCE_DIR / m).exists()]
+    stray = [
+        str(p.relative_to(_INFERENCE_DIR))
+        for p in _INFERENCE_DIR.rglob("*.py")
+        if "__pycache__" not in p.parts and p.name in AGENTIC_PRIMITIVES
+    ]
     assert not stray, (
-        "execution machinery must live in the domain layer, not the inference proxy: "
-        + ", ".join(stray)
+        "shared execution primitives must live above the inference proxy, not inside it: "
+        + ", ".join(sorted(stray))
     )
-    # ...and it really is in the domain layer.
-    for m in EXECUTION_MACHINERY:
+    # ...and they really are in their own top-level package.
+    for m in AGENTIC_PRIMITIVES:
+        assert (_AGENTIC_DIR / m).exists(), f"{m} missing from unseen_university/agentic/"
+
+    # The DOMAIN layer is still a waypoint inside the proxy package: `devices/inference/domains/`
+    # moves to `unseen_university/domains/` in T-domains-global-package (the very next ticket).
+    # Until then, assert only what is true TODAY — domain machinery is not at the proxy's top
+    # level — rather than pretending the move already happened.
+    stray_domain = [m for m in DOMAIN_MACHINERY if (_INFERENCE_DIR / m).exists()]
+    assert not stray_domain, (
+        "domain machinery must not sit at the proxy's top level: " + ", ".join(stray_domain)
+    )
+    for m in DOMAIN_MACHINERY:
         assert (_INFERENCE_DIR / "domains" / m).exists(), f"{m} missing from the domain layer"
 
 

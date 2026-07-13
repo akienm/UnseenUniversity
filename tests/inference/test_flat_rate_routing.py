@@ -74,7 +74,7 @@ def test_ollama_cloud_source_ping_returns_false_without_key():
 
 def test_ollama_cloud_source_call_includes_tools():
     """OllamaCloudSource.call() forwards req.tools to the API payload."""
-    from unseen_university.devices.inference.domains.agentic_loop import TOOL_DEFINITIONS
+    from unseen_university.agentic.loop import TOOL_DEFINITIONS
 
     captured = {}
 
@@ -120,7 +120,7 @@ def test_ollama_cloud_source_call_includes_tools():
 
 def test_openrouter_forwards_tools_to_api():
     """OpenRouterSource.call() must include req.tools in the POST payload."""
-    from unseen_university.devices.inference.domains.agentic_loop import TOOL_DEFINITIONS
+    from unseen_university.agentic.loop import TOOL_DEFINITIONS
 
     captured = {}
 

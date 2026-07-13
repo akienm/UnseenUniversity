@@ -9,7 +9,7 @@ PROOF NODE: run(ticket, cwd=tmp) threads tmp to _run_attempt. Red (run ignores c
 """
 from __future__ import annotations
 
-from unseen_university.devices.inference.domains.agentic_loop import LOOP_DONE, LoopResult
+from unseen_university.agentic.loop import LOOP_DONE, LoopResult
 from unseen_university.devices.inference.domains.base import BaseDomain, DomainPrompts
 
 _TICKET = {"id": "T-cwd", "title": "t", "tags": [], "description": "d"}

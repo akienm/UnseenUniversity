@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from unseen_university.devices.inference.domains.agentic_loop import LOOP_ESCALATE, LoopResult
+from unseen_university.agentic.loop import LOOP_ESCALATE, LoopResult
 from unseen_university.devices.inference.domains.base import BaseDomain, DomainPrompts
 from unseen_university.devices.inference.domains.escalation_policy import (
     DEFAULT_POLICY,

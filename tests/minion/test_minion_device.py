@@ -13,7 +13,7 @@ from __future__ import annotations
 import textwrap
 from unittest.mock import MagicMock
 
-from unseen_university.devices.inference.domains.agentic_loop import (
+from unseen_university.agentic.loop import (
     execute_tool,
     _parse_text_signal,
     _parse_text_tool_call,
@@ -350,7 +350,7 @@ def test_minion_device_restart_resets_loop():
 def test_map_signal_covers_all_outcomes():
     """_map_signal maps every LoopResult outcome, preserving the escalate tier target."""
     from unseen_university.devices.minion.tool_loop import _map_signal
-    from unseen_university.devices.inference.domains.agentic_loop import (
+    from unseen_university.agentic.loop import (
         LOOP_AVAILABILITY,
         LOOP_COST_EXCEEDED,
         LOOP_DONE,

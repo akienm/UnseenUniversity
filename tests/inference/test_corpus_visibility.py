@@ -95,7 +95,7 @@ def test_capture_io_records_role_and_turn(device, tmp_path, monkeypatch):
 
 def test_agentic_loop_threads_role_into_request():
     """The coding loop labels its dispatch: role='architect' + the turn index ride the request."""
-    from unseen_university.devices.inference.domains.agentic_loop import AgenticLoop, TextToolCodec
+    from unseen_university.agentic.loop import AgenticLoop, TextToolCodec
 
     seen = []
 

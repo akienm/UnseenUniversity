@@ -22,7 +22,7 @@ import json
 
 from unittest.mock import MagicMock
 
-from unseen_university.devices.inference.domains.agentic_loop import AgenticLoop, NativeToolCodec
+from unseen_university.agentic.loop import AgenticLoop, NativeToolCodec
 
 
 def _read_response(path: str, call_seq: int) -> MagicMock:

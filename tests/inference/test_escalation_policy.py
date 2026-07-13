@@ -25,7 +25,7 @@ from __future__ import annotations
 import logging
 from unittest.mock import patch
 
-from unseen_university.devices.inference.domains.agentic_loop import LOOP_ESCALATE, LoopResult
+from unseen_university.agentic.loop import LOOP_ESCALATE, LoopResult
 from unseen_university.devices.inference.domains.base import BaseDomain, DomainPrompts
 
 _TICKET = {"id": "T-esc-policy-proof", "title": "always-fails", "tags": [], "description": "d"}

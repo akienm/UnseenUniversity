@@ -16,7 +16,7 @@ import logging
 import os
 from pathlib import Path
 
-from unseen_university.devices.inference.domains.agentic_loop import (
+from unseen_university.agentic.loop import (
     LOOP_DONE,
     AgenticLoop,
     TextToolCodec,
