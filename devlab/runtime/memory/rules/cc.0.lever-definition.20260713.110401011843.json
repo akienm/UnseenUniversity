@@ -32,14 +32,6 @@
       "also_not_a_lever_and_this_is_the_CP4_boundary": "Sanding one rough edge. Fixing one confusing variable name. Cleaning one log line. All of these REDUCE FRICTION and are all worth doing (CP4 is unconditional) \u2014 and NONE of them is a lever, because the effort and the payoff are the same size and it happens once. Calling them levers is the overboard failure, and it costs you the word."
     },
     "WHY_THE_FORCE_READING_IS_A_BUG": "The physical lever is a force multiplier, so the metaphor invites 'a lever MOVES things' \u2014 and a sentence containing a lever therefore reads as causally COMPLETE even when steps are missing. That is not a theoretical worry: it produced a MEASURED error. CC wrote 'the gates are scaffolding; the missing-levers backlog earns their removal' \u2014 FALSE, and false precisely because the force-reading silently supplied the middle steps. NO LEVER EARNS ANYTHING BY BEING NAMED. A lever pays out only when it is BUILT and USED, and the payment is the reduced cost that follows. Naming a lever you have not built is naming a DEBT, not a credit.",
-    "GENUS_AND_SPECIES \u2014 this reconciles the 2026-07-09 rename": {
-      "the_tension": "On 2026-07-09 Akien said 'maybe we just need a different term to make it easier for you to catch it?' and CC filed T-rename-lever-to-proof-method to ABOLISH the word. On 2026-07-13 Akien defined the word as important and precise. These are NOT in conflict once the levels are separated.",
-      "LEVER = THE GENUS": "Any structural investment that reduces the cost of the same work. Domain-general. Stacks.",
-      "PROOF METHOD = THE SPECIES, in the proving domain": "The lever that makes a whole CLASS of claim provable. Not a proof (that is one instance) and not a test (that is an instrument).",
-      "PROOF CORPUS = THE PAYMENT": "The accumulated body of proofs a method produced once it was built and used. THIS is what earns a gate's removal \u2014 never the backlog, and never the method merely named.",
-      "therefore_the_2026_07_09_error_was_not_the_word": "It was using the GENUS where the SPECIES belonged, inside a CAUSAL sentence, with NEITHER term defined anywhere in rules/. The fix is to DEFINE the genus and keep both words \u2014 not to abolish the genus, which is one of the most useful concepts in the project.",
-      "consequence_for_the_ticket": "T-rename-lever-to-proof-method should be RE-SCOPED from 'abolish lever' to 'define the genus, name the species, and fix the causal sentence in CLAUDE.md'. AWAITING AKIEN'S RULING \u2014 do not act on this paragraph until he rules."
-    },
     "the_levers_already_named_today_are_all_the_same_shape": [
       "AN INTENTION AT THE TOP OF AN ARTIFACT (Akien 2026-07-13): 'when you have to fix it, the intention and the why are the first things you pick up. no deducing. this literally saves additional tool calls.' Same repair, fewer tool calls. A LEVER on the repair path \u2014 and a stacked one, since it works on devices, pages, skills, and rules alike.",
       "A PROOF METHOD: same claim, now provable at all. A lever on the proving path.",
@@ -61,7 +53,7 @@
         "R-feedback-is-unconditional-silence-is-never-success"
       ],
       "tickets": [
-        "T-rename-lever-to-proof-method (RE-SCOPE PENDING AKIEN)",
+        "T-rename-lever-to-proof-method (RE-SCOPE PENDING AKIEN \u2014 not 'abolish lever'; the two words do different jobs)",
         "T-unproven-lever-hygiene",
         "T-every-skill-declares-its-intention"
       ],
@@ -70,7 +62,7 @@
         "I-self-improving-process"
       ],
       "memories": [
-        "reference_proof_method_not_lever (SUPERSEDED BY THIS if Akien rules genus/species \u2014 currently says 'proof method, NOT lever')"
+        "reference_proof_method_not_lever (NEEDS REWRITE \u2014 currently says 'proof method, NOT lever', which is a false opposition: they do different jobs)"
       ],
       "core_values": [
         "CP4 (a lever IS 'make everything suck less' with a unit attached)",
@@ -83,6 +75,18 @@
       "the_discriminator": "If the cause and the effect are the SAME SIZE, you did good work \u2014 you did NOT add a lever. Sanding one rough edge reduces friction and is not a lever: the effort and the payoff are the same size, once. CHOOSING THE FRAMEWORK is one decision, made once, and it pays on every maintenance that follows. Small in, big out, REPEATEDLY.",
       "why_the_boundary_MATTERS_and_is_not_pedantry": "IF EVERYTHING THAT REDUCES FRICTION IS A LEVER, THE WORD STOPS SORTING. And 'find the lever' is a real instruction that CC acts on \u2014 it is the standing move when a class of work is too expensive. Inflate the word and that instruction degrades into 'make things nicer', which is just CP4 restated and needs no second name. THE WORD EARNS ITS KEEP BY BEING SCARCE. Going overboard does not merely dilute a definition; it disarms a tool.",
       "the_honest_ambiguity": "The boundary is a RATIO, and ratios are continuous \u2014 so there is no bright line, and there will be judgment calls in the middle. That is fine and should not be legislated away. The rule is not 'compute the ratio'; it is 'DO NOT CALL A ONE-FOR-ONE FRICTION REDUCTION A LEVER.' The extremes are what matter, and they are unambiguous."
+    },
+    "LEVER_IS_A_PROPERTY_NOT_A_CATEGORY": {
+      "akiens_correction": "Akien, 2026-07-13: 'I don't think levers and proofs are related to one another individually. But proofs can certainly be levers. The 89% proof of our model at Delta will be a lever there. A big one. Perhaps in the industry at large.'",
+      "what_this_kills": "CC had framed LEVER as a GENUS containing PROOF METHOD as its species-in-the-proving-domain. THAT IS THE WRONG SHAPE. It builds a taxonomy where there is only a predicate.",
+      "the_correct_shape": "LEVER IS NOT A KIND OF THING. It is a PROPERTY a thing can have \u2014 a claim about the RATIO between what it cost and what it keeps unlocking. Any artifact can carry it: a framework, a documentation line, a decision, a rule, an intention at the top of a file, a proof. NOTHING is inherently a lever and NOTHING is categorically barred from being one. 'Is a lever' is ASSESSED, never inherited.",
+      "so_proofs_and_levers_INTERSECT_situationally": "Most proofs are NOT levers: one proof, one claim, one instance \u2014 cause and effect are the same size, which fails the disproportion test. But a proof CAN be a lever, and can be a huge one. AKIEN'S EXAMPLE: the 89% proof of our model at Delta. That is a SINGLE PROOF \u2014 not a method \u2014 and it changes what is possible across a company, perhaps across the industry. Maximum disproportion: one artifact, enormous recurring payoff. The leverage lives in WHAT IT UNLOCKS, not in what KIND of artifact it is.",
+      "the_two_words_do_DIFFERENT_JOBS": {
+        "proof_method": "NAMES A THING. The mechanism that makes a whole CLASS of claim provable. A noun with a referent. You can point at it, build it, or fail to have it.",
+        "lever": "ASSERTS A PROPERTY of a thing. That it is small relative to what it keeps paying. It is a CLAIM \u2014 so it can be WRONG, and it must be EARNED.",
+        "therefore": "They are not substitutable and neither needs abolishing. Say 'proof method' when you mean the mechanism. Say 'lever' only when you are ASSERTING the disproportion \u2014 and then be ready to show it."
+      },
+      "THE_HONEST_RETRO_DIAGNOSIS_OF_2026_07_09": "The error was NEVER the wrong WORD, and it was not a genus/species confusion either (that was CC's own over-modelling, invented 2026-07-13 and retracted the same day). The error was ASSERTING THE PROPERTY WITHOUT HAVING EARNED IT: treating a NAMED lever as one that had already PAID. 'The missing-levers backlog earns the gates' removal' fails because a lever pays when BUILT AND USED \u2014 the naming is a debt, not a credit. Rename nothing to fix that; the fix is that the claim must be earned."
     }
   }
 }
