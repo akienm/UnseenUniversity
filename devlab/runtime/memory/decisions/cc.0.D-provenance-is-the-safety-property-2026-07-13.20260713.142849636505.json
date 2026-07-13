@@ -25,7 +25,7 @@
     "WHY_AUTHORSHIP_FAILS_AS_A_GUARD": "A ratified string and a machine-written string are BYTE-IDENTICAL. Authority cannot live in the typing. And ratification by a human who does not remember the ticket is a RITUAL — that human is inferring from the artifact too, only slower and with more self-confidence. Fable: 'ratification-without-independent-knowledge is a ritual, and your design currently treats the ritual as the safety property.' What a human genuinely adds, WHEN THEY ADD IT, is an INDEPENDENT EVIDENCE CHANNEL — memory of what was wanted, sampled from the intent side rather than the code side. That is real work when it is real, and nothing when it is not. Name the evidence, not the author.",
     "THE_KERNEL_THAT_SURVIVES": "The circularity argument is SOUND but its SCOPE was wrong. A spec derived SOLELY from the code carries no information the code does not already contain, so it cannot judge the code it came from. That is information-theoretically true and no better model fixes it. The correct ban is NARROW: an intention may not be derived solely from THE ARTIFACT IT IS MEANT TO FALSIFY.",
     "provenance_classes": {
-      "declared": "A human stated it, with independent knowledge of what was wanted. The ONLY class that counts as a SPEC for proof-on-close.",
+      "declared": "Stated by THE AUTHOR at AUTHORING TIME, from the conversation/evidence that PRODUCED the artifact — i.e. from evidence INDEPENDENT of the artifact it will judge. The ONLY class that counts as a SPEC for proof-on-close. **NOT 'a human typed it'** — that was CC's first draft of this field and it is WRONG on its face: Akien authors no tickets (CC writes them all), and a ratified string and a machine-written string are byte-identical anyway, so authorship was never the guard. What makes it `declared` is EVIDENTIAL INDEPENDENCE FROM THE ARTIFACT, plus being stated BEFORE the artifact exists to be read back.",
       "extracted-upstream": "Machine-derived from evidence CAUSALLY UPSTREAM of the implementation — the ticket description, the decision record, the conversation that produced it. NOT circular: this material predates the code it will judge. Legitimate. Enters as a RATCHET, and may be PROMOTED to `declared` when independent evidence arrives.",
       "extracted-from-artifact": "Machine-derived from the implementation itself. A DESCRIPTION, never a spec. Admissible ONLY as a characterization ratchet (see below), never as a proof-on-close gate."
     },
@@ -53,6 +53,7 @@
         "CP1 (an assertion with no named evidence is a confident nothing)",
         "CP3 (provenance IS the why, made mechanical)"
       ]
-    }
+    },
+    "CORRECTION_2026-07-13_who_actually_failed": "CC's kickback of 149 intentionless tickets told each of them 'Akien declares it.' Akien: 'LOL. As a reminder: I haven't written any of this. you've written it all.' **CC IS THE AUTHOR OF ALL 149.** So the design step that failed is CC's own, and the rule cannot be 'a human must declare it' — that rule would be UNSATISFIABLE in this project (see memory only-claude-edits-repo). The rule is: THE AUTHOR DECLARES, AT AUTHORING TIME, FROM THE ORIGINATING CONVERSATION. CC reconstructing an intention later from the ticket body is `extracted-from-artifact` — the same circularity, and CC walked into it while writing the fix for it."
   }
 }

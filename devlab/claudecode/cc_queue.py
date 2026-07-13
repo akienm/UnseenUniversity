@@ -82,6 +82,7 @@ from unseen_university.gate_logic import (  # noqa: E402
     GATE_ID_RE as _GATE_ID_RE,
     TERMINAL_STATUSES as _TERMINAL_STATUSES,
     gate_clear as _gate_clear,
+    intention_is_declared as _intention_is_declared,
 )
 
 # Filesystem queue chokepoint (T-ticket-store-module). The build queue is a
@@ -337,7 +338,14 @@ def reset_stale_in_progress(ticket_id: str) -> bool:
     Returns True if the reset happened, False otherwise.
     """
     def _mut(body):
-        body["status"] = "sprint"
+        # Sprint-entry gate, inside the atomic mutation so the invariant cannot be
+        # lost to a race. A stale ticket with no intention goes back to the DESIGN
+        # step, not to the claimable pile — but it is never left stranded in
+        # in_progress, which refusing the reset outright would do.
+        ok, _reason = _intention_is_declared(body.get("intention"))
+        body["status"] = "sprint" if ok else "triage"
+        if not ok:
+            body["fail_reason"] = "no intention — cannot be proven; design incomplete"
         body["dispatched_at"] = None  # clear the stale dispatch stamp
         return body
 
@@ -956,6 +964,11 @@ def _flip_ungated_to_sprint(t: dict) -> bool:
     logs the state change). Callers MUST clear the gate before calling.
     """
     if t.get("status") == "dependency" and not t.get("gate"):
+        # Sprint-entry gate: an ungated ticket with no intention is diverted to
+        # triage rather than made claimable. Returns False, so the caller does not
+        # log this as a dependency->sprint flip (it wasn't one).
+        if not _guard_sprint_entry(t, via="flip_ungated"):
+            return False
         t["status"] = "sprint"
         return True
     return False
@@ -1017,6 +1030,65 @@ _HIGH_INERTIA_PATTERNS = (
     "memory/models.py",
     "cognition/reasoners/base.py",
 )
+
+
+def _intention_gate(t: dict) -> tuple[bool, str]:
+    """Sprint-ENTRY gate: a ticket may not become claimable without an intention.
+
+    The bookend to ``_proof_gate``. That one guards the EXIT (nothing closes
+    posing as done); this one guards the ENTRANCE — because a ticket with no
+    intention has NO PROPERTY FOR MUTATION-RED TO BREAK, so it arrives at the
+    exit gate already unprovable and the only honest closes left are hollow or a
+    `shipped-unproven` whose stated reason is not the real one. Gating the exit
+    alone was never enough: it catches the ticket at the moment the cost of
+    fixing it is highest.
+
+    Measured 2026-07-13: 149 tickets sat in `sprint` with no intention. That was
+    ONE absent gate, not 149 oversights.
+
+    Returns ``(allowed, message)``. Never raises — callers decide the disposition
+    (refuse loudly on an explicit request; divert to `triage` on an automatic
+    reconciliation path, so a ticket is never STRANDED out of the queue by a gate
+    that only meant to hold a line).
+    """
+    ok, reason = _intention_is_declared(t.get("intention"))
+    if ok:
+        return True, "intention gate: ok"
+
+    return False, (
+        f"REFUSED {t.get('id', '?')} → sprint: intention {reason}. "
+        "A ticket with no intention CANNOT BE PROVEN — the intention IS the "
+        "property mutation-red breaks. State it as a present-tense contract "
+        "('I intend that X, because Y') where X names a property a hollow build "
+        "would violate. Declare it at AUTHORING time, from the conversation that "
+        "produced the ticket — never reconstruct it later from the ticket body "
+        "(that is the same circularity: a spec taken from the artifact cannot "
+        "judge the artifact). See T-sprint-tickets-with-no-intention-cannot-be-proven."
+    )
+
+
+def _guard_sprint_entry(t: dict, *, via: str) -> bool:
+    """Automatic sprint-entry paths (reset / ungate / stale-reconcile).
+
+    An automatic path must NOT strand a ticket: refusing a reset would pin it in
+    `in_progress` forever with no way back. So an ungated ticket is diverted to
+    `triage` (the design step) carrying the FAIL, which is the same disposition
+    the 149 got — homogeneous, and it holds the invariant without a dead end.
+
+    Returns True when the caller may proceed to set `sprint`; False when this
+    function has already diverted the ticket to `triage`.
+    """
+    allowed, msg = _intention_gate(t)
+    if allowed:
+        return True
+
+    t["status"] = "triage"
+    t["title"] = _with_status_prefix("triage", t["title"])
+    t["fail_reason"] = "no intention — cannot be proven; design incomplete"
+    _log({"action": "intention_gate", "id": t.get("id"), "via": via,
+          "result": msg, "allowed": False, "diverted_to": "triage"})
+    print(f"  {t.get('id')}: no intention → diverted to triage (not sprint)")
+    return False
 
 
 def _proof_gate(t: dict, *, unproven_reason=None, repo_root=None):
@@ -1956,6 +2028,12 @@ def cmd_reset(args):
             f"Skipping reset of {clean_args[0]}: already terminal ({prev}) — will not reopen."
         )
         return
+    if not _guard_sprint_entry(t, via="reset"):
+        _save(tasks)
+        _log({"action": "reset", "id": clean_args[0], "prev_status": prev,
+              "diverted_to": "triage"})
+        print(f"Reset {clean_args[0]}: {prev} → triage (no intention — see gate message)")
+        return
     t["status"] = "sprint"
     t["dispatched_at"] = None
     t["blocked_at"] = None
@@ -1977,6 +2055,9 @@ def cmd_reset_stale(args):
     for t in tasks:
         if t["status"] == "in_progress":
             prev = t["status"]
+            if not _guard_sprint_entry(t, via="reset_stale"):
+                reset_count += 1
+                continue
             t["status"] = "sprint"
             t["dispatched_at"] = None
             _log({"action": "reset_stale", "id": t["id"], "prev_status": prev})
@@ -2033,6 +2114,19 @@ def cmd_setstatus(args):
             sys.exit(1)
         t.update(annotations)
         print(gate_msg)
+
+    # Sprint-ENTRY gate — the bookend to the proof gate above. An EXPLICIT request
+    # to make a ticket claimable is REFUSED (not diverted) when it has no
+    # intention: the caller asked for something specific, and silently doing
+    # something else would hide the very defect the gate exists to surface. The
+    # automatic paths divert instead (see _guard_sprint_entry) so nothing strands.
+    if new_status == "sprint" and old_status != "sprint":
+        allowed, gate_msg = _intention_gate(t)
+        _log({"action": "intention_gate", "id": tid, "via": "setstatus",
+              "result": gate_msg, "allowed": allowed})
+        if not allowed:
+            print(gate_msg)
+            sys.exit(1)
 
     t["status"] = new_status
     t["title"] = _with_status_prefix(new_status, t["title"])

@@ -20,8 +20,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "devlab", "clau
 import cc_queue  # noqa: E402
 
 
-def _task(tid, status="sprint", gate=None):
-    return {"id": tid, "status": status, "gate": gate, "title": tid}
+_INTENTION = "I intend that clearing a gate makes the ticket claimable in one step."
+
+
+def _task(tid, status="sprint", gate=None, intention=_INTENTION):
+    # An intention is REQUIRED for sprint entry (T-sprint-tickets-with-no-intention-
+    # cannot-be-proven). These fixtures predate that gate; they exercise the UNGATE
+    # flip, so they carry a valid intention and the gate is not what is under test
+    # here. The no-intention path is pinned separately below.
+    return {"id": tid, "status": status, "gate": gate, "title": tid,
+            "intention": intention}
 
 
 def _run_ungate(tasks, tid, extra=None):
@@ -80,3 +88,24 @@ def test_flip_helper_ignores_ticket_that_still_has_a_gate():
     t = _task("T-x", status="dependency", gate="T-blocker")
     assert cc_queue._flip_ungated_to_sprint(t) is False
     assert t["status"] == "dependency"
+
+
+# ── The sprint-ENTRY gate composes with the ungate flip ────────────────────────
+
+
+def test_ungate_does_not_make_an_intentionless_ticket_claimable():
+    """A cleared gate must NOT promote a ticket that cannot be proven.
+
+    The ungate flip exists so a cleared gate makes a ticket claimable in ONE step.
+    But `claimable` now carries a precondition: an intention, because the intention
+    IS the property mutation-red breaks. So an ungated ticket with no intention
+    goes to the DESIGN step, not the claimable pile — and crucially it is DIVERTED,
+    never stranded in `dependency` limbo, which is the failure the ungate flip was
+    built to cure. Both invariants hold at once.
+    """
+    tasks = [_task("T-impl", status="dependency", gate="T-design", intention=None)]
+    saved, _logs = _run_ungate(tasks, "T-impl")
+    t = next(x for x in saved if x["id"] == "T-impl")
+    assert t["gate"] is None, "the gate still clears"
+    assert t["status"] == "triage", "no intention -> design step, not the sprint queue"
+    assert t["status"] != "dependency", "and it is NEVER left stranded in limbo"

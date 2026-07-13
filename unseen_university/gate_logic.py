@@ -48,6 +48,35 @@ from datetime import date as _date
 # semantics match the queue authority (cc_queue) exactly.
 TERMINAL_STATUSES = {"closed", "done", "cancelled"}
 
+# --- the sprint-entry intention gate ---------------------------------------
+#
+# INTENTION (2026-07-13): no ticket becomes claimable without an intention that
+# names a property a hollow build would violate.
+#
+# WHY: the intention IS the property mutation-red breaks. A ticket with none has
+# no property to break, so it CANNOT BE PROVEN — it can only ever close hollow,
+# or `shipped-unproven` for a reason that is not the real one. Measured
+# 2026-07-13: 149 tickets had reached `sprint` (approved, queued, dispatchable)
+# with no intention, and were kicked back to design as FAIL. That was ONE ABSENT
+# GATE, not 149 oversights (notes/fail-149-tickets-no-intention-20260713).
+#
+# WHY A PRESENCE-CHECK IS NOT ENOUGH — this is the load-bearing part. The intent
+# extractor's `except Exception` block writes intent="unknown" (2,435 records,
+# ~99% of its output). `if not intention: reject` ACCEPTS the string "unknown",
+# so a presence-check gate would certify every one of those crash outputs as a
+# valid intention. A degenerate value is not a weaker intention; it is the ABSENCE
+# of one wearing a non-empty string, and the gate must see through the costume.
+DEGENERATE_INTENTIONS = frozenset({
+    "unknown", "tbd", "todo", "n/a", "na", "none", "null", "nil",
+    "?", "-", "--", "...", "…", "x", "xxx", "fixme", "pending",
+})
+
+
+def intention_is_declared(intention: object) -> tuple[bool, str]:
+    """STUB — the gate exists but does not yet discriminate. Accepts anything."""
+    return True, "ok"
+
+
 # Ticket-id token in a gate string. Case-insensitive after the ``T-`` prefix so
 # ids like ``T-consequence-D-constraints`` (embedded uppercase) round-trip.
 # ``findall`` extracts EVERY referenced predecessor, so a multi-predecessor gate

@@ -30,8 +30,12 @@ def _fs(tmp_path, monkeypatch):
 
 
 def _mk(tid, status="sprint", worker=None, **kw):
+    # `intention` is REQUIRED for sprint entry (T-sprint-tickets-with-no-intention-
+    # cannot-be-proven). Default it here so these mutator fixtures represent a
+    # VALID post-gate ticket; the no-intention divert is pinned separately below.
     body = {"id": tid, "title": f"t {tid}", "status": status, "worker": worker,
-            "priority": 0.5, "created_by": "cc.0"}
+            "priority": 0.5, "created_by": "cc.0",
+            "intention": "I intend that the mutators route through ticket_store."}
     body.update(kw)
     return body
 
@@ -107,3 +111,20 @@ def test_cmd_next_claims_fs(capsys):
 def test_cmd_next_empty_when_none(capsys):
     cc_queue.cmd_next(["--worker", "ds.0"])
     assert capsys.readouterr().out.strip() == ""
+
+
+# ── reset_stale_in_progress honours the sprint-ENTRY gate ─────────────────────
+
+
+def test_reset_stale_diverts_an_intentionless_ticket_to_triage():
+    """A stale ticket with no intention is reset to the DESIGN step, not to sprint.
+
+    It must never be STRANDED in `in_progress` — refusing the reset outright would
+    pin it there forever with no way back, which is why the automatic paths divert
+    rather than refuse. The gate holds the line without creating a dead end.
+    """
+    ts.write(_mk("T-noint", status="in_progress", intention=None))
+    assert cc_queue.reset_stale_in_progress("T-noint") is True
+    got = ts.read("T-noint")
+    assert got["status"] == "triage", "no intention -> design step, not sprint"
+    assert got["status"] != "in_progress", "and never left stranded"
