@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-always-on-observer-pattern",
-    "title": "[sprint] Distill the always-on observer contract from its built instances",
-    "status": "sprint",
+    "title": "[triage] Distill the always-on observer contract from its built instances",
+    "status": "triage",
     "worker": "claude",
     "size": "L",
     "tags": [
@@ -29,7 +29,7 @@
       "Observer",
       "Architecture"
     ],
-    "description": "**Problem:** Observations that close the intention+why loop come in two modes: one-shot (consequence-check, built) and always-on/standing (for properties that can regress). The always-on half exists only as concrete instances (T-build-log-digester [closed]; soon T-skill-why-auditor) with no generalized contract, so each standing observer is rebuilt ad hoc and risks putting expensive inference on watch duty.\n**Proposed shape:** DISTILL (not design top-down) a reusable always-on observer contract FROM the >=2 BUILT instances: standing property -> continuous CHEAP filter (inference-free / free-cloud) -> escalate to judgment ONLY on a flagged candidate -> maintained pickup-ready projection + drift signal. Then retrofit the two instances to conform (or document conformance). Grow-from-seams: do NOT bless a schema before the instances exist.\n**Affected files:** NEW observer-pattern contract module; conform/adapt devices/scraps build-log digester + skills-why auditor. Relates: T-build-log-digester, T-skill-why-auditor, T-why-sorter (a future conforming instance, not rewritten here).\n**Design rules:** Inference-Proxy-only; three-tier cost (cheap filter; escalate on hit; never expensive brain on watch); External State Principle (projection durable); grow-from-seams (distill from instances).\n**Scope boundary:** IN — the documented+importable contract + conform the 2 built instances. OUT — converting ALL standing checks; rewriting T-why-sorter; incoherent-rationale judging beyond the candidate-escalation hook.\n**Completion criteria:** A documented, importable always-on observer contract; both built instances (digester + skills-why auditor) conform to it (or carry a documented adapter); a conformance test shows the cheap-filter / escalate-on-hit boundary (zero inference on clean inputs).\n**Test plan:** Both instances expose the contract surface; a clean-input run logs zero inference calls; a flagged-candidate run invokes the escalation hook exactly once.\n**Sequencing:** GATED on >=2 BUILT instances — T-skill-why-auditor (this batch) + T-build-log-digester (closed). Cannot distill from unbuilt instances.",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\n**Problem:** Observations that close the intention+why loop come in two modes: one-shot (consequence-check, built) and always-on/standing (for properties that can regress). The always-on half exists only as concrete instances (T-build-log-digester [closed]; soon T-skill-why-auditor) with no generalized contract, so each standing observer is rebuilt ad hoc and risks putting expensive inference on watch duty.\n**Proposed shape:** DISTILL (not design top-down) a reusable always-on observer contract FROM the >=2 BUILT instances: standing property -> continuous CHEAP filter (inference-free / free-cloud) -> escalate to judgment ONLY on a flagged candidate -> maintained pickup-ready projection + drift signal. Then retrofit the two instances to conform (or document conformance). Grow-from-seams: do NOT bless a schema before the instances exist.\n**Affected files:** NEW observer-pattern contract module; conform/adapt devices/scraps build-log digester + skills-why auditor. Relates: T-build-log-digester, T-skill-why-auditor, T-why-sorter (a future conforming instance, not rewritten here).\n**Design rules:** Inference-Proxy-only; three-tier cost (cheap filter; escalate on hit; never expensive brain on watch); External State Principle (projection durable); grow-from-seams (distill from instances).\n**Scope boundary:** IN — the documented+importable contract + conform the 2 built instances. OUT — converting ALL standing checks; rewriting T-why-sorter; incoherent-rationale judging beyond the candidate-escalation hook.\n**Completion criteria:** A documented, importable always-on observer contract; both built instances (digester + skills-why auditor) conform to it (or carry a documented adapter); a conformance test shows the cheap-filter / escalate-on-hit boundary (zero inference on clean inputs).\n**Test plan:** Both instances expose the contract surface; a clean-input run logs zero inference calls; a flagged-candidate run invokes the escalation hook exactly once.\n**Sequencing:** GATED on >=2 BUILT instances — T-skill-why-auditor (this batch) + T-build-log-digester (closed). Cannot distill from unbuilt instances.",
     "decision_id": "D-intention-why-observation-2026-06-19",
     "gate": "T-skill-why-auditor",
     "priority": 0.4,
@@ -39,6 +39,14 @@
     "updated_at": "2026-06-19T20:31:02.898487+00:00",
     "completed_at": null,
     "result": null,
-    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

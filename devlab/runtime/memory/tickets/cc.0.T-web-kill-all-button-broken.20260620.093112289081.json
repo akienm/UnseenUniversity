@@ -18,7 +18,7 @@
   },
   "body": {
     "id": "T-web-kill-all-button-broken",
-    "status": "sprint",
+    "status": "triage",
     "size": "M",
     "priority": 0.7,
     "worker": null,
@@ -29,7 +29,18 @@
     ],
     "created_by": "cc.0",
     "decision_id": null,
-    "title": "Web server 'kill everything' button does not kill the fleet",
-    "description": "Akien hit the web UI 'kill everything' button (2026-06-19) expecting a full fleet teardown. It did NOT work: left alive THREE orphan dicksimnel processes (pids 680410 Jun15, 3246273 + 3305146 Jun18, each with an sh -c wrapper), the granny daemon (running in tmux session 'granny'), the scraps daemon, and ground_loop itself (systemd --user service — survived; Akien thought the button killed it but it stayed active on :8078). Net: the button under-kills badly. CC had to kill the fleet manually (systemctl stop ground_loop.service + tmux kill-session granny + SIGTERM the dicksimnel pids + wrappers).\n\nRoot-cause hypotheses to check: the button likely only kills processes the web server itself tracks/spawned, missing (a) detached orphans launched via sh -c wrappers outside its registry, (b) tmux-hosted daemons (granny), (c) systemd --user services (ground_loop — needs `systemctl --user stop`, not SIGTERM to a pid systemd will respawn). A real kill-all must enumerate via process scan (pgrep -f 'devices\\.') AND stop systemd units AND kill tmux sessions, not just its own child registry.\n\n**Affected files:** devices/web_server/server.py (the kill-everything endpoint/handler)\n**Design rules:** external-state-principle, log-state-changes (lifecycle events)\n**Scope boundary:** IN: make kill-all actually reap the full fleet (orphans, tmux, systemd units) + report what it killed/failed. OUT: redesigning device supervision.\n**Completion criteria:** after pressing kill-all with the fleet up (incl. an orphan + a tmux daemon + ground_loop), a process scan shows zero `devices.*` daemons; the button reports each unit's kill result.\n**Test plan:** integration — launch a decoy orphan + tmux daemon, invoke the handler, assert all gone."
+    "title": "[triage] Web server 'kill everything' button does not kill the fleet",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\nAkien hit the web UI 'kill everything' button (2026-06-19) expecting a full fleet teardown. It did NOT work: left alive THREE orphan dicksimnel processes (pids 680410 Jun15, 3246273 + 3305146 Jun18, each with an sh -c wrapper), the granny daemon (running in tmux session 'granny'), the scraps daemon, and ground_loop itself (systemd --user service — survived; Akien thought the button killed it but it stayed active on :8078). Net: the button under-kills badly. CC had to kill the fleet manually (systemctl stop ground_loop.service + tmux kill-session granny + SIGTERM the dicksimnel pids + wrappers).\n\nRoot-cause hypotheses to check: the button likely only kills processes the web server itself tracks/spawned, missing (a) detached orphans launched via sh -c wrappers outside its registry, (b) tmux-hosted daemons (granny), (c) systemd --user services (ground_loop — needs `systemctl --user stop`, not SIGTERM to a pid systemd will respawn). A real kill-all must enumerate via process scan (pgrep -f 'devices\\.') AND stop systemd units AND kill tmux sessions, not just its own child registry.\n\n**Affected files:** devices/web_server/server.py (the kill-everything endpoint/handler)\n**Design rules:** external-state-principle, log-state-changes (lifecycle events)\n**Scope boundary:** IN: make kill-all actually reap the full fleet (orphans, tmux, systemd units) + report what it killed/failed. OUT: redesigning device supervision.\n**Completion criteria:** after pressing kill-all with the fleet up (incl. an orphan + a tmux daemon + ground_loop), a process scan shows zero `devices.*` daemons; the button reports each unit's kill result.\n**Test plan:** integration — launch a decoy orphan + tmux daemon, invoke the handler, assert all gone.",
+    "result": null,
+    "role": "master",
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

@@ -27,9 +27,9 @@
       "Consequence",
       "Workflow"
     ],
-    "title": "[sprint] Consequence check: 4-tier memory scope + global KB",
+    "title": "[triage] Consequence check: 4-tier memory scope + global KB",
     "result": null,
-    "status": "sprint",
+    "status": "triage",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,
@@ -37,7 +37,7 @@
     "created_by": null,
     "related_to": null,
     "decision_id": "D-memory-scope-layers-2026-06-01",
-    "description": "**What changed:** 4-tier memory scope (global/local/agent/client) with separate DBs; global tier is a forkable git repo.\n\n**Predicted unintended effects:**\n- DB connection count explosion — each device opens connections to 3+ DBs; connection pool limits hit at scale\n- Global KB diverges across forks without upstream PRs — the commons fragments\n- Client data isolation breaks if a device caches a cross-client query result in local/shared scope\n- 'Agent requests other agent's data via bus' protocol is never implemented — agents just query the DB directly because it's easier\n- Migration from Igor-wild-0001 single DB is deferred indefinitely — new tier model ships but old data stays in the monolith\n\n**Signals to watch:**\n- Postgres connection count per device (alert if >20)\n- Global KB fork divergence (check upstream PRs monthly)\n- Any direct cross-DB query outside bus protocol (grep for connection strings in device code)\n- Migration ticket status (should have a filed execution ticket within 30 days of T-memory-scope-layers closing)\n\n**Gate condition:** Check by 2026-06-15.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** Observation ticket — done when each predicted effect is annotated",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\n**What changed:** 4-tier memory scope (global/local/agent/client) with separate DBs; global tier is a forkable git repo.\n\n**Predicted unintended effects:**\n- DB connection count explosion — each device opens connections to 3+ DBs; connection pool limits hit at scale\n- Global KB diverges across forks without upstream PRs — the commons fragments\n- Client data isolation breaks if a device caches a cross-client query result in local/shared scope\n- 'Agent requests other agent's data via bus' protocol is never implemented — agents just query the DB directly because it's easier\n- Migration from Igor-wild-0001 single DB is deferred indefinitely — new tier model ships but old data stays in the monolith\n\n**Signals to watch:**\n- Postgres connection count per device (alert if >20)\n- Global KB fork divergence (check upstream PRs monthly)\n- Any direct cross-DB query outside bus protocol (grep for connection strings in device code)\n- Migration ticket status (should have a filed execution ticket within 30 days of T-memory-scope-layers closing)\n\n**Gate condition:** Check by 2026-06-15.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** Observation ticket — done when each predicted effect is annotated",
     "completed_at": null,
     "github_issue": null,
     "required_files": [],
@@ -46,6 +46,9 @@
     "inferred_intention_id": "51ad43cc-f194-4d6f-a08b-221a4850fd17",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
     "role": "master",
-    "dispatched_at": null
+    "dispatched_at": null,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

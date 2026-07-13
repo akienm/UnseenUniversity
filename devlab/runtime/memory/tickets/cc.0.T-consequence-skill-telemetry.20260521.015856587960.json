@@ -27,9 +27,9 @@
       "Consequence",
       "Workflow"
     ],
-    "title": "[sprint] Consequence check: skill telemetry signal vs noise",
+    "title": "[triage] Consequence check: skill telemetry signal vs noise",
     "result": null,
-    "status": "sprint",
+    "status": "triage",
     "worker": "claude",
     "priority": 0.3,
     "blocked_at": null,
@@ -37,7 +37,7 @@
     "created_by": null,
     "related_to": null,
     "decision_id": "D-skill-telemetry-2026-05-20",
-    "description": "**What changed:** Per-skill telemetry contracts + violation logger added.\n**Predicted unintended effects:** Violation log grows without bound if not rotated; forget-flag definitions may be too broad (everything fires) or too narrow (nothing fires); metric postconditions may not reflect actual skill quality.\n**Signals to watch:** violation_log.jsonl size after 30 days; top_violations() result — is the list stable (good signal) or rotating every run (noise)?\n**Gate condition:** Check 30 days after T-skill-telemetry-rollup closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate outcome as signal/noise/partial and close\n**Test plan:** no tests — observation ticket",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\n**What changed:** Per-skill telemetry contracts + violation logger added.\n**Predicted unintended effects:** Violation log grows without bound if not rotated; forget-flag definitions may be too broad (everything fires) or too narrow (nothing fires); metric postconditions may not reflect actual skill quality.\n**Signals to watch:** violation_log.jsonl size after 30 days; top_violations() result — is the list stable (good signal) or rotating every run (noise)?\n**Gate condition:** Check 30 days after T-skill-telemetry-rollup closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate outcome as signal/noise/partial and close\n**Test plan:** no tests — observation ticket",
     "completed_at": null,
     "github_issue": 768,
     "timeout_count": 1,
@@ -48,6 +48,9 @@
     "inferred_intention_id": "9c39a9d3-d650-4180-9fc6-1e4d36257660",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
     "role": "master",
-    "dispatched_at": null
+    "dispatched_at": null,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

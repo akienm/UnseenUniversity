@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-skill-why-convention",
-    "title": "[sprint] Skills carry an explicit greppable Why: (the format the auditor keys on)",
-    "status": "sprint",
+    "title": "[triage] Skills carry an explicit greppable Why: (the format the auditor keys on)",
+    "status": "triage",
     "worker": "claude",
     "size": "S",
     "tags": [
@@ -29,7 +29,7 @@
       "Skills",
       "Convention"
     ],
-    "description": "**Problem:** Skills (and their MANDATORY steps) don't uniformly carry an explicit why. The why is what turns a brittle lookup into a generative rule, is the conflict tiebreaker, and is the only lever that rescues unprompted recognition. Without it, skill instructions are followed only when salient and cannot be drift-checked.\n**Proposed shape:** Document the contract in the skill-authoring location (CLAUDE.md skill section / skills authoring guide): every skill carries a top-level why, and each step marked MANDATORY carries a one-line why. Define a MACHINE-DETECTABLE format (a `Why:` line) so the auditor (T-skill-why-auditor) can key on presence/structure.\n**Affected files:** skill-authoring doc (convention text); a sample skill annotated to the convention. No code-behavior change.\n**Design rules:** Theory-of-Operation (every rule carries its why); External State Principle (the why is durable, not in-context).\n**Scope boundary:** IN — the documented convention + the greppable `Why:` format. OUT — backfilling existing skills (that is the auditor's first run); enforcement tooling.\n**Completion criteria:** A discoverable written convention stating skills + MANDATORY steps carry an explicit `Why:`; the format is greppable; it is referenced from the skill-authoring location.\n**Test plan:** No tests (convention/docs). Verify a sample skill annotated to the convention is matched by a grep for the `Why:` format.",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\n**Problem:** Skills (and their MANDATORY steps) don't uniformly carry an explicit why. The why is what turns a brittle lookup into a generative rule, is the conflict tiebreaker, and is the only lever that rescues unprompted recognition. Without it, skill instructions are followed only when salient and cannot be drift-checked.\n**Proposed shape:** Document the contract in the skill-authoring location (CLAUDE.md skill section / skills authoring guide): every skill carries a top-level why, and each step marked MANDATORY carries a one-line why. Define a MACHINE-DETECTABLE format (a `Why:` line) so the auditor (T-skill-why-auditor) can key on presence/structure.\n**Affected files:** skill-authoring doc (convention text); a sample skill annotated to the convention. No code-behavior change.\n**Design rules:** Theory-of-Operation (every rule carries its why); External State Principle (the why is durable, not in-context).\n**Scope boundary:** IN — the documented convention + the greppable `Why:` format. OUT — backfilling existing skills (that is the auditor's first run); enforcement tooling.\n**Completion criteria:** A discoverable written convention stating skills + MANDATORY steps carry an explicit `Why:`; the format is greppable; it is referenced from the skill-authoring location.\n**Test plan:** No tests (convention/docs). Verify a sample skill annotated to the convention is matched by a grep for the `Why:` format.",
     "decision_id": "D-intention-why-observation-2026-06-19",
     "gate": null,
     "priority": 0.5,
@@ -39,6 +39,14 @@
     "updated_at": "2026-06-19T20:31:02.898487+00:00",
     "completed_at": null,
     "result": null,
-    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

@@ -29,9 +29,9 @@
       "Consequence",
       "Workflow"
     ],
-    "title": "[sprint] Consequence check: PA2.0 adopted as UU north star",
+    "title": "[triage] Consequence check: PA2.0 adopted as UU north star",
     "result": null,
-    "status": "sprint",
+    "status": "triage",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,
@@ -39,7 +39,7 @@
     "created_by": null,
     "related_to": null,
     "decision_id": "D-prescient-agents-north-star-2026-06-01",
-    "description": "**What changed:** Prescient Agents 2.0 adopted as UU's explicit architectural north star; G-factory-of-factories filed as master goal; outcome learner + pattern tracker wired as Layer 1→2; Vetinari spec updated as Layer 3.\n\n**Predicted unintended effects:**\n- Linking all decisions to G-factory-of-factories will surface decisions that don't fit the goal — design debt that was invisible before. These are worth surfacing but may be disorienting.\n- OUTCOME_LEARNER_REPORT channel posts may overwhelm the channel if the Scraps job runs too frequently before a rate-limit is tuned\n- Vetinari spec update may conflict with in-progress design work Akien hasn't shared yet\n- PA2.0 Layer 3 (future modeling) will feel urgently missing once Layer 1+2 exist — risk of pulling priority from more immediate work\n- The 'improve quality of future decisions' framing may create pressure to make the advisor loop self-modifying (scope creep risk)\n\n**Signals to watch:** Any D-*.md files where goal_link = G-factory-of-factories feels dishonest (misaligned decisions worth surfacing to Akien); OUTCOME_LEARNER_REPORT frequency in channel; T-vetinari-device sprint attempts before Layer 1+2 data exists\n\n**Gate condition:** Check by 2026-06-15 or after T-pa20-palace-foundation + T-inference-outcome-learner both close.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate and close\n**Completion criteria:** No automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\n**What changed:** Prescient Agents 2.0 adopted as UU's explicit architectural north star; G-factory-of-factories filed as master goal; outcome learner + pattern tracker wired as Layer 1→2; Vetinari spec updated as Layer 3.\n\n**Predicted unintended effects:**\n- Linking all decisions to G-factory-of-factories will surface decisions that don't fit the goal — design debt that was invisible before. These are worth surfacing but may be disorienting.\n- OUTCOME_LEARNER_REPORT channel posts may overwhelm the channel if the Scraps job runs too frequently before a rate-limit is tuned\n- Vetinari spec update may conflict with in-progress design work Akien hasn't shared yet\n- PA2.0 Layer 3 (future modeling) will feel urgently missing once Layer 1+2 exist — risk of pulling priority from more immediate work\n- The 'improve quality of future decisions' framing may create pressure to make the advisor loop self-modifying (scope creep risk)\n\n**Signals to watch:** Any D-*.md files where goal_link = G-factory-of-factories feels dishonest (misaligned decisions worth surfacing to Akien); OUTCOME_LEARNER_REPORT frequency in channel; T-vetinari-device sprint attempts before Layer 1+2 data exists\n\n**Gate condition:** Check by 2026-06-15 or after T-pa20-palace-foundation + T-inference-outcome-learner both close.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate and close\n**Completion criteria:** No automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
     "completed_at": null,
     "github_issue": null,
     "required_files": [],
@@ -48,6 +48,9 @@
     "inferred_intention_id": "ec622f92-f59a-4b2b-9c49-3716d5c72aa7",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
     "role": "master",
-    "dispatched_at": null
+    "dispatched_at": null,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

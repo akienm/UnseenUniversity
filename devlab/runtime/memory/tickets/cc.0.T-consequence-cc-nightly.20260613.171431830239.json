@@ -27,9 +27,9 @@
       "Consequence",
       "Workflow"
     ],
-    "title": "[sprint] Consequence check: CC nightly learning loop",
+    "title": "[triage] Consequence check: CC nightly learning loop",
     "result": null,
-    "status": "sprint",
+    "status": "triage",
     "worker": "claude",
     "priority": 0.3,
     "intention": null,
@@ -38,7 +38,7 @@
     "created_by": null,
     "related_to": null,
     "decision_id": "D-cc-nightly-learning-2026-06-13",
-    "description": "Verify CC nightly learning processes transcripts correctly and improves next-day context.\n\n**What changed:** CC processes session transcripts automatically at night (3:30 AM), extracts feedback, updates memory, prepares context for next day.\n\n**Predicted unintended effects:**\n  - False positive feedback: script interprets random text as feedback\n  - Stale patterns: outdated patterns clutter palace (no deprecation yet)\n  - Transcript loading: if session log is not available, script errors\n  - Idempotency: multiple runs might duplicate entries\n\n**Signals to watch:**\n  - Check: cc_nightly_learning.log shows 0 errors, process completes\n  - Log: feedback_items extracted matches manual count (spot-check)\n  - Verify: tomorrow's /context-load shows prepared briefing\n  - Palace: no duplicate nodes, feedback tree grows cleanly\n  - Next day: CC starts session with patterns and decisions from previous day visible\n\n**Gate condition:** Check 2026-06-27 (14 days) or first morning after nightly script runs in prod.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe transcript processing quality, context briefing accuracy\n**Test plan:** no tests — observation ticket",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\nVerify CC nightly learning processes transcripts correctly and improves next-day context.\n\n**What changed:** CC processes session transcripts automatically at night (3:30 AM), extracts feedback, updates memory, prepares context for next day.\n\n**Predicted unintended effects:**\n  - False positive feedback: script interprets random text as feedback\n  - Stale patterns: outdated patterns clutter palace (no deprecation yet)\n  - Transcript loading: if session log is not available, script errors\n  - Idempotency: multiple runs might duplicate entries\n\n**Signals to watch:**\n  - Check: cc_nightly_learning.log shows 0 errors, process completes\n  - Log: feedback_items extracted matches manual count (spot-check)\n  - Verify: tomorrow's /context-load shows prepared briefing\n  - Palace: no duplicate nodes, feedback tree grows cleanly\n  - Next day: CC starts session with patterns and decisions from previous day visible\n\n**Gate condition:** Check 2026-06-27 (14 days) or first morning after nightly script runs in prod.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe transcript processing quality, context briefing accuracy\n**Test plan:** no tests — observation ticket",
     "completed_at": null,
     "github_issue": null,
     "required_files": [],
@@ -47,6 +47,9 @@
     "inferred_intention": "unknown",
     "inferred_intention_id": "d3d7529e-25b6-41b5-b4eb-aa76aaeb85c7",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
-    "dispatched_at": null
+    "dispatched_at": null,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

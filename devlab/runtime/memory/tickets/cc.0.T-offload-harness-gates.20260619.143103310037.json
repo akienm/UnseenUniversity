@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-offload-harness-gates",
-    "title": "[sprint] Reliable CC.0->CC.1 offload: verification gates + harness-driven step injection",
-    "status": "sprint",
+    "title": "[triage] Reliable CC.0->CC.1 offload: verification gates + harness-driven step injection",
+    "status": "triage",
     "worker": "claude",
     "size": "L",
     "tags": [
@@ -29,7 +29,7 @@
       "Dispatch",
       "Reliability"
     ],
-    "description": "**Problem:** Reliable CC.0->CC.1 offload hits the reliability ceiling: latent capability is unreliable, procedural-injection checklists work 'most of the time', and CC is currently the orchestrator of its own reliability, so missed steps pass silently.\n**Proposed shape:** Move control flow into the harness (LLM = a called function): (a) verification GATES between checklist steps so a missed/failed step is CAUGHT and retried, not silently passed; (b) harness-driven step INJECTION — the driver (Granny/CCWorkerShim) re-injects the next step at decision time rather than relying on CC recall. Builds on the existing Granny handshake + CCWorkerShim.\n**Affected files:** devices/granny/* (step sequencing) + CCWorkerShim + the offload checklist/orchestrator definition.\n**Design rules:** Don't make CC the orchestrator of its own reliability; Granny send-keys ONLY, never spawn; one-CC-at-a-time; calm signals (no spurious urgency).\n**Inertia:** MEDIUM+ — touches devices/granny/* and CCWorkerShim. Pre-approval gate applies at BUILD time, not filing time. (This is the separable 'could be its own decision' ticket; default is to keep it in D-intention-why-observation unless Akien spins it out.)\n**Scope boundary:** IN — gates (catch+retry) + harness step-injection for the ONE CC.0->CC.1 flow. OUT — generalizing to all skills; rebuilding dispatch; any CC-spawn path.\n**Completion criteria:** A CC.0->CC.1 offload flow where (1) a deliberately skipped/failed step is caught by a gate and retried (asserted in a test), not silently passed; (2) the next step is injected by the driver — verified by a NAMED injection log line — rather than CC-recalled; runs within the existing handshake + one-at-a-time guards; no CC spawn (send-keys only).\n**Test plan:** Simulate a skipped step -> assert gate retry fires. Assert the named step-injection log line is emitted by the driver. Assert no subprocess/CC-spawn occurs (send-keys path only).",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\n**Problem:** Reliable CC.0->CC.1 offload hits the reliability ceiling: latent capability is unreliable, procedural-injection checklists work 'most of the time', and CC is currently the orchestrator of its own reliability, so missed steps pass silently.\n**Proposed shape:** Move control flow into the harness (LLM = a called function): (a) verification GATES between checklist steps so a missed/failed step is CAUGHT and retried, not silently passed; (b) harness-driven step INJECTION — the driver (Granny/CCWorkerShim) re-injects the next step at decision time rather than relying on CC recall. Builds on the existing Granny handshake + CCWorkerShim.\n**Affected files:** devices/granny/* (step sequencing) + CCWorkerShim + the offload checklist/orchestrator definition.\n**Design rules:** Don't make CC the orchestrator of its own reliability; Granny send-keys ONLY, never spawn; one-CC-at-a-time; calm signals (no spurious urgency).\n**Inertia:** MEDIUM+ — touches devices/granny/* and CCWorkerShim. Pre-approval gate applies at BUILD time, not filing time. (This is the separable 'could be its own decision' ticket; default is to keep it in D-intention-why-observation unless Akien spins it out.)\n**Scope boundary:** IN — gates (catch+retry) + harness step-injection for the ONE CC.0->CC.1 flow. OUT — generalizing to all skills; rebuilding dispatch; any CC-spawn path.\n**Completion criteria:** A CC.0->CC.1 offload flow where (1) a deliberately skipped/failed step is caught by a gate and retried (asserted in a test), not silently passed; (2) the next step is injected by the driver — verified by a NAMED injection log line — rather than CC-recalled; runs within the existing handshake + one-at-a-time guards; no CC spawn (send-keys only).\n**Test plan:** Simulate a skipped step -> assert gate retry fires. Assert the named step-injection log line is emitted by the driver. Assert no subprocess/CC-spawn occurs (send-keys path only).",
     "decision_id": "D-intention-why-observation-2026-06-19",
     "gate": null,
     "priority": 0.5,
@@ -39,6 +39,14 @@
     "updated_at": "2026-06-19T20:31:02.898487+00:00",
     "completed_at": null,
     "result": null,
-    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

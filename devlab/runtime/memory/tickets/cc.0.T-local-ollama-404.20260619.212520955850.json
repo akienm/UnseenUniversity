@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-local-ollama-404",
-    "title": "Local Ollama source returns 404 — wire the 4-machine local tier",
-    "status": "sprint",
+    "title": "[triage] Local Ollama source returns 404 — wire the 4-machine local tier",
+    "status": "triage",
     "size": "S",
     "priority": 0.35,
     "worker": null,
@@ -32,6 +32,17 @@
     ],
     "created_by": "cc.0",
     "decision_id": "D-dsimnel-cc-parity-2026-06-04",
-    "description": "The `ollama` (local) inference source self-tests with HTTP 404 (`self_test_sources.py`). Akien's topology names FOUR local computers as the background/overnight free-inference tier (slow, good for night-mode batch). The `local_ollama` routing rules exist (batch tier) but the local endpoint/model isn't serving — likely the wrong host/port or models not pulled on the local box(es). Cloud Ollama (ollama_cloud) + Gemini free + deepseek work; this is the local leg of the same free topology.\n\nFound 2026-06-19 while wiring DS free inference (Gemini cred plumbing + ollama_cloud slug reconciliation + gemini-2.5-flash). Worker/analyst/designer/minion all complete on free inference ($0); only the LOCAL ollama source remains down.\n\n**Affected files:** devices/inference/sources.py (OllamaSource / local), local Ollama host config, rules_engine batch tier (local_ollama rules)\n**Design rules:** inference-proxy-only, no-direct-backend\n**Scope boundary:** IN: get the local ollama source serving (correct host/port, pull required models on the 4 machines, verify self_test_sources green). OUT: load-balancing across the 4 machines (separate).\n**Completion criteria:** `self_test_sources.py` shows `ollama ✓`; a batch-tier dispatch routes to local_ollama and completes.\n**Test plan:** run self_test_sources.py; e2e batch-tier dispatch through InferenceDevice."
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\nThe `ollama` (local) inference source self-tests with HTTP 404 (`self_test_sources.py`). Akien's topology names FOUR local computers as the background/overnight free-inference tier (slow, good for night-mode batch). The `local_ollama` routing rules exist (batch tier) but the local endpoint/model isn't serving — likely the wrong host/port or models not pulled on the local box(es). Cloud Ollama (ollama_cloud) + Gemini free + deepseek work; this is the local leg of the same free topology.\n\nFound 2026-06-19 while wiring DS free inference (Gemini cred plumbing + ollama_cloud slug reconciliation + gemini-2.5-flash). Worker/analyst/designer/minion all complete on free inference ($0); only the LOCAL ollama source remains down.\n\n**Affected files:** devices/inference/sources.py (OllamaSource / local), local Ollama host config, rules_engine batch tier (local_ollama rules)\n**Design rules:** inference-proxy-only, no-direct-backend\n**Scope boundary:** IN: get the local ollama source serving (correct host/port, pull required models on the 4 machines, verify self_test_sources green). OUT: load-balancing across the 4 machines (separate).\n**Completion criteria:** `self_test_sources.py` shows `ollama ✓`; a batch-tier dispatch routes to local_ollama and completes.\n**Test plan:** run self_test_sources.py; e2e batch-tier dispatch through InferenceDevice.",
+    "result": null,
+    "role": "master",
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

@@ -20,17 +20,17 @@
   },
   "body": {
     "id": "T-halt-on-dirty-tree",
-    "title": "[sprint] Halt-until-sorted: refuse to start work / prove on a dirty tree",
+    "title": "[triage] Halt-until-sorted: refuse to start work / prove on a dirty tree",
     "size": "M",
     "tags": [
       "ProofOnClose",
       "Workflow"
     ],
-    "description": "No-hidden-state principle (D-proof-on-close-2026-06-20): uncommitted work is deferred/hidden state (git's hollow build); it must be sorted immediately (committed or reverted), never stashed or deferred. A dirty tree HALTS work until sorted, at two points: (a) start of a unit of work, (b) proof/close time (the proof_emitter clean-tree guard, already shipped, is this half). Workflow-halt (CC stops, surfaces, sorts) — NOT the device-bus HALT/priority signal. Scope = work-boundaries + proof-time, NOT continuous (avoid the Igor email-panic over-eager-urgency failure).\n\n**Affected files:** TBD — work-start check in the sprint/ticket skills + CC behavior; proposed CLAUDE.md Structural rule ('don't start a unit of work on a dirty tree; sort it first'). CLAUDE.md is HIGH-inertia — rule TEXT needs Akien approval before this builds.\n**Design rules:** prove-what's-load-bearing; do-it-right-not-deprecate-in-place\n**Scope boundary:** IN — the work-start halt check + (approved) CLAUDE.md rule; OUT — bus-HALT signal, continuous/global enforcement\n**Test plan:** a work-start check that detects `git status --porcelain` non-empty and halts with a clear 'commit or revert first' message; test asserts halt fires on dirty + passes on clean. CLAUDE.md rule text reviewed by Akien before merge.\n\n**Refinement (Akien, 2026-06-23):** Keep it DEAD simple — one git call. On a dirty tree, HALT skill execution with a LOUD COMPLAINT (name the offending paths). Explicitly NOT a system_alarm and NOT the web panel — 'it doesn't have to tell the web server to panic.' Its whole job is to stop Akien + CC mid-process (born from the stash-pop-on-dirty-tree surgery of 2026-06-23). Absorbs the since-retired T-alarm-on-dirty-tree / T-dirty-tree-guard duplicate.",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\nNo-hidden-state principle (D-proof-on-close-2026-06-20): uncommitted work is deferred/hidden state (git's hollow build); it must be sorted immediately (committed or reverted), never stashed or deferred. A dirty tree HALTS work until sorted, at two points: (a) start of a unit of work, (b) proof/close time (the proof_emitter clean-tree guard, already shipped, is this half). Workflow-halt (CC stops, surfaces, sorts) — NOT the device-bus HALT/priority signal. Scope = work-boundaries + proof-time, NOT continuous (avoid the Igor email-panic over-eager-urgency failure).\n\n**Affected files:** TBD — work-start check in the sprint/ticket skills + CC behavior; proposed CLAUDE.md Structural rule ('don't start a unit of work on a dirty tree; sort it first'). CLAUDE.md is HIGH-inertia — rule TEXT needs Akien approval before this builds.\n**Design rules:** prove-what's-load-bearing; do-it-right-not-deprecate-in-place\n**Scope boundary:** IN — the work-start halt check + (approved) CLAUDE.md rule; OUT — bus-HALT signal, continuous/global enforcement\n**Test plan:** a work-start check that detects `git status --porcelain` non-empty and halts with a clear 'commit or revert first' message; test asserts halt fires on dirty + passes on clean. CLAUDE.md rule text reviewed by Akien before merge.\n\n**Refinement (Akien, 2026-06-23):** Keep it DEAD simple — one git call. On a dirty tree, HALT skill execution with a LOUD COMPLAINT (name the offending paths). Explicitly NOT a system_alarm and NOT the web panel — 'it doesn't have to tell the web server to panic.' Its whole job is to stop Akien + CC mid-process (born from the stash-pop-on-dirty-tree surgery of 2026-06-23). Absorbs the since-retired T-alarm-on-dirty-tree / T-dirty-tree-guard duplicate.",
     "decision_id": "D-proof-on-close-2026-06-20",
     "gate": null,
     "priority": 0.35,
-    "status": "sprint",
+    "status": "triage",
     "created_at": "2026-06-22T02:21:44.264095+00:00",
     "worker": null,
     "created_by": null,
@@ -43,6 +43,9 @@
     "intention": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-22T02:21:44.264142+00:00"
+    "scraps_validated": "2026-06-22T02:21:44.264142+00:00",
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

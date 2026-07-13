@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.fail-149-tickets-no-intention-20260713.20260713.151917935809",
+  "emitter": "cc.0",
+  "namespace": [
+    "fail-149-tickets-no-intention-20260713"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-07-13T15:19:17.935809",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "FAIL 2026-07-13: 149 tickets cleared the design step with no intention — kicked back. The learning is that this was ONE hole, not 149 oversights.",
+    "date": "2026-07-13",
+    "kind": "fail-learning",
+    "cp": "CP2 — FAIL = Further Advance In Learning",
+    "what_happened": "149 sprint tickets (approved, queued, dispatchable) carried NO intention. Under D-intentions-are-the-root + proof-on-close, the intention IS the property mutation-red breaks — so with no intention there is no property to break and the ticket CANNOT BE PROVEN. They could only ever have closed hollow. All 149 were returned to `triage` (the design step) as FAIL; 1 more (T-gate-timeout-test) was cancelled as test junk that leaked into the live queue.",
+    "the_disposition_and_why_it_matters": "CC's first instinct was to DRAFT the missing intentions ticket by ticket. Akien overruled: 'those should get sent back to the design step as FAIL for learning from and fixing.' THIS IS THE ANTI-ESCAPE-HATCH MOVE. Backfilling 149 intentions would have PAPERED OVER the actual defect and produced a green queue that means nothing — the exact failure this whole line of work exists to kill. Per CLAUDE.md: the nuisance stays VISIBLE so it drives finding the fix; papered over, it sucks silently forever (CP4). A ticket with no intention is NOT defective work. IT IS INCOMPLETE DESIGN, and incomplete design goes back to design.",
+    "THE LEARNING — ONE HOLE, NOT 149 OVERSIGHTS": {
+      "root_cause": "The triage→sprint transition NEVER CHECKED for an intention. The field was optional at `add`, and nothing gated promotion. 149 tickets did not each get forgotten; ONE GATE WAS ABSENT, and it let everything through. Counting the instances instead of finding the gate is how you 'fix' this 149 times and still ship the 150th.",
+      "the_compounding_cause": "The intent extractor was SUPPOSED to soften this by inferring an intention at `add` time — and it has been ~99% BROKEN since it shipped (2,436/2,470 predictions are an except-block fallback). But note carefully: EVEN WORKING, IT WOULD NOT HAVE FIXED THIS. A machine-extracted intention is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13); only a DECLARED intention gates proof-on-close. So the extractor was never the gate, and treating it as one was a second, quieter error.",
+      "the_pattern_underneath": "Reading the 8 highest-priority of the 149, nearly EVERY ONE is the same defect wearing different clothes: A SIGNAL THAT CANNOT DISTINGUISH TWO CAUSES. Capability vs budget (T-capability-measured-at-a-budget-ceiling). Truncation vs inability (T-escalation-truncation-misclassified-as-capability). Test artifact vs real proof (T-tests-pollute-the-canonical-memory-store). Missing skill vs clean audit (T-orphan-skills-invisible-to-every-audit). Empty .text vs no reasoning (T-io-corpus-text-drops-reasoning). Crash vs honest refusal (T-intent-extractor-crash-masquerades-as-refusal). THIS IS THE MOST COMMON DEFECT IN THE QUEUE, not a one-off — and it is exactly the rule ratified the same day: THE CAUSE→SIGNAL MAP MUST BE INJECTIVE OVER EVERY PAIR OF CAUSES YOU WILL EVER NEED TO DISTINGUISH."
+    },
+    "THE_FIX": "T-sprint-tickets-with-no-intention-cannot-be-proven — gate the triage→sprint transition. It must reject MISSING, EMPTY, and DEGENERATE intentions (`TBD`/`unknown`/whitespace) — a bare presence-check passes all three, and `unknown` is precisely what a broken extractor writes. THE RED RUN IS NOW RECORDED AND IS NOT HYPOTHETICAL: 149 tickets, measured 2026-07-13, kicked back.",
+    "the_invariant_now_true_for_the_first_time": "sprint = 163 tickets, ALL 163 carrying an intention. The gate must now HOLD this, not achieve it.",
+    "falsifier": "If a ticket ever reaches `sprint` again with a missing, empty, or degenerate intention, the gate is decorative and this FAIL was not learned from — only tidied up.",
+    "related": {
+      "decisions": [
+        "D-intentions-are-the-root-2026-07-13",
+        "D-provenance-is-the-safety-property-2026-07-13"
+      ],
+      "rules": [
+        "R-feedback-is-unconditional-silence-is-never-success"
+      ],
+      "tickets": [
+        "T-sprint-tickets-with-no-intention-cannot-be-proven",
+        "T-intent-extractor-crash-masquerades-as-refusal",
+        "T-tests-pollute-the-canonical-memory-store"
+      ],
+      "core_values": [
+        "CP1 (a ticket with no intention closes posing as done)",
+        "CP2 (the FAIL is the data)",
+        "CP4 (the nuisance stays visible or it sucks silently forever)"
+      ]
+    }
+  }
+}

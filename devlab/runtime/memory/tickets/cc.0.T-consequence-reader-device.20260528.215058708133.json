@@ -26,9 +26,9 @@
       "Consequence",
       "Workflow"
     ],
-    "title": "[sprint] Consequence check: unified ReaderDevice replaces split reading",
+    "title": "[triage] Consequence check: unified ReaderDevice replaces split reading",
     "result": null,
-    "status": "sprint",
+    "status": "triage",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,
@@ -36,7 +36,7 @@
     "created_by": null,
     "related_to": null,
     "decision_id": "D-reader-device-unified-uri-2026-05-28",
-    "description": "**What changed:** A unified ReaderDevice (URI resolver + blob cache + two output modes) was built as a rack device, consolidating SummarizerDevice and Igor's reading_tool.py/reading_engine.py/book_learner.py.\n\n**Predicted unintended effects:**\n- Igor's reading_tool.py still in place alongside ReaderDevice — risk of running both without a clean cutover, producing duplicate nodes\n- Calibre:// handler introduces dependency on Calibre CLI/metadata.db presence — silent failures if Calibre not installed or library moved\n- Blob cache accumulates with no eviction policy — disk exhaustion risk on high-volume reading\n- Node extraction quality may drift from book_learner.py's current behavior — embeddings could shift for the same source material\n- comms:// deferred but URI resolver pattern assumes it fits — may need design rework when added\n\n**Signals to watch:** Igor's reading_tool.py being invoked after ReaderDevice ships (check logs for book_learner_progress/ writes); disk usage in ~/.unseen_university/blobs/; calibre:// error rate in reader logs; node count per source vs prior book_learner baseline.\n\n**Gate condition:** Check by 2026-06-11 or when first ReaderDevice reading run completes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\n**What changed:** A unified ReaderDevice (URI resolver + blob cache + two output modes) was built as a rack device, consolidating SummarizerDevice and Igor's reading_tool.py/reading_engine.py/book_learner.py.\n\n**Predicted unintended effects:**\n- Igor's reading_tool.py still in place alongside ReaderDevice — risk of running both without a clean cutover, producing duplicate nodes\n- Calibre:// handler introduces dependency on Calibre CLI/metadata.db presence — silent failures if Calibre not installed or library moved\n- Blob cache accumulates with no eviction policy — disk exhaustion risk on high-volume reading\n- Node extraction quality may drift from book_learner.py's current behavior — embeddings could shift for the same source material\n- comms:// deferred but URI resolver pattern assumes it fits — may need design rework when added\n\n**Signals to watch:** Igor's reading_tool.py being invoked after ReaderDevice ships (check logs for book_learner_progress/ writes); disk usage in ~/.unseen_university/blobs/; calibre:// error rate in reader logs; node count per source vs prior book_learner baseline.\n\n**Gate condition:** Check by 2026-06-11 or when first ReaderDevice reading run completes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
     "completed_at": null,
     "github_issue": 814,
     "required_files": [],
@@ -46,6 +46,9 @@
     "inferred_intention_id": "3143b179-d397-475a-9c9d-42e4fcbc7a7b",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
     "role": "master",
-    "dispatched_at": null
+    "dispatched_at": null,
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }

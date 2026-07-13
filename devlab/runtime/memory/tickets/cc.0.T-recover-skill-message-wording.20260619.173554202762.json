@@ -18,18 +18,18 @@
   },
   "body": {
     "id": "T-recover-skill-message-wording",
-    "title": "[sprint] Improve /recover skill message — emphasize time divergence",
+    "title": "[triage] Improve /recover skill message — emphasize time divergence",
     "size": "S",
     "tags": [
       "Skill",
       "UX",
       "Recovery"
     ],
-    "description": "Refine the safeguard message in /recover to be more explicit about the time divergence that can occur across a rewind. The current message 'Rewound. Read today's slate and git log...' works but doesn't emphasize that 'a lot of time may have passed' between when CC was rewound and when it resumes, leading to significant git divergence.\n\nProposed wording:\n> **Rewound. A lot of time may have passed from what you remember — significant divergence. Git will be far ahead of my memory. Read today's slate and git log --oneline -10, reconcile against them, and trust slate+git over your memory before doing anything.**\n\nThe new message makes it clearer upfront that git divergence is expected and why (time passage), which helps CC orient faster.\n\n**Affected files:** /home/akien/.claude/skills/recover/SKILL.md\n**Design rules:** none apply\n**Scope boundary:** Only the safeguard message text in Step 1; no changes to reconcile logic or hard rules.\n**Test plan:** no tests — manual verification: run /recover after a rewind, confirm the new message displays correctly.",
+    "description": "**⛔ FAIL — KICKED BACK TO DESIGN 2026-07-13 (Akien: 'those should get sent back to the design step as FAIL for learning from and fixing').**\n\n**THIS TICKET ENTERED SPRINT WITH NO INTENTION.** Under D-intentions-are-the-root-2026-07-13 and proof-on-close, THE INTENTION IS THE PROPERTY MUTATION-RED BREAKS. With no intention there is **no property to break**, so this ticket **cannot be proven as it stands** — it could only ever close hollow, or `shipped-unproven` for a reason that is not the real one.\n\n**IT IS NOT DEFECTIVE WORK — IT IS INCOMPLETE DESIGN.** So the honest disposition is BACK TO DESIGN, not a backfilled intention. CC drafting the missing intention would have **papered over the real defect**: 150 tickets cleared the design step without an intention, which is a **gate hole**, not 150 individual oversights. Per CLAUDE.md, the nuisance stays VISIBLE so it drives finding the fix — never papered over, which sucks silently forever (CP4).\n\n**CP2 — FAIL = FURTHER ADVANCE IN LEARNING.** This kickback IS the learning signal. The fix is upstream: the triage→sprint transition must reject a missing, empty, or degenerate (`TBD`/`unknown`) intention (T-sprint-tickets-with-no-intention-cannot-be-proven).\n\n**TO RE-ENTER SPRINT:** state the intention as a present-tense contract — *'I intend that X, because Y'* — where X names a property a hollow build would violate. Akien declares it (`provenance_class: declared`); a machine-extracted one is a RATCHET, not a SPEC (D-provenance-is-the-safety-property-2026-07-13).\n\n---\n\nRefine the safeguard message in /recover to be more explicit about the time divergence that can occur across a rewind. The current message 'Rewound. Read today's slate and git log...' works but doesn't emphasize that 'a lot of time may have passed' between when CC was rewound and when it resumes, leading to significant git divergence.\n\nProposed wording:\n> **Rewound. A lot of time may have passed from what you remember — significant divergence. Git will be far ahead of my memory. Read today's slate and git log --oneline -10, reconcile against them, and trust slate+git over your memory before doing anything.**\n\nThe new message makes it clearer upfront that git divergence is expected and why (time passage), which helps CC orient faster.\n\n**Affected files:** /home/akien/.claude/skills/recover/SKILL.md\n**Design rules:** none apply\n**Scope boundary:** Only the safeguard message text in Step 1; no changes to reconcile logic or hard rules.\n**Test plan:** no tests — manual verification: run /recover after a rewind, confirm the new message displays correctly.",
     "decision_id": null,
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "triage",
     "created_at": "2026-06-19T23:35:53.901995+00:00",
     "worker": null,
     "created_by": null,
@@ -42,6 +42,9 @@
     "intention": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-19T23:35:53.949703+00:00"
+    "scraps_validated": "2026-06-19T23:35:53.949703+00:00",
+    "fail_reason": "entered sprint with no intention — cannot be proven; design incomplete",
+    "kicked_back_from": "sprint",
+    "kicked_back_at": "2026-07-13"
   }
 }
