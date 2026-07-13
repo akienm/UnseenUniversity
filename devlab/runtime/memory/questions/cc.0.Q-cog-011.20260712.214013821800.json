@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.Q-cog-011.20260712.214013821800",
+  "emitter": "cc.0",
+  "namespace": [
+    "Q-cog-011"
+  ],
+  "category": "questions",
+  "kind": "question",
+  "emitted_at": "2026-07-12T21:40:13.821800",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "question_id": "Q-cog-011",
+    "question": "does that leave any gaps?",
+    "kind": "cognition-question",
+    "status": "active",
+    "verbatim": true,
+    "asked_of": "self",
+    "function": "⭐ THE MISS DETECTOR",
+    "class": "gap-detection",
+    "taxonomy_is_cc0_proposal": "Akien supplied the QUESTIONS. The `function` and `class` fields are CC.0's proposed taxonomy and are OVERRULABLE — do not treat them as his.",
+    "notes": "*** THE LOAD-BEARING ONE. *** This is CP1 ('I don't know') operationalized as a THINKING MOVE. It is the question that fires BEFORE committing to an answer, and it is exactly the organ the compiled-inference thesis requires and does not yet have in code (see note novelty-is-compilable-2026-07-12: a teach-on-miss graph that cannot detect a miss compiles the lie in permanently). Akien has been running it in meatware for years. IT IS ALREADY IN THE REPERTOIRE.",
+    "source": "Akien, 2026-07-12 — 'this is the oldest batch' (direct dictation), plus the pattern-selection sequence quoted verbatim from ~/.unseen_university/akien/20260702.ClaudeWebOnCorticalColumnsAndEachQuestionATreeAndPrediction.txt",
+    "why_this_corpus_matters": "These are the NOVELTY HANDLER. Akien 2026-07-12: 'I have figured out novelty. I not only have the questions to ask in the face of novelty. but if those fail, I have the questions to ask to sort the questions to ask. and I can do that in a graph tree.' This corpus is the seed for the INTERVIEW / intention-extraction stage — the hardest step of the whole compiled-inference pipeline. These are not notes. They are the SPEC.",
+    "related": {
+      "notes": [
+        "novelty-is-compilable-2026-07-12"
+      ],
+      "memories": [
+        "project_staged_intention_compiler_pipeline",
+        "project_graph_trees_self_aware_telos"
+      ],
+      "tickets": [
+        "T-cognition-questions-canonical-home",
+        "T-orphan-skills-invisible-to-every-audit"
+      ]
+    }
+  }
+}

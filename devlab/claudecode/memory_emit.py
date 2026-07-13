@@ -56,12 +56,20 @@ CATEGORIES = {
     "architecture", "artifacts", "boot", "chat.cc.0", "chat.igor", "slates",
     "sessions", "decisions", "designs", "builder_feedback", "judge", "notes",
     "design_patterns", "projects/acurite", "projects/uu", "projects/swadl",
-    "rules", "tickets", "proofs", "intentions",
+    "rules", "tickets", "proofs", "intentions", "questions",
 }
 
 # `intentions` replaces the `goals` edge that T-skills-goals-to-intentions removed
 # on 2026-06-26 without a successor. Its absence is why intentions accumulated as
 # prose in a ticket field instead of as entities anything could point at.
+#
+# `questions` (2026-07-12, T-cognition-questions-canonical-home) is the home for Akien's
+# COGNITION QUESTIONS — the thinking moves he applies to novelty ("how might that work?",
+# "does that leave any gaps?", "where is the lever?"). They had NO home: /question wrote
+# Q-xxx records by psql-ing into `adc.palace`, the Postgres palace retired 2026-06-23, so
+# every one of them went into a corpse. That is why the corpus had to be dug back out of
+# chat logs. These are not notes — they are the seed corpus for the interview /
+# intention-extraction stage, i.e. the SPEC for the hardest step of the pipeline.
 LINK_KINDS = ("decisions", "tickets", "commits", "whys", "intentions")
 _STAMP_RE = re.compile(r"^\d{8}\.\d{12}$")
 
