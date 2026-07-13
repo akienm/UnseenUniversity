@@ -24,6 +24,7 @@ import time
 from datetime import datetime, timezone
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
+from unseen_university.devices.intent.distribution import check_output_distribution
 from unseen_university.devices.intent.store import IntentStore
 
 log = logging.getLogger(__name__)
@@ -31,9 +32,22 @@ log = logging.getLogger(__name__)
 _START_TIME = time.time()
 _FEW_SHOT_LIMIT = 10
 
+# Classification is a minion-tier task and should stay one — but structured output
+# from a minion is not reliable, so an unparseable answer buys exactly one escalation.
+# Not a ladder to the top: if `worker` can't emit a JSON object, the problem is the
+# prompt or the contract, and spending `designer` tokens on it would hide that.
+_TIER_LADDER = ("minion", "worker")
+
+# Sample the output distribution every N predictions (see distribution.py).
+_MONITOR_EVERY = 25
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+class IntentParseError(Exception):
+    """The model answered, but not in a shape we can read."""
 
 
 def _parse_json(text: str) -> dict:
@@ -43,6 +57,26 @@ def _parse_json(text: str) -> dict:
         inner = lines[1:-1] if len(lines) > 2 else lines
         s = "\n".join(inner).strip()
     return json.loads(s)
+
+
+def _parse_prediction(text: str) -> dict:
+    """Parse the model's answer, or raise ``IntentParseError`` NAMING the reason.
+
+    The original bug in one line: ``_parse_json`` happily returns a LIST when the
+    model emits a JSON array, and the caller's ``parsed.get(...)`` then raises
+    ``AttributeError: 'list' object has no attribute 'get'`` — a type error blamed on
+    the caller, three frames from the cause. Checking the type HERE means the failure
+    says what it is at the place it happens.
+    """
+    try:
+        parsed = _parse_json(text)
+    except Exception as exc:
+        raise IntentParseError(f"parse: not JSON ({exc})") from exc
+    if not isinstance(parsed, dict):
+        raise IntentParseError(
+            f"parse: expected a JSON object, got {type(parsed).__name__}"
+        )
+    return parsed
 
 
 class IntentExtractorDevice(BaseDevice):
@@ -59,6 +93,8 @@ class IntentExtractorDevice(BaseDevice):
         self._inference = inference_device
         self._store = IntentStore(db_url=db_url)
         self._errors: list[str] = []
+        self._predict_count = 0
+        self._monitor_every = _MONITOR_EVERY
 
     # ── BaseDevice contract ───────────────────────────────────────────────────
 
@@ -172,35 +208,103 @@ class IntentExtractorDevice(BaseDevice):
             '{"intent": "<intent label>", "confidence": <0.0-1.0>}'
         )
 
-        req = InferenceRequest(
-            messages=[{"role": "user", "content": prompt}],
-            # Route by domain — intent classification is a trivial classify task.
-            task_class="minion",
-            domain="",
-            max_tokens=256,
-            temperature=0.0,
-            agent_id=self.DEVICE_ID,
-        )
+        # THE RECORD MUST STATE ITS CAUSE. Every exit from the block below sets these
+        # three together, and `error_detail` is set ONLY where something actually went
+        # wrong — so a crash CANNOT be written as a model answer. That is not a
+        # convention a future caller can forget: there is no path to the store that
+        # doesn't pass through here.
+        intent = "unknown"
+        confidence = 0.0
+        provenance_class = "error"
+        error_detail: str | None = None
 
-        try:
-            resp = self._get_inference().dispatch(req)
-            parsed = _parse_json(resp.text)
+        # Unparseable output ESCALATES once before we give up. The root cause of the
+        # 2,435 crashes was almost certainly upstream of the parse: a minion-tier model
+        # handed ten long few-shot examples and asked for structured output returns a
+        # JSON *array*. A device that can't read its model's answer and has no recourse
+        # doesn't have error HANDLING — it has an error MASK.
+        for attempt, tier in enumerate(_TIER_LADDER):
+            req = InferenceRequest(
+                messages=[{"role": "user", "content": prompt}],
+                task_class=tier,
+                domain="",
+                max_tokens=256,
+                temperature=0.0,
+                agent_id=self.DEVICE_ID,
+            )
+            try:
+                resp = self._get_inference().dispatch(req)
+            except Exception as exc:
+                # An unreachable model is not an unparseable one. Escalating the tier
+                # cannot fix a connection, so this failure does NOT retry — and it does
+                # not get filed under the same cause.
+                error_detail = f"inference: {exc}"
+                log.warning("IntentExtractorDevice.predict: %s", error_detail)
+                self._errors.append(f"predict: {error_detail}")
+                break
+
+            try:
+                parsed = _parse_prediction(resp.text)
+            except IntentParseError as exc:
+                error_detail = f"{exc} [tier={tier}]"
+                log.warning(
+                    "IntentExtractorDevice.predict: unparseable output at tier=%s: %s",
+                    tier, exc,
+                )
+                continue  # escalate to the next tier
+
             intent = str(parsed.get("intent", "unknown"))
             confidence = float(parsed.get("confidence", 0.5))
-        except Exception as exc:
-            log.warning("IntentExtractorDevice.predict: inference failed: %s", exc)
-            self._errors.append(f"predict: {exc}")
-            intent = "unknown"
-            confidence = 0.0
+            provenance_class = "model"   # a model answered — INCLUDING an honest 'unknown'
+            error_detail = None
+            if attempt:
+                log.info(
+                    "IntentExtractorDevice.predict: recovered at tier=%s after %d "
+                    "unparseable response(s)", tier, attempt,
+                )
+            break
+        else:
+            self._errors.append(f"predict: {error_detail}")
 
         confidence = max(0.0, min(1.0, confidence))
-        prediction_id = self._store.save_prediction(context, domain, intent, confidence)
+        prediction_id = self._store.save_prediction(
+            context,
+            domain,
+            intent,
+            confidence,
+            provenance_class=provenance_class,
+            error_detail=error_detail,
+        )
 
         log.info(
-            "IntentExtractorDevice.predict: domain=%s intent=%s confidence=%.2f pid=%s",
-            domain, intent, confidence, prediction_id,
+            "IntentExtractorDevice.predict: domain=%s intent=%s confidence=%.2f "
+            "class=%s pid=%s",
+            domain, intent, confidence, provenance_class, prediction_id,
         )
+        self._check_distribution(domain)
         return {"prediction_id": prediction_id, "intent": intent, "confidence": confidence}
+
+    def _check_distribution(self, domain: str) -> None:
+        """Run the degenerate-output monitor on the LIVE path, every N predictions.
+
+        This is deliberately in-process rather than a daemon (no device runs its own
+        daemon) and deliberately NOT test-only: a monitor that fires only inside pytest
+        is a check indistinguishable from an absent one — which is the very failure
+        this ticket exists to make impossible. Sampled every N calls so the aggregate
+        query costs ~nothing per prediction.
+
+        Fail-soft: monitoring must never be able to break the thing it monitors.
+        """
+        # Tests construct the device via __new__ (no __init__), so read through getattr.
+        count = getattr(self, "_predict_count", 0) + 1
+        self._predict_count = count
+        every = getattr(self, "_monitor_every", _MONITOR_EVERY)
+        if count % every:
+            return
+        try:
+            check_output_distribution(self._store, domain)
+        except Exception as exc:  # never let the watchman take down the watched
+            log.warning("IntentExtractorDevice: distribution check failed: %s", exc)
 
     def validate(
         self,

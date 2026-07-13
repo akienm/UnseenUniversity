@@ -125,7 +125,9 @@ def test_a_zero_confidence_model_answer_is_not_a_crash():
 
 def test_the_crash_record_carries_the_cause():
     """`error` alone is not enough — the record must say WHY, or the cause is lost."""
-    dev, store, _ = _device(['[{"intent": "x"}]'])
+    # Both tiers return garbage: the escalation is exhausted, so this is a genuine,
+    # final PARSE failure — not a masked one.
+    dev, store, _ = _device(['[{"intent": "x"}]', '[{"intent": "x"}]'])
     dev.predict(context="ctx", domain="coding")
     rec = _saved(store)
 
@@ -139,7 +141,7 @@ def test_the_crash_record_carries_the_cause():
 
 def test_an_inference_failure_and_a_parse_failure_are_different_causes():
     """The bare `except Exception` collapsed every failure class into one value."""
-    dev_p, store_p, _ = _device(['[{"intent": "x"}]'])          # parse failure
+    dev_p, store_p, _ = _device(['[{"intent": "x"}]'] * 2)      # parse failure, both tiers
     dev_p.predict(context="ctx", domain="coding")
 
     dev_i, store_i, _ = _device([RuntimeError("connection refused")])  # inference failure
@@ -257,7 +259,7 @@ def test_the_monitor_runs_on_the_live_predict_path(monkeypatch):
         lambda store, domain, **kw: calls.append(domain) or {"fired": False},
     )
     dev, _, _ = _device([json.dumps({"intent": "refactor", "confidence": 0.9})])
-    monkeypatch.setattr(dev, "_monitor_every", 1)
+    dev._monitor_every = 1   # sample every prediction rather than every 25th
     dev.predict(context="ctx", domain="coding")
 
     assert calls == ["coding"], "predict() must exercise the distribution monitor"
