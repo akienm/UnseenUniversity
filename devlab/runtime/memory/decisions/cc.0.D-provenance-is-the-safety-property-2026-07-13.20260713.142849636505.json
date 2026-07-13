@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.D-provenance-is-the-safety-property-2026-07-13.20260713.142849636505",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-provenance-is-the-safety-property-2026-07-13"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-07-13T14:28:49.636505",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Provenance is the safety property — not authorship. Every stored assertion carries {claim, evidence, provenance_class, falsifier, horizon}.",
+    "status": "open",
+    "date": "2026-07-13",
+    "ratified_by": "Akien, 2026-07-13: 'i agree with fable'",
+    "origin": "CC banned the intent extractor from ever writing an intention field, on a circularity argument: the property mutation-red breaks IS the intention, so an intention inferred from the implementation is tested against the implementation it came from and passes on ANY build, including a hollow one. Akien pushed back — 'the intent extractor should be able to try and extract intent from ANYTHING' — and an independent review (Fable) plus direct measurement both agreed with him, on the same axis, independently.",
+    "THE_DECISION": "The authority of an assertion does NOT live in who typed it. It lives in WHAT EVIDENCE CONDITIONED IT. Therefore the blanket ban on machine-written intentions is REPEALED and replaced by a PROVENANCE DISCIPLINE. Every assertion in the store — intention, decision, rule, prediction, lever claim — carries a uniform envelope: claim, evidence, provenance_class, falsifier, horizon.",
+    "WHY_AUTHORSHIP_FAILS_AS_A_GUARD": "A ratified string and a machine-written string are BYTE-IDENTICAL. Authority cannot live in the typing. And ratification by a human who does not remember the ticket is a RITUAL — that human is inferring from the artifact too, only slower and with more self-confidence. Fable: 'ratification-without-independent-knowledge is a ritual, and your design currently treats the ritual as the safety property.' What a human genuinely adds, WHEN THEY ADD IT, is an INDEPENDENT EVIDENCE CHANNEL — memory of what was wanted, sampled from the intent side rather than the code side. That is real work when it is real, and nothing when it is not. Name the evidence, not the author.",
+    "THE_KERNEL_THAT_SURVIVES": "The circularity argument is SOUND but its SCOPE was wrong. A spec derived SOLELY from the code carries no information the code does not already contain, so it cannot judge the code it came from. That is information-theoretically true and no better model fixes it. The correct ban is NARROW: an intention may not be derived solely from THE ARTIFACT IT IS MEANT TO FALSIFY.",
+    "provenance_classes": {
+      "declared": "A human stated it, with independent knowledge of what was wanted. The ONLY class that counts as a SPEC for proof-on-close.",
+      "extracted-upstream": "Machine-derived from evidence CAUSALLY UPSTREAM of the implementation — the ticket description, the decision record, the conversation that produced it. NOT circular: this material predates the code it will judge. Legitimate. Enters as a RATCHET, and may be PROMOTED to `declared` when independent evidence arrives.",
+      "extracted-from-artifact": "Machine-derived from the implementation itself. A DESCRIPTION, never a spec. Admissible ONLY as a characterization ratchet (see below), never as a proof-on-close gate."
+    },
+    "RATCHET_NOT_VERDICT": "CC's error was 'it passes on ANY implementation' — FALSE. An extracted intention passes on the CURRENT implementation and any future one preserving the described property; it goes RED on future DIVERGENCE. Two distinct threats were conflated: (a) detecting that TODAY's code is hollow — an extracted intention genuinely cannot do this; (b) detecting TOMORROW's drift — it does this perfectly well. This is the theory of characterization tests (Feathers). For 150 tickets whose code does not exist yet, threat (a) is not even live. Refusing 150 ratchets because they cannot ALSO be verdicts throws away most of the value to preserve a purity the situation does not offer.",
+    "MEASURED_2026-07-13_the_extractor_was_never_circular": "unseen_university/devices/intent/device.py reads the TICKET DESCRIPTION, not the code. devlab/claudecode/cc_queue.py:1519-1545 runs predict() on the description and validates against the human-written `intention` as ground truth. The store holds 1,722 joinable (description -> human intention) pairs, harvested automatically from every ticket Akien filed WITH an intention. The device ALREADY writes only `inferred_intention`, NEVER `intention` (1,735 tickets carry one). The safety property CC 'ruled' on 2026-07-12 was ALREADY THE CODE.",
+    "consequences": [
+      "REPEAL the ban in T-intent-extractor-agent. The machine MAY write an intention, tagged `extracted-upstream`. It may NOT derive one from the artifact it judges and call it a spec.",
+      "The intention schema gains `provenance_class`. Only `declared` satisfies proof-on-close as a SPEC; `extracted-upstream` is a ratchet pending promotion.",
+      "The uniform envelope {claim, evidence, provenance_class, falsifier, horizon} lands on every assertion category in devlab/runtime/memory/ — this is the single structural move; ticketed separately.",
+      "CP1/CP3 applied to the MEMORY, not just to the tickets: the store today records WHAT was concluded but not HOW ANYTHING KNOWS IT. Fable: without provenance the store is 'a confabulation store with good uptime.'"
+    ],
+    "falsifier": "If, after the envelope ships, an assertion is found in the store that carries a provenance_class it did not earn — an `extracted-from-artifact` intention gating a proof-on-close, or a `declared` one no human actually declared — then the class is decorative and the discipline has failed exactly as authorship did. The class must be MECHANICALLY set at the write path (memory_emit chokepoint), never hand-typed.",
+    "horizon": "First check at the monthly design cadence after the envelope ships.",
+    "related": {
+      "supersedes_within": "T-intent-extractor-agent (the 2026-07-12 blanket ban)",
+      "decisions": [
+        "D-intentions-are-the-root-2026-07-13"
+      ],
+      "rules": [
+        "R-feedback-is-unconditional-silence-is-never-success",
+        "lever-definition",
+        "R-canonicity-is-granted-not-asserted"
+      ],
+      "core_values": [
+        "CP1 (an assertion with no named evidence is a confident nothing)",
+        "CP3 (provenance IS the why, made mechanical)"
+      ]
+    }
+  }
+}
