@@ -19,9 +19,9 @@
   "produced_by": "session:cc.0",
   "body": {
     "id": "T-sprint-tickets-with-no-intention-cannot-be-proven",
-    "title": "[triage] 150 sprint tickets carry NO intention — so under today's ruling they cannot be proven. There is no property to break.",
+    "title": "150 sprint tickets carry NO intention — so under today's ruling they cannot be proven. There is no property to break.",
     "size": "M",
-    "status": "triage",
+    "status": "closed",
     "priority": 0.95,
     "tags": [
       "intentions",
@@ -39,11 +39,14 @@
     "created_by": null,
     "result": null,
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-07-13T22:11:12.168871+00:00",
     "required_files": [],
     "github_issue": null,
     "decision_id": null,
     "gate": null,
-    "scraps_validated": "2026-07-13T18:32:17.819031+00:00"
+    "scraps_validated": "2026-07-13T18:32:17.819031+00:00",
+    "proven": true,
+    "proof_id": "cc.0.the-sprint-entry-intention-gate-gate-log.T-sprint-tickets-with-no-intention-cannot-be-proven.20260713.161052549496",
+    "proof_commit": "b73c14b47eab22c3600884707f05e662f30897b1"
   }
 }

@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.the-sprint-entry-intention-gate-gate-log.T-sprint-tickets-with-no-intention-cannot-be-proven.20260713.161052549496",
+  "emitter": "cc.0",
+  "namespace": [
+    "the-sprint-entry-intention-gate-gate-log",
+    "T-sprint-tickets-with-no-intention-cannot-be-proven"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-13T16:10:52.549496",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-sprint-tickets-with-no-intention-cannot-be-proven"
+    ],
+    "commits": [
+      "b73c14b47eab22c3600884707f05e662f30897b1"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-sprint-tickets-with-no-intention-cannot-be-proven",
+  "body": {
+    "thing": "the sprint-entry intention gate (gate_logic.intention_is_declared / cc_queue._intention_gate)",
+    "intention": "I intend that no ticket becomes claimable without an intention naming a property a hollow build would violate — and that a DEGENERATE intention ('unknown', 'TBD', '?') is refused exactly as a missing one is, because a bare presence-check accepts the very string a crashing extractor writes.",
+    "test": "tests/test_intention_gate.py::test_cc_queue_refuses_sprint_entry_without_an_intention",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_intention_gate.py::test_cc_queue_refuses_sprint_entry_without_an_intention",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\n    def test_cc_queue_refuses_sprint_entry_without_an_intention():\n        import importlib.util\n        import pathlib\n    \n        from unseen_university._uu_root import uu_root\n    \n        path = pathlib.Path(uu_root()) / \"devlab\" / \"claudecode\" / \"cc_queue.py\"\n        spec = importlib.util.spec_from_file_location(\"cc_queue_under_test\", path)\n        cc_queue = importlib.util.module_from_spec(spec)\n        spec.loader.exec_module(cc_queue)\n    \n        blocked, msg = cc_queue._intention_gate({\"id\": \"T-x\", \"intention\": \"unknown\"})\n>       assert blocked is False\nE       assert True is False\n\ntests/test_intention_gate.py:104: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_intention_gate.py::test_cc_queue_refuses_sprint_entry_without_an_intention\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.09s"
+          }
+        }
+      }
+    ],
+    "commit": "b73c14b47eab22c3600884707f05e662f30897b1",
+    "impl_paths": [
+      "unseen_university/gate_logic.py"
+    ],
+    "ticket": "T-sprint-tickets-with-no-intention-cannot-be-proven",
+    "narrative": "RED at 8f76f01d (stub-first): gate wired at all six sprint write-paths but accepts the literal string 'unknown' — precisely what the ~99%-broken intent extractor writes into 2,435 records. GREEN at b73c14b4: 'unknown' is REFUSED. THE HOLLOW BUILD THIS DEFEATS: 'if not t[intention]: reject' passes a green run and certifies every one of those crash outputs as a valid intention. Also proven: enforced at ALL SIX sprint write-paths (setstatus refuses loudly, exit 1; reset/ungate/stale-reconcile DIVERT to triage, so a ticket is never STRANDED by a gate that only meant to hold a line), and the causes stay DISTINCT (missing/empty/degenerate are three reasons, not one).",
+    "why": "The intention IS the property mutation-red breaks. A ticket with none has no property to break, so it CANNOT be proven — it can only close hollow. Measured 2026-07-13: 149 sprint tickets carried no intention. ONE absent gate, not 149 oversights.",
+    "bootstrap": false
+  }
+}

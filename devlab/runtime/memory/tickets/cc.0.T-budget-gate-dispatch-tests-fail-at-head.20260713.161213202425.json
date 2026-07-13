@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-budget-gate-dispatch-tests-fail-at-head.20260713.161213202425",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-budget-gate-dispatch-tests-fail-at-head"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T22:12:13.202425+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-budget-gate-dispatch-tests-fail-at-head"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-budget-gate-dispatch-tests-fail-at-head",
+    "title": "[triage] PRE-EXISTING RED: test_budget_gate dispatch tests fail at HEAD — the balance check before the OR call is not firing",
+    "size": "S",
+    "status": "triage",
+    "priority": 0.75,
+    "tags": [
+      "tests",
+      "inference",
+      "budget",
+      "pre-existing-red"
+    ],
+    "worker": "CC.0",
+    "role": "builder",
+    "target_difficulty": 2,
+    "intention": "I intend that a red test is never carried as background noise — because a suite with a known-red member cannot tell a NEW regression from the old one, so the next real break arrives invisible.",
+    "description": "Found 2026-07-13 while proving the sprint-entry intention gate. VERIFIED PRE-EXISTING: reproduced in a clean git worktree at HEAD, so it is NOT a regression from that work.\n\nFAILING:\n  tests/test_budget_gate.py::TestDispatchBudgetGate::test_dispatch_checks_balance_before_or_call\n  tests/test_budget_gate.py::TestDispatchBudgetGate::test_dispatch_records_spend_after_or_call\n\nWHY IT MATTERS (and why it is not merely untidy): per CLAUDE.md the suite is meant to be green so that A RED IS ALWAYS A REAL REGRESSION. A carried red destroys exactly that property — the signal 'the suite went red' stops distinguishing 'I broke something' from 'that one was already broken', which is the same non-injective-signal defect as R-feedback-is-unconditional. It cost real time today: I had to spin a worktree at HEAD to find out whether I had caused it.\n\n**Affected files:** tests/test_budget_gate.py, unseen_university/devices/inference/ (dispatch balance check).\n\n**Scope boundary:** IN — diagnose whether the test or the code is wrong, and fix the one that is. OUT — redesigning the budget gate.\n\n**Test plan:** the two named nodes go green, and the reason is understood (not silenced with a skip).\n\n**Proof obligation:** the hollow build marks them xfail/skip and reports a green suite — which is the defect, not the fix. What a hollow build could not pass: the two nodes PASS, and a mutation to the balance check turns them red again (proving they test the balance check and not the mock).\n\n**Completion criteria:** 1. Both nodes pass. 2. No skip/xfail added. 3. A deliberate mutation to the balance-check code reddens them.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-13T22:11:12.548864+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-07-13T22:11:12.594179+00:00"
+  }
+}
