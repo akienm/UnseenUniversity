@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.Q-meta-003.20260712.214451134530",
+  "emitter": "cc.0",
+  "namespace": [
+    "Q-meta-003"
+  ],
+  "category": "questions",
+  "kind": "question",
+  "emitted_at": "2026-07-12T21:44:51.134530",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "question_id": "Q-meta-003",
+    "question": "how?",
+    "kind": "cognition-question",
+    "level": 2,
+    "status": "active",
+    "verbatim": true,
+    "asked_of": "self",
+    "function": "escalation to explicit reasoning",
+    "class": "LEVEL-2 meta",
+    "taxonomy_is_cc0_proposal": "Akien supplied the QUESTIONS. `function`/`class`/`level` are CC.0's proposal — overrulable.",
+    "notes": "LEVEL-2, RUNG 3 — the TERMINAL. Akien: 'at that point, it's prompting.' THIS IS THE ESCALATION BOUNDARY, in his own words: when the compiled question-habits run out, the cold path opens and it becomes an explicit prompt. It is the same shape as the escalation walk we built in code on 2026-07-12 (rung exhausted -> escalate). He described the architecture before we wrote it.",
+    "source": "~/.unseen_university/akien/20260319.1300.Gemini.On.Claude.Patterns.txt line 256",
+    "PENDING_RECONCILIATION": "TWO HOMES EXIST for this corpus — see T-questions-corpus-two-homes. skills/questions/questions.json declares itself 'the SINGLE canonical source'; CLAUDE.md says dev-process artifacts live ONLY under devlab/runtime/memory/. Do NOT treat either as settled until Akien rules.",
+    "related": {
+      "notes": [
+        "novelty-is-compilable-2026-07-12"
+      ],
+      "tickets": [
+        "T-cognition-questions-canonical-home",
+        "T-questions-corpus-two-homes"
+      ]
+    }
+  }
+}

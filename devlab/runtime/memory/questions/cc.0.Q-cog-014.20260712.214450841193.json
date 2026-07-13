@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.Q-cog-014.20260712.214450841193",
+  "emitter": "cc.0",
+  "namespace": [
+    "Q-cog-014"
+  ],
+  "category": "questions",
+  "kind": "question",
+  "emitted_at": "2026-07-12T21:44:50.841193",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "question_id": "Q-cog-014",
+    "question": "what levers exist here?",
+    "kind": "cognition-question",
+    "level": 1,
+    "status": "active",
+    "verbatim": true,
+    "asked_of": "self",
+    "function": "leverage survey",
+    "class": "efficiency",
+    "taxonomy_is_cc0_proposal": "Akien supplied the QUESTIONS. `function`/`class`/`level` are CC.0's proposal — overrulable.",
+    "notes": "Paired with 'how might that work?' IN THE SAME BREATH. Distinct from 'Where is the lever?' (Q-cog-008): this SURVEYS the available levers; that one SELECTS the decisive one.",
+    "source": "CC.0 log 2026-06-14: 'always looking for \"how might that work\" and \"what levers exist here\"'",
+    "PENDING_RECONCILIATION": "TWO HOMES EXIST for this corpus — see T-questions-corpus-two-homes. skills/questions/questions.json declares itself 'the SINGLE canonical source'; CLAUDE.md says dev-process artifacts live ONLY under devlab/runtime/memory/. Do NOT treat either as settled until Akien rules.",
+    "related": {
+      "notes": [
+        "novelty-is-compilable-2026-07-12"
+      ],
+      "tickets": [
+        "T-cognition-questions-canonical-home",
+        "T-questions-corpus-two-homes"
+      ]
+    }
+  }
+}

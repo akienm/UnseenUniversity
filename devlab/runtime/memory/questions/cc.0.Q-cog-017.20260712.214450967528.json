@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.Q-cog-017.20260712.214450967528",
+  "emitter": "cc.0",
+  "namespace": [
+    "Q-cog-017"
+  ],
+  "category": "questions",
+  "kind": "question",
+  "emitted_at": "2026-07-12T21:44:50.967528",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "question_id": "Q-cog-017",
+    "question": "how can i share that?",
+    "kind": "cognition-question",
+    "level": 1,
+    "status": "active",
+    "verbatim": true,
+    "asked_of": "self",
+    "function": "dissemination",
+    "class": "improvement",
+    "taxonomy_is_cc0_proposal": "Akien supplied the QUESTIONS. `function`/`class`/`level` are CC.0's proposal — overrulable.",
+    "notes": "Fires on something GOOD, where the others fire on a gap or an irritation. Notably other-directed.",
+    "source": "~/TheIgorsProject/akien/Readings/20260305ChatswIgorandclaude.txt lines 222-239 (OLDEST source, 2026-03-05)",
+    "PENDING_RECONCILIATION": "TWO HOMES EXIST for this corpus — see T-questions-corpus-two-homes. skills/questions/questions.json declares itself 'the SINGLE canonical source'; CLAUDE.md says dev-process artifacts live ONLY under devlab/runtime/memory/. Do NOT treat either as settled until Akien rules.",
+    "related": {
+      "notes": [
+        "novelty-is-compilable-2026-07-12"
+      ],
+      "tickets": [
+        "T-cognition-questions-canonical-home",
+        "T-questions-corpus-two-homes"
+      ]
+    }
+  }
+}

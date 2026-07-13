@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-questions-corpus-two-homes.20260712.214533594363",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-questions-corpus-two-homes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T03:45:33.594363+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-questions-corpus-two-homes"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-questions-corpus-two-homes",
+    "title": "[sprint] The cognition-question corpus now has TWO homes — skills/questions/questions.json vs devlab/runtime/memory/questions/. Akien rules; ONE survives.",
+    "size": "S",
+    "status": "sprint",
+    "priority": 0.8,
+    "tags": [
+      "memory-store",
+      "canonical-home",
+      "cognition",
+      "questions"
+    ],
+    "description": "SELF-REPORTED, 2026-07-12. CC.0 created devlab/runtime/memory/questions/ and seeded 21 cognition questions there — WITHOUT first checking whether a home existed. One did: skills/questions/questions.json, whose own _meta says 'This is the SINGLE canonical source; consumers ... draw from here rather than hardcoding their own copy.'\n\nThat is a SILENT SPLIT SOURCE OF TRUTH — the exact failure CLAUDE.md's one-home rule exists to prevent, and the same class that bit us three other times on this very day (a stale note beating a correct memory; test-junk proofs in the store; 8 orphan skills invisible to every audit). Documented rather than left silent; needs a ruling, not a guess.\n\nTHE GENUINE CONFLICT (why this is not just a mistake to undo):\n  - skills/questions/questions.json claims canonical, and has NAMED RUNTIME CONSUMERS: it was seeded from igor/tools/ebook_reader.py :: _INTERP_CANDIDATES (PROC_HEURISTIC_*), and the intent recorded there is that ebook_reader should later READ from the file. That makes it a RUNTIME DATA CORPUS consumed by a device.\n  - CLAUDE.md is unambiguous: every dev-process artifact lives ONLY under devlab/runtime/memory/. And the questions are ALSO a design artifact — per 2026-07-12 they are the SPEC for the interview / intention-extraction stage.\n  - So the corpus is BOTH runtime data AND a dev-process artifact. That is the real question: which is it, and does one file serve both, or does one read from the other?\n\nCC.0's RECOMMENDATION (overrulable): ONE canonical source in devlab/runtime/memory/questions/ (CLAUDE.md-compliant, grep-able, one record per question so each is an addressable NODE — which is the graph-tree shape the whole thesis wants: 'a question is the only unit that has a stable identity across time while its answer varies'). skills/questions/questions.json becomes a generated/derived artifact or a pointer, and ebook_reader reads from the canonical store.\n\nWHAT IS IN THE NEW STORE (do not lose it — this is NEW material the old file does not have):\n  - Q-cog-001..013: the 9 from Akien's OWN self-titled list (notes_as_i_go_along.txt lines 488-497, 'questions important to me:') + the 4-step pattern-selection sequence from the 2026-07-02 cortical-columns log.\n  - Q-cog-014..018: 'what levers exist here?', the two 'suck less' questions, 'how can i share that?', the counterfactual-simplification question.\n  - Q-meta-001..003: **THE LEVEL-2 LADDER** — 'do i have tools for this?' -> 'can i figure this out?' -> 'how?' -> and then, in his words, 'at that point, it's prompting.' This is the ONLY written evidence of the meta-level he says exists, and it is the escalation boundary in his own words.\n\nALSO NOTE: skills/questions/questions.json's _meta declares the Q-xxx /question skill a 'RETIRED parking-lot experiment'. The /question skill is nonetheless STILL RUNNING (see T-orphan-skills-invisible-to-every-audit) and still psql-ing the retired palace. Retired-by-declaration, alive-in-fact — reconcile that here too.\n\n**Test plan:** red->green: exactly ONE file/dir is the source of the cognition-question corpus; a guard test asserts no second copy of the question strings exists elsewhere in the tree; ebook_reader's _INTERP_CANDIDATES reads from it rather than hardcoding.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-13T03:45:26.076170+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-07-13T03:45:26.141061+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e5e382ea-febf-4c1f-8c85-318316f6f896"
+  }
+}
