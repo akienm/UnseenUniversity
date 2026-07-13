@@ -1,0 +1,65 @@
+{
+  "id": "cc.0.I-reader-reads-an-address-into-domain-trees.20260712.181626796220",
+  "emitter": "cc.0",
+  "namespace": [
+    "I-reader-reads-an-address-into-domain-trees"
+  ],
+  "category": "intentions",
+  "kind": "intention",
+  "emitted_at": "2026-07-12T18:16:26.796220",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "intention_id": "I-reader-reads-an-address-into-domain-trees",
+    "title": "The reader belongs to the Librarian: it takes an ADDRESS, READS it, and loads patterns into domain knowledge trees — routing-domain and knowledge-domain are two different axes",
+    "statement": "I intend that the reader belongs to the LIBRARIAN, and that its job is to take an ADDRESS — a URL, a file path, a blob in the DB, a book in Calibre, a book on Kindle — and READ it: loading the patterns it finds into the root collection of nodes and into the relevant knowledge trees, and/or producing a summary. Reading has two parts: ACQUISITION, where a rules engine works out how to get the blob loaded (a URL is fetched to a file or a blob; a Kindle book is unprotected for reading if we can, and read through a browser via SWADL process automation if we cannot — SWADL is Akien's process-automation tool for web pages and windows apps, repo alongside UnseenUniversity); and DECONSTRUCTION, which turns the loaded blob into graph-tree knowledge. TWO AXES, NOT ONE: the ROUTING domain picks a model; the KNOWLEDGE domain owns trees. They share a word and nothing else — and knowledge domains OVERLAP (programming and psychology share heavy structure in the body of knowledge), so a single pattern may land in more than one tree. Each knowledge domain has its own root tree. TWO KINDS OF RESEARCH, and both are real: SUMMARY ('what are the best minds in this space doing?' — a summary is the deliverable, and that is fine) and DEEP LEARNING ('we are going to be doing a lot of work with xyz, so go learn about it' — the deliverable is LOADED TREES, not prose). SHARING AND PRIVACY: knowledge trees are available to all users; Igors share PATTERNS, never PRIVATE INFORMATION. Employer-specific information is the exception that does not cross. DATABASE TOPOLOGY: there is a COMMON database used by all members, where the general knowledge trees live (the 'go learn about this' material); Igor has two of his own — CLAN knowledge and INSTANCE knowledge; and each EMPLOYER has their own database. IGOR ALSO READS, but his reading is its OWN DOMAIN, which INHERITS the general reading domain and ADDS EMOTIONAL VALENCE. That specialization is INTRINSIC, not debt: it must never be folded back into the general case, because the shared trees are purely epistemic by contract.",
+    "status": "active",
+    "date": "2026-07-12",
+    "origin": "Akien, 2026-07-12, in the middle of the inference domain refactor. The reader was built when everything was in Igor's head — to load Igor with background information for coding, for character (Igor himself), and for psychology (dealing with people) — and has been through one modification after another without a coherent step-back-and-assess in a long time. This intention IS that step back. Akien: 'we're not reading yet. we will be soon, but we'll also be doing a deep dive on the librarian later too.' NOT A BUILD ORDER: the only part live TODAY is the inference-call / routing-domain work; the acquisition rules engine, the per-domain root trees, the employer scope and Igor's valenced reading domain are 'for when we get to it' — but what is built now MUST SUPPORT them when we get there.",
+    "what_exists_today": {
+      "verified_2026-07-12": "Checked in code, not assumed — Akien believed the two kinds of research were already load-bearing in the Librarian. Half right:",
+      "summary_kind": "REAL. librarian/research.py: summarize() and research(), backed by tier selection.",
+      "deep_learning_kind": "PRESENT BUT SCATTERED, and NOT in the reader. THREE unrelated tree-loading paths, unaware of each other: (1) librarian/persistent_inquiry.py become_knowledgeable_about(topic) — a PersistentQuestion accumulating hits over time, compressed into a denser model (accumulates from HITS, not from reading an address); (2) librarian/learning_pipeline.py — builds knowledge-graph nodes from inference requests so similar queries need no LLM next time (this is learn-from-the-chat-logs, and it is explicitly compiled inference); (3) the READER's own deposit path (chunk -> extract -> READ_* nodes -> encode pass), which lives in devices/reader/ + igor, NOT in the Librarian.",
+      "name_collision_hazard": "librarian/research.py research(depth='deep') maps 'deep' -> 0.8, which produces a LONGER SYNTHESIS. Asking the Librarian for 'deep' research on a topic today yields a wordier summary, NOT learning. The word 'deep' is already taken, and taken by the WRONG axis.",
+      "db_scope_axis": "PARTLY BUILT. db_proxy.py ships make_home_proxy() (clan schema), make_local_proxy() (instance schema: instance.ring_memory, instance.twm_observations), make_infra_proxy() (cross-agent infra.*), make_dc_proxy(). So clan-vs-instance knowledge IS a real split with distinct search_paths. MISSING: the EMPLOYER scope (served today only by pointing an env var at a different DB per deployment — not a scope the code can reason about at deposit time), and NOTHING in the reader's deposit path chooses a scope at all.",
+      "purely_epistemic_constraint_already_asserted": "librarian/learning_pipeline.py already carries, verbatim: 'CRITICAL CONSTRAINT: This graph is PURELY EPISTEMIC — no emotional encoding. Igor's graph carries emotional valence; this layer is pure observation.' The common-vs-Igor split is therefore already a stated rule in the code; the DB topology above is the mechanism that would ENFORCE it."
+    },
+    "named_hazards": {
+      "home_db_means_two_opposite_things": "LIVE AMBIGUITY, and the privacy rule rests on it. identity.home_db_url() documents UU_HOME_DB_URL as 'Postgres URL for THIS INSTANCE's home DB'; db_proxy.make_home_proxy() documents the SAME env var as the 'global truth DB SHARED ACROSS ALL Igor instances'. Both cannot be true. If a deposit routes to 'home' believing it is private when it is shared (or the reverse), employer-specific material crosses the boundary that must not be crossed. Resolve this BEFORE the reader starts choosing where to deposit.",
+      "share_the_pattern_not_the_source": "If patterns are shared but employer-specific content is not, the split must happen AT DEPOSIT TIME. A tree that mixes them cannot be un-mixed later, and a read-time filter is too late. This is a constraint on the EXTRACTOR: a deposited node must be DERIVABLE-FROM private material without CONTAINING it.",
+      "summary_and_deposit_have_different_completion_contracts": "A summary is judged by a reader; a deposited node is judged by whether it survives the encode pass (deposit != encode, D170). The 'and/or' in this intention is a real seam, not a hedge — the two kinds owe two different DONE-checks."
+    },
+    "consequence_for_the_domain_decision": "D-domains-general-with-device-owned-specializations-2026-07-08 holds that SPECIALIZATION IS GRADUATING DEBT: every specialization records property/incapacity/graduation_proof and is folded back once the general case can prove the property. That rule is correct for a COMPENSATION (critic_enabled, aci_mode, the architect/editor split — all present because an executor is WEAK, all of which should vanish as models improve). Igor's emotional valence is NOT that. It is not a crutch for a weak executor; it is a genuinely different job, and folding it back would CONTAMINATE the shared epistemic trees with one instance's feelings — violating the purely-epistemic contract above. So there are TWO KINDS OF SPECIALIZATION and the decision has a category for only one: COMPENSATION (exists because an executor is weak; graduates; has a graduation_proof) and INTRINSIC (exists because the job is genuinely different; NEVER graduates; demanding its graduation_proof is a category error). As written, the fold-back machinery would eventually come for Igor's valence and try to delete it.",
+    "related": {
+      "intentions": [
+        "I-compiled-inference-residue",
+        "I-self-improving-process"
+      ],
+      "decisions": [
+        "D-domains-general-with-device-owned-specializations-2026-07-08"
+      ],
+      "tickets": [
+        "T-route-all-inference-through-a-domain",
+        "T-librarian-inference-onto-proxy",
+        "T-consequence-reader-device"
+      ],
+      "architecture": [
+        "reading",
+        "librarian",
+        "memory-graph-tree",
+        "inference-router"
+      ],
+      "memories": [
+        "project_graph_trees_self_aware_telos",
+        "project_compiled_inference_vision",
+        "project_intentions"
+      ]
+    }
+  }
+}

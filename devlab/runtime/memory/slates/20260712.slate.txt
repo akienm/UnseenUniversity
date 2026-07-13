@@ -1,2 +1,64 @@
 - T-inference-audit-resolve-consumers-human-terminal: audit resolve() consumers for model-less HUMAN_TERMINAL (follow-up from tier-ladder)
 - T-inference-escalation-policy-object: escalation is now a POLICY object (DEFAULT/NoEscalation/Harvest); harvest_mode + escalation_allowed retired. Proven red→green @171e9d2f.
+
+## In-flight / Session close → Next (RESCUE, 2026-07-12, pre-restart hand-off)
+Session = akiendelllinux_cc_RESCUE (paramedic; NO tmux, scroll-back OK, system NOT up).
+Rack services are DOWN — not needed: next ticket is an OFFLINE refactor, tests hermetic.
+Restarting to open the big refactor with a cold context (forgetfulness discriminator).
+
+Next: T-domains-global-package (M, 0.8, status=sprint) — file:
+  devlab/runtime/memory/tickets/cc.0.T-domains-global-package.20260708.210104799822.json
+Decision: D-domains-general-with-device-owned-specializations-2026-07-08 (READ Amendment 2).
+
+Scope (heavier than "M"): move devices/inference/domains/ → unseen_university/domains/
+  (top-level, precedent: unseen_university/capabilities/). Rename BaseDomain→GeneralDomain
+  (concrete, instantiable, IS the default; _run_attempt = ONE dispatch, NOT the full
+  AgenticLoop). GeneralDomain owns: DEFAULT EscalationPolicy + COMPLETION CONTRACT + core
+  coding prompt. DESCEND to DS (later, blocked ticket T-ds-coding-domain-specialization):
+  full AgenticLoop, critic_enabled, aci_mode, architect/editor split, harvest, stuck_ladder.
+  Retire resolve_domain(name) + CapabilityMixin.capability_domain:str — agent holds its OWN
+  domain INSTANCE. NOTE: between this ticket & the (blocked) DS ticket, DS's coding-loop
+  path goes DORMANT — acceptable (research substrate, nothing live), but it's the ordering call.
+
+Orientation already done (callers mapped, do not re-derive):
+  resolve_domain callers: capabilities/base.py (ONLY prod caller, line 55), capabilities/coding.py
+    (docstring), harvest_run.py, harvest_batch.py, + tests (test_domain_object, test_harvest_toggle,
+    test_harvest_batch, test_general_domain_escalation, test_capability_mixin).
+  capability_domain: capabilities/base.py:43 (attr), capabilities/coding.py:18 (="coding").
+  DSCodingDomain consumer today: devices/dicksimnel/device.py (imports CodingDomain).
+  Precedent package: unseen_university/capabilities/ (base/coding/identity/__init__).
+FIRST STEP after restart: advisor design-pass on the descent boundary BEFORE editing.
+
+## REORDER (CC.0 + advisor, 2026-07-12) — agentic FIRST, then domains
+T-agentic-primitives-package (M, 0.75, sprint) runs BEFORE T-domains-global-package (0.8).
+The slate's Next: was a PRIORITY call, not a dependency call — and the dependency runs the
+other way: domains import the loop; the loop imports no domain. VERIFIED by dumping the
+intra-package import graph: {agentic_loop, architect_editor, block_apply, edit_format} is
+CLOSED — it imports base/general/coding NOWHERE.
+
+WHY the order matters (not a preference):
+  domains-first  → unseen_university/domains/ (top-level) imports agentic_loop from INSIDE
+                   devices/inference/ — a top-level package reaching up into a device's guts.
+                   That is a WORSE inversion than the waypoint the ticket exists to fix, and
+                   it double-moves all 4 primitive files (device → domains/ → agentic/).
+  agentic-first  → primitives land in their FINAL home (unseen_university/agentic/, the Q2
+                   resolution Akien confirmed). devices/inference/domains/ then imports
+                   device → top-level (correct direction). Domains ticket then moves
+                   top-level → top-level. NO inversion at any commit; nothing moves twice.
+
+Support files are NOT agentic and stay put for the domains ticket to place:
+  reply_text (also imported by proxy-side run_record.py), escalation_corpus, stuck_ladder,
+  escalation_policy, domain_prompts, prompts/.
+Fold-back apparatus (eval_slice, io_corpus, corpus_verdict, prereg, verdict_gate — sitting in
+the routing proxy): agentic ticket says "relocate with this ticket OR file a follow-on" → FILE
+A FOLLOW-ON, keep the move ticket to the primitives.
+
+Descent boundary (design-passed, for the domains ticket when it opens):
+  merge base.py + general.py → ONE concrete GeneralDomain (walk + DEFAULT policy + completion
+  contract + _run_attempt = one dispatch). CodingDomain strips to prompt + contract (no
+  _run_attempt, no critic/aci/architect-editor — those DESCEND to the blocked DS ticket).
+  CapabilityMixin holds a per-INSTANCE domain (factory, NOT a class-level shared object —
+  a shared instance would share escalation state across every agent).
+  NAMED DEFERRAL (CP1): with _run_attempt = one dispatch and no ground truth, there is no real
+  coding DONE-check to write. Do NOT invent a fake completion contract for CodingDomain; the
+  provable claim is the stripping + the retire + instance-holding.
