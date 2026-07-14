@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-orphan-watchdog-watches-tickets-not-processes.20260713.210234757330",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-orphan-watchdog-watches-tickets-not-processes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T21:02:34.757330",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-orphan-watchdog-watches-tickets-not-processes",
+    "title": "[triage] The orphan watchdog watches orphaned TICKETS, not orphaned PROCESSES — so nine 2-hour pytest orphans holding sockets to Hex were invisible to it (and Scraps wasn't running anyway)",
+    "size": "M",
+    "priority": 0.75,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "scraps",
+      "cleanup",
+      "orphans",
+      "observability",
+      "constrained-resource"
+    ],
+    "intention": "I intend that a process which outlives its purpose is REAPED, because an orphaned process is not like a stale file — it is invisible AND it keeps acting, generating load on the very resources everyone else is trying to measure. [intention_date: 2026-07-13]",
+    "description": "**MEASURED 2026-07-13.** Nine orphaned `pytest tests/` processes — the oldest alive **1h57m** —\neach holding an open socket to Hex and driving live inference at its single slot. They saturated it, and the\nresulting queue got diagnosed as a broken server. Twice.\n\n**THE SHAPE OF THE FIX ALREADY EXISTS AND DID NOT FIRE:**\n  * `unseen_university/devices/scraps/jobs/orphan_watchdog.py` — but it watches **orphaned TICKETS**\n    (in_progress past a size-keyed timeout). **It has no notion of an orphaned PROCESS.** It would never have\n    seen these nine.\n  * `unseen_university/devices/scraps/jobs/cpu_peg_monitor.py` — watches **local CPU**. A remote box's\n    saturated inference slot pegs nothing here; the dev box was idle the whole time.\n  * **Scraps was not running.**\n\n**An orphaned process is not like a stale file. It is invisible AND IT KEEPS ACTING** — holding sockets,\ngenerating load, and deepening the very queue that everyone (including the person debugging it) is measuring.\nA stale file misleads; a stale process *participates*.\n\n**Scope boundary:** IN — (a) a Scraps job that reaps processes which outlive a declared lifetime (starting\nwith test runs and anything holding a lease on a constrained resource); (b) it must NAME what it killed and\nwhy — a silent reaper is its own invisible actor; (c) reconcile with the lease work\n(T-constrained-resources-need-an-owner-with-admission-control): the reaper is what makes a lease releasable\nwhen the holder dies. OUT — Scraps lifecycle/startup (separate); ticket orphaning (already covered).\n\n**NOTE — resist proliferation:** this is a **Scraps job**, not a new device. Akien floated a \"testing device\";\nScraps already IS the job runner, with a `jobs/` directory containing exactly this class of watchdog. The gap\nis CONTENT, not architecture.\n\n**Test plan / discriminating fixture:** a process that outlives its declared lifetime while holding a resource\nis reaped, and the reap is LOGGED with what and why. A watchdog that only checks ticket age passes today and\nfails this.\n\n**Completion criteria:**\n  1. A test-run process that outlives its lifetime is reaped, and the reap names it.\n  2. Reaping releases any lease the dead process held.\n  3. Scraps is actually RUNNING (a watchdog that isn't running is a check indistinguishable from an absent one\n     — the same defect this repo keeps rediscovering).",
+    "created_at": "2026-07-14T00:20:00+00:00"
+  }
+}

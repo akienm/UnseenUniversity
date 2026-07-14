@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-rack-health-has-one-home-and-it-is-not-the-web-server.20260713.210234617117",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rack-health-has-one-home-and-it-is-not-the-web-server"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-13T21:02:34.617117",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-rack-health-has-one-home-and-it-is-not-the-web-server",
+    "title": "[triage] The single rack health monitor EXISTS, is wired to the RETIRED IMAP transport, runs its own forbidden daemon, and is instantiated by NOBODY — while its 14 tests pass. Rack health is de-facto a property of the web server being up.",
+    "size": "L",
+    "priority": 0.85,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "health",
+      "observability",
+      "dead-code",
+      "imap-debt",
+      "ground-loop",
+      "non-injective-signal",
+      "cp1"
+    ],
+    "intention": "I intend that every device can report its own status on its own, so that rack health survives the death of any single component — including the web server — and that there is exactly ONE home for that health, which a reader can find without knowing which device happens to host it. [intention_date: 2026-07-13]",
+    "description": "**RAISED BY AKIEN 2026-07-13:** \"there is supposed to be a single health monitoring for all the\nparts of the system. even if the web server is not up, if a device is up, it should be able to deliver its\nstatus pages — the ones the web server would use.\"\n\n**IT WAS BUILT. IT IS A CORPSE. AND ITS TESTS ARE GREEN.**\n`unseen_university/devices/librarian/health_aggregator.py` — `HealthAggregator`, collects per-device\nheartbeats, exposes `rack_health()`. Exactly the thing. And:\n  * its constructor takes an **`IMAPServer`** — the **RETIRED** transport. CLAUDE.md: \"IMAP was the OLD\n    transport and is fully removed — any IMAP/IMAPServer mention anywhere in this repo is stale debt\n    (T-imap-references-purge).\" The rack's health monitor is plumbed into a transport that no longer exists.\n  * it has **`run_forever()`** — its own daemon, which \"⛔ ONE daemon structure — the Ground Loop\" forbids.\n  * **NOTHING instantiates it.** The only callers in the whole repo are `tests/test_health_aggregator.py`.\n    `health_tools.set_aggregator()` guards a module-global `_aggregator = None` that is never set in a live\n    process.\n  * it lives **inside librarian**, not as rack infrastructure — so \"rack health\" is a thing one device owns.\n\n**AND ITS 14 TESTS PASS.** This is the day's defect one more time, in a new costume: **a green suite on a\ncomponent wired to a dead transport and constructed by no one. A passing test is indistinguishable from a\nlive capability.** (Cousins: the intent extractor's crash wearing CP1's clothes; HealthMonitor calling a\nsaturated source healthy; `test_ollama_liveness` \"fixing\" a reachability probe by replacing it with a\ndifferent reachability probe.)\n\n**MEANWHILE, health is de-facto served BY THE WEB SERVER**: `/health`, `/api/rack/health`,\n`/api/comms/health`, `/api/granny/health` all live in `devices/web_server/server.py`. So rack health is a\nproperty of the web server being up — the exact coupling Akien says must not exist. **When the web server\ndies, the rack stops being able to say whether it is alive.** That is the failure mode where health matters\nmost.\n\n**WHAT IS ALREADY RIGHT:** `BaseDevice.health()` is an `@abstractmethod` — every device HAS a health method,\nand `uptime()`, `startup_errors()`, `logs()` alongside it. The contract exists. **What is missing is any way\nto REACH it that does not go through the web server.**\n\n**Scope boundary:** IN — (a) the aggregator moves off IMAP onto **PgBus** and off `run_forever()` onto a\n**shim-started `ShimLoopThread`** driven by the Ground Loop; (b) it is instantiated in a live process, or it\nis deleted — a health monitor nobody constructs is worse than none, because its green tests assert that we\nhave one; (c) every device can serve its OWN status independent of the web server (the web server becomes a\nCONSUMER of device status, never its source); (d) ONE home for rack health, findable without knowing which\ndevice hosts it. OUT — the content of any individual device's `health()`; the inference-source capability\nprobe (T-healthmonitor-probes-reachability-not-capability).\n\n**Test plan / discriminating fixture:** with the web server **stopped**, a running device must still report\nits status, and the aggregate must still be obtainable. A build that serves health only through the web\nserver passes today's tests and fails this one — which is the entire point. Plus: a test that FAILS if\n`HealthAggregator` is constructed by nothing in a live process (the dead-code detector — the check that would\nhave caught this years ago).\n\n**Completion criteria:**\n  1. Kill the web server; a running device still reports its status; rack health is still obtainable.\n  2. `HealthAggregator` is either LIVE (constructed in a real process, on PgBus, on a shim thread) or GONE.\n     There is no third state, and \"has passing tests\" is not one.\n  3. No `IMAPServer` reference remains in the health path.\n  4. A test exists that goes red if the health path is instantiated by nobody.",
+    "created_at": "2026-07-14T00:20:00+00:00"
+  }
+}
