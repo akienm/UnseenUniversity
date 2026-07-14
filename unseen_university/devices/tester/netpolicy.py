@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import socket
 import subprocess
@@ -61,6 +62,7 @@ _NFT_TABLE = "uu_tester"
 FIXTURE = "fixture"
 REFUSE = "refuse"
 DENY = "deny"
+FORWARD = "forward"
 
 
 @dataclass(frozen=True)
@@ -71,14 +73,19 @@ class Rule:
     port: int
     action: str = REFUSE
     fixture: str = ""      # a key of FIXTURES, when action == FIXTURE
+    via: str = ""          # host-side Unix socket path, when action == FORWARD
 
     def __post_init__(self):
-        if self.action not in (FIXTURE, REFUSE, DENY):
+        if self.action not in (FIXTURE, REFUSE, DENY, FORWARD):
             raise ValueError(f"unknown action {self.action!r}")
         if self.action == FIXTURE and self.fixture not in FIXTURES:
             raise ValueError(
                 f"unknown fixture {self.fixture!r} — have {sorted(FIXTURES)}"
             )
+        # `via` is left EMPTY on purpose here: the caller declares WHAT to forward, and the device
+        # decides WHERE the host-side socket lives (it owns the temp dir and the forwarder). The
+        # Router enforces that it was filled in — see _forward — because by then it is a real
+        # requirement rather than a premature one.
 
     @property
     def claims_address(self) -> bool:
@@ -94,7 +101,7 @@ class NetworkPolicy:
 
     def to_json(self) -> str:
         return json.dumps([
-            {"host": r.host, "port": r.port, "action": r.action, "fixture": r.fixture}
+            {"host": r.host, "port": r.port, "action": r.action, "fixture": r.fixture, "via": r.via}
             for r in self.rules
         ])
 
@@ -117,6 +124,7 @@ class Router:
     def __init__(self, policy: NetworkPolicy) -> None:
         self._policy = policy
         self._servers: list[ThreadingHTTPServer] = []
+        self._forwarders: list[socket.socket] = []
         self._counted: list[Rule] = []
         self._nft_ready = False
         self.attempts: list[dict] = []
@@ -145,8 +153,72 @@ class Router:
 
             if rule.action == FIXTURE:
                 self._serve(rule)
+            elif rule.action == FORWARD:
+                self._forward(rule)
             else:  # REFUSE — an nft reject+counter rule: a true ECONNREFUSED that is still SEEN
                 self._refuse(rule)
+
+    def _forward(self, rule: Rule) -> None:
+        """Bind (host, port) IN HERE and pipe every byte over a Unix socket to the host side.
+
+        THE ONLY CHANNEL IN OR OUT IS A FILE. This is exactly ContainerShim's model — "the container
+        gets no TCP stack at all... the only channel is the bind-mounted Unix socket" — reached from
+        the other end, and it is what lets a fully network-sealed sandbox still talk to Postgres.
+
+        Why not simply repoint the DB at its Unix socket and be done? Because that silently changes
+        the AUTHENTICATION METHOD. Postgres applies `peer` auth to `local` connections (matching the
+        OS uid against the role name) and password auth to `host` connections. Rewriting the URL to
+        the socket therefore made 716 tests fail with "Peer authentication failed" — a sandbox that
+        broke the thing it was meant to observe, which is the one sin a grader may not commit.
+
+        Forwarding keeps the connection a TCP one from Postgres's point of view, so the URL, the
+        credentials, and the auth path are all EXACTLY what they are in production. The sandbox
+        stays transparent, and we still own every byte that crosses the boundary.
+        """
+        if not rule.via:
+            raise RuntimeError(
+                f"FORWARD {rule.host}:{rule.port} has no `via` socket — the device must resolve it "
+                f"before the sandbox starts, or there is no door to forward through"
+            )
+        srv = socket.socket()
+        srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        srv.bind((rule.host, rule.port))
+        srv.listen(64)
+        self._forwarders.append(srv)
+
+        def _pump(a: socket.socket, b: socket.socket) -> None:
+            try:
+                while chunk := a.recv(65536):
+                    b.sendall(chunk)
+            except OSError:
+                pass
+            finally:
+                for s in (a, b):
+                    try:
+                        s.shutdown(socket.SHUT_RDWR)
+                    except OSError:
+                        pass
+                    s.close()
+
+        def _accept() -> None:
+            while True:
+                try:
+                    client, _ = srv.accept()
+                except OSError:
+                    return
+                self._record(rule.host, rule.port, "forwarded", "")
+                try:
+                    up = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    up.connect(rule.via)
+                except OSError as exc:
+                    log.warning("Router: forward %s:%s failed: %s", rule.host, rule.port, exc)
+                    client.close()
+                    continue
+                threading.Thread(target=_pump, args=(client, up), daemon=True).start()
+                threading.Thread(target=_pump, args=(up, client), daemon=True).start()
+
+        threading.Thread(target=_accept, daemon=True).start()
+        log.info("Router: %s:%s -> FORWARD via %s", rule.host, rule.port, rule.via)
 
     def _serve(self, rule: Rule) -> None:
         handler = FIXTURES[rule.fixture]
@@ -236,3 +308,74 @@ class Router:
         self._harvest_counters()      # ask the kernel what it saw, before we tear anything down
         for srv in self._servers:
             srv.shutdown()
+        for f in self._forwarders:
+            f.close()
+
+
+# ── the HOST side of the channel ─────────────────────────────────────────────
+
+
+class HostForwarder:
+    """Runs on the HOST: a Unix socket that pipes to a real TCP service.
+
+    The sandbox has no TCP stack, so it cannot reach Postgres — but a Unix socket is a FILE, and
+    files cross a network namespace freely. This is the only door, and we are standing in it: every
+    byte the sandbox sends to the outside world passes through here, which is what makes the policy
+    ENFORCEABLE rather than merely declared.
+    """
+
+    def __init__(self, sock_path: str, host: str, port: int) -> None:
+        self._path = sock_path
+        self._target = (host, port)
+        self._srv: socket.socket | None = None
+        self.connections = 0
+
+    def start(self) -> None:
+        if os.path.exists(self._path):
+            os.unlink(self._path)
+        srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        srv.bind(self._path)
+        srv.listen(64)
+        os.chmod(self._path, 0o666)
+        self._srv = srv
+        threading.Thread(target=self._accept, daemon=True).start()
+        log.info("HostForwarder: %s -> %s:%s", self._path, *self._target)
+
+    def _accept(self) -> None:
+        while True:
+            try:
+                client, _ = self._srv.accept()   # type: ignore[union-attr]
+            except OSError:
+                return
+            self.connections += 1
+            try:
+                up = socket.create_connection(self._target, timeout=10)
+            except OSError as exc:
+                log.warning("HostForwarder: cannot reach %s:%s — %s", *self._target, exc)
+                client.close()
+                continue
+            for a, b in ((client, up), (up, client)):
+                threading.Thread(target=_pipe, args=(a, b), daemon=True).start()
+
+    def stop(self) -> None:
+        if self._srv:
+            self._srv.close()
+        try:
+            os.unlink(self._path)
+        except OSError:
+            pass
+
+
+def _pipe(a: socket.socket, b: socket.socket) -> None:
+    try:
+        while chunk := a.recv(65536):
+            b.sendall(chunk)
+    except OSError:
+        pass
+    finally:
+        for s in (a, b):
+            try:
+                s.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            s.close()

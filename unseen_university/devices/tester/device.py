@@ -44,7 +44,7 @@ from unseen_university.devices.tester.isolation import (
     Isolation,
     get_isolation,
 )
-from unseen_university.devices.tester.netpolicy import NetworkPolicy
+from unseen_university.devices.tester.netpolicy import FORWARD, HostForwarder, NetworkPolicy, Rule
 
 log = logging.getLogger(__name__)
 
@@ -150,7 +150,22 @@ class TesterDevice(BaseDevice):
         pytest_argv = [python or "python3", "-m", "pytest", "-q", "--tb=line", *(test_paths or [])]
 
         report_path = ""
+        forwarders: list[HostForwarder] = []
         if policy is not None:
+            # Stand up the HOST side of every FORWARD rule before the sandbox exists. The sandbox has
+            # no TCP stack; a Unix socket is a FILE and crosses the namespace freely. This is the only
+            # door, and we are standing in it.
+            sockdir = tempfile.mkdtemp(prefix="uu-tester-sock-")
+            resolved: list[Rule] = []
+            for r in policy.rules:
+                if r.action == FORWARD and not r.via:
+                    r = Rule(r.host, r.port, FORWARD, via=f"{sockdir}/{r.host}_{r.port}.sock")
+                if r.action == FORWARD:
+                    fw = HostForwarder(r.via, r.host, r.port)
+                    fw.start()
+                    forwarders.append(fw)
+                resolved.append(r)
+            policy = NetworkPolicy(resolved)
             # The tester IS the network (T-tester-owns-the-network). We do not merely deny the
             # constrained resource — we DECIDE what it is: a fixture, a closed door, or a void.
             # The run happens inside a supervisor that claims the addresses, verifies the policy
@@ -165,10 +180,16 @@ class TesterDevice(BaseDevice):
         argv = iso.wrap(pytest_argv, cwd=repo)
         env = dict(os.environ)
         env.update(env_overrides or {})   # e.g. aider's PYTHONPATH contamination guard
-        db = env.get("UU_HOME_DB_URL", "")
-        if iso.seals_network and db:
-            # No TCP inside the namespace — speak to Postgres over its socket instead.
-            env["UU_HOME_DB_URL"] = _tcp_url_to_socket(db)
+        # NOTE: the DB URL is deliberately left ALONE. Rewriting it to Postgres's Unix socket seems
+        # obvious and is wrong — it silently switches `host` (password) auth to `local` (peer) auth,
+        # which failed 716 tests. Postgres is reached through a FORWARD rule instead, so from its
+        # side the connection is the same TCP connection it always was.
+        if iso.seals_network and env.get("UU_HOME_DB_URL") and policy is not None:
+            if not any(r.action == FORWARD and r.port == 5432 for r in policy.rules):
+                log.warning(
+                    "TesterDevice: the sandbox has no TCP stack and no FORWARD rule for Postgres — "
+                    "DB-backed tests will fail. Add Rule('127.0.0.1', 5432, FORWARD)."
+                )
 
         try:
             proc = subprocess.run(
@@ -221,6 +242,9 @@ class TesterDevice(BaseDevice):
                 )
                 log.error("TesterDevice: %s", verdict["seal_detail"])
                 return verdict
+
+        for fw in forwarders:
+            fw.stop()
 
         if not seal.confirmed:
             # The tests may well have passed. We cannot say they passed *honestly*, because we

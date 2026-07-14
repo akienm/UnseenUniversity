@@ -159,13 +159,18 @@ class NetnsIsolation(Isolation):
         # needs no special handling — it is a file, and files are not the network. That asymmetry
         # is the whole design, and it costs exactly zero flags.
         #
-        # `--cap-add CAP_NET_ADMIN --uid 0` makes us root IN OUR OWN USER NAMESPACE — which confers
-        # no privilege whatsoever on the host, and lets us configure the netns we already own. That
-        # is what turns an empty namespace into a PROGRAMMABLE one (see netpolicy.Router): we can
-        # claim 10.0.0.100 and BE Hex in here. Without it the namespace is merely dark.
+        # `--cap-add CAP_NET_ADMIN` lets us configure the netns we already own — which is what turns
+        # an empty namespace into a PROGRAMMABLE one (netpolicy.Router): we can claim 10.0.0.100 and
+        # BE Hex in here. Without it the namespace is merely dark.
+        #
+        # NOTE: we deliberately do NOT pass `--uid 0`. The capability works at our real uid, and
+        # becoming root-in-namespace BREAKS POSTGRES: `peer` authentication matches the connecting
+        # process's OS uid against the role name, so a root sandbox failed 716 tests with "Peer
+        # authentication failed". A grader that breaks the thing it is observing is worse than no
+        # grader. Least privilege here is not hygiene — it is correctness.
         return [
             "bwrap", "--dev-bind", "/", "/", "--unshare-net",
-            "--cap-add", "CAP_NET_ADMIN", "--uid", "0", "--gid", "0",
+            "--cap-add", "CAP_NET_ADMIN",
             "--chdir", cwd,
         ] + list(argv)
 

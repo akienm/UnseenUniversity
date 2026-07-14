@@ -27,6 +27,7 @@ import sys
 from unseen_university.devices.tester.netpolicy import (
     DENY,
     FIXTURE,
+    FORWARD,
     REFUSE,
     NetworkPolicy,
     Router,
@@ -45,7 +46,7 @@ def _observe(host: str, port: int, timeout: float = 3.0) -> str:
         return "unreachable" if exc.errno in (101, 113) else f"error:{exc.errno}"
 
 
-_EXPECTED = {FIXTURE: "connected", REFUSE: "refused", DENY: "unreachable"}
+_EXPECTED = {FIXTURE: "connected", FORWARD: "connected", REFUSE: "refused", DENY: "unreachable"}
 
 
 def verify(policy: NetworkPolicy) -> list[dict]:
