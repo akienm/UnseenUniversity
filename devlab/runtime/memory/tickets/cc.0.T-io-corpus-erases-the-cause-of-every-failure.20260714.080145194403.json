@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-io-corpus-erases-the-cause-of-every-failure.20260714.080145194403",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-io-corpus-erases-the-cause-of-every-failure"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-14T08:01:45.194403",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-io-corpus-erases-the-cause-of-every-failure",
+    "title": "[triage] The inference corpus RECORDS SUCCESSES AND FORGETS FAILURES — all 70 of today's errors are byte-identical (`{'raw': None}`, elapsed_ms=0). The system of record has the same non-injective defect as everything it records.",
+    "size": "M",
+    "priority": 0.95,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "inference",
+      "corpus",
+      "observability",
+      "non-injective-signal",
+      "cp1",
+      "cp2",
+      "cp3"
+    ],
+    "intention": "I intend that the inference corpus preserves the CAUSE and the COST of a failure, because a failure is the datum worth keeping — a record that says only 'something went wrong' has recorded the shape of the truth and thrown away the truth. [intention_date: 2026-07-14]",
+    "description": "**AKIEN, 2026-07-14:** *\"every inference call is supposed to be tracked, logged both the up\nand downstream, so you should be able to go and inspect those... that was the intention.\"*\n\n**HE IS RIGHT, AND I SHOULD HAVE LOOKED.** `~/.unseen_university/inference_corpus/YYYYMMDD.io.jsonl` exists,\ncarries real model names, and had the answer to yesterday's disaster sitting in it the entire time:\n\n    20260714 io corpus, rich-schema calls:\n      ok     n=62   p50=6.8s   p95=237.4s   max=284.8s      <-- THE SATURATION. Written down.\n      error  n=70   p50=0.0s   p95=0.0s     max=0.0s\n\nA p95 of **237 seconds** on SUCCESSFUL calls is the queue, recorded, in a file. One read of `elapsed_ms` and\nthe 2026-07-13 saturation would have been obvious in seconds. Instead I reasoned from sockets and produced\ntwo confidently-wrong diagnoses. **I went hunting for evidence I already had.** That is a lesson about me\n([[feedback_account_for_your_own_load]]).\n\n**BUT THE CORPUS HAS THE SAME DISEASE AS EVERYTHING IT RECORDS, AND THAT IS THIS TICKET.**\n\n  * **`elapsed_ms == 0` for EVERY error.** A call that burned 60 seconds and timed out is recorded as having\n    taken **zero milliseconds**. The corpus therefore *systematically erases the cost of failure* — and every\n    latency or budget analysis built on it is wrong, in a known direction, by the exact amount that matters.\n  * **`response == \"{'raw': None}\"` for ALL 70 errors — BYTE-IDENTICAL.** A parse failure, a timeout, a\n    refused connection, and a reasoning model truncated at `finish_reason='length'` all collapse into one\n    string with the cause erased.\n\n**THIS IS THE SAME NON-INJECTIVE MAP, IN THE SYSTEM OF RECORD.** It is the crash wearing CP1's clothes\n(T-intent-extractor-crash-masquerades-as-refusal), the saturated ollama reporting healthy\n(T-healthmonitor-probes-reachability-not-capability), and INDETERMINATE collapsing into GREEN — except here\nit is in the artifact whose ONE JOB is to preserve causes. **The corpus keeps its successes and forgets why\nanything failed. That is exactly backwards: the failures are the data (CP2).**\n\n**AND A SECOND, DISJOINT GAP — the run-record path is dark for real traffic.**\n`devices/inference/run_record.py` writes rich per-run \"inference tickets\"\n(`~/.unseen_university/inference_corpus/runs/`). **804 of them exist. NOT ONE NAMES A REAL MODEL.** Every\nrecorded hop is `stub-model`, `stub`, or `''` — the entire run-record corpus is TEST OUTPUT. Cause:\n`RunRecord` is written only by `BaseDomain.run`; **`InferenceDevice.dispatch()` has ZERO references to it**,\nand `dispatch()` is the path the intent extractor (`self._get_inference().dispatch(req)`), aider, and DS all\ntake. So the run-record corpus *looks* alive — 804 records, growing daily, resolutions spread plausibly\nacross done/harvest_wall/capability_ceiling — and is **entirely fictional**. A corpus indistinguishable from\na working one is worse than an empty one: it does not merely fail to inform, it actively misleads.\n\n**Third, and it is Akien's contamination argument exactly:** the TEST SUITE writes into the PRODUCTION\ncorpus (326,694 fabricated tokens). `--unshare-net` does not stop this, because it is a FILESYSTEM write, not\na network call. The tester needs corpus/FS isolation too, not only network isolation\n(T-tester-owns-the-network).\n\n**Scope boundary:** IN — (a) an error row records its CAUSE (named class: parse / timeout / refused /\ntruncated / no-capacity) and its real `elapsed_ms`; (b) `dispatch()` writes a run record, so the real traffic\nis recorded and not just the domain path; (c) the test suite must not write to the production corpus. OUT —\nthe distributional monitor over the corpus (worth its own ticket: a 48% error rate went unnoticed today, and\nonly the DISTRIBUTION screams when every record is well-formed).\n\n**Test plan / discriminating fixture:** four failures — a parse error, a 60s timeout, a refused connection,\nand a `finish_reason='length'` truncation — must land as FOUR DISTINCT records, each carrying its cause and\nits true elapsed time. **A build that writes `{'raw': None}` with `elapsed_ms=0` for all four fails, which is\nthe entire point.** The tester's new network fixtures (`saturated`, `truncated_reasoner`, `array_answer`)\nmake all four producible on demand — this ticket is buildable *because* of T-tester-owns-the-network.\n\n**Completion criteria:**\n  1. Four different failure causes -> four different records. Asserted, not assumed.\n  2. A failed call's `elapsed_ms` reflects the time it actually burned. A 60s timeout is not 0ms.\n  3. `dispatch()` writes a run record; a real model name appears in the run corpus for the first time.\n  4. A test run cannot write to the production corpus.",
+    "created_at": "2026-07-14T08:00:00+00:00"
+  }
+}

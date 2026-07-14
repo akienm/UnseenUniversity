@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-test-tiers-and-the-kill-switch.20260714.080237986571",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-tiers-and-the-kill-switch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-14T08:02:37.986571",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-test-tiers-and-the-kill-switch",
+    "title": "[triage] Test TIERS + a KILL SWITCH — the scarce resource is not 'testing time', it is Hex's single inference slot. Hermetic full suite = 219s; live is the tier that must be rationed.",
+    "size": "M",
+    "priority": 0.8,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "tester",
+      "pipeline",
+      "scheduling",
+      "kill-switch",
+      "capacity",
+      "async"
+    ],
+    "intention": "I intend that testing is TIERED by what it CONSUMES rather than by what it covers, and that every tier can be cancelled outright — so a debugging session can stop the world without hunting for what is still running. [intention_date: 2026-07-14]",
+    "description": "**AKIEN, 2026-07-14, two points:**\n  1. *\"we hand off the testing task to it, while the llm goes on to do other things. but part of what this\n     means is that that's our main point of bottleneck. so we can't run the entire test suite several times a\n     day. each ticket has to run a small set of tests. and then we run the entire suite overnight... unit\n     tests, commit tests, hourly integrations, nightly builds, and weekly builds.\"*\n  2. *\"such a system needs to have an off switch. so that we can cancel all pending everything as we do\n     debugging. that would be another argument for containers.\"*\n\n**THE TIERING IS RIGHT. THE PREMISE NEEDS ONE CORRECTION, AND IT CUTS IN OUR FAVOUR — MEASURED, 2026-07-14:**\n\n    full suite on the HOST (network live)  : HUNG. 46 min elapsed, 44s of CPU, never finished.\n    full suite under the ROUTER (Hex REFUSED): 219 SECONDS. 7276 passed.\n    connections the suite made to Hex        : 187, counted by the kernel.\n\n**The suite was never slow because it was BIG. It was slow because it was LIVE** — 187 network round-trips to\na contended 24B model, several of which blocked forever. Hermetically it is **3 minutes 39 seconds**, which\nis cheap enough to run on every ticket.\n\n**SO THE TIERING AXIS IS NOT fast-vs-slow. IT IS HERMETIC-vs-LIVE:**\n\n  | tier        | what it consumes                    | cadence                      |\n  |-------------|-------------------------------------|------------------------------|\n  | hermetic    | CPU only. Network = fixtures/REFUSE | every ticket, every commit   |\n  | live        | **Hex's single inference slot**     | rationed: leased, nightly    |\n  | eval/weekly | real models across a matrix; $      | weekly                       |\n\n**The bottleneck to protect is not \"testing time\" in the abstract — it is `-np 1` on Hex.** That is the same\nscarce thing behind T-constrained-resources-need-an-owner-with-admission-control, T-tester-owns-the-network,\nand the nine orphans. Ration THAT, and the hermetic tier is nearly free.\n\n**THE KILL SWITCH — and Akien is right that it is an argument for containers, but the reason is sharper than\n'containers are tidy':** the nine orphaned pytest runs of 2026-07-13 survived for hours precisely because\n**nothing owned them.** They were host processes with no parent that cared. A sandbox is a thing you can KILL,\nand killing it takes its netns and every process inside it with it — no survivors, no hunting. **A test run\nin a sandbox cannot orphan, by construction.**\n\nAnd the router gives a second, softer off-switch that costs nothing: **flip every rule to DENY** and all\nin-flight and future reach-outs die instantly, without killing the run — useful precisely when you are\ndebugging and want the world to stop touching Hex while you look at it.\n\n**Scope boundary:** IN — (a) tiers as a first-class property of a test run (the tester takes a tier, not a\nguess); (b) the per-ticket tier is hermetic and runs on every close; (c) the live tier is leased and\nscheduled, never ad-hoc; (d) a KILL that stops every sandbox and every pending run, and a SOFT kill that flips\nthe network to DENY without tearing the run down; (e) the handoff is ASYNC — the tester runs, the LLM goes on\nto other work, the verdict arrives. OUT — the lease itself (T-constrained-resources-…); the weekly eval matrix.\n\n**Test plan / discriminating fixture:** a KILL issued mid-run leaves ZERO surviving processes and ZERO open\nsockets to Hex — asserted by counting both, not by assuming. (On 2026-07-13 the honest count was nine and\nnobody was counting.) And: the hermetic tier must complete without a single connection to Hex — the router's\nkernel counter says 0, or the tier is a lie.\n\n**Completion criteria:**\n  1. A test run declares its TIER, and the hermetic tier provably makes zero live calls (kernel-counted).\n  2. A KILL leaves no surviving sandbox process and no open socket to a constrained resource.\n  3. The live tier cannot run without a lease.\n  4. The handoff is async: the caller gets a handle, not a block.",
+    "created_at": "2026-07-14T08:05:00+00:00"
+  }
+}
