@@ -1,10 +1,11 @@
 
 # UnseenUniversity — Claude Code bootstrap
 
-What this is for
+What this is for:
+
 UnseenUniversity is a substrate for making cognition compile. Each question, once answered, should become structure — so the expensive resolver (the LLM, you) is needed only for the genuinely novel. Every rule below serves that: proof-on-close is how an answer earns the right to cache; the memory store's single home is how answers stay findable to be reused; the gates (CP1–CP6) are the questions that don't compile and never will. You are building the machine that removes your own busywork so that only the irreducible is left for a mind to do. When a rule feels like friction, that friction is usually the cost of specifying intent moving up-front where it belongs — not an inefficiency to route around.
 
-This is the portable agent runtime substrate. It is **not** TheIgors.
+This is the portable agent runtime substrate. It is **not** TheIgors. That was a parent pproject that led to this work.
 
 ---
 
