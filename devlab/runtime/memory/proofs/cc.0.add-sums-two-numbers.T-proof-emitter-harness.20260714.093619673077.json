@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.add-sums-two-numbers.T-proof-emitter-harness.20260714.093619673077",
+  "emitter": "cc.0",
+  "namespace": [
+    "add-sums-two-numbers",
+    "T-proof-emitter-harness"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-14T09:36:19.673077",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proof-emitter-harness"
+    ],
+    "commits": [
+      "abc123"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-proof-emitter-harness",
+  "body": {
+    "thing": "add() sums two numbers",
+    "intention": "add(2, 3) returns 5",
+    "test": "test_sample.py::test_adds",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "test_sample.py::test_adds",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________________________ test_adds ___________________________________\n\n    def test_adds():\n>       assert sample_thing.add(2, 3) == 5\nE       assert None == 5\nE        +  where None = <function add at 0x704961bc9120>(2, 3)\nE        +    where <function add at 0x704961bc9120> = sample_thing.add\n\ntest_sample.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED test_sample.py::test_adds - assert None == 5\n1 failed in 0.01s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.00s"
+          }
+        }
+      }
+    ],
+    "commit": "abc123",
+    "impl_paths": [],
+    "ticket": "T-proof-emitter-harness",
+    "narrative": "bootstrap sample proof",
+    "why": "CP1 — done means proven",
+    "bootstrap": false
+  }
+}

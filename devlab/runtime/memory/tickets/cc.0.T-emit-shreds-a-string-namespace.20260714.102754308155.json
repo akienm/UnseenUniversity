@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-emit-shreds-a-string-namespace.20260714.102754308155",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-emit-shreds-a-string-namespace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-14T16:27:54.308155+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-emit-shreds-a-string-namespace"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-emit-shreds-a-string-namespace",
+    "title": "[triage] memory_emit.emit() silently SHREDS a string namespace into characters — 6 of 6 session records in the store are corrupt. A string and a list of segments are both iterables of strings, so the write path cannot tell them apart.",
+    "size": "S",
+    "priority": 0.8,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "memory-store",
+      "correctness",
+      "write-path",
+      "cp1",
+      "data-integrity"
+    ],
+    "intention": "I intend that the memory store's write path REFUSES a malformed record rather than writing a corrupt one — because an interface may collapse an error into a success shape, but a RECORD OF TRUTH may not: an interface can be re-called, a record cannot be un-written. [intention_date: 2026-07-14]",
+    "description": "**MEASURED 2026-07-14, while starting at the bottom of the stack (Akien's direction).**\n\n`devlab/claudecode/memory_emit.py:162` —\n\n    ns = [s for s in (namespace or []) if s]\n\n`emit()` means `namespace` to be a LIST OF SEGMENTS. The CLI honors that (line 227 splits a dotted\nstring on [.,] first). But a **Python caller passing a plain string** has it iterated CHARACTER BY\nCHARACTER — because a string IS an iterable of one-character strings. The comprehension cannot\ndistinguish `[\"session\", \"20260713\"]` from `\"session-20260713\"`, so it does not fail. It writes a\ncorrupt record and returns success.\n\n**THE CALLER:** `scripts/session_capture.py:153`\n\n    memory_emit.emit(\"sessions\", \"cc.0\", body, kind=\"session\", namespace=f\"session-{datestamp}\")\n\n**THE DAMAGE, counted:**\n\n    sessions     ok=  0   char-split=  6     <-- 100% CORRUPT\n    decisions    ok=278   char-split=  0\n    tickets      ok=2388  char-split=  0\n    proofs       ok=174   char-split=  0\n    notes        ok= 46   char-split=  0\n    rules        ok= 22   char-split=  0\n    architecture ok= 24   char-split=  0\n\nEvery session record ever written is corrupt. On disk:\n\n    namespace: ['s','e','s','s','i','o','n','-','2','0','2','6','0','7','1','3']\n    filename : cc.0.s.e.s.s.i.o.n.-.2.0.2.6.0.7.1.3.20260712.210210576003.json\n\nThe store's whole value is that it is GREP-ABLE. A session is now findable by neither its namespace\nnor its filename. Blast radius is sessions today only because every other category goes through the\nCLI — but **the defect is in emit(), and it will shred the next Python caller too.**\n\n**THIS IS THE DAY'S RECURRING DEFECT, ONE LAYER FURTHER DOWN: a cause->signal map that is not\ninjective.** Two different inputs (a segment list, a bare string) produce one indistinguishable shape\n(an iterable of strings), so no discriminator exists and the error collapses into a success. Same\nshape as crash-vs-CP1-refusal, reachability-vs-capacity, INDETERMINATE-vs-GREEN, and\nno-counts-vs-zero-failures. CLAUDE.md already names the rule this violates: *an error may collapse\ninto a success shape at an INTERFACE, never into a RECORD OF TRUTH.*\n\n**Affected files:** devlab/claudecode/memory_emit.py (emit); scripts/session_capture.py:153;\nthe 6 corrupt records in devlab/runtime/memory/sessions/.\n\n**Scope boundary:** fix the write path and repair the 6 records. Do NOT redesign the namespace scheme.\n\n**Completion criteria:** (1) emit() RAISES TypeError on a str namespace, naming the fix ('pass a list of\nsegments, or a dotted string via the CLI') — it must not helpfully coerce, because a helpful coercion is\nhow this got in; (2) session_capture.py passes a list; (3) the 6 corrupt records are repaired IN PLACE\n(annotate, never delete — CP2), namespace and filename both; (4) sessions are grep-able by namespace again.\n\n**Test plan:** red->green. RED: `emit(..., namespace='session-20260713')` currently writes\n`['s','e','s',...]`; the test asserts it raises. GREEN: it raises, and a list namespace still round-trips.\nSecond node: no record in the store has a namespace that is a list of 1-char strings. The hollow build\nthis must fail: coercing a str to [str] and calling it fixed — that hides the caller's bug instead of\nsurfacing it, and the next caller passing a dotted string gets a single wrong segment.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "related_to": "T-a-proxy-that-can-be-bypassed-is-not-a-chokepoint",
+    "created_at": "2026-07-14T16:25:48.778736+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-14T16:25:48.778797+00:00"
+  }
+}

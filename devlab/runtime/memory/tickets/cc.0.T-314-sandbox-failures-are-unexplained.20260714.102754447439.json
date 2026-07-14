@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-314-sandbox-failures-are-unexplained.20260714.102754447439",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-314-sandbox-failures-are-unexplained"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-14T16:27:54.447439+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-314-sandbox-failures-are-unexplained"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-314-sandbox-failures-are-unexplained",
+    "title": "[triage] 314 tests still fail under the tester sandbox and I do not know why — there is NO host baseline to compare against, so 'pre-existing failure' and 'third sandbox artifact' are indistinguishable.",
+    "size": "M",
+    "priority": 0.85,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "tester",
+      "cp1",
+      "baseline",
+      "discriminator"
+    ],
+    "intention": "I intend that the tester can always tell a CARRIED RED from a REGRESSION IT CAUSED — so a red under the sandbox is attributable evidence rather than an accusation with no defendant. [intention_date: 2026-07-14]",
+    "description": "**MEASURED 2026-07-14, full suite under the netns router, 753s:**\n\n    passed 7781 | failed 314 | skipped 79 | errors 2\n    policy HELD: Hex REFUSED (356 attempts, kernel-counted) - Postgres CONNECTED (10,244 via forwarder)\n\n**WHAT IS SETTLED:** the earlier 716 failures were MINE. `--uid 0` made the sandbox root-in-namespace,\nand Postgres `peer` auth matches the connecting process's OS uid to the role name, so every connection\nfailed with 'Peer authentication failed for user unseen_university'. Compounding it, `_tcp_url_to_socket()`\nrewrote the DB URL to the Unix socket — which does not merely change the TRANSPORT, it changes the AUTH\nMETHOD (host/password -> local/peer). Fixed in 88f839aa: dropped --uid 0 (CAP_NET_ADMIN works at the real\nuid) and added a FORWARD rule so Postgres is reached over a Unix socket piped to a host-side TCP forwarder,\nleaving the DB URL and its auth path byte-identical to production. **That accounted for ~400 of the 716.**\n\n**WHAT IS NOT SETTLED: 314 remain, and I cannot attribute them.** I have no host baseline. So these two\nhypotheses are currently INDISTINGUISHABLE:\n    (a) they are pre-existing reds that also fail on the host (a CARRIED red — the tester is innocent), or\n    (b) they are a THIRD sandbox artifact I have not found (the tester is breaking what it observes).\n\n**I must not assume (a).** I assumed the analogous thing this morning and it was false: I told Akien the\n716 proved the tests 'measure the wrong thing', and the discriminator showed the tests were fine and the\nsandbox was broken. **A grader that breaks the thing it is observing is worse than no grader.** Until this\nis attributed, every RED the tester emits is unsafe to act on.\n\n**THE DISCRIMINATOR IS CHEAP AND MUST BE RUN:** same suite, same flags, on the HOST, with live tests\nalready deselected by addopts (T-default-suite-drives-live-inference-and-saturates-hex, closed proven) so\nit will not saturate Hex. Diff the failing-node sets. Nodes red in BOTH = carried. Nodes red ONLY under the\nsandbox = the tester's own damage, and each one is a bug in the tester.\n\n**Affected files:** unseen_university/devices/tester/{device,isolation,netpolicy,_sandbox_main}.py; whatever\nthe diff indicts.\n\n**Scope boundary:** ATTRIBUTE the 314 first. Do not fix any test until it is known which population it is in\n— fixing a carried red is out of scope here (it gets its own ticket); fixing a sandbox artifact is in scope.\n\n**Completion criteria:** (1) a host baseline of failing node ids exists and is stored, not just observed;\n(2) every one of the 314 is classified CARRIED or SANDBOX-CAUSED; (3) the SANDBOX-CAUSED set is zero or\nfully explained and ticketed; (4) the tester REFUSES to emit a bare RED it cannot attribute — it reports\n'N carried, M caused' or says it does not know (CP1).\n\n**Test plan:** red->green — a proof node asserts the tester reports failures ATTRIBUTED against a stored\nbaseline, and that an unattributable red is not reported as a clean RED. The hollow build this must fail:\nrecording today's 314 as 'the baseline' and calling everything green — that launders 314 unexamined\nfailures into an expected value, which is exactly how a green suite stops meaning anything.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "related_to": "T-tester-rackmount",
+    "created_at": "2026-07-14T16:26:19.519982+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-14T16:26:19.520059+00:00"
+  }
+}

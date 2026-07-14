@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-tester-verdict-without-counts-is-not-a-verdict.20260714.102754576145",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tester-verdict-without-counts-is-not-a-verdict"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-14T16:27:54.576145+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-tester-verdict-without-counts-is-not-a-verdict"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-tester-verdict-without-counts-is-not-a-verdict",
+    "title": "[triage] TesterDevice returned counts:{} and a RED verdict in the same breath — a parse failure and a real result are the same shape, and I nearly reported the number I never measured.",
+    "size": "S",
+    "priority": 0.7,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "tester",
+      "cp1",
+      "indeterminate",
+      "observability"
+    ],
+    "intention": "I intend that the tester never emits a verdict it cannot substantiate — a run whose results could not be PARSED is INDETERMINATE, exactly like a run whose seal could not be CONFIRMED, and INDETERMINATE is never GREEN and never a bare RED. [intention_date: 2026-07-14]",
+    "description": "**MEASURED 2026-07-14.** A full-suite run under the router returned:\n\n    verdict     : RED | policy_holds: True\n    counts      : {}                     <-- the _COUNTS regex matched NOTHING\n    Hex reaches : 364 (kernel-counted)\n\nThe device happily emitted **RED with no idea how many tests passed or failed.** The regex found no\npytest summary line (extra `-q --tb=no` flags in test_paths changed the tail's shape), so it returned an\nempty dict — and an empty dict is falsy, and nothing checked it.\n\n**THE DEFECT IS THE SHAPE, NOT THE REGEX.** `counts == {}` means 'I could not parse the result'. It is\ncurrently indistinguishable from a legitimate result, and it rides alongside a confident RED. That is the\nday's recurring bug once more: **two causes, one signal.** The tester already gets this right for the SEAL\n(a seal it cannot confirm => INDETERMINATE, never GREEN). It does not apply its own rule to its RESULTS.\n\n**WHAT IT COST:** I was one sentence away from telling Akien the 716 peer-auth failures were fixed, on the\nstrength of a run that had not told me anything. I caught it only because I had said out loud that I would\nnot report a number I had not measured. **A discipline I have to remember is not a property of the system.**\n\n**Affected files:** unseen_university/devices/tester/device.py (_COUNTS, run_tests verdict assembly).\n\n**Scope boundary:** the verdict logic. Do not widen this into general tester hardening.\n\n**Completion criteria:** an unparseable result yields INDETERMINATE with a reason naming WHY (no summary\nline found, tail attached), `passed` stays None, and no GREEN or bare RED is ever emitted without counts.\n\n**Test plan:** red->green — feed run_tests output with no pytest summary line; RED: it returns RED with\ncounts:{}. GREEN: it returns INDETERMINATE with the reason and the tail. The hollow build this must fail:\nmaking the regex more permissive. A better regex still leaves the failure mode — the point is that the\nUNPARSEABLE CASE MUST BE A DISTINCT SIGNAL, not a rarer one.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "related_to": "T-tester-rackmount",
+    "created_at": "2026-07-14T16:26:50.259935+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-14T16:26:50.259976+00:00"
+  }
+}

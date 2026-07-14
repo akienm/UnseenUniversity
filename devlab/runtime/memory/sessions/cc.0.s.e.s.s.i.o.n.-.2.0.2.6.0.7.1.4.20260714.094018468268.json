@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.s.e.s.s.i.o.n.-.2.0.2.6.0.7.1.4.20260714.094018468268",
+  "emitter": "cc.0",
+  "namespace": [
+    "s",
+    "e",
+    "s",
+    "s",
+    "i",
+    "o",
+    "n",
+    "-",
+    "2",
+    "0",
+    "2",
+    "6",
+    "0",
+    "7",
+    "1",
+    "4"
+  ],
+  "category": "sessions",
+  "kind": "session",
+  "emitted_at": "2026-07-14T09:40:18.468268",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "title": "Session 2026-07-14",
+    "date": "2026-07-14",
+    "turn_count": 2,
+    "summary": "proof summary line",
+    "transcript": "**Akien:** build the thing\n\n**CC:** done — shipped the thing",
+    "source_file": "/tmp/pytest-of-akien/pytest-169/test_session_capture_writes_fl0/sess.jsonl",
+    "tags": [
+      "session",
+      "rollup"
+    ],
+    "text": "proof summary line"
+  }
+}

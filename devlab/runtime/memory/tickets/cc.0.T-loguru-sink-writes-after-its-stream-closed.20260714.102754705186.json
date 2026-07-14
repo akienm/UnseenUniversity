@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-loguru-sink-writes-after-its-stream-closed.20260714.102754705186",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-loguru-sink-writes-after-its-stream-closed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-14T16:27:54.705186+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-loguru-sink-writes-after-its-stream-closed"
+    ],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-loguru-sink-writes-after-its-stream-closed",
+    "title": "[triage] loguru sink raises ValueError: I/O operation on closed file at teardown (+2 collection errors) — the logger outlives the stream it logs to.",
+    "size": "S",
+    "priority": 0.5,
+    "status": "triage",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "logging",
+      "teardown",
+      "test-hygiene"
+    ],
+    "intention": "I intend that the logging path never raises — a logger that throws during teardown destroys the record of the very shutdown it was there to witness. [intention_date: 2026-07-14]",
+    "description": "**OBSERVED 2026-07-14** in the full-suite run under the tester (753s, 7781 passed / 314 failed / 2 errors):\n\n    --- Logging error ---\n    File \".venv/lib/python3.12/site-packages/loguru/_simple_sinks.py\", line 16, in write\n        self._stream.write(message)\n    ValueError: I/O operation on closed file.\n    --- End of logging error ---\n\nA loguru sink is still bound to a stream that has already been closed — something logs during teardown\n(or from a daemon thread outliving the fixture that opened the sink). The 2 collection `errors` in the same\nrun may or may not be the same cause; that is unmeasured and must not be assumed.\n\n**WHY IT MATTERS BEYOND NOISE:** the failure is in the LOGGING PATH ITSELF. CLAUDE.md requires a log at\nevery state change and every interface crossing precisely so that a boundary bug is visible. A sink that\nthrows at shutdown is a hole in exactly the record we would need to diagnose a shutdown bug — and it\nannounces itself as a stack trace in the test output, where it is easy to learn to ignore.\n\n**Affected files:** unseen_university/diagnostic_base/* (the base JSON sink), tests/conftest.py (fixture\nteardown order), unseen_university/shim.py (ShimLoopThread — a daemon thread logging after its owner is gone\nis the likeliest cause and should be checked FIRST).\n\n**Scope boundary:** stop the logging path from raising. Do not restructure the sink hierarchy.\n\n**Completion criteria:** a full suite run produces zero 'Logging error' blocks; the 2 collection errors are\nseparately identified and either fixed or ticketed by name (they are NOT assumed to be the same bug).\n\n**Test plan:** red->green — a test that opens a device sink, closes the stream, and logs from the shim's\nloop thread. RED: ValueError. GREEN: the record is dropped or rerouted, and nothing raises. The hollow build\nthis must fail: wrapping the sink's write in a bare `except: pass` — that silences the symptom and deletes\nthe evidence, and CLAUDE.md's audit already forbids a silent except.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-07-14T16:27:20.944389+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "scraps_validated": "2026-07-14T16:27:20.944463+00:00"
+  }
+}

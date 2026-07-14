@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.flag-removed.20260714.093625405826",
+  "emitter": "cc.0",
+  "namespace": [
+    "flag-removed"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-14T09:36:25.405826",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [
+      "18b8ba96713011de77dfd05e36e1c4001cce0e39"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "thing": "flag removed",
+    "intention": "VALUE is 'absent' once flag.py is gone",
+    "test": "test_flag.py::test_flag_gone",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "test_flag.py::test_flag_gone",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________________________ test_flag_gone ________________________________\n\n    def test_flag_gone():\n>       assert sample_thing.VALUE == \"absent\"\nE       AssertionError: assert 'present' == 'absent'\nE         \nE         - absent\nE         + present\n\ntest_flag.py:3: AssertionError\n=========================== short test summary info ============================\nFAILED test_flag.py::test_flag_gone - AssertionError: assert 'present' == 'ab...\n1 failed in 0.02s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.00s"
+          }
+        }
+      }
+    ],
+    "commit": "18b8ba96713011de77dfd05e36e1c4001cce0e39",
+    "impl_paths": [
+      "flag.py"
+    ],
+    "ticket": null,
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
