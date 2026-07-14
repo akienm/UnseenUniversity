@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.an-independent-grader-runs-a-builder-s-t.T-tester-rackmount.20260714.065429624042",
+  "emitter": "cc.0",
+  "namespace": [
+    "an-independent-grader-runs-a-builder-s-t",
+    "T-tester-rackmount"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-07-14T06:54:29.624042",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-tester-rackmount"
+    ],
+    "commits": [
+      "d57bbd0d3f66e07dee430dbd8127601a039414ce"
+    ],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "T-tester-rackmount",
+  "body": {
+    "thing": "an independent grader runs a builder's tests where they CANNOT reach the constrained shared resource, and the seal is measured from inside every run",
+    "intention": "I intend that an independent grader runs a builder's tests where the builder cannot reach a constrained shared resource, and that a run whose isolation cannot be CONFIRMED is never reported as a pass. INDETERMINATE is not GREEN.",
+    "test": "tests/tester/test_tester_isolation_is_real.py::test_a_test_run_by_the_tester_cannot_reach_the_constrained_resource",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/tester/test_tester_isolation_is_real.py::test_a_test_run_by_the_tester_cannot_reach_the_constrained_resource",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n        v = TesterDevice(isolation=\"netns\").run_tests(repo=str(repo))\n    \n        assert v[\"seal_confirmed\"] is True, f\"the sandbox was not sealed: {v['seal_detail']}\"\n>       assert v[\"verdict\"] == RED, (\n            \"a test that reaches out to the constrained resource must FAIL inside the sandbox — it has \"\n            f\"no route. Got {v['verdict']} instead, which means the sandbox leaked.\\n{v['tail']}\"\n        )\nE       AssertionError: a test that reaches out to the constrained resource must FAIL inside the sandbox — it has no route. Got GREEN instead, which means the sandbox leaked.\nE         .                                                                        [100%]\nE         1 passed in 0.01s\nE       assert 'GREEN' == 'RED'\nE         \nE         - RED\nE         + GREEN\n\ntests/tester/test_tester_isolation_is_real.py:92: AssertionError\n=========================== short test summary info ============================\nFAILED tests/tester/test_tester_isolation_is_real.py::test_a_test_run_by_the_tester_cannot_reach_the_constrained_resource\n1 failed in 0.44s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.45s"
+          }
+        }
+      }
+    ],
+    "commit": "d57bbd0d3f66e07dee430dbd8127601a039414ce",
+    "impl_paths": [
+      "unseen_university/devices/tester/device.py",
+      "unseen_university/devices/tester/isolation.py"
+    ],
+    "ticket": "T-tester-rackmount",
+    "narrative": "RED at 9a925d37: the stub IS the hollow build — it ASSERTS its seal ('assumed sealed') and shells pytest on the host, so a test that opens a socket to Hex SUCCEEDS and is certified GREEN. AssertionError on verdict == RED. GREEN at d57bbd0d: NetnsIsolation wraps the run in bubblewrap --unshare-net; the seal is probed FROM INSIDE the sandbox on every run; the same test now fails with [Errno 101] Network is unreachable and earns RED. The control half is asserted too — the identical probe on the HOST must connect, or a universally-failing probe would pass for free. Not mocked: a real sandbox, a real socket, a real refusal.",
+    "why": "Nine host-shelled pytest runs saturated Hex's single inference slot on 2026-07-13 and produced two confidently-wrong diagnoses. A policy ('run tests in series', 'don't hammer Hex') binds only the consumers who read it; --unshare-net binds all of them, including the ones nobody remembered to tell. And ContainerShim's 27 green tests mock subprocess — they have never run a real container, so its isolation guarantee is a property of an argv string, not of the world.",
+    "bootstrap": false
+  }
+}

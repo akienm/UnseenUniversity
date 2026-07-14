@@ -1,0 +1,18 @@
+# Slate — 2026-07-14
+
+## Rewound? (read this if you were rewound, not compacted)
+A rewind rolls your CONVERSATION back but NOT git/this slate — so your memory is now BEHIND reality. Read this slate + `git log --oneline -10`, trust slate+git over your memory, and `git status` for working-tree divergence (a code-rewind can delete committed files — `git restore` fixes it) before acting.
+
+## Summary
+(empty — session just started)
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today

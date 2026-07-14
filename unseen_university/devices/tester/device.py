@@ -28,10 +28,12 @@ T-tester-rackmount. D-dev-pipeline-stations-2026-07-07.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
 import subprocess
+import tempfile
 import time
 from datetime import datetime, timezone
 
@@ -42,6 +44,7 @@ from unseen_university.devices.tester.isolation import (
     Isolation,
     get_isolation,
 )
+from unseen_university.devices.tester.netpolicy import NetworkPolicy
 
 log = logging.getLogger(__name__)
 
@@ -100,6 +103,8 @@ class TesterDevice(BaseDevice):
         timeout: float = DEFAULT_TIMEOUT,
         python: str | None = None,
         forbidden: tuple[str, int] = DEFAULT_FORBIDDEN,
+        env_overrides: dict | None = None,
+        policy: "NetworkPolicy | None" = None,
     ) -> dict:
         """Grade a build. Returns a verdict dict; NEVER raises for a failing build.
 
@@ -142,11 +147,24 @@ class TesterDevice(BaseDevice):
             iso.name, seal.confirmed, seal.detail,
         )
 
-        argv = iso.wrap(
-            [python or "python3", "-m", "pytest", "-q", "--tb=line", *(test_paths or [])],
-            cwd=repo,
-        )
+        pytest_argv = [python or "python3", "-m", "pytest", "-q", "--tb=line", *(test_paths or [])]
+
+        report_path = ""
+        if policy is not None:
+            # The tester IS the network (T-tester-owns-the-network). We do not merely deny the
+            # constrained resource — we DECIDE what it is: a fixture, a closed door, or a void.
+            # The run happens inside a supervisor that claims the addresses, verifies the policy
+            # from inside, and hands back a record of every connection the tests attempted.
+            fd, report_path = tempfile.mkstemp(prefix="uu-tester-", suffix=".json")
+            os.close(fd)
+            pytest_argv = [
+                python or "python3", "-m", "unseen_university.devices.tester._sandbox_main",
+                "--policy", policy.to_json(), "--report", report_path, "--", *pytest_argv,
+            ]
+
+        argv = iso.wrap(pytest_argv, cwd=repo)
         env = dict(os.environ)
+        env.update(env_overrides or {})   # e.g. aider's PYTHONPATH contamination guard
         db = env.get("UU_HOME_DB_URL", "")
         if iso.seals_network and db:
             # No TCP inside the namespace — speak to Postgres over its socket instead.
@@ -173,6 +191,36 @@ class TesterDevice(BaseDevice):
         verdict["counts"] = {k if k != "errors" else "error": int(n) for n, k in _COUNTS.findall(out)}
         verdict["tail"] = "\n".join(out.strip().splitlines()[-15:])
         verdict["duration_s"] = time.time() - started
+
+        if policy is not None:
+            report = {}
+            try:
+                with open(report_path) as fh:
+                    report = json.load(fh)
+            except (OSError, ValueError):
+                pass
+            finally:
+                try:
+                    os.unlink(report_path)
+                except OSError:
+                    pass
+
+            # A router does not SAMPLE connections, it IS them. This is the record `ss` could not
+            # give me: every address a test reached for, and what it got.
+            verdict["attempts"] = report.get("attempts", [])
+            verdict["policy_checks"] = report.get("checks", [])
+            verdict["policy_holds"] = bool(report.get("policy_holds"))
+            verdict["returncode"] = report.get("returncode", proc.returncode)
+
+            if not verdict["policy_holds"]:
+                # The network we promised is not the network they got. Whatever the tests said, we
+                # cannot vouch for it — and a green we cannot vouch for is worse than a red,
+                # because it looks like something.
+                verdict["seal_detail"] += " | NETWORK POLICY DID NOT HOLD: " + json.dumps(
+                    [c for c in verdict["policy_checks"] if not c.get("holds")]
+                )
+                log.error("TesterDevice: %s", verdict["seal_detail"])
+                return verdict
 
         if not seal.confirmed:
             # The tests may well have passed. We cannot say they passed *honestly*, because we

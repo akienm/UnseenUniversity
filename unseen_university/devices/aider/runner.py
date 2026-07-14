@@ -31,6 +31,7 @@ no shell=True, no bash-isms. git and an aider venv must be present on the box.
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import re
 import shutil
@@ -41,6 +42,8 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 from .consts import DEFAULT_MODEL, HEX_OLLAMA, aider_bin
+
+log = logging.getLogger(__name__)
 
 # A changed path matching any of these is a TEST file — aider must never edit
 # tests to make them pass (the "did it cheat" guard). Repo-relative, POSIX slashes.
@@ -216,24 +219,51 @@ def _push_branch(workdir: Path, branch: str, remote: str) -> tuple[bool, str]:
 
 
 def _run_tests(workdir: Path, test_paths) -> tuple[bool | None, str]:
-    """Run pytest against the given repo-relative test paths inside the clone.
+    """HAND OFF to the tester rackmount. Aider does NOT grade its own work.
 
-    Returns (green|None, tail). None when no target given — the gate then cannot
-    assert correctness and the caller escalates to CC (honest: no silent green).
-    PYTHONPATH is prepended with the clone so `import`s resolve to the EDITED code,
-    not an editable install pointing at the original working tree (contamination guard).
+    SEPARATION OF POWERS (T-tester-rackmount). This function used to shell `pytest` on the HOST,
+    in aider's own clone, and read its own exit code — the thing that produced the diff deciding
+    whether the diff is good. That is not a check; it is the builder's opinion with a process
+    boundary around it. And it is not hypothetical harm: on 2026-07-13 nine host-shelled pytest
+    runs saturated Hex's single inference slot, and the resulting queue was diagnosed as a broken
+    server, twice.
+
+    Now the verdict comes from a device aider does not control, running the tests in a network
+    namespace with NO ROUTE to Hex. A builder that wanted to cheat could not reach the thing it
+    would have to cheat with.
+
+    Returns (green|None, tail). **None means NOT ASSERTED, and it is returned for BOTH "no test
+    target" and the tester's INDETERMINATE** — an unsealed or unbuildable sandbox tells us nothing
+    about correctness, and the caller escalates to CC rather than reporting a silent green. The two
+    reasons are distinguished in the TAIL, never in the verdict, because they have the same
+    consequence: we do not know.
+
+    The PYTHONPATH contamination guard survives: imports must resolve to the EDITED clone, not to
+    an editable install pointing at the original working tree.
     """
     if not test_paths:
         return None, "(no test target — correctness not asserted)"
-    env = dict(os.environ)
-    env["PYTHONPATH"] = os.pathsep.join([str(workdir), env.get("PYTHONPATH", "")]).rstrip(os.pathsep)
-    r = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", "--tb=line", *test_paths],
-        cwd=str(workdir), env=env, capture_output=True, text=True,
+
+    from unseen_university.devices.tester.device import GREEN, INDETERMINATE, TesterDevice
+
+    verdict = TesterDevice().run_tests(
+        repo=str(workdir),
+        test_paths=list(test_paths),
+        python=sys.executable,
+        env_overrides={
+            "PYTHONPATH": os.pathsep.join(
+                [str(workdir), os.environ.get("PYTHONPATH", "")]
+            ).rstrip(os.pathsep)
+        },
     )
-    out = (r.stdout + r.stderr).strip()
-    tail = out.splitlines()[-1] if out else "(no output)"
-    return r.returncode == 0, tail
+
+    if verdict["verdict"] == INDETERMINATE:
+        # NOT a failure of the build — a failure of the GRADER. Never a silent green.
+        log.warning("aider: tester returned INDETERMINATE — %s", verdict["seal_detail"])
+        return None, f"(tester INDETERMINATE — correctness not asserted: {verdict['seal_detail']})"
+
+    tail = (verdict["tail"] or "").strip().splitlines()
+    return verdict["verdict"] == GREEN, (tail[-1] if tail else "(no output)")
 
 
 def build(ticket_id: str, repo_source, message: str, *, model: str = DEFAULT_MODEL,

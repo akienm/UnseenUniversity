@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-tester-owns-the-network.20260714.073609460510",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tester-owns-the-network"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-07-14T07:36:09.460510",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": [],
+    "intentions": []
+  },
+  "produced_by": "session:cc.0",
+  "body": {
+    "id": "T-tester-owns-the-network",
+    "title": "[sprint] The tester IS the local network — per-port policy, fixtures at the real address, fault injection, and a record of every connection a test attempts",
+    "size": "L",
+    "priority": 0.9,
+    "status": "sprint",
+    "worker": "CC.0",
+    "role": "builder",
+    "tags": [
+      "tester",
+      "network",
+      "fixtures",
+      "fault-injection",
+      "observability",
+      "admission-control",
+      "hermetic"
+    ],
+    "intention": "I intend that the tester OWNS the network its tests see — so that what a test can reach is a decision we make per run, a failing dependency is something we can SERVE on demand, and every connection a test attempts is RECORDED rather than inferred. [intention_date: 2026-07-14]",
+    "description": "**AKIEN, 2026-07-14:** *\"the testing container should be itself the router for the local network.\nso we can literally turn on and off individual ports as part of the testing protocol. or repoint them to\nfixtures, or whatever we wish to do.\"*\n\n**FEASIBILITY: PROVEN, ON THIS BOX, WITH NO NEW DEPENDENCIES.** Inside `bwrap --unshare-net --cap-add\nCAP_NET_ADMIN --uid 0` we are root *in the user namespace*, so we can configure our own netns — and that\nmeans we can **claim the constrained resource's own IP address as our own**:\n\n    whoami-in-userns : 0\n    ip addr add 10.0.0.100/32 dev lo   -> ok\n    BOUND fake ollama on 10.0.0.100:11434   <-- we ARE Hex inside the namespace\n    client got : {\"message\":{\"content\":\"I am a FIXTURE, not Hex\"}}\n\nA perfectly ordinary client — code with **no idea it is sandboxed** — dialled `http://10.0.0.100:11434/api/chat`\nand reached our fixture. **ZERO changes to the code under test.** `INFERENCE_ENDPOINT` still says Hex. The\ndevice still dials Hex. It reaches whatever we decide Hex is today.\n\n**THIS IS STRICTLY BETTER THAN `--unshare-net` ALONE (T-tester-rackmount, closed).** All-or-nothing isolation\nprotects the resource but leaves every inference-touching test either unrunnable or live. Owning the network\nturns the same namespace into a *programmable* one.\n\n**WHAT IT UNLOCKS — and the first item is the one that matters most:**\n\n**1. TODAY'S BUGS BECOME PERMANENT REGRESSION TESTS. None of them is reproducible right now.**\n  * *saturated ollama* — `/api/tags` 200 in 2ms while `/api/chat` never returns. This is the exact\n    discriminating fixture `T-healthmonitor-probes-reachability-not-capability` NEEDS and which I could only\n    describe as an aspiration when I filed it. **It becomes buildable.**\n  * *`deepseek-r1:14b` returns HTTP 200 with an EMPTY message*, its whole token budget eaten by its `<think>`\n    trace (`finish_reason='length'`) — T-intent-extractor-live-success-rate-is-zero.\n  * *minion returns a JSON ARRAY* (few-shot read as a batch) — the original crash-masquerading-as-refusal.\n\n**2. Per-port policy.** Postgres open, Hex closed. Or Hex open only to a run holding a capacity lease.\n\n**3. Hermetic inference.** A test that \"needs a model\" gets a deterministic fixture, instantly. This does not\nmerely FENCE the `-m live` problem (which is what deselecting the marker did) — it DISSOLVES it.\n\n**4. A RECORD OF EVERY CONNECTION A TEST ATTEMPTS.** The router cannot miss. This directly repairs the\nmeasurement failure of 2026-07-13: I sampled `ss` once per second looking for connections that live 2-4\nmilliseconds, got a clean zero, and read the silence as proof. **An instrument too coarse to see the event is\nnot evidence of absence.** A router IS the event.\n\n**5. It settles the admission-control argument.** A policy binds only the consumers who read it. **A socket\nthat does not exist binds all of them.** The tester's network IS the admission point\n(T-constrained-resources-need-an-owner-with-admission-control): DENY is a closed port; ALLOW is a\nlease-checked forward.\n\n**Scope boundary:** IN — (a) a `NetworkPolicy` of per-(host,port) rules: **FIXTURE** (our handler answers at\nthe real address), **REFUSE** (address claimed, nothing listening -> fast ECONNREFUSED, and the attempt is\nRECORDED), **DENY** (address never claimed -> ENETUNREACH, indistinguishable from a dead box); (b) the five\nollama fixtures above, drawn from real measured incidents, not imagined ones; (c) the seal check becomes a\nPOLICY check — every rule is verified from inside the sandbox, every run (the seal is measured, never\nasserted); (d) the connection log. OUT — **FORWARD** (proxying a real, lease-checked call out through a\nhost-side UDS) belongs with the lease ticket, because that is where the capacity accounting lives.\n\n**Default is REFUSE-and-RECORD, not DENY.** A recorded refusal beats an invisible unreachable: \"which tests\ntouch the network, and what do they reach for\" must be MEASURED, and a silently-unroutable packet tells us\nnothing. (An honest ENETUNREACH stays available per-rule, because that is what a genuinely dead box looks\nlike and some tests need to face it.)\n\n**Test plan / discriminating fixture:** a test dials `10.0.0.100:11434` and receives the fixture we chose —\nproving the interception. Then the SATURATED fixture: `/api/tags` answers in milliseconds while `/api/chat`\nhangs, and a capability probe must call that source DOWN while a reachability probe calls it healthy. **A\nbuild that cannot serve that asymmetry fails, and that asymmetry is the whole month's bug.**\n\n**Completion criteria:**\n  1. A test reaching for Hex gets the declared fixture, with no change to the code under test.\n  2. The saturated-ollama fixture reproduces the 2026-07-13 incident in a hermetic test.\n  3. Every connection attempt a test makes is recorded and retrievable from the verdict.\n  4. A policy rule that does not hold at run time makes the verdict INDETERMINATE — never GREEN.",
+    "created_at": "2026-07-14T07:20:00+00:00"
+  }
+}

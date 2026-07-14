@@ -158,7 +158,16 @@ class NetnsIsolation(Isolation):
         # is a symlink to /run, so bwrap tries to mkdir a mountpoint that cannot exist. The socket
         # needs no special handling — it is a file, and files are not the network. That asymmetry
         # is the whole design, and it costs exactly zero flags.
-        return ["bwrap", "--dev-bind", "/", "/", "--unshare-net", "--chdir", cwd] + list(argv)
+        #
+        # `--cap-add CAP_NET_ADMIN --uid 0` makes us root IN OUR OWN USER NAMESPACE — which confers
+        # no privilege whatsoever on the host, and lets us configure the netns we already own. That
+        # is what turns an empty namespace into a PROGRAMMABLE one (see netpolicy.Router): we can
+        # claim 10.0.0.100 and BE Hex in here. Without it the namespace is merely dark.
+        return [
+            "bwrap", "--dev-bind", "/", "/", "--unshare-net",
+            "--cap-add", "CAP_NET_ADMIN", "--uid", "0", "--gid", "0",
+            "--chdir", cwd,
+        ] + list(argv)
 
 
 def get_isolation(name: str) -> Isolation:
